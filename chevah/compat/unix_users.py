@@ -25,14 +25,12 @@ except ImportError:
 
 
 from chevah.compat.helpers import (
+    _,
+    NoOpContext,
     raise_failed_to_get_home_folder,
     raise_failed_to_get_primary_group,
     )
 from chevah.utils.exceptions import ChangeUserException
-from chevah.utils.helpers import (
-    _,
-    NoOpContext,
-    )
 from chevah.utils.interfaces import (
     IAvatarBase,
     IHasImpersonatedAvatar,
@@ -108,7 +106,7 @@ class UnixUsers(object):
 
     def getSuperAvatar(self, avatar=None):
         '''Create a super user/Administrator avatar.'''
-        from chevah.commons.utils.avatar import OSAvatar
+        from chevah.utils.avatar import OSAvatar
         if avatar:
             home_folder_path = avatar.home_folder_path
         else:

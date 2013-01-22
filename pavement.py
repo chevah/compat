@@ -4,16 +4,21 @@
 Build script for chevah-compat.
 """
 from __future__ import with_statement
+import os
 import sys
 
 # Marker for paver.sh.
 # This value is pavers by bash. Use a strict format.
-BRINK_VERSION = '0.6.6'
+BRINK_VERSION = '0.7.1'
 
 EXTRA_PACKAGES = [
-    'chevah-utils==0.1.0',
-    'chevah-empirical==0.1.0',
+    'chevah-utils==0.3.4',
+    'chevah-empirical==0.3.0',
     ]
+
+if os.name == 'posix':
+    EXTRA_PACKAGES.extend(['pam>=0.1.4.chevah'])
+
 
 from brink.pavement_commons import (
     _p,
@@ -51,6 +56,7 @@ SETUP['pocket-lint']['include_files'] = ['pavement.py']
 SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.compat.tests'
+SETUP['test']['elevated'] = 'elevated'
 
 
 @task

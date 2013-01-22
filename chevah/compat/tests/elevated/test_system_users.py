@@ -16,12 +16,9 @@ from chevah.compat import (
 from chevah.compat.constants import (
     WINDOWS_PRIMARY_GROUP,
     )
+from chevah.compat.platform import os_administration, OSUser
+from chevah.compat.helpers import NoOpContext
 from chevah.empirical import ChevahTestCase, factory
-from chevah.empirical.platform import os_administration, OSUser
-from chevah.utils.exceptions import (
-    ChangeUserException,
-    OperationalException,
-    )
 from chevah.empirical.constants import (
     TEST_ACCOUNT_CENTRIFY_USERNAME,
     TEST_ACCOUNT_CENTRIFY_PASSWORD,
@@ -35,7 +32,10 @@ from chevah.empirical.constants import (
     TEST_ACCOUNT_LDAP_PASSWORD,
     TEST_ACCOUNT_LDAP_USERNAME,
     )
-from chevah.utils.helpers import NoOpContext
+from chevah.utils.exceptions import (
+    ChangeUserException,
+    OperationalException,
+    )
 from chevah.utils.interfaces import IHasImpersonatedAvatar
 
 

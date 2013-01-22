@@ -18,7 +18,7 @@ from chevah.empirical.constants import (
     TEST_ACCOUNT_PASSWORD,
     TEST_ACCOUNT_USERNAME_OTHER,
     )
-from chevah.empirical.test_filesystem import LocalTestFilesystem
+from chevah.empirical.filesystem import LocalTestFilesystem
 from chevah.utils.exceptions import OperationalException
 
 

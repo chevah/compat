@@ -78,7 +78,7 @@ class TestSystemUsers(ChevahTestCase):
         if os.name != 'posix':
             raise self.skipTest()
 
-        from chevah.commons.compat.unix_users import HAS_PAM_SUPPORT
+        from chevah.compat.unix_users import HAS_PAM_SUPPORT
 
         self.assertTrue(HAS_PAM_SUPPORT)
 
@@ -89,7 +89,7 @@ class TestSystemUsers(ChevahTestCase):
         if os.name != 'posix':
             raise self.skipTest()
 
-        from chevah.commons.compat.unix_users import HAS_SHADOW_SUPPORT
+        from chevah.compat.unix_users import HAS_SHADOW_SUPPORT
 
         self.assertTrue(HAS_SHADOW_SUPPORT)
 

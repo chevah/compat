@@ -7,7 +7,25 @@ Any methods from here is a sign of bad design.
 from chevah.utils.exceptions import (
     OperationalException,
     )
-from chevah.utils.helpers import _
+
+
+def _(string):
+    '''Placeholder for future gettext integration.'''
+    return string
+
+
+class NoOpContext(object):
+    """
+    A context manager that does nothing.
+    """
+
+    def __enter__(self):
+        '''Do nothing.'''
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        '''Just propagate errors.'''
+        return False
 
 
 def raise_failed_to_add_group(group, path, message=u''):
