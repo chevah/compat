@@ -12,16 +12,14 @@ import win32security
 
 from chevah.compat.constants import WINDOWS_PRIMARY_GROUP
 from chevah.compat.helpers import (
+    _,
+    NoOpContext,
     raise_failed_to_get_home_folder,
     raise_failed_to_get_primary_group,
     )
 from chevah.utils.exceptions import (
     ChangeUserException,
     OperationalException,
-    )
-from chevah.utils.helpers import (
-    _,
-    NoOpContext,
     )
 from chevah.utils.interfaces import (
     IAvatarBase,
