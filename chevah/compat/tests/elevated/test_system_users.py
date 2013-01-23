@@ -16,7 +16,7 @@ from chevah.compat import (
 from chevah.compat.constants import (
     WINDOWS_PRIMARY_GROUP,
     )
-from chevah.compat.platform import os_administration, OSUser
+from chevah.compat.administration import os_administration, OSUser
 from chevah.compat.helpers import NoOpContext
 from chevah.empirical import ChevahTestCase, factory
 from chevah.empirical.constants import (

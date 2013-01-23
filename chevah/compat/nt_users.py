@@ -28,7 +28,7 @@ from chevah.utils.interfaces import (
     IHasImpersonatedAvatar,
     IOSUsers,
     )
-# We can not import chevah.commons.compat.process_capabilities as it would
+# We can not import chevah.compat.process_capabilities as it would
 # create a circular import.
 from chevah.compat.nt_capabilities import NTProcessCapabilities
 
@@ -41,7 +41,7 @@ GetUserNameW.argtypes = [c_wchar_p, POINTER(c_uint)]
 GetUserNameW.restype = c_uint
 
 # This is initialized at this module level so that it can be reuse in the
-# whole module as a normal import from chevah.commons.compat.
+# whole module as a normal import from chevah.compat.
 process_capabilities = NTProcessCapabilities()
 
 

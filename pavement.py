@@ -9,18 +9,18 @@ import sys
 
 # Marker for paver.sh.
 # This value is pavers by bash. Use a strict format.
-BRINK_VERSION = '0.7.1'
+BRINK_VERSION = '0.8.0'
 
 EXTRA_PACKAGES = [
     'chevah-utils==0.3.4',
-    'chevah-empirical==0.3.0',
+    'chevah-empirical==0.3.2',
     ]
 
 if os.name == 'posix':
     EXTRA_PACKAGES.extend(['pam>=0.1.4.chevah'])
 
 
-from brink.pavement_commons import (
+from chevah.brink.pavement_commons import (
     _p,
     buildbot_list,
     buildbot_try,
