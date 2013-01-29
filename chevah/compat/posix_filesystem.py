@@ -44,13 +44,6 @@ class PosixFilesystemBase(object):
         return self._avatar
 
     @property
-    def chevah_module_segments(self):
-        '''See `ILocalFilesystem`.'''
-        path = os.path.dirname(chevah.__file__)
-        segments = self.getSegmentsFromRealPath(path)
-        return segments
-
-    @property
     def installation_segments(self):
         """
         See `ILocalFilesystem`.
