@@ -9,7 +9,7 @@ from zope.interface.verify import verifyObject
 
 from chevah.compat import process_capabilities
 from chevah.empirical.testcase import ChevahTestCase
-from chevah.utils.interfaces import IProcessCapabilities
+from chevah.compat.interfaces import IProcessCapabilities
 
 
 class TestProcessCapabilities(ChevahTestCase):

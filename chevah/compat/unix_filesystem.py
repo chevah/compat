@@ -10,13 +10,13 @@ import grp
 from zope.interface import implements
 from twisted.python.filepath import FilePath
 
-from chevah.compat.posix_filesystem import PosixFilesystemBase
-from chevah.compat.unix_users import UnixUsers
 from chevah.compat.helpers import (
     raise_failed_to_add_group,
     raise_failed_to_set_owner,
     )
-from chevah.utils.interfaces import ILocalFilesystem
+from chevah.compat.interfaces import ILocalFilesystem
+from chevah.compat.posix_filesystem import PosixFilesystemBase
+from chevah.compat.unix_users import UnixUsers
 
 
 class UnixFilesystem(PosixFilesystemBase):

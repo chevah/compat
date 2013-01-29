@@ -19,7 +19,7 @@ from chevah.empirical.constants import (
     TEST_ACCOUNT_USERNAME_OTHER,
     )
 from chevah.empirical.filesystem import LocalTestFilesystem
-from chevah.utils.exceptions import OperationalException
+from chevah.compat.exceptions import CompatError
 
 
 class TestPosixFilesystem(ChevahTestCase):
@@ -85,11 +85,11 @@ class TestPosixFilesystem(ChevahTestCase):
         file_object = self.filesystem.openFileForWriting(file_segments)
         file_object.close()
 
-        with self.assertRaises(OperationalException) as context:
+        with self.assertRaises(CompatError) as context:
             self.filesystem.setOwner(
                 file_segments,
                 u'non-existent-owner')
-        self.assertEqual(1016, context.exception.id)
+        self.assertEqual(1016, context.exception.event_id)
 
     def test_setOwner_bad_owner_folder(self):
         """
@@ -101,11 +101,11 @@ class TestPosixFilesystem(ChevahTestCase):
         self.filesystem.createFolder(folder_segments)
 
         # Check on folder.
-        with self.assertRaises(OperationalException) as context:
+        with self.assertRaises(CompatError) as context:
             self.filesystem.setOwner(
                 folder_segments,
                 u'non-existent-owner')
-        self.assertEqual(1016, context.exception.id)
+        self.assertEqual(1016, context.exception.event_id)
 
     def test_setGroup(self):
         """
@@ -118,23 +118,23 @@ class TestPosixFilesystem(ChevahTestCase):
     def test_addGroup_unknown_segments(self):
         """
         Changing the groups for an unknown file will raise an
-        OperationalException.
+        CompatError.
         """
         segments = [u'no-such-segments']
 
-        with self.assertRaises(OperationalException) as context:
+        with self.assertRaises(CompatError) as context:
             self.filesystem.addGroup(segments, TEST_ACCOUNT_USERNAME_OTHER)
 
-        self.assertEqual(1017, context.exception.id)
+        self.assertEqual(1017, context.exception.event_id)
 
     def test_addGroup_unknown_group(self):
         """
         An error is raised when adding an unknown group.
         """
-        with self.assertRaises(OperationalException) as context:
+        with self.assertRaises(CompatError) as context:
             self.filesystem.addGroup(
                 self.filesystem.home_segments, u'non-existent-group')
-        self.assertEqual(1017, context.exception.id)
+        self.assertEqual(1017, context.exception.event_id)
 
     def test_addGroup_ok_group_file(self):
         """
@@ -273,10 +273,10 @@ class TestUnixFilesystem(ChevahTestCase):
         file_segments.append(file_name)
         file_object = self.filesystem.openFileForWriting(file_segments)
         file_object.close()
-        with self.assertRaises(OperationalException) as context:
+        with self.assertRaises(CompatError) as context:
             self.filesystem.addGroup(
                 file_segments, TEST_ACCOUNT_GROUP_OTHER)
-        self.assertEqual(1017, context.exception.id)
+        self.assertEqual(1017, context.exception.event_id)
 
     def test_addGroup_denied_group_folder(self):
         """
@@ -288,10 +288,10 @@ class TestUnixFilesystem(ChevahTestCase):
         folder_segments = self.filesystem.home_segments
         folder_segments.append(folder_name)
         self.filesystem.createFolder(folder_segments)
-        with self.assertRaises(OperationalException) as context:
+        with self.assertRaises(CompatError) as context:
             self.filesystem.addGroup(
                 folder_segments, TEST_ACCOUNT_GROUP_OTHER)
-        self.assertEqual(1017, context.exception.id)
+        self.assertEqual(1017, context.exception.event_id)
 
     def test_removeGroup(self):
         """
@@ -376,7 +376,7 @@ class TestNTFilesystem(ChevahTestCase):
             self.filesystem.removeGroup(
                 [u'no-such-segments'], TEST_ACCOUNT_GROUP_OTHER)
 
-        with self.assertRaises(OperationalException) as context:
+        with self.assertRaises(CompatError) as context:
             self.filesystem.removeGroup(
                 folder_segments, u'no-such-group')
-        self.assertEqual(1013, context.exception.id)
+        self.assertEqual(1013, context.exception.event_id)

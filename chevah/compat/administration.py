@@ -12,8 +12,7 @@ import random
 import subprocess
 import sys
 
-from chevah.compat import system_users
-from chevah.empirical.filesystem import LocalTestFilesystem
+from chevah.compat import LocalFilesystem, system_users
 
 
 def execute(command, input_text=None, output=None,
@@ -80,7 +79,7 @@ class OSAdministration(object):
 
     def __init__(self):
         self.name = self.getName()
-        self.fs = LocalTestFilesystem(avatar=system_users.getSuperAvatar())
+        self.fs = LocalFilesystem(avatar=system_users.getSuperAvatar())
 
     def getName(self):
         '''Return the name of the platform.'''
@@ -502,7 +501,7 @@ class OSAdministration(object):
         '''Add the new_line to the end of `segments`.'''
         temp_segments = segments[:]
         temp_segments[-1] = temp_segments[-1] + '-'
-        content = self.fs.getFileContent(segments)
+        content = self._getFileContent(segments)
         opened_file = self.fs.openFileForWriting(temp_segments, utf8=True)
         try:
             for line in content:
@@ -525,7 +524,7 @@ class OSAdministration(object):
             temp_segments = segments[:]
             temp_segments[-1] = temp_segments[-1] + '-'
 
-            content = self.fs.getFileContent(segments)
+            content = self._getFileContent(segments)
             opened_file = self.fs.openFileForWriting(
                 temp_segments, utf8=True)
             try:
@@ -559,7 +558,7 @@ class OSAdministration(object):
         temp_segments = segments[:]
         temp_segments[-1] = temp_segments[-1] + '-'
 
-        content = self.fs.getFileContent(segments)
+        content = self._getFileContent(segments)
         opened_file = self.fs.openFileForWriting(
             temp_segments, utf8=True)
         try:
@@ -607,6 +606,21 @@ class OSAdministration(object):
             'gid': gid,
             })
         self.fs.rename(from_segments, to_segments)
+
+    def _getFileContent(self, segments):
+        """
+        Return a list of all files from file.
+        """
+        opened_file = self.fs.openFileForReading(segments, utf8=True)
+        content = []
+        try:
+            for line in opened_file:
+                content.append(line.rstrip())
+        finally:
+            opened_file.close()
+
+        return content
+
 
 # Create the singleton.
 os_administration = OSAdministration()

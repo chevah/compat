@@ -12,11 +12,12 @@ import ntsecuritycon
 
 from zope.interface import implements
 
-from chevah.compat.posix_filesystem import PosixFilesystemBase
+from chevah.compat.exceptions import CompatError
+from chevah.compat.helpers import _
+from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.nt_users import NTUsers
-from chevah.utils.exceptions import OperationalException
-from chevah.utils.helpers import _
-from chevah.utils.interfaces import ILocalFilesystem
+from chevah.compat.posix_filesystem import PosixFilesystemBase
+
 
 # cut-and-pasted from MSDN
 # 0 Unknown
@@ -31,14 +32,14 @@ LOCAL_DRIVE = 3
 
 def raise_failed_to_set_owner(owner, path, message=u''):
     '''Helper for raising the exception from a single place.'''
-    raise OperationalException(1016,
+    raise CompatError(1016,
         _(u'Failed to set owner to "%s" for "%s". %s' % (
             owner, path, message)))
 
 
 def raise_failed_to_add_group(group, path, message=u''):
     '''Helper for raising the exception from a single place.'''
-    raise OperationalException(1017,
+    raise CompatError(1017,
         _(u'Failed to add group "%s" for "%s". %s' % (
             group, path, message)))
 
@@ -319,7 +320,7 @@ class NTFilesystem(PosixFilesystemBase):
             group_sid, group_domain, group_type = (
                 win32security.LookupAccountName(None, group))
         except win32net.error:
-            raise OperationalException(1013, _(
+            raise CompatError(1013, _(
                 u'Failed to remove group "%s" from "%s". %s' % (
                     group, path, u'Group does not exists.')))
 

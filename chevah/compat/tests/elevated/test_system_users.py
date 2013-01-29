@@ -32,11 +32,11 @@ from chevah.empirical.constants import (
     TEST_ACCOUNT_LDAP_PASSWORD,
     TEST_ACCOUNT_LDAP_USERNAME,
     )
-from chevah.utils.exceptions import (
+from chevah.compat.exceptions import (
     ChangeUserException,
-    OperationalException,
+    CompatError,
     )
-from chevah.utils.interfaces import IHasImpersonatedAvatar
+from chevah.compat.interfaces import IHasImpersonatedAvatar
 
 
 class TestSystemUsers(ChevahTestCase):
@@ -87,10 +87,10 @@ class TestSystemUsers(ChevahTestCase):
         if process_capabilities.get_home_folder:
             raise self.skipTest()
 
-        with self.assertRaises(OperationalException) as context:
+        with self.assertRaises(CompatError) as context:
             system_users.getHomeFolder(username=TEST_ACCOUNT_USERNAME)
 
-        self.assertEqual(1014, context.exception.id)
+        self.assertEqual(1014, context.exception.event_id)
 
     def test_getHomeFolder_bad_nt(self):
         """
@@ -185,10 +185,10 @@ class TestSystemUsers(ChevahTestCase):
         """
         An error is raised by getHomeFolder if account does not exists.
         """
-        with self.assertRaises(OperationalException) as context:
+        with self.assertRaises(CompatError) as context:
             system_users.getHomeFolder(username=u'non-existent-patricia')
 
-        self.assertEqual(1014, context.exception.id)
+        self.assertEqual(1014, context.exception.event_id)
 
     def test_authenticateWithUsernameAndPassword_good(self):
         """
@@ -424,9 +424,9 @@ class TestSystemUsers(ChevahTestCase):
         unknown user.
         """
         username = u'non-existent-username'
-        with self.assertRaises(OperationalException) as context:
+        with self.assertRaises(CompatError) as context:
             system_users.getPrimaryGroup(username=username)
-        self.assertEqual(1015, context.exception.id)
+        self.assertEqual(1015, context.exception.event_id)
 
 
 class ImpersonatedAvatarImplementation(HasImpersonatedAvatar):

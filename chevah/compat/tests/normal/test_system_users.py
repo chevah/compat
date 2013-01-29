@@ -12,7 +12,7 @@ from chevah.compat import (
     system_users,
     )
 from chevah.empirical import ChevahTestCase, factory
-from chevah.utils.interfaces import IAvatarBase
+from chevah.compat.interfaces import IAvatarBase
 
 
 class TestSystemUsers(ChevahTestCase):

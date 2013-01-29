@@ -23,15 +23,14 @@ try:
 except ImportError:
     HAS_PAM_SUPPORT = False
 
-
+from chevah.compat.exceptions import ChangeUserException
 from chevah.compat.helpers import (
     _,
     NoOpContext,
     raise_failed_to_get_home_folder,
     raise_failed_to_get_primary_group,
     )
-from chevah.utils.exceptions import ChangeUserException
-from chevah.utils.interfaces import (
+from chevah.compat.interfaces import (
     IAvatarBase,
     IHasImpersonatedAvatar,
     IOSUsers,
@@ -56,7 +55,7 @@ def _get_euid_and_egid(username_encoded):
     try:
         pwnam = pwd.getpwnam(username_encoded)
     except KeyError:
-        raise ChangeUserException(0, _(u'User does not exists.'))
+        raise ChangeUserException(_(u'User does not exists.'))
 
     return (pwnam.pw_uid, pwnam.pw_gid)
 
@@ -69,7 +68,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None,
         try:
             pwnam = pwd.getpwnam(username_encoded)
         except KeyError:
-            raise ChangeUserException(0, _(u'User does not exists.'))
+            raise ChangeUserException(_(u'User does not exists.'))
         euid = pwnam.pw_uid
         egid = pwnam.pw_gid
     else:
@@ -96,7 +95,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None,
         os.setegid(egid)
         os.seteuid(euid)
     except OSError:
-        raise ChangeUserException(0, u'Could not switch user.')
+        raise ChangeUserException(u'Could not switch user.')
 
 
 class UnixUsers(object):
@@ -336,7 +335,7 @@ class _ExecuteAsUser(object):
             try:
                 pwnam = pwd.getpwnam(username.encode('utf-8'))
             except KeyError:
-                raise ChangeUserException(0, _(u'User does not exists.'))
+                raise ChangeUserException(_(u'User does not exists.'))
             euid = pwnam.pw_uid
             egid = pwnam.pw_gid
         self.euid = euid
