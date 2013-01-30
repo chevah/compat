@@ -18,7 +18,6 @@ from chevah.utils.exceptions import (
     )
 from chevah.utils.helpers import _, NoOpContext
 from chevah.utils.logger import log
-import chevah
 
 
 class PosixFilesystemBase(object):
