@@ -10,7 +10,7 @@ from chevah.compat import (
     process_capabilities,
     system_users,
     )
-from chevah.empirical import ChevahTestCase, factory
+from chevah.compat.testing import ChevahTestCase, manufacture
 from chevah.empirical.constants import (
     TEST_ACCOUNT_GROUP,
     TEST_ACCOUNT_GROUP_OTHER,
@@ -34,17 +34,15 @@ class TestPosixFilesystem(ChevahTestCase):
 
         user = TEST_ACCOUNT_USERNAME
         password = TEST_ACCOUNT_PASSWORD
-        credentials = factory.makePasswordCredentials(
-            username=user, password=password)
-        token = factory.makeToken(credentials)
+        token = manufacture.makeToken(username=user, password=password)
         home_folder_path = system_users.getHomeFolder(
             username=user, token=token)
-        cls.avatar = factory.makeOSAvatar(
+        cls.avatar = manufacture.makeFilesystemOSAvatar(
             name=user,
             home_folder_path=home_folder_path,
             token=token,
             )
-        cls.avatar.root_folder_path = None
+        cls.avatar._root_folder_path = None
         cls.filesystem = LocalFilesystem(avatar=cls.avatar)
 
     def setUp(self):
@@ -79,7 +77,7 @@ class TestPosixFilesystem(ChevahTestCase):
         """
         An error is raised when setting an unknown owner for a file.
         """
-        file_name = factory.makeFilename()
+        file_name = manufacture.makeFilename()
         file_segments = self.filesystem.home_segments
         file_segments.append(file_name)
         file_object = self.filesystem.openFileForWriting(file_segments)
@@ -95,7 +93,7 @@ class TestPosixFilesystem(ChevahTestCase):
         """
         An error is raised when setting an unknown owner for a folder.
         """
-        folder_name = factory.makeFilename()
+        folder_name = manufacture.makeFilename()
         folder_segments = self.filesystem.home_segments
         folder_segments.append(folder_name)
         self.filesystem.createFolder(folder_segments)
@@ -140,7 +138,7 @@ class TestPosixFilesystem(ChevahTestCase):
         """
         Check successful adding a group for a file.
         """
-        file_name = factory.makeFilename()
+        file_name = manufacture.makeFilename()
         file_segments = self.filesystem.home_segments
         file_segments.append(file_name)
         file_object = self.filesystem.openFileForWriting(file_segments)
@@ -148,8 +146,8 @@ class TestPosixFilesystem(ChevahTestCase):
 
         if os.name == 'posix':
             root_avatar = system_users.getSuperAvatar()
-            root_avatar.home_folder_path = self.avatar.home_folder_path
-            root_avatar.root_folder_path = self.avatar.root_folder_path
+            root_avatar._home_folder_path = self.avatar.home_folder_path
+            root_avatar._root_folder_path = self.avatar.root_folder_path
             root_filesystem = LocalFilesystem(avatar=root_avatar)
         else:
             root_filesystem = self.filesystem
@@ -167,15 +165,15 @@ class TestPosixFilesystem(ChevahTestCase):
         """
         Check successful adding a group for a folder.
         """
-        folder_name = factory.makeFilename()
+        folder_name = manufacture.makeFilename()
         folder_segments = self.filesystem.home_segments
         folder_segments.append(folder_name)
         self.filesystem.createFolder(folder_segments)
 
         if os.name == 'posix':
             root_avatar = system_users.getSuperAvatar()
-            root_avatar.home_folder_path = self.avatar.home_folder_path
-            root_avatar.root_folder_path = self.avatar.root_folder_path
+            root_avatar._home_folder_path = self.avatar.home_folder_path
+            root_avatar._root_folder_path = self.avatar.root_folder_path
             root_filesystem = LocalFilesystem(avatar=root_avatar)
         else:
             root_filesystem = self.filesystem
@@ -221,16 +219,14 @@ class TestUnixFilesystem(ChevahTestCase):
 
         user = TEST_ACCOUNT_USERNAME
         password = TEST_ACCOUNT_PASSWORD
-        credentials = factory.makePasswordCredentials(
-            username=user, password=password)
-        token = factory.makeToken(credentials)
+        token = manufacture.makeToken(username=user, password=password)
         home_folder_path = system_users.getHomeFolder(username=user)
-        cls.avatar = factory.makeOSAvatar(
+        cls.avatar = manufacture.makeFilesystemOSAvatar(
             name=user,
             home_folder_path=home_folder_path,
             token=token,
             )
-        cls.avatar.root_folder_path = None
+        cls.avatar._root_folder_path = None
         cls.filesystem = LocalFilesystem(avatar=cls.avatar)
 
     def setUp(self):
@@ -242,18 +238,18 @@ class TestUnixFilesystem(ChevahTestCase):
         """
         Check setting owner.
         """
-        file_name = factory.makeFilename()
+        file_name = manufacture.makeFilename()
         file_segments = self.filesystem.home_segments
         file_segments.append(file_name)
         file_object = self.filesystem.openFileForWriting(file_segments)
         file_object.close()
-        folder_name = factory.makeFilename()
+        folder_name = manufacture.makeFilename()
         folder_segments = self.filesystem.home_segments
         folder_segments.append(folder_name)
         self.filesystem.createFolder(folder_segments)
 
         root_avatar = system_users.getSuperAvatar(self.avatar)
-        root_avatar.home_folder_path = self.avatar.home_folder_path
+        root_avatar._home_folder_path = self.avatar.home_folder_path
         root_filesystem = LocalFilesystem(avatar=root_avatar)
 
         root_filesystem.setOwner(
@@ -268,7 +264,7 @@ class TestUnixFilesystem(ChevahTestCase):
 
         Stupid Unix!
         """
-        file_name = factory.makeFilename()
+        file_name = manufacture.makeFilename()
         file_segments = self.filesystem.home_segments
         file_segments.append(file_name)
         file_object = self.filesystem.openFileForWriting(file_segments)
@@ -284,7 +280,7 @@ class TestUnixFilesystem(ChevahTestCase):
 
         Stupid Unix!
         """
-        folder_name = factory.makeFilename()
+        folder_name = manufacture.makeFilename()
         folder_segments = self.filesystem.home_segments
         folder_segments.append(folder_name)
         self.filesystem.createFolder(folder_segments)
@@ -324,12 +320,10 @@ class TestNTFilesystem(ChevahTestCase):
 
         user = TEST_ACCOUNT_USERNAME
         password = TEST_ACCOUNT_PASSWORD
-        credentials = factory.makePasswordCredentials(
-            username=user, password=password)
-        token = factory.makeToken(credentials)
+        token = manufacture.makeToken(username=user, password=password)
         home_folder_path = system_users.getHomeFolder(
             username=user, token=token)
-        cls.avatar = factory.makeOSAvatar(
+        cls.avatar = manufacture.makeFilesystemOSAvatar(
             name=user,
             home_folder_path=home_folder_path,
             token=token,
@@ -345,7 +339,7 @@ class TestNTFilesystem(ChevahTestCase):
         """
         Check group removal for a file/folder.
         """
-        folder_name = factory.makeFilename()
+        folder_name = manufacture.makeFilename()
         folder_segments = self.filesystem.home_segments
         folder_segments.append(folder_name)
         self.filesystem.createFolder(folder_segments)

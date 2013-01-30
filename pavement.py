@@ -12,8 +12,7 @@ import sys
 BRINK_VERSION = '0.9.0'
 
 EXTRA_PACKAGES = [
-    'chevah-utils==0.3.4',
-    'chevah-empirical==0.3.2',
+    'chevah-empirical==0.5.0-adi3',
     ]
 
 if os.name == 'posix':

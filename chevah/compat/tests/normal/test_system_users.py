@@ -11,8 +11,8 @@ from chevah.compat import (
     process_capabilities,
     system_users,
     )
-from chevah.empirical import ChevahTestCase, factory
-from chevah.compat.interfaces import IAvatarBase
+from chevah.compat.interfaces import IFilesystemAvatar
+from chevah.compat.testing import ChevahTestCase, manufacture
 
 
 class TestSystemUsers(ChevahTestCase):
@@ -25,13 +25,13 @@ class TestSystemUsers(ChevahTestCase):
         if not sys.platform.startswith('linux'):
             raise self.skipTest()
         home_folder = system_users.getHomeFolder(
-            username=factory.username)
+            username=manufacture.username)
 
         # For buidlslave, home folder is in srv.
-        if factory.username == 'buildslave':
-            self.assertEqual(u'/srv/' + factory.username, home_folder)
+        if manufacture.username == 'buildslave':
+            self.assertEqual(u'/srv/' + manufacture.username, home_folder)
         else:
-            self.assertEqual(u'/home/' + factory.username, home_folder)
+            self.assertEqual(u'/home/' + manufacture.username, home_folder)
 
     def test_getHomeFolder_nt(self):
         """
@@ -41,12 +41,12 @@ class TestSystemUsers(ChevahTestCase):
             raise self.skipTest()
 
         home_folder = system_users.getHomeFolder(
-            username=factory.username)
+            username=manufacture.username)
 
         self.assertNotEqual(
             -1,
-            home_folder.lower().find(factory.username.lower()),
-            '%s not in %s' % (factory.username, home_folder))
+            home_folder.lower().find(manufacture.username.lower()),
+            '%s not in %s' % (manufacture.username, home_folder))
 
     def test_getHomeFolder_osx(self):
         """
@@ -56,9 +56,9 @@ class TestSystemUsers(ChevahTestCase):
             raise self.skipTest()
 
         home_folder = system_users.getHomeFolder(
-            username=factory.username)
+            username=manufacture.username)
 
-        self.assertEqual(u'/Users/' + factory.username, home_folder)
+        self.assertEqual(u'/Users/' + manufacture.username, home_folder)
 
     def test_getHomeFolder_return_type(self):
         """
@@ -67,7 +67,7 @@ class TestSystemUsers(ChevahTestCase):
         if not process_capabilities.get_home_folder:
             raise self.skipTest()
 
-        home_folder = system_users.getHomeFolder(username=factory.username)
+        home_folder = system_users.getHomeFolder(username=manufacture.username)
 
         self.assertTrue(isinstance(home_folder, unicode))
 
@@ -100,9 +100,9 @@ class TestSystemUsers(ChevahTestCase):
 
         On unix this is the root account.
         """
-        name = factory.getUniqueString()
-        home_folder_path = factory.getUniqueString()
-        normal_avatar = factory.makeApplicationAvatar(
+        name = manufacture.getUniqueString()
+        home_folder_path = manufacture.getUniqueString()
+        normal_avatar = manufacture.makeFilesystemApplicationAvatar(
             name=name, home_folder_path=home_folder_path)
 
         super_avatar = system_users.getSuperAvatar(avatar=normal_avatar)
@@ -122,9 +122,9 @@ class TestSystemUsers(ChevahTestCase):
 
         On unix this is the root account.
         """
-        name = factory.getUniqueString()
-        home_folder_path = factory.getUniqueString()
-        normal_avatar = factory.makeOSAvatar(
+        name = manufacture.getUniqueString()
+        home_folder_path = manufacture.getUniqueString()
+        normal_avatar = manufacture.makeFilesystemOSAvatar(
             name=name, home_folder_path=home_folder_path)
 
         super_avatar = system_users.getSuperAvatar(avatar=normal_avatar)
@@ -148,4 +148,4 @@ class TestDefaultAvatar(ChevahTestCase):
         """
         avatar = DefaultAvatar()
 
-        self.assertProvides(IAvatarBase, avatar)
+        self.assertProvides(IFilesystemAvatar, avatar)

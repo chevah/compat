@@ -104,18 +104,10 @@ class IHasImpersonatedAvatar(Interface):
         """
 
 
-class IAvatarBase(IHasImpersonatedAvatar):
+class IFilesystemAvatar(IHasImpersonatedAvatar):
     """
-    Base Avatar for all Chevah services.
-
-    This avatar will be used by various adaptors to make it usable for each
-    service.
-
-    It should store all user configuration options.
+    Avatar for interacting with the filesystem.
     """
-
-    name = Attribute(u'Name/ID of this avatar.')
-    peer = Attribute(u'The remote peer associated to this avatar.')
 
     home_folder_path = Attribute(u'Path to home folder')
     root_folder_path = Attribute(u'Path to root folder')
@@ -126,7 +118,7 @@ class IAvatarBase(IHasImpersonatedAvatar):
 
     def getCopy():
         """
-        Gets copy of this avatar.
+        Gets a copy of this avatar.
         """
 
 

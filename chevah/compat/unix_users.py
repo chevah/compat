@@ -31,7 +31,7 @@ from chevah.compat.helpers import (
     raise_failed_to_get_primary_group,
     )
 from chevah.compat.interfaces import (
-    IAvatarBase,
+    IFilesystemAvatar,
     IHasImpersonatedAvatar,
     IOSUsers,
     )
@@ -105,12 +105,12 @@ class UnixUsers(object):
 
     def getSuperAvatar(self, avatar=None):
         '''Create a super user/Administrator avatar.'''
-        from chevah.utils.avatar import OSAvatar
+        from chevah.compat.avatar import FilesystemOSAvatar
         if avatar:
             home_folder_path = avatar.home_folder_path
         else:
             home_folder_path = u'/root'
-        return OSAvatar(
+        return FilesystemOSAvatar(
             name=u'root',
             home_folder_path=home_folder_path,
             root_folder_path=u'/',
@@ -377,13 +377,13 @@ class UnixHasImpersonatedAvatar(object):
     @property
     def use_impersonation(self):
         """
-        See: :class:`IAvatarBase`
+        See: :class:`IFilesystemAvatar`
         """
         raise NotImplementedError()
 
     def getImpersonationContext(self):
         """
-        See: :class:`IAvatarBase`
+        See: :class:`IFilesystemAvatar`
         """
         if not self.use_impersonation:
             return NoOpContext()
@@ -410,7 +410,7 @@ class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
     It does not uses impersoantion.
     """
 
-    implements(IAvatarBase)
+    implements(IFilesystemAvatar)
 
     home_folder_path = '/'
     root_folder_path = '/'
@@ -421,7 +421,7 @@ class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
     @property
     def use_impersonation(self):
         """
-        See: :class:`IAvatarBase`
+        See: :class:`IFilesystemAvatar`
         """
         return False
 
