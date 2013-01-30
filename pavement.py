@@ -9,7 +9,7 @@ import sys
 
 # Marker for paver.sh.
 # This value is pavers by bash. Use a strict format.
-BRINK_VERSION = '0.8.1'
+BRINK_VERSION = '0.9.0'
 
 EXTRA_PACKAGES = [
     'chevah-utils==0.3.4',
@@ -19,12 +19,12 @@ EXTRA_PACKAGES = [
 if os.name == 'posix':
     EXTRA_PACKAGES.extend(['pam>=0.1.4.chevah'])
 
-
 from brink.pavement_commons import (
     _p,
     buildbot_list,
     buildbot_try,
     default,
+    github,
     harness,
     help,
     lint,
@@ -41,6 +41,7 @@ from paver.easy import task
 buildbot_list
 buildbot_try
 default
+github
 harness
 help
 lint
@@ -52,6 +53,7 @@ test_super
 SETUP['product']['name'] = 'chevah-compat'
 SETUP['folders']['source'] = u'chevah/compat'
 SETUP['repository']['name'] = u'compat'
+SETUP['github']['url'] = 'https://github.com/chevah/compat'
 SETUP['pocket-lint']['include_files'] = ['pavement.py']
 SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
 SETUP['pocket-lint']['exclude_files'] = []
