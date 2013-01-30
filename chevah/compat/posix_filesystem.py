@@ -18,7 +18,6 @@ from chevah.utils.exceptions import (
     )
 from chevah.utils.helpers import _, NoOpContext
 from chevah.utils.logger import log
-import chevah
 
 
 class PosixFilesystemBase(object):
@@ -42,13 +41,6 @@ class PosixFilesystemBase(object):
     @property
     def avatar(self):
         return self._avatar
-
-    @property
-    def chevah_module_segments(self):
-        '''See `ILocalFilesystem`.'''
-        path = os.path.dirname(chevah.__file__)
-        segments = self.getSegmentsFromRealPath(path)
-        return segments
 
     @property
     def installation_segments(self):

@@ -47,18 +47,6 @@ class TestDefaultFilesystem(ChevahTestCase):
         self.assertIsTrue(self.filesystem.isFile(segments))
         factory.fs.deleteFile(segments)
 
-    def test_chevah_module_segments(self):
-        """
-        chevah_module_segments is the path to the folder where
-        chevah module is installed.
-        """
-        segments = self.filesystem.chevah_module_segments
-        self.assertTrue(factory.fs.isFolder(segments))
-        self.assertEqual(['chevah'], segments[-1:])
-        init_file = segments[:]
-        init_file.append('__init__.py')
-        self.assertTrue(factory.fs.isFile(init_file))
-
     def test_installation_segments(self):
         """
         Installation segments is the base installation path.
