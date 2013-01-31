@@ -533,4 +533,5 @@ class TestHasImpersonatedAvatar(ChevahTestCase):
             self.assertEqual(
                 TEST_ACCOUNT_USERNAME, system_users.getCurrentUserName())
 
-        self.assertEqual(manufacture.username, system_users.getCurrentUserName())
+        self.assertEqual(
+            manufacture.username, system_users.getCurrentUserName())

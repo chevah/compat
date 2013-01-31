@@ -3,7 +3,7 @@ from setuptools import Command, find_packages, setup
 import os
 import shutil
 
-VERSION = '0.5.0-adi1'
+VERSION = '0.5.0-adi3'
 
 
 class PublishCommand(Command):

@@ -67,7 +67,8 @@ class TestSystemUsers(ChevahTestCase):
         if not process_capabilities.get_home_folder:
             raise self.skipTest()
 
-        home_folder = system_users.getHomeFolder(username=manufacture.username)
+        home_folder = system_users.getHomeFolder(
+            username=manufacture.username)
 
         self.assertTrue(isinstance(home_folder, unicode))
 
