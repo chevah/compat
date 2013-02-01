@@ -380,7 +380,7 @@ class ILocalFilesystem(Interface):
 
         If `recursive` is True it will try to create parent folder.
         If `recursive` is False and parent folder does not exists it will
-        raise `OperationalException`.
+        raise `OSError`.
         '''
 
     def deleteFolder(segments, recursive):
@@ -388,7 +388,7 @@ class ILocalFilesystem(Interface):
         If `recursive` is True the whole folder and its content will be
         deleted.
         If `resursice` is False and folder is not empty it will raise
-        `OperationalException`.
+        `OSError`.
         '''
 
     def deleteFile(segments):
