@@ -9,7 +9,7 @@ import sys
 
 # Marker for paver.sh.
 # This value is pavers by bash. Use a strict format.
-BRINK_VERSION = '0.10.7'
+BRINK_VERSION = '0.11.3'
 
 EXTRA_PACKAGES = [
     'chevah-empirical==0.5.1',
