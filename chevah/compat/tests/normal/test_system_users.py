@@ -11,7 +11,7 @@ from chevah.compat import (
     process_capabilities,
     system_users,
     )
-from chevah.compat.interfaces import IFilesystemAvatar
+from chevah.compat.interfaces import IFileSystemAvatar
 from chevah.compat.testing import ChevahTestCase, manufacture
 
 
@@ -149,4 +149,4 @@ class TestDefaultAvatar(ChevahTestCase):
         """
         avatar = DefaultAvatar()
 
-        self.assertProvides(IFilesystemAvatar, avatar)
+        self.assertProvides(IFileSystemAvatar, avatar)

@@ -22,7 +22,7 @@ from chevah.compat.helpers import (
     raise_failed_to_get_primary_group,
     )
 from chevah.compat.interfaces import (
-    IFilesystemAvatar,
+    IFileSystemAvatar,
     IHasImpersonatedAvatar,
     IOSUsers,
     )
@@ -261,13 +261,13 @@ class NTHasImpersonatedAvatar(object):
     @property
     def use_impersonation(self):
         """
-        See: :class:`IFilesystemAvatar`
+        See: :class:`IFileSystemAvatar`
         """
         raise NotImplementedError()
 
     def getImpersonationContext(self):
         """
-        See: :class:`IFilesystemAvatar`
+        See: :class:`IFileSystemAvatar`
         """
         if not self.use_impersonation:
             # Don't switch context if not required.
@@ -297,7 +297,7 @@ class NTDefaultAvatar(NTHasImpersonatedAvatar):
     It does not uses impersonation.
     """
 
-    implements(IFilesystemAvatar)
+    implements(IFileSystemAvatar)
 
     root_folder_path = u'c:\\'
     home_folder_path = u'c:\\'
@@ -308,7 +308,7 @@ class NTDefaultAvatar(NTHasImpersonatedAvatar):
     @property
     def use_impersonation(self):
         """
-        See: :class:`IFilesystemAvatar`
+        See: :class:`IFileSystemAvatar`
         """
         return False
 

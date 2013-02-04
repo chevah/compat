@@ -31,7 +31,7 @@ from chevah.compat.helpers import (
     raise_failed_to_get_primary_group,
     )
 from chevah.compat.interfaces import (
-    IFilesystemAvatar,
+    IFileSystemAvatar,
     IHasImpersonatedAvatar,
     IOSUsers,
     )
@@ -377,13 +377,13 @@ class UnixHasImpersonatedAvatar(object):
     @property
     def use_impersonation(self):
         """
-        See: :class:`IFilesystemAvatar`
+        See: :class:`IFileSystemAvatar`
         """
         raise NotImplementedError()
 
     def getImpersonationContext(self):
         """
-        See: :class:`IFilesystemAvatar`
+        See: :class:`IFileSystemAvatar`
         """
         if not self.use_impersonation:
             return NoOpContext()
@@ -410,7 +410,7 @@ class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
     It does not uses impersoantion.
     """
 
-    implements(IFilesystemAvatar)
+    implements(IFileSystemAvatar)
 
     home_folder_path = '/'
     root_folder_path = '/'
@@ -421,7 +421,7 @@ class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
     @property
     def use_impersonation(self):
         """
-        See: :class:`IFilesystemAvatar`
+        See: :class:`IFileSystemAvatar`
         """
         return False
 

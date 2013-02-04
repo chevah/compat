@@ -17,7 +17,7 @@ from chevah.compat.avatar import (
 
 class CompatManufacture(ChevahCommonsFactory):
     """
-    Generating of testing helpers for chevah.compat package.
+    Generator of testing helpers for chevah.compat package.
     """
 
     def makeFilesystemOSAvatar(self, name=None,

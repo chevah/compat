@@ -609,7 +609,7 @@ class OSAdministration(object):
 
     def _getFileContent(self, segments):
         """
-        Return a list of all files from file.
+        Return a list of all lines from file.
         """
         opened_file = self.fs.openFileForReading(segments, utf8=True)
         content = []

@@ -8,15 +8,15 @@ from copy import copy
 from zope.interface import implements
 
 from chevah.compat import HasImpersonatedAvatar
-from chevah.compat.interfaces import IFilesystemAvatar
+from chevah.compat.interfaces import IFileSystemAvatar
 
 
 class FilesystemAvatar(HasImpersonatedAvatar):
     '''
-    See `IFilesystemAvatar`.
+    See `IFileSystemAvatar`.
     '''
 
-    implements(IFilesystemAvatar)
+    implements(IFileSystemAvatar)
 
     def __init__(self, name, home_folder_path, root_folder_path=None,
             lock_in_home_folder=True, token=None):
@@ -32,7 +32,7 @@ class FilesystemAvatar(HasImpersonatedAvatar):
 
     def getCopy(self):
         """
-        See: :class:`IFilesystemAvatar`
+        See: :class:`IFileSystemAvatar`
         """
         result = copy(self)
         return result
@@ -40,7 +40,7 @@ class FilesystemAvatar(HasImpersonatedAvatar):
     @property
     def token(self):
         """
-        See: :class:`IFilesystemAvatar`
+        See: :class:`IFileSystemAvatar`
 
         A token is only used for Windows accounts.
         """
@@ -49,21 +49,21 @@ class FilesystemAvatar(HasImpersonatedAvatar):
     @property
     def home_folder_path(self):
         """
-        See: :class:`IFilesystemAvatar`
+        See: :class:`IFileSystemAvatar`
         """
         return self._home_folder_path
 
     @property
     def root_folder_path(self):
         """
-        See: :class:`IFilesystemAvatar`
+        See: :class:`IFileSystemAvatar`
         """
         return self._root_folder_path
 
     @property
     def lock_in_home_folder(self):
         """
-        See: :class:`IFilesystemAvatar`
+        See: :class:`IFileSystemAvatar`
         """
         return self._lock_in_home_folder
 
@@ -81,7 +81,7 @@ class FilesystemOSAvatar(FilesystemAvatar):
     @property
     def use_impersonation(self):
         """
-        See: :class:`IFilesystemAvatar`
+        See: :class:`IFileSystemAvatar`
 
         For now OSAvatar is always be impersonated.
         """

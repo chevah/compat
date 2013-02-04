@@ -12,7 +12,7 @@ import win32serviceutil
 
 from twisted.internet import reactor
 
-from chevah.comapt.helpers import _
+from chevah.compat.helpers import _
 
 
 class ChevahNTService(win32serviceutil.ServiceFramework):

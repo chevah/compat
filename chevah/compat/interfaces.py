@@ -104,7 +104,7 @@ class IHasImpersonatedAvatar(Interface):
         """
 
 
-class IFilesystemAvatar(IHasImpersonatedAvatar):
+class IFileSystemAvatar(IHasImpersonatedAvatar):
     """
     Avatar for interacting with the filesystem.
     """
@@ -174,7 +174,7 @@ class IFilesystemNode(Interface):
     """
     def __init__(avatar, segments=None):
         """
-        It is initialized with an :class:`IFilesystemAvatar` and an optional
+        It is initialized with an :class:`IFileSystemAvatar` and an optional
         list of `segments`.
 
         The segments represent the path inside avatar's root folder.
@@ -217,9 +217,9 @@ class IFilesystemNode(Interface):
         Raise ChildAlreadyExists if child exists.
         """
 
-    def getChilds():
+    def getChildren():
         """
-        Return the list of all :class:`IPath` childs.
+        Return the list of all :class:`IPath` children.
         """
 
     def isRoot():

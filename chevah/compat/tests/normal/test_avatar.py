@@ -4,7 +4,7 @@
 from __future__ import with_statement
 
 from chevah.compat.avatar import FilesystemAvatar
-from chevah.compat.interfaces import IFilesystemAvatar
+from chevah.compat.interfaces import IFileSystemAvatar
 from chevah.compat.testing import ChevahTestCase, manufacture
 
 
@@ -70,7 +70,7 @@ class TestApplicationAvatar(ChevahTestCase):
         avatar = manufacture.makeFilesystemApplicationAvatar()
 
         self.assertFalse(avatar.use_impersonation)
-        self.assertProvides(IFilesystemAvatar, avatar)
+        self.assertProvides(IFileSystemAvatar, avatar)
 
 
 class TestOSAvatar(ChevahTestCase):
@@ -85,4 +85,4 @@ class TestOSAvatar(ChevahTestCase):
         avatar = manufacture.makeFilesystemOSAvatar()
 
         self.assertTrue(avatar.use_impersonation)
-        self.assertProvides(IFilesystemAvatar, avatar)
+        self.assertProvides(IFileSystemAvatar, avatar)
