@@ -8,16 +8,15 @@ import re
 import stat
 import shutil
 
-from chevah.utils.constants import (
+from chevah.compat.constants import (
     DEFAULT_FILE_MODE,
     DEFAULT_FOLDER_MODE,
     )
-from chevah.utils.exceptions import (
+from chevah.compat.exceptions import (
     ChangeUserException,
-    OperationalException,
+    CompatError,
     )
-from chevah.utils.helpers import _, NoOpContext
-from chevah.utils.logger import log
+from chevah.compat.helpers import _, NoOpContext
 
 
 class PosixFilesystemBase(object):
@@ -67,10 +66,9 @@ class PosixFilesystemBase(object):
         try:
             return self._avatar.getImpersonationContext()
         except ChangeUserException:
-            log(1006,
+            raise CompatError(1006,
                 _(u'Could not switch process to local account "%s".' % (
                     self._avatar.name)))
-            raise OperationalException()
 
     def _touch(self, segments, times=None):
         '''Update modified time.'''
@@ -111,7 +109,7 @@ class PosixFilesystemBase(object):
         root_lower = self._avatar.root_folder_path.rstrip('/\\').lower()
         # Check that we have a valid home folder.
         if not home_lower.startswith(root_lower):
-            raise OperationalException(20019,
+            raise CompatError(20019,
                 _('User home folder "%s" is not withing the root folder '
                   '"%s".' % (
                     self._avatar.home_folder_path,
@@ -217,7 +215,7 @@ class PosixFilesystemBase(object):
         '''See `ILocalFilesystem`.'''
         path = self.getRealPathFromSegments(segments)
         if path == u'/':
-            raise OperationalException(1009,
+            raise CompatError(1009,
                 _('Deleting Unix root folder is not allowed.'))
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():

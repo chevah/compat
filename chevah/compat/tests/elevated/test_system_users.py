@@ -18,7 +18,7 @@ from chevah.compat.constants import (
     )
 from chevah.compat.administration import os_administration, OSUser
 from chevah.compat.helpers import NoOpContext
-from chevah.empirical import ChevahTestCase, factory
+from chevah.compat.testing import ChevahTestCase, manufacture
 from chevah.empirical.constants import (
     TEST_ACCOUNT_CENTRIFY_USERNAME,
     TEST_ACCOUNT_CENTRIFY_PASSWORD,
@@ -32,11 +32,11 @@ from chevah.empirical.constants import (
     TEST_ACCOUNT_LDAP_PASSWORD,
     TEST_ACCOUNT_LDAP_USERNAME,
     )
-from chevah.utils.exceptions import (
+from chevah.compat.exceptions import (
     ChangeUserException,
-    OperationalException,
+    CompatError,
     )
-from chevah.utils.interfaces import IHasImpersonatedAvatar
+from chevah.compat.interfaces import IHasImpersonatedAvatar
 
 
 class TestSystemUsers(ChevahTestCase):
@@ -68,10 +68,9 @@ class TestSystemUsers(ChevahTestCase):
         if os.name != 'nt' or not process_capabilities.get_home_folder:
             raise self.skipTest()
 
-        credentials = factory.makePasswordCredentials(
+        token = manufacture.makeToken(
             username=TEST_ACCOUNT_USERNAME,
             password=TEST_ACCOUNT_PASSWORD)
-        token = factory.makeToken(credentials)
 
         home_folder = system_users.getHomeFolder(
             username=TEST_ACCOUNT_USERNAME, token=token)
@@ -87,10 +86,10 @@ class TestSystemUsers(ChevahTestCase):
         if process_capabilities.get_home_folder:
             raise self.skipTest()
 
-        with self.assertRaises(OperationalException) as context:
+        with self.assertRaises(CompatError) as context:
             system_users.getHomeFolder(username=TEST_ACCOUNT_USERNAME)
 
-        self.assertEqual(1014, context.exception.id)
+        self.assertEqual(1014, context.exception.event_id)
 
     def test_getHomeFolder_bad_nt(self):
         """
@@ -100,8 +99,8 @@ class TestSystemUsers(ChevahTestCase):
         if os.name != 'nt' or not process_capabilities.get_home_folder:
             raise self.skipTest()
 
-        home_folder = system_users.getHomeFolder(factory.username)
-        self.assertContains(factory.username, home_folder)
+        home_folder = system_users.getHomeFolder(manufacture.username)
+        self.assertContains(manufacture.username, home_folder)
 
     def test_getHomeFolder_nt_no_previous_profile(self):
         """
@@ -132,10 +131,8 @@ class TestSystemUsers(ChevahTestCase):
             # We don't want to create the profile here since this is
             # what we are testing.
             os_administration._addUser_windows(user, create_profile=False)
-            credentials = factory.makePasswordCredentials(
-                username=username,
-                password=password)
-            token = factory.makeToken(credentials)
+            token = manufacture.makeToken(
+                username=username, password=password)
 
             home_path = system_users.getHomeFolder(
                 username=username, token=token)
@@ -171,10 +168,9 @@ class TestSystemUsers(ChevahTestCase):
         if not process_capabilities.get_home_folder:
             raise self.skipTest()
 
-        credentials = factory.makePasswordCredentials(
+        token = manufacture.makeToken(
             username=TEST_ACCOUNT_USERNAME,
             password=TEST_ACCOUNT_PASSWORD)
-        token = factory.makeToken(credentials)
 
         home_folder = system_users.getHomeFolder(
             username=TEST_ACCOUNT_USERNAME, token=token)
@@ -185,10 +181,10 @@ class TestSystemUsers(ChevahTestCase):
         """
         An error is raised by getHomeFolder if account does not exists.
         """
-        with self.assertRaises(OperationalException) as context:
+        with self.assertRaises(CompatError) as context:
             system_users.getHomeFolder(username=u'non-existent-patricia')
 
-        self.assertEqual(1014, context.exception.id)
+        self.assertEqual(1014, context.exception.event_id)
 
     def test_authenticateWithUsernameAndPassword_good(self):
         """
@@ -266,17 +262,15 @@ class TestSystemUsers(ChevahTestCase):
 
     def test_executeAsUser_multiple_call_on_same_credentials(self):
         '''Test executing as a different user reusing the credentials.'''
-        credentials = factory.makePasswordCredentials(
-            username=TEST_ACCOUNT_USERNAME,
-            password=TEST_ACCOUNT_PASSWORD,
-            )
-        token = factory.makeToken(credentials)
+        username = TEST_ACCOUNT_USERNAME
+        token = manufacture.makeToken(
+            username=username, password=TEST_ACCOUNT_PASSWORD)
         with system_users.executeAsUser(
-                username=credentials.username, token=token):
+                username=username, token=token):
             pass
 
         with system_users.executeAsUser(
-                username=credentials.username, token=token):
+                username=username, token=token):
             pass
 
     def test_getCurrentUserName_NT(self):
@@ -284,25 +278,25 @@ class TestSystemUsers(ChevahTestCase):
         if os.name != 'nt':
             raise self.skipTest()
 
-        self.assertEqual(factory.username, system_users.getCurrentUserName())
+        self.assertEqual(
+            manufacture.username, system_users.getCurrentUserName())
 
     def test_executeAsUser_NT(self):
         '''Test executing as a different user.'''
         if os.name != 'nt':
             raise self.skipTest()
 
-        credentials = factory.makePasswordCredentials(
-            username=TEST_ACCOUNT_USERNAME,
-            password=TEST_ACCOUNT_PASSWORD,
-            )
-        token = factory.makeToken(credentials)
+        username = TEST_ACCOUNT_USERNAME
+        token = manufacture.makeToken(
+            username=username, password=TEST_ACCOUNT_PASSWORD)
 
         with system_users.executeAsUser(
-            username=credentials.username, token=token):
+            username=username, token=token):
             self.assertEqual(
-                credentials.username, system_users.getCurrentUserName())
+                username, system_users.getCurrentUserName())
 
-        self.assertEqual(factory.username, system_users.getCurrentUserName())
+        self.assertEqual(
+            manufacture.username, system_users.getCurrentUserName())
 
     def test_executeAsUser_Unix(self):
         '''Test executing as a different user.'''
@@ -310,24 +304,23 @@ class TestSystemUsers(ChevahTestCase):
             raise self.skipTest()
         initial_uid, initial_gid = os.geteuid(), os.getegid()
         initial_groups = os.getgroups()
-        cred = factory.makePasswordCredentials(
-            username=TEST_ACCOUNT_USERNAME,
-            password=TEST_ACCOUNT_PASSWORD,
-            )
-        with system_users.executeAsUser(username=cred.username):
+        username = TEST_ACCOUNT_USERNAME
+
+        with system_users.executeAsUser(username=username):
+
             import pwd
             import grp
             uid, gid = os.geteuid(), os.getegid()
-            username = pwd.getpwuid(uid)[0].decode('utf-8')
-            groupname = grp.getgrgid(gid)[0].decode('utf-8')
-            groups = os.getgroups()
-            self.assertEqual(cred.username, username)
-            self.assertEqual(TEST_ACCOUNT_GROUP, groupname)
+            impersonated_username = pwd.getpwuid(uid)[0].decode('utf-8')
+            impersonated_groupname = grp.getgrgid(gid)[0].decode('utf-8')
+            impersonated_groups = os.getgroups()
+            self.assertEqual(username, impersonated_username)
+            self.assertEqual(TEST_ACCOUNT_GROUP, impersonated_groupname)
             self.assertNotEqual(initial_uid, uid)
             self.assertNotEqual(initial_gid, gid)
-            self.assertEqual(2, len(groups))
-            self.assertTrue(TEST_ACCOUNT_GID_ANOTHER in groups)
-            self.assertTrue(TEST_ACCOUNT_GID in groups)
+            self.assertEqual(2, len(impersonated_groups))
+            self.assertTrue(TEST_ACCOUNT_GID_ANOTHER in impersonated_groups)
+            self.assertTrue(TEST_ACCOUNT_GID in impersonated_groups)
 
         self.assertEqual(initial_uid, os.geteuid())
         self.assertEqual(initial_gid, os.getegid())
@@ -357,41 +350,41 @@ class TestSystemUsers(ChevahTestCase):
         """
         False is returned if isUserInGroups is asked for a non-existent group.
         """
-        credentials = factory.makePasswordCredentials(
-            username=TEST_ACCOUNT_USERNAME, password=TEST_ACCOUNT_PASSWORD)
-        token = factory.makeToken(credentials)
+        username = TEST_ACCOUNT_USERNAME
+        token = manufacture.makeToken(
+            username=username, password=TEST_ACCOUNT_PASSWORD)
 
         groups = [u'non-existent-group']
         self.assertFalse(system_users.isUserInGroups(
-            username=credentials.username, groups=groups, token=token))
+            username=username, groups=groups, token=token))
 
     def test_isUserInGroups_not_in_groups(self):
         """
         False is returned if user is not in the groups.
         """
-        credentials = factory.makePasswordCredentials(
-            username=TEST_ACCOUNT_USERNAME, password=TEST_ACCOUNT_PASSWORD)
-        token = factory.makeToken(credentials)
+        username = TEST_ACCOUNT_USERNAME
+        token = manufacture.makeToken(
+            username=username, password=TEST_ACCOUNT_PASSWORD)
 
         groups = [u'root', u'Administrators']
 
         self.assertFalse(system_users.isUserInGroups(
-            username=credentials.username, groups=groups, token=token))
+            username=username, groups=groups, token=token))
 
     def test_isUserInGroups_success(self):
         """
         True is returned if user is in groups.
         """
-        credentials = factory.makePasswordCredentials(
+        username = TEST_ACCOUNT_USERNAME
+        token = manufacture.makeToken(
             username=TEST_ACCOUNT_USERNAME, password=TEST_ACCOUNT_PASSWORD)
-        token = factory.makeToken(credentials)
 
         groups = [
             TEST_ACCOUNT_GROUP,
             TEST_ACCOUNT_GROUP_WIN,
             ]
         self.assertTrue(system_users.isUserInGroups(
-            username=credentials.username, groups=groups, token=token))
+            username=username, groups=groups, token=token))
 
         groups = [
             u'non-existent-group',
@@ -399,7 +392,7 @@ class TestSystemUsers(ChevahTestCase):
             TEST_ACCOUNT_GROUP_WIN,
             ]
         self.assertTrue(system_users.isUserInGroups(
-            username=credentials.username, groups=groups, token=token))
+            username=username, groups=groups, token=token))
 
     def test_getPrimaryGroup_good(self):
         """
@@ -407,10 +400,10 @@ class TestSystemUsers(ChevahTestCase):
         """
         user = TEST_ACCOUNT_USERNAME
         password = TEST_ACCOUNT_PASSWORD
-        credentials = factory.makePasswordCredentials(
+        token = manufacture.makeToken(
             username=user, password=password)
-        token = factory.makeToken(credentials)
-        avatar = factory.makeOSAvatar(name=TEST_ACCOUNT_USERNAME, token=token)
+        avatar = manufacture.makeFilesystemOSAvatar(
+            name=TEST_ACCOUNT_USERNAME, token=token)
 
         group_name = system_users.getPrimaryGroup(username=avatar.name)
         if os.name == 'nt':
@@ -424,9 +417,9 @@ class TestSystemUsers(ChevahTestCase):
         unknown user.
         """
         username = u'non-existent-username'
-        with self.assertRaises(OperationalException) as context:
+        with self.assertRaises(CompatError) as context:
             system_users.getPrimaryGroup(username=username)
-        self.assertEqual(1015, context.exception.id)
+        self.assertEqual(1015, context.exception.event_id)
 
 
 class ImpersonatedAvatarImplementation(HasImpersonatedAvatar):
@@ -526,11 +519,10 @@ class TestHasImpersonatedAvatar(ChevahTestCase):
         if os.name != 'nt':
             raise self.skipTest()
 
-        credentials = factory.makePasswordCredentials(
+        token = manufacture.makeToken(
             username=TEST_ACCOUNT_USERNAME,
             password=TEST_ACCOUNT_PASSWORD,
             )
-        token = factory.makeToken(credentials)
         avatar = ImpersonatedAvatarImplementation(
             name=TEST_ACCOUNT_USERNAME,
             token=token,
@@ -541,4 +533,5 @@ class TestHasImpersonatedAvatar(ChevahTestCase):
             self.assertEqual(
                 TEST_ACCOUNT_USERNAME, system_users.getCurrentUserName())
 
-        self.assertEqual(factory.username, system_users.getCurrentUserName())
+        self.assertEqual(
+            manufacture.username, system_users.getCurrentUserName())

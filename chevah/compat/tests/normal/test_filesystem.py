@@ -8,7 +8,7 @@ import os
 from mock import patch
 
 from chevah.compat import DefaultAvatar, LocalFilesystem
-from chevah.empirical import ChevahTestCase, factory
+from chevah.compat.testing import ChevahTestCase, manufacture
 
 
 class TestDefaultFilesystem(ChevahTestCase):
@@ -38,21 +38,21 @@ class TestDefaultFilesystem(ChevahTestCase):
         permissions.
         """
         segments = self.filesystem.temp_segments
-        filename = factory.makeFilename()
+        filename = manufacture.makeFilename()
         segments.append(filename)
 
-        test_content = factory.getUniqueString()
-        factory.fs.createFile(segments, content=test_content)
+        test_content = manufacture.getUniqueString()
+        manufacture.fs.createFile(segments, content=test_content)
 
         self.assertIsTrue(self.filesystem.isFile(segments))
-        factory.fs.deleteFile(segments)
+        manufacture.fs.deleteFile(segments)
 
     def test_installation_segments(self):
         """
         Installation segments is the base installation path.
         """
         segments = self.filesystem.installation_segments
-        self.assertTrue(factory.fs.isFolder(segments))
+        self.assertTrue(manufacture.fs.isFolder(segments))
         folder_name = segments[-1]
         self.assertTrue(folder_name.startswith('build-'))
 
@@ -62,8 +62,8 @@ class TestPosixFilesystem(ChevahTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.avatar = factory.makeOSAvatar()
-        cls.avatar.root_folder_path = cls.avatar.home_folder_path
+        cls.avatar = manufacture.makeFilesystemOSAvatar()
+        cls.avatar._root_folder_path = cls.avatar.home_folder_path
         cls.filesystem = LocalFilesystem(avatar=cls.avatar)
 
     def setUp(self):
@@ -94,8 +94,8 @@ class TestPosixFilesystem(ChevahTestCase):
         Emtpy list is returned for home_segments if root folder is the same
         as home folder.
         """
-        locked_avatar = factory.makeOSAvatar()
-        locked_avatar.root_folder_path = locked_avatar.home_folder_path
+        locked_avatar = manufacture.makeFilesystemOSAvatar()
+        locked_avatar._root_folder_path = locked_avatar.home_folder_path
         filesystem = LocalFilesystem(avatar=locked_avatar)
         self.assertEqual([], filesystem.home_segments)
 
@@ -104,8 +104,8 @@ class TestPosixFilesystem(ChevahTestCase):
         Check getting home segments for an absolute root where home folder
         is not the same as root folder.
         """
-        absolute_avatar = factory.makeOSAvatar()
-        absolute_avatar.root_folder_path = None
+        absolute_avatar = manufacture.makeFilesystemOSAvatar()
+        absolute_avatar._root_folder_path = None
         filesystem = LocalFilesystem(avatar=absolute_avatar)
         home = filesystem._pathSplitRecursive(
             absolute_avatar.home_folder_path)
@@ -116,9 +116,9 @@ class TestPosixFilesystem(ChevahTestCase):
         Check home_segments when root folder for the avatar is not the same
         as root folder for filesystem.
         """
-        locked_avatar = factory.makeOSAvatar()
-        locked_avatar.root_folder_path = locked_avatar.home_folder_path
-        locked_avatar.home_folder_path = os.path.join(
+        locked_avatar = manufacture.makeFilesystemOSAvatar()
+        locked_avatar._root_folder_path = locked_avatar.home_folder_path
+        locked_avatar._home_folder_path = os.path.join(
             locked_avatar.home_folder_path, u'test')
         filesystem = LocalFilesystem(avatar=locked_avatar)
         self.assertEqual([u'test'], filesystem.home_segments)
@@ -260,7 +260,7 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
         exists will return `False` if file or folder does not exists.
         """
         segments = self.unlocked_filesystem.temp_segments[:]
-        segments.append(factory.makeFilename())
+        segments.append(manufacture.makeFilename())
 
         self.assertFalse(self.unlocked_filesystem.exists(segments))
 
@@ -269,12 +269,12 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
         exists will return `True` if file exists.
         """
         segments = self.unlocked_filesystem.temp_segments[:]
-        segments.append(factory.makeFilename())
+        segments.append(manufacture.makeFilename())
 
         try:
             with (self.unlocked_filesystem.openFileForWriting(
                     segments)) as new_file:
-                new_file.write(factory.getUniqueString().encode('utf8'))
+                new_file.write(manufacture.getUniqueString().encode('utf8'))
 
             self.assertTrue(self.unlocked_filesystem.exists(segments))
         finally:
@@ -285,7 +285,7 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
         exists will return `True` if folder exists.
         """
         segments = self.unlocked_filesystem.temp_segments[:]
-        segments.append(factory.makeFilename())
+        segments.append(manufacture.makeFilename())
 
         try:
             self.unlocked_filesystem.createFolder(segments)
@@ -308,7 +308,7 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
         """
         Check makeFolder.
         """
-        folder_name = factory.makeFilename(length=10)
+        folder_name = manufacture.makeFilename(length=10)
         tmp_segments = self.unlocked_filesystem.temp_segments[:]
         tmp_segments.append(folder_name)
         try:
@@ -355,7 +355,7 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
         Check getting folder content.
         """
         temp_segments = self.unlocked_filesystem.temp_segments
-        folder_name = factory.makeFilename()
+        folder_name = manufacture.makeFilename()
         test_folder = temp_segments[:]
         test_folder.append(folder_name)
         self.unlocked_filesystem.createFolder(test_folder)
@@ -441,7 +441,7 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
         Check retrieving the size for a file.
         """
         test_size = 1345
-        segments = factory.fs.createFileInTemp(length=test_size)
+        segments = manufacture.fs.createFileInTemp(length=test_size)
         try:
             impersonate_user = self.unlocked_filesystem._impersonateUser
             with patch.object(
@@ -451,25 +451,25 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
             self.assertEqual(test_size, size)
             self.assertTrue(mock_method.called)
         finally:
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_getFileSize_empty_file(self):
         """
         Check getting file size for an empty file.
         """
         test_size = 0
-        segments = factory.fs.createFileInTemp(length=0)
+        segments = manufacture.fs.createFileInTemp(length=0)
         try:
             size = self.unlocked_filesystem.getFileSize(segments)
             self.assertEqual(test_size, size)
         finally:
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_getFileSize_impersonate(self):
         """
         Check getting file size for an avatar that requires impersonation.
         """
-        segments = factory.fs.createFileInTemp()
+        segments = manufacture.fs.createFileInTemp()
         try:
             impersonate_user = self.unlocked_filesystem._impersonateUser
             with patch.object(
@@ -478,14 +478,14 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
                 self.unlocked_filesystem.getFileSize(segments)
             self.assertTrue(mock_method.called)
         finally:
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_openFileForReading_impersonate(self):
         """
         Check opening a file for reading for an avatar which requires
         impersonation.
         """
-        segments = factory.fs.createFileInTemp()
+        segments = manufacture.fs.createFileInTemp()
         try:
             impersonate_user = self.unlocked_filesystem._impersonateUser
             with patch.object(
@@ -497,7 +497,7 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
                 a_file.close()
             self.assertTrue(mock_method.called)
         finally:
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_openFileForReading_ascii(self):
         """
@@ -505,7 +505,7 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
         """
         content = u'ceva nou'
         content_str = 'ceva nou'
-        segments = factory.fs.createFileInTemp(content=content)
+        segments = manufacture.fs.createFileInTemp(content=content)
         a_file = None
         try:
             a_file = self.unlocked_filesystem.openFileForReading(segments)
@@ -513,14 +513,14 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
         finally:
             if a_file:
                 a_file.close()
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_openFileForReading_unicode(self):
         """
         Check reading in unicode.
         """
-        content = factory.getUniqueString()
-        segments = factory.fs.createFileInTemp(content=content)
+        content = manufacture.getUniqueString()
+        segments = manufacture.fs.createFileInTemp(content=content)
         a_file = None
         try:
 
@@ -531,13 +531,13 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
         finally:
             if a_file:
                 a_file.close()
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_openFileForReading_empty(self):
         """
         An empty file can be opened for reading.
         """
-        segments = factory.fs.createFileInTemp(length=0)
+        segments = manufacture.fs.createFileInTemp(length=0)
         a_file = None
         try:
 
@@ -547,13 +547,13 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
         finally:
             if a_file:
                 a_file.close()
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_openFileForReading_no_write(self):
         """
         A file opened only for reading will not be able to write into.
         """
-        segments = factory.fs.createFileInTemp(length=0)
+        segments = manufacture.fs.createFileInTemp(length=0)
         try:
             a_file = self.unlocked_filesystem.openFileForReading(segments)
 
@@ -561,13 +561,13 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
                 a_file.write('something')
             a_file.close()
         finally:
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_openFileForWriting_impersonate(self):
         """
         Check openFileForWriting while using impersonation.
         """
-        segments = factory.fs.createFileInTemp()
+        segments = manufacture.fs.createFileInTemp()
         try:
             impersonate_user = self.unlocked_filesystem._impersonateUser
             with patch.object(
@@ -579,14 +579,14 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
                 a_file.close()
             self.assertTrue(mock_method.called)
         finally:
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_openFileForWriting_ascii(self):
         """
         Check opening a file for reading in plain/ascii/str mode.
         """
         content = 'some ascii text'
-        segments = factory.fs.createFileInTemp(length=0)
+        segments = manufacture.fs.createFileInTemp(length=0)
         try:
             a_file = self.unlocked_filesystem.openFileForWriting(segments)
             a_file.write(content)
@@ -596,14 +596,14 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
             self.assertEqual(test_content, content)
             a_file.close()
         finally:
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_openFileForWriting_unicode(self):
         """
         Check opening a file for reading in unicode mode.
         """
-        content = factory.getUniqueString()
-        segments = factory.fs.createFileInTemp(length=0)
+        content = manufacture.getUniqueString()
+        segments = manufacture.fs.createFileInTemp(length=0)
         try:
             a_file = self.unlocked_filesystem.openFileForWriting(
                 segments, utf8=True)
@@ -615,13 +615,13 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
             self.assertEqual(test_content, content)
             a_file.close()
         finally:
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_openFileForWriting_no_read(self):
         """
         When a file is opened for writing, we can not read from it.
         """
-        segments = factory.fs.createFileInTemp(length=0)
+        segments = manufacture.fs.createFileInTemp(length=0)
         try:
             a_file = self.unlocked_filesystem.openFileForWriting(segments)
 
@@ -630,17 +630,17 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
                 a_file.read()
             a_file.close()
         finally:
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_openFileForWriting_truncate(self):
         """
         When a file is opened for writing, the previous file is truncated
         to 0 lenght and we write as a fresh file.
         """
-        content = factory.getUniqueString(100)
-        new_content = factory.getUniqueString(50)
+        content = manufacture.getUniqueString(100)
+        new_content = manufacture.getUniqueString(50)
         # Create initial content.
-        self.test_segments = factory.fs.createFileInTemp(content=content)
+        self.test_segments = manufacture.fs.createFileInTemp(content=content)
 
         # Write new content into file.
         test_file = self.unlocked_filesystem.openFileForWriting(
@@ -648,14 +648,15 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
         test_file.write(new_content.encode('utf-8'))
         test_file.close()
 
-        file_content = ''.join(factory.fs.getFileContent(self.test_segments))
+        file_content = ''.join(
+            manufacture.fs.getFileContent(self.test_segments))
         self.assertEqual(new_content, file_content)
 
     def test_openFileForAppending_impersonate(self):
         """
         System test for openFileForAppending while using impersonation.
         """
-        segments = factory.fs.createFileInTemp()
+        segments = manufacture.fs.createFileInTemp()
         try:
             impersonate_user = self.unlocked_filesystem._impersonateUser
             with patch.object(
@@ -668,15 +669,15 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
 
             self.assertTrue(mock_method.called)
         finally:
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_openFileForAppending(self):
         """
         System test for openFileForAppending.
         """
-        content = factory.getUniqueString()
-        new_content = factory.getUniqueString()
-        segments = factory.fs.createFileInTemp(content=content)
+        content = manufacture.getUniqueString()
+        new_content = manufacture.getUniqueString()
+        segments = manufacture.fs.createFileInTemp(content=content)
         a_file = None
         try:
             a_file = self.unlocked_filesystem.openFileForAppending(
@@ -692,7 +693,7 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
         finally:
             if a_file:
                 a_file.close()
-            factory.fs.deleteFile(segments)
+            manufacture.fs.deleteFile(segments)
 
     def test_getRealPathFromSegments_fix_bad_path_nt(self):
         """
@@ -725,8 +726,8 @@ class TestLocalFilesystemLocked(ChevahTestCase):
     @classmethod
     def setUpClass(cls):
         cls.locked_avatar = DefaultAvatar()
-        cls.locked_avatar.root_folder_path = factory.fs.temp_path
-        cls.locked_avatar.home_folder_path = factory.fs.temp_path
+        cls.locked_avatar.root_folder_path = manufacture.fs.temp_path
+        cls.locked_avatar.home_folder_path = manufacture.fs.temp_path
         cls.locked_avatar.lock_in_home_folder = True
         cls.locked_filesystem = LocalFilesystem(avatar=cls.locked_avatar)
 
@@ -854,7 +855,7 @@ class TestLocalFilesystemLocked(ChevahTestCase):
         exists will return `False` if file or folder does not exists.
         """
         segments = self.locked_filesystem.home_segments[:]
-        segments.append(factory.makeFilename())
+        segments.append(manufacture.makeFilename())
 
         self.assertFalse(self.locked_filesystem.exists(segments))
 
@@ -863,12 +864,12 @@ class TestLocalFilesystemLocked(ChevahTestCase):
         exists will return `True` if file exists.
         """
         segments = self.locked_filesystem.home_segments[:]
-        segments.append(factory.makeFilename())
+        segments.append(manufacture.makeFilename())
 
         try:
             with (self.locked_filesystem.openFileForWriting(
                     segments)) as new_file:
-                new_file.write(factory.getUniqueString().encode('utf8'))
+                new_file.write(manufacture.getUniqueString().encode('utf8'))
 
             self.assertTrue(self.locked_filesystem.exists(segments))
         finally:
@@ -879,7 +880,7 @@ class TestLocalFilesystemLocked(ChevahTestCase):
         exists will return `True` if folder exists.
         """
         segments = self.locked_filesystem.home_segments[:]
-        segments.append(factory.makeFilename())
+        segments.append(manufacture.makeFilename())
 
         try:
             self.locked_filesystem.createFolder(segments)
@@ -892,7 +893,7 @@ class TestLocalFilesystemLocked(ChevahTestCase):
         """
         System test for touch.
         """
-        segments = [factory.makeFilename(length=10)]
+        segments = [manufacture.makeFilename(length=10)]
         self.assertFalse(self.locked_filesystem.exists(segments))
         try:
             self.locked_filesystem._touch(segments)
@@ -904,7 +905,7 @@ class TestLocalFilesystemLocked(ChevahTestCase):
         """
         System test for checking that a path is a file.
         """
-        segments = [factory.makeFilename(length=10)]
+        segments = [manufacture.makeFilename(length=10)]
         self.assertFalse(self.locked_filesystem.isFile(segments))
         try:
             self.locked_filesystem.createFolder(segments)
@@ -912,7 +913,7 @@ class TestLocalFilesystemLocked(ChevahTestCase):
         finally:
             self.locked_filesystem.deleteFolder(segments)
 
-        segments = [factory.makeFilename(length=10)]
+        segments = [manufacture.makeFilename(length=10)]
         try:
             self.locked_filesystem._touch(segments)
             self.assertTrue(self.locked_filesystem.isFile(segments))
@@ -923,7 +924,7 @@ class TestLocalFilesystemLocked(ChevahTestCase):
         """
         System test for folder creation.
         """
-        name = factory.makeFilename()
+        name = manufacture.makeFilename()
         try:
             # Just make sure we don't already have this folder
             self.locked_filesystem.deleteFolder([name], recursive=True)
@@ -940,8 +941,8 @@ class TestLocalFilesystemLocked(ChevahTestCase):
         """
         System test for file renaming.
         """
-        initial_segments = [factory.makeFilename(length=10)]
-        final_segments = [factory.makeFilename(length=10)]
+        initial_segments = [manufacture.makeFilename(length=10)]
+        final_segments = [manufacture.makeFilename(length=10)]
         self.assertFalse(self.locked_filesystem.exists(initial_segments))
         self.assertFalse(self.locked_filesystem.exists(final_segments))
         try:
@@ -956,8 +957,8 @@ class TestLocalFilesystemLocked(ChevahTestCase):
         """
         System test for folder renaming.
         """
-        initial_segments = [factory.makeFilename(length=10)]
-        final_segments = [factory.makeFilename(length=10)]
+        initial_segments = [manufacture.makeFilename(length=10)]
+        final_segments = [manufacture.makeFilename(length=10)]
         self.assertFalse(self.locked_filesystem.exists(initial_segments))
         self.assertFalse(self.locked_filesystem.exists(final_segments))
         try:
@@ -972,7 +973,7 @@ class TestLocalFilesystemLocked(ChevahTestCase):
         """
         System test for test_getFolderContent.
         """
-        initial_segments = [factory.makeFilename(length=10)]
+        initial_segments = [manufacture.makeFilename(length=10)]
         try:
             self.locked_filesystem.createFolder(initial_segments)
             content = self.locked_filesystem.getFolderContent([])

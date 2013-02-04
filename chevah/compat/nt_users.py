@@ -11,18 +11,18 @@ import win32profile
 import win32security
 
 from chevah.compat.constants import WINDOWS_PRIMARY_GROUP
+from chevah.compat.exceptions import (
+    ChangeUserException,
+    CompatError,
+    )
 from chevah.compat.helpers import (
     _,
     NoOpContext,
     raise_failed_to_get_home_folder,
     raise_failed_to_get_primary_group,
     )
-from chevah.utils.exceptions import (
-    ChangeUserException,
-    OperationalException,
-    )
-from chevah.utils.interfaces import (
-    IAvatarBase,
+from chevah.compat.interfaces import (
+    IFileSystemAvatar,
     IHasImpersonatedAvatar,
     IOSUsers,
     )
@@ -119,14 +119,14 @@ class NTUsers(object):
             try:
                 # Get home folder if profile already exists.
                 home_folder_path = _getHomeFolderPath()
-            except OperationalException:
-                # On erros we create to create the profile
+            except CompatError:
+                # On erros we try to create the profile
                 # and try one last time.
                 _createProfile()
                 home_folder_path = _getHomeFolderPath()
         except ChangeUserException, error:
             # We fail to impersoante the user, so we exit early.
-            raise_failed_to_get_home_folder(username, error.text)
+            raise_failed_to_get_home_folder(username, error.message)
 
         if home_folder_path:
             return home_folder_path
@@ -194,7 +194,7 @@ class NTUsers(object):
 
         if token is None:
             raise ChangeUserException(
-                0, u'executeAsUser: A valid token is required.')
+                u'executeAsUser: A valid token is required.')
 
         return _ExecuteAsUser(token)
 
@@ -261,13 +261,13 @@ class NTHasImpersonatedAvatar(object):
     @property
     def use_impersonation(self):
         """
-        See: :class:`IAvatarBase`
+        See: :class:`IFileSystemAvatar`
         """
         raise NotImplementedError()
 
     def getImpersonationContext(self):
         """
-        See: :class:`IAvatarBase`
+        See: :class:`IFileSystemAvatar`
         """
         if not self.use_impersonation:
             # Don't switch context if not required.
@@ -297,7 +297,7 @@ class NTDefaultAvatar(NTHasImpersonatedAvatar):
     It does not uses impersonation.
     """
 
-    implements(IAvatarBase)
+    implements(IFileSystemAvatar)
 
     root_folder_path = u'c:\\'
     home_folder_path = u'c:\\'
@@ -308,7 +308,7 @@ class NTDefaultAvatar(NTHasImpersonatedAvatar):
     @property
     def use_impersonation(self):
         """
-        See: :class:`IAvatarBase`
+        See: :class:`IFileSystemAvatar`
         """
         return False
 

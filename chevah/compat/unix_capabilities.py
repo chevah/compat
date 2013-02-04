@@ -5,12 +5,12 @@ from __future__ import with_statement
 
 from zope.interface import implements
 
-from chevah.compat.unix_users import _ExecuteAsUser
-from chevah.utils.exceptions import ChangeUserException
-from chevah.utils.helpers import (
+from chevah.compat.exceptions import ChangeUserException
+from chevah.compat.helpers import (
     _,
     )
-from chevah.utils.interfaces import IProcessCapabilities
+from chevah.compat.interfaces import IProcessCapabilities
+from chevah.compat.unix_users import _ExecuteAsUser
 
 
 class UnixProcessCapabilities(object):

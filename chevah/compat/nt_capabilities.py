@@ -9,7 +9,7 @@ import win32security
 
 from zope.interface import implements
 
-from chevah.utils.interfaces import IProcessCapabilities
+from chevah.compat.interfaces import IProcessCapabilities
 
 
 class NTProcessCapabilities(object):
