@@ -9,10 +9,10 @@ import sys
 
 # Marker for paver.sh.
 # This value is pavers by bash. Use a strict format.
-BRINK_VERSION = '0.9.0'
+BRINK_VERSION = '0.10.7'
 
 EXTRA_PACKAGES = [
-    'chevah-empirical==0.5.0-adi4',
+    'chevah-empirical==0.5.1',
     ]
 
 if os.name == 'posix':
@@ -27,7 +27,10 @@ from brink.pavement_commons import (
     harness,
     help,
     lint,
+    merge_init,
+    merge_commit,
     pave,
+    pqm,
     SETUP,
     test,
     test_remote,
@@ -44,6 +47,9 @@ github
 harness
 help
 lint
+merge_init
+merge_commit
+pqm
 test
 test_remote
 test_normal
@@ -52,7 +58,7 @@ test_super
 SETUP['product']['name'] = 'chevah-compat'
 SETUP['folders']['source'] = u'chevah/compat'
 SETUP['repository']['name'] = u'compat'
-SETUP['github']['url'] = 'https://github.com/chevah/compat'
+SETUP['github']['repo'] = 'chevah/compat'
 SETUP['pocket-lint']['include_files'] = ['pavement.py']
 SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
 SETUP['pocket-lint']['exclude_files'] = []
@@ -63,10 +69,21 @@ SETUP['test']['elevated'] = 'elevated'
 @task
 def deps():
     """
-    Copy external dependencies.
+    Install dependencies for testing.
     """
     print('Installing dependencies to %s...' % (pave.path.build))
     pave.installRunDependencies(extra_packages=EXTRA_PACKAGES)
+    pave.installTestDependencies()
+
+
+@task
+def deps_build():
+    """
+    Install dependencies for build environment.
+    """
+    print('Installing dependencies to %s...' % (pave.path.build))
+    pave.installRunDependencies(extra_packages=EXTRA_PACKAGES)
+    pave.installTestDependencies()
     pave.installBuildDependencies()
 
 
