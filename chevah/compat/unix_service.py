@@ -9,9 +9,9 @@ import sys
 
 from zope.interface import implements
 
-from chevah.utils.helpers import _
-from chevah.utils.interfaces import IDaemon
-from chevah.utils.logger import log, Logger
+from chevah.compat.exceptions import CompatError
+from chevah.compat.helpers import _
+from chevah.compat.interfaces import IDaemon
 
 
 class ChevahDaemon(object):
@@ -43,12 +43,10 @@ class ChevahDaemon(object):
             pid_file = open(pid_path, 'w')
             pid_file.close()
         except IOError:
-            log(1008, _(u'Could not open PID file at %s.' % (pid_path)))
-            sys.exit(1)
+            raise CompatError(1008,
+                _(u'Could not open PID file at %s.' % (pid_path)))
 
         self.initialize()
-
-        daemon_context.files_preserve = Logger.getAllOpenFileHandlers()
 
         with daemon_context:
             try:
@@ -56,8 +54,8 @@ class ChevahDaemon(object):
                 pid_file.write('%d' % os.getpid())
                 pid_file.close()
             except IOError:
-                log(1008, _(u'Could not write PID file at %s.' % (pid_path)))
-                sys.exit(1)
+                raise CompatError(1008,
+                    _(u'Could not write PID file at %s.' % (pid_path)))
 
             self.start()
 
@@ -69,9 +67,10 @@ class ChevahDaemon(object):
                 # Just change the exit value to signal that something went
                 # wrong.
                 # pylint: disable=W0702
-                log(1009, _(u'Could not remove PID file at %s.' % (pid_path)))
+
                 self.stop()
-                sys.exit(3)
+                CompatError(1009,
+                    _(u'Could not remove PID file at %s.' % (pid_path)))
             self.stop()
             sys.exit(0)
 

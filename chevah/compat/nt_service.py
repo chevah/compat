@@ -12,7 +12,7 @@ import win32serviceutil
 
 from twisted.internet import reactor
 
-from chevah.utils.helpers import _, log_add_default_handlers
+from chevah.compat.helpers import _
 
 
 class ChevahNTService(win32serviceutil.ServiceFramework):
@@ -26,7 +26,6 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
         self.process = None
         self._stopped = threading.Event()
         try:
-            log_add_default_handlers(name=self._svc_name_, nt_service=True)
             self.initialize()
         except:
             import traceback

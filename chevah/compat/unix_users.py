@@ -23,16 +23,15 @@ try:
 except ImportError:
     HAS_PAM_SUPPORT = False
 
-
+from chevah.compat.exceptions import ChangeUserException
 from chevah.compat.helpers import (
     _,
     NoOpContext,
     raise_failed_to_get_home_folder,
     raise_failed_to_get_primary_group,
     )
-from chevah.utils.exceptions import ChangeUserException
-from chevah.utils.interfaces import (
-    IAvatarBase,
+from chevah.compat.interfaces import (
+    IFileSystemAvatar,
     IHasImpersonatedAvatar,
     IOSUsers,
     )
@@ -56,7 +55,7 @@ def _get_euid_and_egid(username_encoded):
     try:
         pwnam = pwd.getpwnam(username_encoded)
     except KeyError:
-        raise ChangeUserException(0, _(u'User does not exists.'))
+        raise ChangeUserException(_(u'User does not exists.'))
 
     return (pwnam.pw_uid, pwnam.pw_gid)
 
@@ -69,7 +68,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None,
         try:
             pwnam = pwd.getpwnam(username_encoded)
         except KeyError:
-            raise ChangeUserException(0, _(u'User does not exists.'))
+            raise ChangeUserException(_(u'User does not exists.'))
         euid = pwnam.pw_uid
         egid = pwnam.pw_gid
     else:
@@ -96,7 +95,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None,
         os.setegid(egid)
         os.seteuid(euid)
     except OSError:
-        raise ChangeUserException(0, u'Could not switch user.')
+        raise ChangeUserException(u'Could not switch user.')
 
 
 class UnixUsers(object):
@@ -106,12 +105,12 @@ class UnixUsers(object):
 
     def getSuperAvatar(self, avatar=None):
         '''Create a super user/Administrator avatar.'''
-        from chevah.utils.avatar import OSAvatar
+        from chevah.compat.avatar import FilesystemOSAvatar
         if avatar:
             home_folder_path = avatar.home_folder_path
         else:
             home_folder_path = u'/root'
-        return OSAvatar(
+        return FilesystemOSAvatar(
             name=u'root',
             home_folder_path=home_folder_path,
             root_folder_path=u'/',
@@ -336,7 +335,7 @@ class _ExecuteAsUser(object):
             try:
                 pwnam = pwd.getpwnam(username.encode('utf-8'))
             except KeyError:
-                raise ChangeUserException(0, _(u'User does not exists.'))
+                raise ChangeUserException(_(u'User does not exists.'))
             euid = pwnam.pw_uid
             egid = pwnam.pw_gid
         self.euid = euid
@@ -378,13 +377,13 @@ class UnixHasImpersonatedAvatar(object):
     @property
     def use_impersonation(self):
         """
-        See: :class:`IAvatarBase`
+        See: :class:`IFileSystemAvatar`
         """
         raise NotImplementedError()
 
     def getImpersonationContext(self):
         """
-        See: :class:`IAvatarBase`
+        See: :class:`IFileSystemAvatar`
         """
         if not self.use_impersonation:
             return NoOpContext()
@@ -411,7 +410,7 @@ class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
     It does not uses impersoantion.
     """
 
-    implements(IAvatarBase)
+    implements(IFileSystemAvatar)
 
     home_folder_path = '/'
     root_folder_path = '/'
@@ -422,7 +421,7 @@ class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
     @property
     def use_impersonation(self):
         """
-        See: :class:`IAvatarBase`
+        See: :class:`IFileSystemAvatar`
         """
         return False
 
