@@ -10,12 +10,13 @@ from chevah.compat import (
     DefaultAvatar,
     process_capabilities,
     system_users,
+    SuperAvatar,
     )
 from chevah.compat.interfaces import IFileSystemAvatar
-from chevah.compat.testing import ChevahTestCase, manufacture
+from chevah.compat.testing import CompatTestCase, manufacture
 
 
-class TestSystemUsers(ChevahTestCase):
+class TestSystemUsers(CompatTestCase):
     '''Test system users operations.'''
 
     def test_getHomeFolder_linux(self):
@@ -94,51 +95,8 @@ class TestSystemUsers(ChevahTestCase):
 
         self.assertTrue(HAS_SHADOW_SUPPORT)
 
-    def test_getSuperAvatar_application_avatar(self):
-        """
-        For application accounts, the super avatar will have the same
-        home folder.
 
-        On unix this is the root account.
-        """
-        name = manufacture.getUniqueString()
-        home_folder_path = manufacture.getUniqueString()
-        normal_avatar = manufacture.makeFilesystemApplicationAvatar(
-            name=name, home_folder_path=home_folder_path)
-
-        super_avatar = system_users.getSuperAvatar(avatar=normal_avatar)
-
-        self.assertEqual(home_folder_path, super_avatar.home_folder_path)
-        if os.name == 'posix':
-            self.assertFalse(super_avatar.lock_in_home_folder)
-            self.assertEqual(u'root', super_avatar.name)
-        else:
-            self.assertTrue(super_avatar.lock_in_home_folder)
-            self.assertEqual(name, super_avatar.name)
-
-    def test_getSuperAvatar_os_avatar(self):
-        """
-        For os accounts, the super avatar will have the same
-        home folder.
-
-        On unix this is the root account.
-        """
-        name = manufacture.getUniqueString()
-        home_folder_path = manufacture.getUniqueString()
-        normal_avatar = manufacture.makeFilesystemOSAvatar(
-            name=name, home_folder_path=home_folder_path)
-
-        super_avatar = system_users.getSuperAvatar(avatar=normal_avatar)
-
-        self.assertFalse(super_avatar.lock_in_home_folder)
-        self.assertEqual(home_folder_path, super_avatar.home_folder_path)
-        if os.name == 'posix':
-            self.assertEqual(u'root', super_avatar.name)
-        else:
-            self.assertEqual(name, super_avatar.name)
-
-
-class TestDefaultAvatar(ChevahTestCase):
+class TestDefaultAvatar(CompatTestCase):
     """
     Tests for default avatar.
     """
@@ -150,3 +108,41 @@ class TestDefaultAvatar(ChevahTestCase):
         avatar = DefaultAvatar()
 
         self.assertProvides(IFileSystemAvatar, avatar)
+
+
+class TestSuperAvatar(CompatTestCase):
+    """
+    Tests for super avatar.
+    """
+
+    def test_init(self):
+        """
+        Default avatar is initialized without arguments.
+        """
+        avatar = SuperAvatar()
+
+        self.assertProvides(IFileSystemAvatar, avatar)
+        self.assertFalse(avatar.lock_in_home_folder)
+
+    def test_unix(self):
+        """
+        Check Unix specific properties.
+        """
+        if self.os_name != 'posix':
+            raise self.skipTest()
+
+        avatar = SuperAvatar()
+
+        self.assertEqual('root', avatar.name)
+        self.assertTrue(avatar.use_impersonation)
+
+    def test_windows(self):
+        """
+        Check Windows specific properties.
+        """
+        if self.os_name != 'nt':
+            raise self.skipTest()
+
+        avatar = SuperAvatar()
+
+        self.assertFalse(avatar.use_impersonation)

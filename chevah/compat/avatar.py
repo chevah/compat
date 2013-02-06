@@ -30,13 +30,6 @@ class FilesystemAvatar(HasImpersonatedAvatar):
         if self._root_folder_path:
             assert type(self._root_folder_path) is unicode
 
-    def getCopy(self):
-        """
-        See: :class:`IFileSystemAvatar`
-        """
-        result = copy(self)
-        return result
-
     @property
     def token(self):
         """

@@ -48,17 +48,6 @@ class NTUsers(object):
 
     implements(IOSUsers)
 
-    def getSuperAvatar(self, avatar=None):
-        '''Create a super user/Administrator avatar.
-
-        On Windows, it does nothing for now.
-        '''
-        if avatar:
-            result = avatar.getCopy()
-        else:
-            result = None
-        return result
-
     def getCurrentUserName(self):
         """
         The name of current user.
@@ -319,5 +308,9 @@ class NTDefaultAvatar(NTHasImpersonatedAvatar):
         """
         return get_current_username()
 
-    def getCopy(self):
-        return self
+
+class NTSuperAvatar(NTDefaultAvatar):
+    """
+    On Windows, we don't have a super account so we try do our best
+    using the current account.
+    """
