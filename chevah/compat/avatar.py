@@ -3,8 +3,6 @@
 """
 An account as used by Chevah services.
 """
-from copy import copy
-
 from zope.interface import implements
 
 from chevah.compat import HasImpersonatedAvatar
