@@ -3,8 +3,6 @@
 """
 An account as used by Chevah services.
 """
-from copy import copy
-
 from zope.interface import implements
 
 from chevah.compat import HasImpersonatedAvatar
@@ -29,13 +27,6 @@ class FilesystemAvatar(HasImpersonatedAvatar):
         assert type(self._home_folder_path) is unicode
         if self._root_folder_path:
             assert type(self._root_folder_path) is unicode
-
-    def getCopy(self):
-        """
-        See: :class:`IFileSystemAvatar`
-        """
-        result = copy(self)
-        return result
 
     @property
     def token(self):

@@ -116,19 +116,11 @@ class IFileSystemAvatar(IHasImpersonatedAvatar):
         True if filesystem access should be limited to home folder.
         ''')
 
-    def getCopy():
-        """
-        Gets a copy of this avatar.
-        """
-
 
 class IOSUsers(Interface):
     '''
     Non-object oriented methods for retrieving system accounts.
     '''
-
-    def getSuperAvatar(avatar):
-        '''Create a super user/Administrator avatar.'''
 
     def getHomeFolder(username, token=None):
         '''Get home folder for local (or NIS) user.'''

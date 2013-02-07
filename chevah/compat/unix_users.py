@@ -103,20 +103,6 @@ class UnixUsers(object):
 
     implements(IOSUsers)
 
-    def getSuperAvatar(self, avatar=None):
-        '''Create a super user/Administrator avatar.'''
-        from chevah.compat.avatar import FilesystemOSAvatar
-        if avatar:
-            home_folder_path = avatar.home_folder_path
-        else:
-            home_folder_path = u'/root'
-        return FilesystemOSAvatar(
-            name=u'root',
-            home_folder_path=home_folder_path,
-            root_folder_path=u'/',
-            lock_in_home_folder=False,
-            )
-
     def getHomeFolder(self, username, token=None):
         '''Get home folder for local (or NIS) user.'''
         try:
@@ -432,5 +418,30 @@ class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
         """
         return pwd.getpwuid(os.getuid()).pw_name
 
-    def getCopy(self):
-        return self
+
+class UnixSuperAvatar(UnixHasImpersonatedAvatar):
+    """
+    Avatar for the super account on Unix aka root.
+    """
+
+    implements(IFileSystemAvatar)
+
+    home_folder_path = u'/root'
+    root_folder_path = '/'
+    lock_in_home_folder = False
+    token = None
+    peer = None
+
+    @property
+    def use_impersonation(self):
+        """
+        See: :class:`IFileSystemAvatar`
+        """
+        return True
+
+    @property
+    def name(self):
+        """
+        Name of the default avatar.
+        """
+        return 'root'

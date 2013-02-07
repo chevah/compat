@@ -17,6 +17,7 @@ if os.name == 'posix':
         UnixDefaultAvatar,
         UnixHasImpersonatedAvatar,
         UnixUsers,
+        UnixSuperAvatar,
         )
     from chevah.compat.unix_capabilities import (
         UnixProcessCapabilities,
@@ -28,6 +29,7 @@ if os.name == 'posix':
     LocalFilesystem = UnixFilesystem
     HasImpersonatedAvatar = UnixHasImpersonatedAvatar
     DefaultAvatar = UnixDefaultAvatar
+    SuperAvatar = UnixSuperAvatar
 
 elif os.name == 'nt':
 
@@ -35,6 +37,7 @@ elif os.name == 'nt':
         NTDefaultAvatar,
         NTHasImpersonatedAvatar,
         NTUsers,
+        NTSuperAvatar,
         )
     from chevah.compat.nt_capabilities import NTProcessCapabilities
     from chevah.compat.nt_filesystem import NTFilesystem
@@ -44,6 +47,7 @@ elif os.name == 'nt':
     LocalFilesystem = NTFilesystem
     HasImpersonatedAvatar = NTHasImpersonatedAvatar
     DefaultAvatar = NTDefaultAvatar
+    SuperAvatar = NTSuperAvatar
 
 else:
     raise AssertionError('Operating system "%s" not supported.' % (os.name))
