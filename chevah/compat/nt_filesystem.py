@@ -12,6 +12,7 @@ import ntsecuritycon
 
 from zope.interface import implements
 
+from chevah.compat import process_capabilities
 from chevah.compat.exceptions import CompatError
 from chevah.compat.helpers import _
 from chevah.compat.interfaces import ILocalFilesystem
@@ -252,7 +253,6 @@ class NTFilesystem(PosixFilesystemBase):
         path = self.getRealPathFromSegments(segments)
 
         try:
-            import process_capabilities
             process_capabilities._adjustPrivilege(
                 w32sec.SE_TAKE_OWNERSHIP_NAME, True)
             process_capabilities._adjustPrivilege(
