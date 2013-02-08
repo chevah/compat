@@ -15,6 +15,18 @@ from chevah.compat.avatar import (
     )
 
 
+# Export testcase from here.
+ChevahTestCase
+
+
+class CompatTestCase(ChevahTestCase):
+    """
+    Test case used in chevah.compat package.
+
+    For not, there is nothing special here.
+    """
+
+
 class CompatManufacture(ChevahCommonsFactory):
     """
     Generator of testing helpers for chevah.compat package.
@@ -84,5 +96,4 @@ class CompatManufacture(ChevahCommonsFactory):
                     username, password))
         return token
 
-ChevahTestCase
 manufacture = CompatManufacture()

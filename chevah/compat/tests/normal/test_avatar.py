@@ -46,17 +46,6 @@ class TestAvatarBase(ChevahTestCase):
         self.assertEqual(u'other-path', avatar.root_folder_path)
         self.assertEqual(u'the-token', avatar.token)
 
-    def test_getCopy(self):
-        """
-        Test copying an avatar.
-        """
-        initial_avatar = manufacture.makeFilesystemApplicationAvatar()
-        copy_avatar = initial_avatar.getCopy()
-
-        self.assertNotEqual(id(initial_avatar), id(copy_avatar))
-        self.assertEqual(
-            initial_avatar._home_folder_path, copy_avatar._home_folder_path)
-
 
 class TestApplicationAvatar(ChevahTestCase):
     """
