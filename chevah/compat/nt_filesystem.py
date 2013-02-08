@@ -7,12 +7,12 @@ import os
 import win32api
 import win32file as w32file
 import win32net
+import win32process as w32proc
 import win32security as w32sec
 import ntsecuritycon
 
 from zope.interface import implements
 
-from chevah.compat import process_capabilities
 from chevah.compat.exceptions import CompatError
 from chevah.compat.helpers import _
 from chevah.compat.interfaces import ILocalFilesystem
@@ -67,7 +67,7 @@ class NTFilesystem(PosixFilesystemBase):
     @property
     def _lock_in_home(self):
         """
-        True if filesystem access should be restriced to home folder.
+        True if filesystem access should be restricted to home folder.
         """
         if not self._avatar:
             return False
@@ -253,9 +253,9 @@ class NTFilesystem(PosixFilesystemBase):
         path = self.getRealPathFromSegments(segments)
 
         try:
-            process_capabilities._adjustPrivilege(
+            self._adjustPrivilege(
                 w32sec.SE_TAKE_OWNERSHIP_NAME, True)
-            process_capabilities._adjustPrivilege(
+            self._adjustPrivilege(
                 w32sec.SE_RESTORE_NAME, True)
 
             try:
@@ -276,9 +276,9 @@ class NTFilesystem(PosixFilesystemBase):
                 w32sec.SetNamedSecurityInfo(path, w32sec.SE_FILE_OBJECT,
                     w32sec.DACL_SECURITY_INFORMATION, None, None, dACL, None)
             finally:
-                process_capabilities._adjustPrivilege(
+                self._adjustPrivilege(
                     w32sec.SE_TAKE_OWNERSHIP_NAME, False)
-                process_capabilities._adjustPrivilege(
+                self._adjustPrivilege(
                     w32sec.SE_RESTORE_NAME, False)
         except win32net.error, error:
             if error.winerror == 1332:
@@ -400,3 +400,28 @@ class NTFilesystem(PosixFilesystemBase):
                 if group_sid == sid:
                     return True
         return False
+
+    def _adjustPrivilege(self, privilege_name, enable=False):
+        """
+        privilege_name ex: win32security.SE_BACKUP_NAME
+        remove - win32security.SE_PRIVILEGE_REMOVED
+        enable - win32security.SE_PRIVILEGE_ENABLED
+        disable - 0
+        """
+        process_token = w32sec.OpenProcessToken(
+            w32proc.GetCurrentProcess(),
+            w32sec.TOKEN_ALL_ACCESS)
+
+        new_state = 0
+        if enable:
+            new_state = w32sec.SE_PRIVILEGE_ENABLED
+        else:
+            new_state = 0
+
+        new_privileges = (
+            (w32sec.LookupPrivilegeValue('', privilege_name),
+             new_state),
+        )
+
+        w32sec.AdjustTokenPrivileges(process_token, 0, new_privileges)
+        win32api.CloseHandle(process_token)

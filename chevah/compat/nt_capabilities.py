@@ -77,29 +77,3 @@ class NTProcessCapabilities(object):
             return True
         except:
             return False
-
-    def _adjustPrivilege(self, privilege_name, enable=False):
-        '''
-        privilege_name ex: win32security.SE_BACKUP_NAME
-        remove - win32security.SE_PRIVILEGE_REMOVED
-        enable - win32security.SE_PRIVILEGE_ENABLED
-        disable - 0
-        '''
-        process_token = win32security.OpenProcessToken(
-            win32process.GetCurrentProcess(),
-            win32security.TOKEN_ALL_ACCESS)
-
-        new_state = 0
-        if enable:
-            new_state = win32security.SE_PRIVILEGE_ENABLED
-        else:
-            new_state = 0
-
-        new_priviledges = (
-            (win32security.LookupPrivilegeValue('', privilege_name),
-                new_state),
-            )
-
-        win32security.AdjustTokenPrivileges(
-            process_token, 0, new_priviledges)
-        win32api.CloseHandle(process_token)
