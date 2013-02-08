@@ -5,9 +5,9 @@ from __future__ import with_statement
 
 import os
 import win32api
-import win32file
+import win32file as w32file
 import win32net
-import win32security
+import win32security as w32sec
 import ntsecuritycon
 
 from zope.interface import implements
@@ -205,7 +205,7 @@ class NTFilesystem(PosixFilesystemBase):
                                 if drive]
                 result = []
                 for drive in drives:
-                    if win32file.GetDriveType(drive) == LOCAL_DRIVE:
+                    if w32file.GetDriveType(drive) == LOCAL_DRIVE:
                         drive = drive.strip(':\\')
                         drive = drive.decode(self.INTERNAL_ENCODING)
                         result.append(drive)
@@ -246,29 +246,47 @@ class NTFilesystem(PosixFilesystemBase):
             raise OSError(error.errno, error.strerror)
 
     def setOwner(self, segments, owner):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         path = self.getRealPathFromSegments(segments)
 
-        with self._impersonateUser():
+        try:
+            import process_capabilities
+            process_capabilities._adjustPrivilege(
+                w32sec.SE_TAKE_OWNERSHIP_NAME, True)
+            process_capabilities._adjustPrivilege(
+                w32sec.SE_RESTORE_NAME, True)
+
             try:
-                owner_security = win32security.GetFileSecurity(
-                    path, win32security.OWNER_SECURITY_INFORMATION)
+                secDesc = w32sec.GetNamedSecurityInfo(path,
+                    w32sec.SE_FILE_OBJECT, w32sec.DACL_SECURITY_INFORMATION)
+                dACL = secDesc.GetSecurityDescriptorDacl()
+
                 user_sid, user_domain, user_type = (
-                    win32security.LookupAccountName(None, owner))
-                owner_security.SetSecurityDescriptorOwner(
-                    user_sid, False)
-                win32security.SetFileSecurity(
-                    path,
-                    win32security.OWNER_SECURITY_INFORMATION,
-                    owner_security)
-            except win32net.error, error:
-                if error.winerror == 1332:
-                    raise_failed_to_set_owner(owner, path, u'No such owner')
-                if error.winerror == 1307:
-                    raise_failed_to_set_owner(owner, path, u'Not permitted')
-                else:
-                    raise OSError(
-                        error.winerror, error.strerror)
+                    w32sec.LookupAccountName(None, owner))
+                flags = (
+                    w32sec.OBJECT_INHERIT_ACE | w32sec.CONTAINER_INHERIT_ACE)
+                dACL.AddAccessAllowedAceEx(w32sec.ACL_REVISION_DS, flags,
+                    w32file.FILE_ALL_ACCESS, user_sid)
+
+                w32sec.SetNamedSecurityInfo(path, w32sec.SE_FILE_OBJECT,
+                    w32sec.OWNER_SECURITY_INFORMATION, user_sid,
+                    None, None, None)
+                w32sec.SetNamedSecurityInfo(path, w32sec.SE_FILE_OBJECT,
+                    w32sec.DACL_SECURITY_INFORMATION, None, None, dACL, None)
+            finally:
+                process_capabilities._adjustPrivilege(
+                    w32sec.SE_TAKE_OWNERSHIP_NAME, False)
+                process_capabilities._adjustPrivilege(
+                    w32sec.SE_RESTORE_NAME, False)
+        except win32net.error, error:
+            if error.winerror == 1332:
+                raise_failed_to_set_owner(owner, path, u'No such owner')
+            if error.winerror == 1307:
+                raise_failed_to_set_owner(owner, path, u'Not permitted')
+            else:
+                raise OSError(error.winerror, error.strerror)
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''
@@ -276,10 +294,10 @@ class NTFilesystem(PosixFilesystemBase):
 
         with self._impersonateUser():
             try:
-                owner_security = win32security.GetFileSecurity(
-                    path, win32security.OWNER_SECURITY_INFORMATION)
+                owner_security = w32sec.GetFileSecurity(
+                    path, w32sec.OWNER_SECURITY_INFORMATION)
                 owner_sid = owner_security.GetSecurityDescriptorOwner()
-                name, domain, type = win32security.LookupAccountSid(
+                name, domain, type = w32sec.LookupAccountSid(
                     None, owner_sid)
                 return name
             except win32net.error, error:
@@ -292,22 +310,22 @@ class NTFilesystem(PosixFilesystemBase):
 
         try:
             group_sid, group_domain, group_type = (
-                win32security.LookupAccountName(None, group))
+                w32sec.LookupAccountName(None, group))
         except win32net.error:
             raise_failed_to_add_group(group, path, u'Could not get group ID.')
 
         with self._impersonateUser():
             try:
-                security = win32security.GetFileSecurity(
-                    path, win32security.DACL_SECURITY_INFORMATION)
+                security = w32sec.GetFileSecurity(
+                    path, w32sec.DACL_SECURITY_INFORMATION)
                 dacl = security.GetSecurityDescriptorDacl()
                 dacl.AddAccessAllowedAce(
-                    win32security.ACL_REVISION,
+                    w32sec.ACL_REVISION,
                     ntsecuritycon.FILE_ALL_ACCESS,
                     group_sid)
                 security.SetDacl(True, dacl, False)
-                win32security.SetFileSecurity(
-                    path, win32security.DACL_SECURITY_INFORMATION, security)
+                w32sec.SetFileSecurity(
+                    path, w32sec.DACL_SECURITY_INFORMATION, security)
             except win32net.error, error:
                 raise_failed_to_add_group(
                     group, path, u'%s: %s' % (error.winerror, error.strerror))
@@ -318,7 +336,7 @@ class NTFilesystem(PosixFilesystemBase):
 
         try:
             group_sid, group_domain, group_type = (
-                win32security.LookupAccountName(None, group))
+                w32sec.LookupAccountName(None, group))
         except win32net.error:
             raise CompatError(1013, _(
                 u'Failed to remove group "%s" from "%s". %s' % (
@@ -326,8 +344,8 @@ class NTFilesystem(PosixFilesystemBase):
 
         with self._impersonateUser():
             try:
-                security = win32security.GetFileSecurity(
-                    path, win32security.DACL_SECURITY_INFORMATION)
+                security = w32sec.GetFileSecurity(
+                    path, w32sec.DACL_SECURITY_INFORMATION)
             except win32net.error, error:
                 raise OSError(
                     error.winerror, error.strerror)
@@ -350,8 +368,8 @@ class NTFilesystem(PosixFilesystemBase):
 
             dacl.DeleteAce(index_ace_to_remove)
             security.SetDacl(True, dacl, False)
-            win32security.SetFileSecurity(
-                path, win32security.DACL_SECURITY_INFORMATION, security)
+            w32sec.SetFileSecurity(
+                path, w32sec.DACL_SECURITY_INFORMATION, security)
         return False
 
     def hasGroup(self, segments, group):
@@ -360,14 +378,14 @@ class NTFilesystem(PosixFilesystemBase):
 
         try:
             group_sid, group_domain, group_type = (
-                win32security.LookupAccountName(None, group))
+                w32sec.LookupAccountName(None, group))
         except win32net.error:
             return False
 
         with self._impersonateUser():
             try:
-                security = win32security.GetFileSecurity(
-                    path, win32security.DACL_SECURITY_INFORMATION)
+                security = w32sec.GetFileSecurity(
+                    path, w32sec.DACL_SECURITY_INFORMATION)
             except win32net.error, error:
                 raise OSError(
                     error.winerror, error.strerror)
