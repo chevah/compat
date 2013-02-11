@@ -405,10 +405,10 @@ class NTFilesystem(PosixFilesystemBase):
     def _elevatePrivileges(self, *privileges):
         try:
             for privilege in privileges:
-                NTFilesystem.process_capabilities._adjustPrivilege(
+                NTFilesystem.process_capabilities.adjustPrivilege(
                     privilege, True)
             yield
         finally:
             for privilege in privileges:
-                NTFilesystem.process_capabilities._adjustPrivilege(
+                NTFilesystem.process_capabilities.adjustPrivilege(
                     privilege, False)

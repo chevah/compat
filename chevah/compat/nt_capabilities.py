@@ -80,7 +80,7 @@ class NTProcessCapabilities(object):
         except:
             return False
 
-    def _adjustPrivilege(self, privilege_name, enable=False):
+    def adjustPrivilege(self, privilege_name, enable=False):
         """
         privilege_name ex: win32security.SE_BACKUP_NAME
         remove - win32security.SE_PRIVILEGE_REMOVED
