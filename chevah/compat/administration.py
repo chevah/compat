@@ -12,7 +12,11 @@ import random
 import subprocess
 import sys
 
-from chevah.compat import LocalFilesystem, system_users
+from chevah.compat import (
+    LocalFilesystem,
+    system_users,
+    SuperAvatar,
+    )
 
 
 def execute(command, input_text=None, output=None,
@@ -79,7 +83,7 @@ class OSAdministration(object):
 
     def __init__(self):
         self.name = self.getName()
-        self.fs = LocalFilesystem(avatar=system_users.getSuperAvatar())
+        self.fs = LocalFilesystem(SuperAvatar())
 
     def getName(self):
         '''Return the name of the platform.'''

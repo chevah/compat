@@ -9,6 +9,7 @@ from chevah.compat import (
     LocalFilesystem,
     process_capabilities,
     system_users,
+    SuperAvatar,
     )
 from chevah.compat.testing import ChevahTestCase, manufacture
 from chevah.empirical.constants import (
@@ -145,7 +146,7 @@ class TestPosixFilesystem(ChevahTestCase):
         file_object.close()
 
         if os.name == 'posix':
-            root_avatar = system_users.getSuperAvatar()
+            root_avatar = SuperAvatar()
             root_avatar._home_folder_path = self.avatar.home_folder_path
             root_avatar._root_folder_path = self.avatar.root_folder_path
             root_filesystem = LocalFilesystem(avatar=root_avatar)
@@ -171,7 +172,7 @@ class TestPosixFilesystem(ChevahTestCase):
         self.filesystem.createFolder(folder_segments)
 
         if os.name == 'posix':
-            root_avatar = system_users.getSuperAvatar()
+            root_avatar = SuperAvatar()
             root_avatar._home_folder_path = self.avatar.home_folder_path
             root_avatar._root_folder_path = self.avatar.root_folder_path
             root_filesystem = LocalFilesystem(avatar=root_avatar)
