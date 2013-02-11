@@ -7,7 +7,6 @@ import os
 import win32api
 import win32file as w32file
 import win32net
-import win32process as w32proc
 import win32security as w32sec
 import ntsecuritycon
 
@@ -16,6 +15,7 @@ from zope.interface import implements
 from chevah.compat.exceptions import CompatError
 from chevah.compat.helpers import _
 from chevah.compat.interfaces import ILocalFilesystem
+from chevah.compat.nt_capabilities import NTProcessCapabilities
 from chevah.compat.nt_users import NTUsers
 from chevah.compat.posix_filesystem import PosixFilesystemBase
 
@@ -54,6 +54,7 @@ class NTFilesystem(PosixFilesystemBase):
 
     implements(ILocalFilesystem)
     system_users = NTUsers()
+    process_capabilities = NTProcessCapabilities()
 
     OPEN_READ_ONLY = os.O_RDONLY | os.O_BINARY
     OPEN_WRITE_ONLY = os.O_WRONLY | os.O_BINARY
@@ -101,7 +102,7 @@ class NTFilesystem(PosixFilesystemBase):
 
     def _getLockedPathFromSegments(self, segments):
         '''
-        Return a path for segments making sure the resuling path is not
+        Return a path for segments making sure the resulting path is not
         outside of the chroot.
         '''
         path = os.path.normpath(os.path.join(*segments))
@@ -253,9 +254,9 @@ class NTFilesystem(PosixFilesystemBase):
         path = self.getRealPathFromSegments(segments)
 
         try:
-            self._adjustPrivilege(
+            NTFilesystem.process_capabilities._adjustPrivilege(
                 w32sec.SE_TAKE_OWNERSHIP_NAME, True)
-            self._adjustPrivilege(
+            NTFilesystem.process_capabilities._adjustPrivilege(
                 w32sec.SE_RESTORE_NAME, True)
 
             try:
@@ -276,9 +277,9 @@ class NTFilesystem(PosixFilesystemBase):
                 w32sec.SetNamedSecurityInfo(path, w32sec.SE_FILE_OBJECT,
                     w32sec.DACL_SECURITY_INFORMATION, None, None, dACL, None)
             finally:
-                self._adjustPrivilege(
+                NTFilesystem.process_capabilities._adjustPrivilege(
                     w32sec.SE_TAKE_OWNERSHIP_NAME, False)
-                self._adjustPrivilege(
+                NTFilesystem.process_capabilities._adjustPrivilege(
                     w32sec.SE_RESTORE_NAME, False)
         except win32net.error, error:
             if error.winerror == 1332:
@@ -400,28 +401,3 @@ class NTFilesystem(PosixFilesystemBase):
                 if group_sid == sid:
                     return True
         return False
-
-    def _adjustPrivilege(self, privilege_name, enable=False):
-        """
-        privilege_name ex: win32security.SE_BACKUP_NAME
-        remove - win32security.SE_PRIVILEGE_REMOVED
-        enable - win32security.SE_PRIVILEGE_ENABLED
-        disable - 0
-        """
-        process_token = w32sec.OpenProcessToken(
-            w32proc.GetCurrentProcess(),
-            w32sec.TOKEN_ALL_ACCESS)
-
-        new_state = 0
-        if enable:
-            new_state = w32sec.SE_PRIVILEGE_ENABLED
-        else:
-            new_state = 0
-
-        new_privileges = (
-            (w32sec.LookupPrivilegeValue('', privilege_name),
-             new_state),
-        )
-
-        w32sec.AdjustTokenPrivileges(process_token, 0, new_privileges)
-        win32api.CloseHandle(process_token)

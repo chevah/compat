@@ -36,12 +36,11 @@ elif os.name == 'nt':
         NTHasImpersonatedAvatar,
         NTUsers,
         )
-    from chevah.compat.nt_capabilities import NTProcessCapabilities
     from chevah.compat.nt_filesystem import NTFilesystem
 
     system_users = NTUsers()
-    process_capabilities = NTProcessCapabilities()
     LocalFilesystem = NTFilesystem
+    process_capabilities = NTFilesystem.process_capabilities
     HasImpersonatedAvatar = NTHasImpersonatedAvatar
     DefaultAvatar = NTDefaultAvatar
 

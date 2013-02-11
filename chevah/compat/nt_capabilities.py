@@ -1,11 +1,13 @@
 # Copyright (c) 2012 Adi Roiban.
 # See LICENSE for details.
-'''Provides informatin about capabilites for a process on Windows.'''
+"""
+Provides information about capabilities for a process on Windows.
+"""
 from __future__ import with_statement
 import platform
 import win32api
-import win32process
-import win32security
+import win32process as w32proc
+import win32security as w32sec
 
 from zope.interface import implements
 
@@ -20,16 +22,16 @@ class NTProcessCapabilities(object):
     def getCurrentPrivilegesDescription(self):
         '''Return a text describing current privileges.'''
         result = []
-        process_token = win32security.OpenProcessToken(
-            win32process.GetCurrentProcess(),
-            win32security.TOKEN_QUERY,
+        process_token = w32sec.OpenProcessToken(
+            w32proc.GetCurrentProcess(),
+            w32sec.TOKEN_QUERY,
             )
 
-        privileges = win32security.GetTokenInformation(
-            process_token, win32security.TokenPrivileges)
+        privileges = w32sec.GetTokenInformation(
+            process_token, w32sec.TokenPrivileges)
 
         for privilege in privileges:
-            name = win32security.LookupPrivilegeName('', privilege[0])
+            name = w32sec.LookupPrivilegeName('', privilege[0])
             value = unicode(privilege[1])
             result.append(name + u':' + value)
         win32api.CloseHandle(process_token)
@@ -77,3 +79,27 @@ class NTProcessCapabilities(object):
             return True
         except:
             return False
+
+    def _adjustPrivilege(self, privilege_name, enable=False):
+        """
+        privilege_name ex: win32security.SE_BACKUP_NAME
+        remove - win32security.SE_PRIVILEGE_REMOVED
+        enable - win32security.SE_PRIVILEGE_ENABLED
+        disable - 0
+        """
+        process_token = w32sec.OpenProcessToken(
+            w32proc.GetCurrentProcess(),
+            w32sec.TOKEN_ALL_ACCESS)
+
+        if enable:
+            new_state = w32sec.SE_PRIVILEGE_ENABLED
+        else:
+            new_state = 0
+
+        new_privileges = (
+            (w32sec.LookupPrivilegeValue('', privilege_name),
+             new_state),
+        )
+
+        w32sec.AdjustTokenPrivileges(process_token, 0, new_privileges)
+        win32api.CloseHandle(process_token)
