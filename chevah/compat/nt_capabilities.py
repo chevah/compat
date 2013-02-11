@@ -4,6 +4,8 @@
 Provides information about capabilities for a process on Windows.
 """
 from __future__ import with_statement
+
+from contextlib import contextmanager
 import platform
 import win32api
 import win32process
@@ -80,26 +82,60 @@ class NTProcessCapabilities(object):
         except:
             return False
 
-    def adjustPrivilege(self, privilege_name, enable=False):
+    def _adjustPrivilege(self, privilege_name, enable=False):
         """
         privilege_name ex: win32security.SE_BACKUP_NAME
         remove - win32security.SE_PRIVILEGE_REMOVED
         enable - win32security.SE_PRIVILEGE_ENABLED
-        disable - 0
+        disable - None
         """
         process_token = win32security.OpenProcessToken(
             win32process.GetCurrentProcess(),
             win32security.TOKEN_ALL_ACCESS)
 
-        if enable:
-            new_state = win32security.SE_PRIVILEGE_ENABLED
-        else:
-            new_state = 0
+        try:
+            if enable:
+                new_state = win32security.SE_PRIVILEGE_ENABLED
+            else:
+                new_state = 0
 
-        new_privileges = (
-            (win32security.LookupPrivilegeValue('', privilege_name),
-             new_state),
-        )
+            new_privileges = (
+                (win32security.LookupPrivilegeValue('', privilege_name),
+                 new_state),
+            )
 
-        win32security.AdjustTokenPrivileges(process_token, 0, new_privileges)
-        win32api.CloseHandle(process_token)
+            win32security.AdjustTokenPrivileges(process_token, 0,
+                new_privileges)
+        finally:
+            win32api.CloseHandle(process_token)
+
+    def _hasPrivilege(self, privilege_name):
+        process_token = win32security.OpenProcessToken(
+            win32process.GetCurrentProcess(),
+            win32security.TOKEN_QUERY)
+
+        try:
+            privileges = win32security.GetTokenInformation(
+                process_token, win32security.TokenPrivileges)
+
+            for privilege in privileges:
+                name = win32security.LookupPrivilegeName('', privilege[0])
+                if privilege_name == name:
+                    return True
+        finally:
+            win32api.CloseHandle(process_token)
+
+        return False
+
+    @contextmanager
+    def elevatePrivileges(self, *privileges):
+        """
+        Elevate current process privileges to include the specified
+        """
+        try:
+            for privilege in privileges:
+                self._adjustPrivilege(privilege, True)
+            yield
+        finally:
+            for privilege in privileges:
+                self._adjustPrivilege(privilege, False)

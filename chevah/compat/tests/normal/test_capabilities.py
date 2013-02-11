@@ -27,7 +27,7 @@ class TestProcessCapabilities(ChevahTestCase):
     def test_impersonate_local_account(self):
         """
         When running under normal account, impersonation is always False
-        on Unix and alwasy True on Windows.
+        on Unix and always True on Windows.
         """
         result = self.capabilities.impersonate_local_account
         if os.name == 'posix':

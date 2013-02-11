@@ -3,7 +3,6 @@
 '''Module for hosting the Chevah FTP filesystem access.'''
 from __future__ import with_statement
 
-from contextlib import contextmanager
 import os
 import win32api
 import win32file
@@ -254,7 +253,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         path = self.getRealPathFromSegments(segments)
 
-        with self._elevatePrivileges(
+        with NTFilesystem.process_capabilities.elevatePrivileges(
                 win32security.SE_TAKE_OWNERSHIP_NAME,
                 win32security.SE_RESTORE_NAME,
                 ):
@@ -400,15 +399,3 @@ class NTFilesystem(PosixFilesystemBase):
                 if group_sid == sid:
                     return True
         return False
-
-    @contextmanager
-    def _elevatePrivileges(self, *privileges):
-        try:
-            for privilege in privileges:
-                NTFilesystem.process_capabilities.adjustPrivilege(
-                    privilege, True)
-            yield
-        finally:
-            for privilege in privileges:
-                NTFilesystem.process_capabilities.adjustPrivilege(
-                    privilege, False)

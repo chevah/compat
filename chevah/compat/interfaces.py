@@ -65,14 +65,14 @@ class IProcess(Interface):
         '''Log the propduct stopping event.'''
 
     def logListenError(error):
-        '''Log the error of listening for incomming connections.'''
+        '''Log the error of listening for incoming connections.'''
 
 
 class IProcessCapabilities(Interface):
-    '''Provides information about current process capabilites.'''
+    '''Provides information about current process capabilities.'''
 
     impersonate_local_account = Attribute(
-        'True if it can impersoante any local account.')
+        'True if it can impersonate any local account.')
     create_home_folder = Attribute(
         'True if it can create home folders for any local account.')
     get_home_folder = Attribute(
@@ -96,7 +96,7 @@ class IHasImpersonatedAvatar(Interface):
         ''')
 
     use_impersonation = Attribute(
-        u'True if this avatar should be impersoanted.')
+        u'True if this avatar should be impersonated.')
 
     def getImpersonationContext():
         """

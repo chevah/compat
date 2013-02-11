@@ -223,9 +223,9 @@ class TestPosixFilesystem(ChevahTestCase):
         folder_segments.append(folder_name)
         self.filesystem.createFolder(folder_segments)
 
-        root_avatar = SuperAvatar
+        root_avatar = SuperAvatar()
         root_avatar._home_folder_path = self.avatar.home_folder_path
-        root_filesystem = LocalFilesystem(avatar=root_avatar)
+        root_filesystem = LocalFilesystem(root_avatar)
 
         root_filesystem.setOwner(
             file_segments,

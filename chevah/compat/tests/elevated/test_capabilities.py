@@ -4,20 +4,21 @@
 '''Test system users portable code code.'''
 from __future__ import with_statement
 import os
+import win32security
 
 from chevah.compat import process_capabilities
 from chevah.empirical import ChevahTestCase
 
 
-class TestProcessCapabilites(ChevahTestCase):
+class TestProcessCapabilities(ChevahTestCase):
 
     def setUp(self):
-        super(TestProcessCapabilites, self).setUp()
+        super(TestProcessCapabilities, self).setUp()
         self.capabilities = process_capabilities
 
     def test_impersonate_local_account(self):
         """
-        When running as super user we can alwasy impersonate local accounts.
+        When running as super user we can always impersonate local accounts.
         """
         result = self.capabilities.impersonate_local_account
         self.assertTrue(result)
@@ -54,3 +55,25 @@ class TestProcessCapabilites(ChevahTestCase):
         else:
             # Windows tests are done in the normal tests.
             pass
+
+
+class TestNTProcessCapabilities(TestProcessCapabilities):
+
+    def setUp(self):
+        super(TestNTProcessCapabilities, self).setUp()
+
+        if os.name != 'nt':
+            raise self.skipTest("Only Windows platforms supported.")
+
+    def test_adjustPrivilege(self):
+        """
+        Turning SE_TAKE_OWNERSHIP privilege on/off for the current
+        process when running as super user.
+        """
+        self.capabilities._adjustPrivilege(
+            win32security.SE_TAKE_OWNERSHIP_NAME,
+            True
+            )
+
+        self.assertIsTrue(self.capabilities._hasPrivilege(
+            win32security.SE_TAKE_OWNERSHIP_NAME))
