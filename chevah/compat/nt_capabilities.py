@@ -130,7 +130,7 @@ class NTProcessCapabilities(object):
     @contextmanager
     def elevatePrivileges(self, *privileges):
         """
-        Elevate current process privileges to include the specified
+        Elevate current process privileges to include the specified ones.
         """
         try:
             for privilege in privileges:

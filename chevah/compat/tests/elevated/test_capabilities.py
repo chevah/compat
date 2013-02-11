@@ -67,13 +67,27 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
 
     def test_adjustPrivilege(self):
         """
-        Turning SE_TAKE_OWNERSHIP privilege on/off for the current
+        Turning SE_BACKUP privilege on/off for the current
         process when running as super user.
         """
-        self.capabilities._adjustPrivilege(
-            win32security.SE_TAKE_OWNERSHIP_NAME,
-            True
-            )
+        initial_state = self.capabilities._hasPrivilege(
+            win32security.SE_BACKUP_NAME)
 
-        self.assertIsTrue(self.capabilities._hasPrivilege(
-            win32security.SE_TAKE_OWNERSHIP_NAME))
+        if initial_state:
+            self.capabilities._adjustPrivilege(
+                win32security.SE_BACKUP_NAME,
+                False)
+
+            self.assertIsFalse(self.capabilities._hasPrivilege(
+                win32security.SE_BACKUP_NAME))
+        else:
+            self.capabilities._adjustPrivilege(
+                win32security.SE_BACKUP_NAME,
+                True)
+
+            self.assertIsTrue(self.capabilities._hasPrivilege(
+                win32security.SE_BACKUP_NAME))
+
+        self.capabilities._adjustPrivilege(
+                win32security.SE_BACKUP_NAME,
+                initial_state)
