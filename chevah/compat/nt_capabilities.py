@@ -87,7 +87,7 @@ class NTProcessCapabilities(object):
         privilege_name ex: win32security.SE_BACKUP_NAME
         remove - win32security.SE_PRIVILEGE_REMOVED
         enable - win32security.SE_PRIVILEGE_ENABLED
-        disable - None
+        disable - 0
         """
         process_token = win32security.OpenProcessToken(
             win32process.GetCurrentProcess(),
