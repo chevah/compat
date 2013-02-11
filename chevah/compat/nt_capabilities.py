@@ -6,8 +6,8 @@ Provides information about capabilities for a process on Windows.
 from __future__ import with_statement
 import platform
 import win32api
-import win32process as w32proc
-import win32security as w32sec
+import win32process
+import win32security
 
 from zope.interface import implements
 
@@ -87,19 +87,19 @@ class NTProcessCapabilities(object):
         enable - win32security.SE_PRIVILEGE_ENABLED
         disable - 0
         """
-        process_token = w32sec.OpenProcessToken(
-            w32proc.GetCurrentProcess(),
-            w32sec.TOKEN_ALL_ACCESS)
+        process_token = win32security.OpenProcessToken(
+            win32process.GetCurrentProcess(),
+            win32security.TOKEN_ALL_ACCESS)
 
         if enable:
-            new_state = w32sec.SE_PRIVILEGE_ENABLED
+            new_state = win32security.SE_PRIVILEGE_ENABLED
         else:
             new_state = 0
 
         new_privileges = (
-            (w32sec.LookupPrivilegeValue('', privilege_name),
+            (win32security.LookupPrivilegeValue('', privilege_name),
              new_state),
         )
 
-        w32sec.AdjustTokenPrivileges(process_token, 0, new_privileges)
+        win32security.AdjustTokenPrivileges(process_token, 0, new_privileges)
         win32api.CloseHandle(process_token)
