@@ -121,7 +121,7 @@ class NTProcessCapabilities(object):
             for privilege in privileges:
                 name = win32security.LookupPrivilegeName('', privilege[0])
                 if privilege_name == name:
-                    return True
+                    return 0 != privilege[1]
         finally:
             win32api.CloseHandle(process_token)
 
