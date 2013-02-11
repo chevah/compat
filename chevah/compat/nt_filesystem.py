@@ -3,6 +3,7 @@
 '''Module for hosting the Chevah FTP filesystem access.'''
 from __future__ import with_statement
 
+from contextlib import contextmanager
 import os
 import win32api
 import win32file
@@ -253,24 +254,22 @@ class NTFilesystem(PosixFilesystemBase):
         """
         path = self.getRealPathFromSegments(segments)
 
-        try:
-            NTFilesystem.process_capabilities._adjustPrivilege(
-                win32security.SE_TAKE_OWNERSHIP_NAME, True)
-            NTFilesystem.process_capabilities._adjustPrivilege(
-                win32security.SE_RESTORE_NAME, True)
-
+        with self._elevatePrivileges(
+                win32security.SE_TAKE_OWNERSHIP_NAME,
+                win32security.SE_RESTORE_NAME,
+                ):
             try:
-                secDesc = win32security.GetNamedSecurityInfo(path,
+                security_descriptor = win32security.GetNamedSecurityInfo(path,
                     win32security.SE_FILE_OBJECT,
                     win32security.DACL_SECURITY_INFORMATION)
-                dACL = secDesc.GetSecurityDescriptorDacl()
+                d_acl = security_descriptor.GetSecurityDescriptorDacl()
 
                 user_sid, user_domain, user_type = (
                     win32security.LookupAccountName(None, owner))
                 flags = (
                     win32security.OBJECT_INHERIT_ACE |
                     win32security.CONTAINER_INHERIT_ACE)
-                dACL.AddAccessAllowedAceEx(win32security.ACL_REVISION_DS,
+                d_acl.AddAccessAllowedAceEx(win32security.ACL_REVISION_DS,
                     flags, win32file.FILE_ALL_ACCESS, user_sid)
 
                 win32security.SetNamedSecurityInfo(path,
@@ -280,19 +279,14 @@ class NTFilesystem(PosixFilesystemBase):
                 win32security.SetNamedSecurityInfo(path,
                     win32security.SE_FILE_OBJECT,
                     win32security.DACL_SECURITY_INFORMATION,
-                    None, None, dACL, None)
-            finally:
-                NTFilesystem.process_capabilities._adjustPrivilege(
-                    win32security.SE_TAKE_OWNERSHIP_NAME, False)
-                NTFilesystem.process_capabilities._adjustPrivilege(
-                    win32security.SE_RESTORE_NAME, False)
-        except win32net.error, error:
-            if error.winerror == 1332:
-                raise_failed_to_set_owner(owner, path, u'No such owner')
-            if error.winerror == 1307:
-                raise_failed_to_set_owner(owner, path, u'Not permitted')
-            else:
-                raise OSError(error.winerror, error.strerror)
+                    None, None, d_acl, None)
+            except win32net.error, error:
+                if error.winerror == 1332:
+                    raise_failed_to_set_owner(owner, path, u'No such owner')
+                if error.winerror == 1307:
+                    raise_failed_to_set_owner(owner, path, u'Not permitted')
+                else:
+                    raise OSError(error.winerror, error.strerror)
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''
@@ -406,3 +400,15 @@ class NTFilesystem(PosixFilesystemBase):
                 if group_sid == sid:
                     return True
         return False
+
+    @contextmanager
+    def _elevatePrivileges(self, *privileges):
+        try:
+            for privilege in privileges:
+                NTFilesystem.process_capabilities._adjustPrivilege(
+                    privilege, True)
+            yield
+        finally:
+            for privilege in privileges:
+                NTFilesystem.process_capabilities._adjustPrivilege(
+                    privilege, False)
