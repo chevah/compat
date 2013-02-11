@@ -22,16 +22,16 @@ class NTProcessCapabilities(object):
     def getCurrentPrivilegesDescription(self):
         '''Return a text describing current privileges.'''
         result = []
-        process_token = w32sec.OpenProcessToken(
-            w32proc.GetCurrentProcess(),
-            w32sec.TOKEN_QUERY,
+        process_token = win32security.OpenProcessToken(
+            win32process.GetCurrentProcess(),
+            win32security.TOKEN_QUERY,
             )
 
-        privileges = w32sec.GetTokenInformation(
-            process_token, w32sec.TokenPrivileges)
+        privileges = win32security.GetTokenInformation(
+            process_token, win32security.TokenPrivileges)
 
         for privilege in privileges:
-            name = w32sec.LookupPrivilegeName('', privilege[0])
+            name = win32security.LookupPrivilegeName('', privilege[0])
             value = unicode(privilege[1])
             result.append(name + u':' + value)
         win32api.CloseHandle(process_token)
