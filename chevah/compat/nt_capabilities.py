@@ -117,13 +117,13 @@ class NTProcessCapabilities(object):
         else:
             new_state = 0
 
+        new_privileges = (
+            (win32security.LookupPrivilegeValue('', privilege_name),
+             new_state),
+        )
+
         with self._openProcess() as process_token:
             try:
-                new_privileges = (
-                    (win32security.LookupPrivilegeValue('', privilege_name),
-                     new_state),
-                )
-
                 win32security.AdjustTokenPrivileges(process_token, 0,
                     new_privileges)
             except win32security.error, error:
