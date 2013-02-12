@@ -87,10 +87,10 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
 
     def test_hasPrivilege_enabled(self):
         """
-        hasPrivilege return True for a privilege which is present and is
+        hasPrivilege returns True for a privilege which is present and is
         enabled.
         """
-        # We use  SE_IMPERSONATE privilege as it is enabled by default
+        # We use SE_IMPERSONATE privilege as it is enabled by default
         # when running as super user.
         import win32security
         privilege = win32security.SE_IMPERSONATE_NAME
@@ -98,7 +98,7 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
 
     def test_hasPrivilege_disabled(self):
         """
-        hasPrivilege return False for a privilege which is disabled.
+        hasPrivilege returns False for a privilege which is disabled.
         """
         # By default SE_LOAD_DRIVER privilege is disabled.
         import win32security
@@ -107,11 +107,11 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
 
     def test_elevatePrivileges_take_ownership_success(self):
         """
-        elevatePrivileges is a context manager which will elevates the
+        elevatePrivileges is a context manager which will elevate the
         privileges for current process upon entering the context,
-        and restore them at exit.
+        and restore them on exit.
         """
-        # We use SE_TAKE_OWNERSHIP privilege at it should be present for
+        # We use SE_TAKE_OWNERSHIP privilege as it should be present for
         # super user and disabled by default.
         import win32security
         privilege = win32security.SE_TAKE_OWNERSHIP_NAME
@@ -132,7 +132,32 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         privilege = win32security.SE_IMPERSONATE_NAME
         self.assertTrue(self.capabilities._hasPrivilege(privilege))
 
-        with (self.capabilities._elevatePrivileges(privilege)):
-            self.assertTrue(self.capabilities._hasPrivilege(privilege))
+        capabilities = self.capabilities
+        with self.Patch.object(capabilities, '_adjustPrivilege') as method:
+            with (capabilities._elevatePrivileges(privilege)):
+                self.assertFalse(method.called)
+                self.assertTrue(capabilities._hasPrivilege(privilege))
 
         self.assertTrue(self.capabilities._hasPrivilege(privilege))
+
+    def test_elevatePrivilege_multiple_privileges_success(self):
+        """
+        elevatePrivileges supports a variable list of privilege name
+        arguments and will make sure all of them are enabled.
+        """
+        # We use SE_IMPERSONATE as it is enabled by default
+        # We also use SE_TAKE_OWNERSHIP as it is disabled by default but can
+        # be enabled when running as super user.
+        import win32security
+        take_ownership = win32security.SE_TAKE_OWNERSHIP_NAME
+        impersonate = win32security.SE_IMPERSONATE_NAME
+        self.assertTrue(self.capabilities._hasPrivilege(impersonate))
+        self.assertFalse(self.capabilities._hasPrivilege(take_ownership))
+
+        capabilities = self.capabilities
+        with (capabilities._elevatePrivileges(take_ownership, impersonate)):
+            self.assertTrue(self.capabilities._hasPrivilege(impersonate))
+            self.assertTrue(self.capabilities._hasPrivilege(take_ownership))
+
+        self.assertTrue(self.capabilities._hasPrivilege(impersonate))
+        self.assertFalse(self.capabilities._hasPrivilege(take_ownership))

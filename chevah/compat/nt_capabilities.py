@@ -13,7 +13,10 @@ import win32security
 
 from zope.interface import implements
 
-from chevah.compat.exceptions import AdjustPrivilegeException
+from chevah.compat.exceptions import (
+    AdjustPrivilegeException,
+    CompatException,
+    )
 from chevah.compat.interfaces import IProcessCapabilities
 
 
@@ -157,38 +160,43 @@ class NTProcessCapabilities(object):
 
         Returns False otherwise.
         """
-        privilege_value = win32security.LookupPrivilegeValue('',
-            privilege_name)
-
         with self._openProcess(win32security.TOKEN_QUERY) as process_token:
-            privileges = win32security.GetTokenInformation(
-                process_token, win32security.TokenPrivileges)
+            try:
+                privilege_value = win32security.LookupPrivilegeValue(
+                    '',
+                    privilege_name
+                    )
 
-            for privilege in privileges:
-                value = privilege[0]
-                state = privilege[1]
-                # bitwise flag
-                # 0 - not set
-                # 1 - win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
-                # 2 - win32security.SE_PRIVILEGE_ENABLED
-                # 4 - win32security.SE_PRIVILEGE_REMOVED
-                # -2147483648 - win32security.SE_PRIVILEGE_USED_FOR_ACCESS
+                privileges = win32security.GetTokenInformation(
+                    process_token, win32security.TokenPrivileges)
 
-                if privilege_value == value:
-                    enabled = (
-                        state &
-                        win32security.SE_PRIVILEGE_ENABLED ==
-                            win32security.SE_PRIVILEGE_ENABLED
-                        )
-                    enabled_by_default = (
-                        state &
-                        win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT ==
-                            win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
-                        )
+                for privilege in privileges:
+                    value = privilege[0]
+                    state = privilege[1]
+                    # bitwise flag
+                    # 0 - not set
+                    # 1 - win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
+                    # 2 - win32security.SE_PRIVILEGE_ENABLED
+                    # 4 - win32security.SE_PRIVILEGE_REMOVED
+                    # -2147483648 - win32security.SE_PRIVILEGE_USED_FOR_ACCESS
 
-                    if enabled or enabled_by_default:
-                        return True
-                    else:
-                        return False
+                    if privilege_value == value:
+                        enabled = (
+                            state &
+                            win32security.SE_PRIVILEGE_ENABLED ==
+                                win32security.SE_PRIVILEGE_ENABLED
+                            )
+                        enabled_by_default = (
+                            state &
+                            win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT ==
+                                win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
+                            )
+
+                        if enabled or enabled_by_default:
+                            return True
+                        else:
+                            return False
+            except win32security.error, error:
+                raise CompatException(error)
 
         return False

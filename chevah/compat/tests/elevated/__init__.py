@@ -1,7 +1,9 @@
 # Copyright (c) 2012 Adi Roiban.
 # See LICENSE for details.
-'''Code for testing compat module that requires access to system security
-functions.'''
+"""
+Code for testing compat module that requires access to system security
+functions.
+"""
 
 from chevah.compat import process_capabilities
 from chevah.empirical.testcase import (
@@ -30,7 +32,7 @@ def runElevatedTest():
 
 def setup_package():
     # Don't run these tests if we can not access privileged OS part.
-    if not (ChevahTestCase.haveSuperPowers() and runElevatedTest()):
+    if not runElevatedTest():
         raise ChevahTestCase.skipTest()
     # Initialize the testing OS.
 

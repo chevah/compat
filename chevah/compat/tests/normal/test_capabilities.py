@@ -8,9 +8,10 @@ import os
 from zope.interface.verify import verifyObject
 
 from chevah.compat import process_capabilities
-from chevah.empirical.testcase import ChevahTestCase
 from chevah.compat.exceptions import CompatException
 from chevah.compat.interfaces import IProcessCapabilities
+from chevah.compat.testing import manufacture
+from chevah.empirical.testcase import ChevahTestCase
 
 
 class TestProcessCapabilities(ChevahTestCase):
@@ -95,7 +96,7 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         with self.assertRaises(TypeError):
             self.capabilities._openProcess()
 
-    def test_openProcess_succeed(self):
+    def test_openProcess_success(self):
         """
         _openProcess can be used for process token for the current
         process having a specified mode enabled.
@@ -105,16 +106,17 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
                 process_token):
             self.assertIsNotNone(process_token)
 
-    def test_openProcess_failed(self):
+    def test_hasPrivilege_invalid_privilege_fails(self):
         """
-        A CompatException is raised when trying to open the process with
-        a mode which is not allowed.
+        _hasPrivilege will raise a CompatException when an invalid
+        privilege name is used.
         """
-        import win32security
-        # TODO: Find a mode which is not enabled for normal users or
-        # some condition which makes the process opening fail.
-        mode = win32security.TOKEN_QUERY
-        with self.assertRaises(CompatException) as context:
-            self.capabilities._openProcess(mode)
+        privilege = manufacture.getUniqueString()
 
-        self.assertEqual('some failure', context.excetion.message)
+        with self.assertRaises(CompatException) as context:
+            self.assertFalse(self.capabilities._hasPrivilege(privilege))
+
+        self.assertContains(
+            'A specified privilege does not exist.',
+            context.exception.message
+            )

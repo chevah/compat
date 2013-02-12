@@ -271,7 +271,7 @@ class NTFilesystem(PosixFilesystemBase):
                     win32security.SE_FILE_OBJECT,
                     win32security.DACL_SECURITY_INFORMATION,
                     )
-                d_dacl = security_descriptor.GetSecurityDescriptorDacl()
+                d_acl = security_descriptor.GetSecurityDescriptorDacl()
 
                 user_sid, user_domain, user_type = (
                     win32security.LookupAccountName(None, owner))
@@ -279,7 +279,7 @@ class NTFilesystem(PosixFilesystemBase):
                     win32security.OBJECT_INHERIT_ACE |
                     win32security.CONTAINER_INHERIT_ACE)
 
-                d_dacl.AddAccessAllowedAceEx(
+                d_acl.AddAccessAllowedAceEx(
                     win32security.ACL_REVISION_DS,
                     flags,
                     win32file.FILE_ALL_ACCESS,
@@ -298,7 +298,7 @@ class NTFilesystem(PosixFilesystemBase):
                     win32security.DACL_SECURITY_INFORMATION,
                     None,
                     None,
-                    d_dacl,
+                    d_acl,
                     None,
                     )
             except win32net.error, error:
