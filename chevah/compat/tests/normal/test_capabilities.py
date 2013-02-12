@@ -3,6 +3,7 @@
 # See LICENSE for details.
 '''Test system users portable code code.'''
 from __future__ import with_statement
+from contextlib import nested
 import os
 
 from zope.interface.verify import verifyObject
@@ -77,3 +78,22 @@ class TestProcessCapabilities(ChevahTestCase):
         else:
             # Windows tests are done in elevated
             self.assertTrue('SeChangeNotifyPrivilege' in text, text)
+
+
+class TestNTProcessCapabilities(TestProcessCapabilities):
+
+    def setUp(self):
+        super(TestNTProcessCapabilities, self).setUp()
+
+        if os.name != 'nt':
+            raise self.skipTest("Only Windows platforms supported.")
+
+    def test_openProcess_query(self):
+        """
+        Opening current process token for querying returns a valid value.
+        """
+        import win32security
+        with nested(
+                self.capabilities._openProcess(win32security.TOKEN_QUERY)
+            ) as (token):
+            self.assertIsNotNone(token)

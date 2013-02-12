@@ -112,13 +112,13 @@ class NTProcessCapabilities(object):
 
         Raises AdjustPrivilegeException if adjusting fails.
         """
+        if enable:
+            new_state = win32security.SE_PRIVILEGE_ENABLED
+        else:
+            new_state = 0
+
         with self._openProcess() as process_token:
             try:
-                if enable:
-                    new_state = win32security.SE_PRIVILEGE_ENABLED
-                else:
-                    new_state = 0
-
                 new_privileges = (
                     (win32security.LookupPrivilegeValue('', privilege_name),
                      new_state),
@@ -170,14 +170,21 @@ class NTProcessCapabilities(object):
     @contextmanager
     def _elevatePrivileges(self, *privileges):
         """
-        Elevate current process privileges to include the specified ones.
+        Elevate current process privileges to include the specified ones. If
+        the privileges are already enabled nothing is changed.
 
         Raises AdjustPrivilegeException if elevating the privileges fails.
         """
+
+        missing_privileges = []
         try:
             for privilege in privileges:
+                if not self._hasPrivilege(privilege):
+                    missing_privileges.append(privilege)
+
+            for privilege in missing_privileges:
                 self._adjustPrivilege(privilege, True)
             yield
         finally:
-            for privilege in privileges:
+            for privilege in missing_privileges:
                 self._adjustPrivilege(privilege, False)

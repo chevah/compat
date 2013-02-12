@@ -5,13 +5,19 @@ Exceptions used in chevah.compat package.
 """
 
 
-class ChangeUserException(Exception):
+class CompatException(Exception):
+    """
+    Base compat repo exception.
+    """
+
+
+class ChangeUserException(CompatException):
     """
     User could not be impersonated.
     """
 
 
-class AdjustPrivilegeException(Exception):
+class AdjustPrivilegeException(CompatException):
     """
     Could not adjust process privileges.
     """

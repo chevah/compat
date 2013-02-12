@@ -3,6 +3,7 @@
 # See LICENSE for details.
 '''Test system users portable code code.'''
 from __future__ import with_statement
+from contextlib import nested
 import os
 
 from chevah.compat import process_capabilities
@@ -93,3 +94,54 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
                 initial_state)
         self.assertEquals(initial_state, self.capabilities._hasPrivilege(
             win32security.SE_BACKUP_NAME))
+
+    def test_hasPrivilege_restore(self):
+        """
+        By default SE_IMPERSONATE privilege is enabled when running
+        as super user.
+        """
+        import win32security
+        if self.capabilities.impersonate_local_account:
+            self.assertTrue(
+                self.capabilities._hasPrivilege(
+                    win32security.SE_IMPERSONATE_NAME))
+        else:
+            self.assertFalse(
+                self.capabilities._hasPrivilege(
+                    win32security.SE_IMPERSONATE_NAME))
+
+    def test_hasPrivilege_load_driver(self):
+        """
+        By default SE_LOAD_DRIVER privilege is disabled.
+        """
+        import win32security
+        self.assertFalse(self.capabilities._hasPrivilege(
+            win32security.SE_LOAD_DRIVER_NAME))
+
+    def test_elevatePrivileges_take_ownership_success(self):
+        """
+        When running as super user we can successfully elevate the
+        privileges to include SE_TAKE_OWNERSHIP. After leaving the context
+        the privileges are lowered again to their previous state.
+        """
+        import win32security
+        self.assertFalse(self.capabilities._hasPrivilege(
+            win32security.SE_TAKE_OWNERSHIP_NAME))
+
+        with (self.capabilities._elevatePrivileges(
+                win32security.SE_TAKE_OWNERSHIP_NAME)):
+            self.assertTrue(self.capabilities._hasPrivilege(
+                win32security.SE_TAKE_OWNERSHIP_NAME))
+
+        self.assertFalse(self.capabilities._hasPrivilege(
+            win32security.SE_TAKE_OWNERSHIP_NAME))
+
+    def test_openProcess_all_access(self):
+        """
+        Opening current process token for all access returns a valid value.
+        """
+        import win32security
+        with nested(
+            self.capabilities._openProcess(win32security.TOKEN_QUERY)
+            ) as (token):
+            self.assertIsNotNone(token)
