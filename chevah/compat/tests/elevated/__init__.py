@@ -30,7 +30,7 @@ def runElevatedTest():
 
 def setup_package():
     # Don't run these tests if we can not access privileged OS part.
-    if not runElevatedTest():
+    if not (ChevahTestCase.haveSuperPowers() and runElevatedTest()):
         raise ChevahTestCase.skipTest()
     # Initialize the testing OS.
 
