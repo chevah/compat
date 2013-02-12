@@ -96,7 +96,7 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
             self.capabilities._hasPrivilege(
                 win32security.SE_IMPERSONATE_NAME))
 
-    def test_hasPrivilege_load_driver(self):
+    def test_hasPrivilege_load_driver_disabled(self):
         """
         By default SE_LOAD_DRIVER privilege is disabled.
         """
