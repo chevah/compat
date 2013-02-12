@@ -5,9 +5,23 @@ Exceptions used in chevah.compat package.
 """
 
 
-class ChangeUserException(Exception):
+class CompatException(Exception):
+    """
+    Base compat repo exception.
+    """
+    def __init__(self, message=''):
+        self.message = message
+
+
+class ChangeUserException(CompatException):
     """
     User could not be impersonated.
+    """
+
+
+class AdjustPrivilegeException(CompatException):
+    """
+    Could not adjust process privileges.
     """
 
 

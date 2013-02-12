@@ -8,8 +8,10 @@ import os
 from zope.interface.verify import verifyObject
 
 from chevah.compat import process_capabilities
-from chevah.empirical.testcase import ChevahTestCase
+from chevah.compat.exceptions import CompatException
 from chevah.compat.interfaces import IProcessCapabilities
+from chevah.compat.testing import manufacture
+from chevah.empirical.testcase import ChevahTestCase
 
 
 class TestProcessCapabilities(ChevahTestCase):
@@ -27,7 +29,7 @@ class TestProcessCapabilities(ChevahTestCase):
     def test_impersonate_local_account(self):
         """
         When running under normal account, impersonation is always False
-        on Unix and alwasy True on Windows.
+        on Unix and always True on Windows.
         """
         result = self.capabilities.impersonate_local_account
         if os.name == 'posix':
@@ -77,3 +79,44 @@ class TestProcessCapabilities(ChevahTestCase):
         else:
             # Windows tests are done in elevated
             self.assertTrue('SeChangeNotifyPrivilege' in text, text)
+
+
+class TestNTProcessCapabilities(TestProcessCapabilities):
+
+    def setUp(self):
+        super(TestNTProcessCapabilities, self).setUp()
+
+        if os.name != 'nt':
+            raise self.skipTest("Only Windows platforms supported.")
+
+    def test_openProcess_no_mode(self):
+        """
+        _openProcess fails if no mode is specified.
+        """
+        with self.assertRaises(TypeError):
+            self.capabilities._openProcess()
+
+    def test_openProcess_success(self):
+        """
+        _openProcess can be used for process token for the current
+        process having a specified mode enabled.
+        """
+        import win32security
+        with self.capabilities._openProcess(win32security.TOKEN_QUERY) as (
+                process_token):
+            self.assertIsNotNone(process_token)
+
+    def test_hasPrivilege_invalid_privilege_fails(self):
+        """
+        _hasPrivilege will raise a CompatException when an invalid
+        privilege name is used.
+        """
+        privilege = manufacture.getUniqueString()
+
+        with self.assertRaises(CompatException) as context:
+            self.assertFalse(self.capabilities._hasPrivilege(privilege))
+
+        self.assertContains(
+            'A specified privilege does not exist.',
+            context.exception.message
+            )
