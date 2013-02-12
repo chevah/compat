@@ -4,7 +4,6 @@
 '''Test system users portable code code.'''
 from __future__ import with_statement
 import os
-import win32security
 
 from chevah.compat import process_capabilities
 from chevah.empirical import ChevahTestCase
@@ -65,11 +64,12 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         if os.name != 'nt':
             raise self.skipTest("Only Windows platforms supported.")
 
-    def test_adjustPrivilege(self):
+    def test_adjustPrivilege_success(self):
         """
         Turning SE_BACKUP privilege on/off for the current
         process when running as super user.
         """
+        import win32security
         initial_state = self.capabilities._hasPrivilege(
             win32security.SE_BACKUP_NAME)
 
@@ -91,3 +91,5 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         self.capabilities._adjustPrivilege(
                 win32security.SE_BACKUP_NAME,
                 initial_state)
+        self.assertEquals(initial_state, self.capabilities._hasPrivilege(
+            win32security.SE_BACKUP_NAME))

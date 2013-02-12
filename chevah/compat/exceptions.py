@@ -11,6 +11,12 @@ class ChangeUserException(Exception):
     """
 
 
+class AdjustPrivilegeException(Exception):
+    """
+    Could not adjust process privileges.
+    """
+
+
 class CompatError(Exception):
     """
     Error raised by chevah.compat package.

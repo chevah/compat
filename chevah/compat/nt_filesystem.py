@@ -253,7 +253,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         path = self.getRealPathFromSegments(segments)
 
-        with NTFilesystem.process_capabilities.elevatePrivileges(
+        with NTFilesystem.process_capabilities._elevatePrivileges(
                 win32security.SE_TAKE_OWNERSHIP_NAME,
                 win32security.SE_RESTORE_NAME,
                 ):

@@ -13,6 +13,7 @@ import win32security
 
 from zope.interface import implements
 
+from chevah.compat.exceptions import AdjustPrivilegeException
 from chevah.compat.interfaces import IProcessCapabilities
 
 
@@ -22,21 +23,20 @@ class NTProcessCapabilities(object):
     implements(IProcessCapabilities)
 
     def getCurrentPrivilegesDescription(self):
-        '''Return a text describing current privileges.'''
+        """
+        Return a text describing current privileges.
+        """
         result = []
-        process_token = win32security.OpenProcessToken(
-            win32process.GetCurrentProcess(),
-            win32security.TOKEN_QUERY,
-            )
 
-        privileges = win32security.GetTokenInformation(
-            process_token, win32security.TokenPrivileges)
+        with self._openProcess(win32security.TOKEN_QUERY) as process_token:
+            privileges = win32security.GetTokenInformation(
+                process_token, win32security.TokenPrivileges)
 
-        for privilege in privileges:
-            name = win32security.LookupPrivilegeName('', privilege[0])
-            value = unicode(privilege[1])
-            result.append(name + u':' + value)
-        win32api.CloseHandle(process_token)
+            for privilege in privileges:
+                name = win32security.LookupPrivilegeName('', privilege[0])
+                value = unicode(privilege[1])
+                result.append(name + u':' + value)
+
         return u', '.join(result)
 
     @property
@@ -82,55 +82,97 @@ class NTProcessCapabilities(object):
         except:
             return False
 
+    @contextmanager
+    def _openProcess(self, mode=win32security.TOKEN_ALL_ACCESS):
+        """
+        Context manager for opening current process token with specified
+        access mode.
+
+        By default it uses all access mode.
+
+        Valid access modes:
+        http://msdn.microsoft.com/en-us/library/windows/desktop/aa374905.aspx
+        """
+        process_token = None
+        try:
+            process_token = win32security.OpenProcessToken(
+                win32process.GetCurrentProcess(),
+                mode)
+            yield process_token
+        finally:
+            if process_token:
+                win32api.CloseHandle(process_token)
+
     def _adjustPrivilege(self, privilege_name, enable=False):
         """
-        privilege_name ex: win32security.SE_BACKUP_NAME
-        remove - win32security.SE_PRIVILEGE_REMOVED
-        enable - win32security.SE_PRIVILEGE_ENABLED
-        disable - 0
+        Adjust (enable/disable) privileges for the current process.
+
+        List of valid privilege names:
+        http://msdn.microsoft.com/en-us/library/windows/desktop/bb530716.aspx
+
+        Raises AdjustPrivilegeException if adjusting fails.
         """
-        process_token = win32security.OpenProcessToken(
-            win32process.GetCurrentProcess(),
-            win32security.TOKEN_ALL_ACCESS)
+        with self._openProcess() as process_token:
+            try:
+                if enable:
+                    new_state = win32security.SE_PRIVILEGE_ENABLED
+                else:
+                    new_state = 0
 
-        try:
-            if enable:
-                new_state = win32security.SE_PRIVILEGE_ENABLED
-            else:
-                new_state = 0
+                new_privileges = (
+                    (win32security.LookupPrivilegeValue('', privilege_name),
+                     new_state),
+                )
 
-            new_privileges = (
-                (win32security.LookupPrivilegeValue('', privilege_name),
-                 new_state),
-            )
-
-            win32security.AdjustTokenPrivileges(process_token, 0,
-                new_privileges)
-        finally:
-            win32api.CloseHandle(process_token)
+                win32security.AdjustTokenPrivileges(process_token, 0,
+                    new_privileges)
+            except win32security.error, error:
+                raise AdjustPrivilegeException(error)
 
     def _hasPrivilege(self, privilege_name):
-        process_token = win32security.OpenProcessToken(
-            win32process.GetCurrentProcess(),
-            win32security.TOKEN_QUERY)
+        """
+        Check if the current process has the specified privilege name.
 
-        try:
+        Returns False otherwise.
+        """
+        with self._openProcess(win32security.TOKEN_QUERY) as process_token:
+            privilege_value = win32security.LookupPrivilegeValue('',
+                privilege_name)
+
             privileges = win32security.GetTokenInformation(
                 process_token, win32security.TokenPrivileges)
 
             for privilege in privileges:
-                name = win32security.LookupPrivilegeName('', privilege[0])
-                if privilege_name == name:
-                    return 0 != privilege[1]
-        finally:
-            win32api.CloseHandle(process_token)
+                value = privilege[0]
+                state = privilege[1]
+                # bitwise flag
+                # 0 - not set
+                # 1 - win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
+                # 2 - win32security.SE_PRIVILEGE_ENABLED
+                # 4 - win32security.SE_PRIVILEGE_REMOVED
+                # -2147483648 - win32security.SE_PRIVILEGE_USED_FOR_ACCESS
+
+                if privilege_value == value:
+                    enabled = (
+                        state & win32security.SE_PRIVILEGE_ENABLED ==
+                        win32security.SE_PRIVILEGE_ENABLED)
+                    enabled_by_default = (
+                        state & win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
+                        == win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT)
+
+                    if enabled or enabled_by_default:
+                        return True
+                    else:
+                        return False
 
         return False
 
     @contextmanager
-    def elevatePrivileges(self, *privileges):
+    def _elevatePrivileges(self, *privileges):
         """
         Elevate current process privileges to include the specified ones.
+
+        Raises AdjustPrivilegeException if elevating the privileges fails.
         """
         try:
             for privilege in privileges:
