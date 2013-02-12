@@ -139,7 +139,7 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         self.assertTrue(self.capabilities._hasPrivilege(
             win32security.SE_IMPERSONATE_NAME))
 
-def test_openProcess_all_access(self):
+    def test_openProcess_all_access(self):
         """
         Opening current process token for all access returns a valid value.
         """
