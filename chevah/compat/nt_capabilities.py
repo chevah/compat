@@ -83,12 +83,10 @@ class NTProcessCapabilities(object):
             return False
 
     @contextmanager
-    def _openProcess(self, mode=win32security.TOKEN_ALL_ACCESS):
+    def _openProcess(self, mode):
         """
         Context manager for opening current process token with specified
         access mode.
-
-        By default it uses all access mode.
 
         Valid access modes:
         http://msdn.microsoft.com/en-us/library/windows/desktop/aa374905.aspx
@@ -96,12 +94,34 @@ class NTProcessCapabilities(object):
         process_token = None
         try:
             process_token = win32security.OpenProcessToken(
-                win32process.GetCurrentProcess(),
-                mode)
+                win32process.GetCurrentProcess(), mode)
             yield process_token
         finally:
             if process_token:
                 win32api.CloseHandle(process_token)
+
+    @contextmanager
+    def _elevatePrivileges(self, *privileges):
+        """
+        Elevate current process privileges to include the specified ones.
+
+        If the privileges are already enabled nothing is changed.
+
+        Raises AdjustPrivilegeException if elevating the privileges fails.
+        """
+
+        missing_privileges = []
+        try:
+            for privilege in privileges:
+                if not self._hasPrivilege(privilege):
+                    missing_privileges.append(privilege)
+
+            for privilege in missing_privileges:
+                self._adjustPrivilege(privilege, True)
+            yield
+        finally:
+            for privilege in missing_privileges:
+                self._adjustPrivilege(privilege, False)
 
     def _adjustPrivilege(self, privilege_name, enable=False):
         """
@@ -117,17 +137,19 @@ class NTProcessCapabilities(object):
         else:
             new_state = 0
 
-        new_privileges = (
-            (win32security.LookupPrivilegeValue('', privilege_name),
-             new_state),
-        )
-
-        with self._openProcess() as process_token:
+        # Privileges are passes as a list of tuples.
+        # We only update one privilege at a time.
+        new_privileges = [(
+            win32security.LookupPrivilegeValue('', privilege_name),
+            new_state
+            )]
+        process_mode = win32security.TOKEN_ALL_ACCESS
+        with self._openProcess(mode=process_mode) as process_token:
             try:
-                win32security.AdjustTokenPrivileges(process_token, 0,
-                    new_privileges)
+                win32security.AdjustTokenPrivileges(
+                    process_token, 0, new_privileges)
             except win32security.error, error:
-                raise AdjustPrivilegeException(error)
+                raise AdjustPrivilegeException(str(error))
 
     def _hasPrivilege(self, privilege_name):
         """
@@ -154,11 +176,15 @@ class NTProcessCapabilities(object):
 
                 if privilege_value == value:
                     enabled = (
-                        state & win32security.SE_PRIVILEGE_ENABLED ==
-                        win32security.SE_PRIVILEGE_ENABLED)
+                        state &
+                        win32security.SE_PRIVILEGE_ENABLED ==
+                            win32security.SE_PRIVILEGE_ENABLED
+                        )
                     enabled_by_default = (
-                        state & win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
-                        == win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT)
+                        state &
+                        win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT ==
+                            win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
+                        )
 
                     if enabled or enabled_by_default:
                         return True
@@ -166,25 +192,3 @@ class NTProcessCapabilities(object):
                         return False
 
         return False
-
-    @contextmanager
-    def _elevatePrivileges(self, *privileges):
-        """
-        Elevate current process privileges to include the specified ones. If
-        the privileges are already enabled nothing is changed.
-
-        Raises AdjustPrivilegeException if elevating the privileges fails.
-        """
-
-        missing_privileges = []
-        try:
-            for privilege in privileges:
-                if not self._hasPrivilege(privilege):
-                    missing_privileges.append(privilege)
-
-            for privilege in missing_privileges:
-                self._adjustPrivilege(privilege, True)
-            yield
-        finally:
-            for privilege in missing_privileges:
-                self._adjustPrivilege(privilege, False)

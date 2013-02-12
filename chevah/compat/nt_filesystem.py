@@ -12,7 +12,7 @@ import ntsecuritycon
 
 from zope.interface import implements
 
-from chevah.compat.exceptions import CompatError
+from chevah.compat.exceptions import CompatError, CompatException
 from chevah.compat.helpers import _
 from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.nt_capabilities import NTProcessCapabilities
@@ -252,38 +252,60 @@ class NTFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         path = self.getRealPathFromSegments(segments)
+        try:
+            self._setOwner(path, owner)
+        except CompatException, error:
+            raise_failed_to_set_owner(owner, path, error.message)
 
-        with NTFilesystem.process_capabilities._elevatePrivileges(
+    def _setOwner(self, path, owner):
+        """
+        Helper for catching exceptions raised by _elevatePrivileges.
+        """
+        with self.process_capabilities._elevatePrivileges(
                 win32security.SE_TAKE_OWNERSHIP_NAME,
                 win32security.SE_RESTORE_NAME,
                 ):
             try:
-                security_descriptor = win32security.GetNamedSecurityInfo(path,
+                security_descriptor = win32security.GetNamedSecurityInfo(
+                    path,
                     win32security.SE_FILE_OBJECT,
-                    win32security.DACL_SECURITY_INFORMATION)
-                d_acl = security_descriptor.GetSecurityDescriptorDacl()
+                    win32security.DACL_SECURITY_INFORMATION,
+                    )
+                d_dacl = security_descriptor.GetSecurityDescriptorDacl()
 
                 user_sid, user_domain, user_type = (
                     win32security.LookupAccountName(None, owner))
                 flags = (
                     win32security.OBJECT_INHERIT_ACE |
                     win32security.CONTAINER_INHERIT_ACE)
-                d_acl.AddAccessAllowedAceEx(win32security.ACL_REVISION_DS,
-                    flags, win32file.FILE_ALL_ACCESS, user_sid)
 
+                d_dacl.AddAccessAllowedAceEx(
+                    win32security.ACL_REVISION_DS,
+                    flags,
+                    win32file.FILE_ALL_ACCESS,
+                    user_sid,
+                    )
                 win32security.SetNamedSecurityInfo(path,
                     win32security.SE_FILE_OBJECT,
                     win32security.OWNER_SECURITY_INFORMATION,
-                    user_sid, None, None, None)
+                    user_sid,
+                    None,
+                    None,
+                    None,
+                    )
                 win32security.SetNamedSecurityInfo(path,
                     win32security.SE_FILE_OBJECT,
                     win32security.DACL_SECURITY_INFORMATION,
-                    None, None, d_acl, None)
+                    None,
+                    None,
+                    d_dacl,
+                    None,
+                    )
             except win32net.error, error:
                 if error.winerror == 1332:
-                    raise_failed_to_set_owner(owner, path, u'No such owner')
+                    raise_failed_to_set_owner(owner, path, u'No such owner.')
                 if error.winerror == 1307:
-                    raise_failed_to_set_owner(owner, path, u'Not permitted')
+                    raise_failed_to_set_owner(owner, path, u'Not permitted.')
                 else:
                     raise OSError(error.winerror, error.strerror)
 

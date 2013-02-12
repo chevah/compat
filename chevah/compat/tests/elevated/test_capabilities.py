@@ -3,7 +3,6 @@
 # See LICENSE for details.
 '''Test system users portable code code.'''
 from __future__ import with_statement
-from contextlib import nested
 import os
 
 from chevah.compat import process_capabilities
@@ -86,65 +85,54 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         self.assertEquals(initial_state, self.capabilities._hasPrivilege(
             win32security.SE_BACKUP_NAME))
 
-    def test_hasPrivilege_impersonate(self):
+    def test_hasPrivilege_enabled(self):
         """
-        By default SE_IMPERSONATE privilege is enabled when running
-        as super user.
+        hasPrivilege return True for a privilege which is present and is
+        enabled.
         """
+        # We use  SE_IMPERSONATE privilege as it is enabled by default
+        # when running as super user.
         import win32security
-        self.assertTrue(
-            self.capabilities._hasPrivilege(
-                win32security.SE_IMPERSONATE_NAME))
+        privilege = win32security.SE_IMPERSONATE_NAME
+        self.assertTrue(self.capabilities._hasPrivilege(privilege))
 
-    def test_hasPrivilege_load_driver_disabled(self):
+    def test_hasPrivilege_disabled(self):
         """
-        By default SE_LOAD_DRIVER privilege is disabled.
+        hasPrivilege return False for a privilege which is disabled.
         """
+        # By default SE_LOAD_DRIVER privilege is disabled.
         import win32security
-        self.assertFalse(self.capabilities._hasPrivilege(
-            win32security.SE_LOAD_DRIVER_NAME))
+        privilege = win32security.SE_LOAD_DRIVER_NAME
+        self.assertFalse(self.capabilities._hasPrivilege(privilege))
 
     def test_elevatePrivileges_take_ownership_success(self):
         """
-        When running as super user we can successfully elevate the
-        privileges to include SE_TAKE_OWNERSHIP. After leaving the context
-        the privileges are lowered again to their previous state.
+        elevatePrivileges is a context manager which will elevates the
+        privileges for current process upon entering the context,
+        and restore them at exit.
         """
+        # We use SE_TAKE_OWNERSHIP privilege at it should be present for
+        # super user and disabled by default.
         import win32security
-        self.assertFalse(self.capabilities._hasPrivilege(
-            win32security.SE_TAKE_OWNERSHIP_NAME))
+        privilege = win32security.SE_TAKE_OWNERSHIP_NAME
+        self.assertFalse(self.capabilities._hasPrivilege(privilege))
 
-        with (self.capabilities._elevatePrivileges(
-                win32security.SE_TAKE_OWNERSHIP_NAME)):
-            self.assertTrue(self.capabilities._hasPrivilege(
-                win32security.SE_TAKE_OWNERSHIP_NAME))
+        with (self.capabilities._elevatePrivileges(privilege)):
+            self.assertTrue(self.capabilities._hasPrivilege(privilege))
 
-        self.assertFalse(self.capabilities._hasPrivilege(
-            win32security.SE_TAKE_OWNERSHIP_NAME))
+        self.assertFalse(self.capabilities._hasPrivilege(privilege))
 
     def test_elevatePrivilege_impersonate_unchanged(self):
         """
-        Make sure that previously enabled privileges remain enabled after
-        leaving the elevated privileges context.
+        elevatePrivilege will not modify the process if the privilege is
+        already enabled.
         """
+        # We use SE_IMPERSONATE as it should be enabled by default.
         import win32security
-        self.assertTrue(self.capabilities._hasPrivilege(
-            win32security.SE_IMPERSONATE_NAME))
+        privilege = win32security.SE_IMPERSONATE_NAME
+        self.assertTrue(self.capabilities._hasPrivilege(privilege))
 
-        with (self.capabilities._elevatePrivileges(
-                win32security.SE_IMPERSONATE_NAME)):
-            self.assertTrue(self.capabilities._hasPrivilege(
-                win32security.SE_IMPERSONATE_NAME))
+        with (self.capabilities._elevatePrivileges(privilege)):
+            self.assertTrue(self.capabilities._hasPrivilege(privilege))
 
-        self.assertTrue(self.capabilities._hasPrivilege(
-            win32security.SE_IMPERSONATE_NAME))
-
-    def test_openProcess_all_access(self):
-        """
-        Opening current process token for all access returns a valid value.
-        """
-        import win32security
-        with nested(
-            self.capabilities._openProcess(win32security.TOKEN_QUERY)
-            ) as (token):
-            self.assertIsNotNone(token)
+        self.assertTrue(self.capabilities._hasPrivilege(privilege))

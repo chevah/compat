@@ -9,6 +9,8 @@ class CompatException(Exception):
     """
     Base compat repo exception.
     """
+    def __init__(self, message=''):
+        self.message = message
 
 
 class ChangeUserException(CompatException):

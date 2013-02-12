@@ -20,7 +20,7 @@ from chevah.empirical.constants import (
     TEST_ACCOUNT_USERNAME_OTHER,
     )
 from chevah.empirical.filesystem import LocalTestFilesystem
-from chevah.compat.exceptions import CompatError
+from chevah.compat.exceptions import CompatError, CompatException
 
 
 class TestPosixFilesystem(ChevahTestCase):
@@ -376,3 +376,17 @@ class TestNTFilesystem(ChevahTestCase):
             self.filesystem.removeGroup(
                 folder_segments, u'no-such-group')
         self.assertEqual(1013, context.exception.event_id)
+
+    def test_setOwner_CompatError(self):
+        """
+        setOwner will convert CompatExceptions into CompatError.
+        """
+        def set_owner(segments, owner):
+            raise CompatException(message='test-message')
+
+        with self.assertRaises(CompatError) as context:
+            with self.Patch.object(self.filesystem, '_setOwner', set_owner):
+                self.filesystem.setOwner('something', 'don-t care')
+
+        self.assertEqual(1016, context.exception.event_id)
+        self.assertContains('test-message', context.exception.message)
