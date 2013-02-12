@@ -27,6 +27,7 @@ def runElevatedTest():
 
     return True
 
+
 def setup_package():
     # Don't run these tests if we can not access privileged OS part.
     if not runElevatedTest():
