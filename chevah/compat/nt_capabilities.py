@@ -135,10 +135,10 @@ class NTProcessCapabilities(object):
 
         Returns False otherwise.
         """
-        with self._openProcess(win32security.TOKEN_QUERY) as process_token:
-            privilege_value = win32security.LookupPrivilegeValue('',
-                privilege_name)
+        privilege_value = win32security.LookupPrivilegeValue('',
+            privilege_name)
 
+        with self._openProcess(win32security.TOKEN_QUERY) as process_token:
             privileges = win32security.GetTokenInformation(
                 process_token, win32security.TokenPrivileges)
 

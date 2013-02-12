@@ -67,48 +67,34 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
 
     def test_adjustPrivilege_success(self):
         """
-        Turning SE_BACKUP privilege on/off for the current
-        process when running as super user.
+        Turning SE_BACKUP privilege on/off for the current process when
+        running as super user.
         """
         import win32security
         initial_state = self.capabilities._hasPrivilege(
             win32security.SE_BACKUP_NAME)
 
-        if initial_state:
-            self.capabilities._adjustPrivilege(
-                win32security.SE_BACKUP_NAME,
-                False)
+        self.capabilities._adjustPrivilege(
+            win32security.SE_BACKUP_NAME, False)
 
-            self.assertIsFalse(self.capabilities._hasPrivilege(
-                win32security.SE_BACKUP_NAME))
-        else:
-            self.capabilities._adjustPrivilege(
-                win32security.SE_BACKUP_NAME,
-                True)
-
-            self.assertIsTrue(self.capabilities._hasPrivilege(
-                win32security.SE_BACKUP_NAME))
+        self.assertIsFalse(self.capabilities._hasPrivilege(
+            win32security.SE_BACKUP_NAME))
 
         self.capabilities._adjustPrivilege(
-                win32security.SE_BACKUP_NAME,
-                initial_state)
+            win32security.SE_BACKUP_NAME, initial_state)
+
         self.assertEquals(initial_state, self.capabilities._hasPrivilege(
             win32security.SE_BACKUP_NAME))
 
-    def test_hasPrivilege_restore(self):
+    def test_hasPrivilege_impersonate(self):
         """
         By default SE_IMPERSONATE privilege is enabled when running
         as super user.
         """
         import win32security
-        if self.capabilities.impersonate_local_account:
-            self.assertTrue(
-                self.capabilities._hasPrivilege(
-                    win32security.SE_IMPERSONATE_NAME))
-        else:
-            self.assertFalse(
-                self.capabilities._hasPrivilege(
-                    win32security.SE_IMPERSONATE_NAME))
+        self.assertTrue(
+            self.capabilities._hasPrivilege(
+                win32security.SE_IMPERSONATE_NAME))
 
     def test_hasPrivilege_load_driver(self):
         """
@@ -136,7 +122,24 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         self.assertFalse(self.capabilities._hasPrivilege(
             win32security.SE_TAKE_OWNERSHIP_NAME))
 
-    def test_openProcess_all_access(self):
+    def test_elevatePrivilege_impersonate_unchanged(self):
+        """
+        Make sure that previously enabled privileges remain enabled after
+        leaving the elevated privileges context.
+        """
+        import win32security
+        self.assertTrue(self.capabilities._hasPrivilege(
+            win32security.SE_IMPERSONATE_NAME))
+
+        with (self.capabilities._elevatePrivileges(
+                win32security.SE_IMPERSONATE_NAME)):
+            self.assertTrue(self.capabilities._hasPrivilege(
+                win32security.SE_IMPERSONATE_NAME))
+
+        self.assertTrue(self.capabilities._hasPrivilege(
+            win32security.SE_IMPERSONATE_NAME))
+
+def test_openProcess_all_access(self):
         """
         Opening current process token for all access returns a valid value.
         """
