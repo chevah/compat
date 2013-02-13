@@ -12,9 +12,10 @@ import ntsecuritycon
 
 from zope.interface import implements
 
-from chevah.compat.exceptions import CompatError
+from chevah.compat.exceptions import CompatError, CompatException
 from chevah.compat.helpers import _
 from chevah.compat.interfaces import ILocalFilesystem
+from chevah.compat.nt_capabilities import NTProcessCapabilities
 from chevah.compat.nt_users import NTUsers
 from chevah.compat.posix_filesystem import PosixFilesystemBase
 
@@ -53,6 +54,7 @@ class NTFilesystem(PosixFilesystemBase):
 
     implements(ILocalFilesystem)
     system_users = NTUsers()
+    process_capabilities = NTProcessCapabilities()
 
     OPEN_READ_ONLY = os.O_RDONLY | os.O_BINARY
     OPEN_WRITE_ONLY = os.O_WRONLY | os.O_BINARY
@@ -66,7 +68,7 @@ class NTFilesystem(PosixFilesystemBase):
     @property
     def _lock_in_home(self):
         """
-        True if filesystem access should be restriced to home folder.
+        True if filesystem access should be restricted to home folder.
         """
         if not self._avatar:
             return False
@@ -100,7 +102,7 @@ class NTFilesystem(PosixFilesystemBase):
 
     def _getLockedPathFromSegments(self, segments):
         '''
-        Return a path for segments making sure the resuling path is not
+        Return a path for segments making sure the resulting path is not
         outside of the chroot.
         '''
         path = os.path.normpath(os.path.join(*segments))
@@ -246,29 +248,66 @@ class NTFilesystem(PosixFilesystemBase):
             raise OSError(error.errno, error.strerror)
 
     def setOwner(self, segments, owner):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         path = self.getRealPathFromSegments(segments)
+        try:
+            self._setOwner(path, owner)
+        except CompatException, error:
+            raise_failed_to_set_owner(owner, path, error.message)
 
-        with self._impersonateUser():
+    def _setOwner(self, path, owner):
+        """
+        Helper for catching exceptions raised by _elevatePrivileges.
+        """
+        with self.process_capabilities._elevatePrivileges(
+                win32security.SE_TAKE_OWNERSHIP_NAME,
+                win32security.SE_RESTORE_NAME,
+                ):
             try:
-                owner_security = win32security.GetFileSecurity(
-                    path, win32security.OWNER_SECURITY_INFORMATION)
+                security_descriptor = win32security.GetNamedSecurityInfo(
+                    path,
+                    win32security.SE_FILE_OBJECT,
+                    win32security.DACL_SECURITY_INFORMATION,
+                    )
+                d_acl = security_descriptor.GetSecurityDescriptorDacl()
+
                 user_sid, user_domain, user_type = (
                     win32security.LookupAccountName(None, owner))
-                owner_security.SetSecurityDescriptorOwner(
-                    user_sid, False)
-                win32security.SetFileSecurity(
-                    path,
+                flags = (
+                    win32security.OBJECT_INHERIT_ACE |
+                    win32security.CONTAINER_INHERIT_ACE)
+
+                d_acl.AddAccessAllowedAceEx(
+                    win32security.ACL_REVISION_DS,
+                    flags,
+                    win32file.FILE_ALL_ACCESS,
+                    user_sid,
+                    )
+                win32security.SetNamedSecurityInfo(path,
+                    win32security.SE_FILE_OBJECT,
                     win32security.OWNER_SECURITY_INFORMATION,
-                    owner_security)
+                    user_sid,
+                    None,
+                    None,
+                    None,
+                    )
+                win32security.SetNamedSecurityInfo(path,
+                    win32security.SE_FILE_OBJECT,
+                    win32security.DACL_SECURITY_INFORMATION,
+                    None,
+                    None,
+                    d_acl,
+                    None,
+                    )
             except win32net.error, error:
                 if error.winerror == 1332:
-                    raise_failed_to_set_owner(owner, path, u'No such owner')
+                    raise_failed_to_set_owner(owner, path, u'No such owner.')
                 if error.winerror == 1307:
-                    raise_failed_to_set_owner(owner, path, u'Not permitted')
+                    raise_failed_to_set_owner(owner, path, u'Not permitted.')
                 else:
-                    raise OSError(
-                        error.winerror, error.strerror)
+                    raise OSError(error.winerror, error.strerror)
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''
