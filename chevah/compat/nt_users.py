@@ -129,11 +129,15 @@ class NTUsers(object):
 
     def userExists(self, username):
         '''Returns `True` if username exists on this system.'''
+        # Windows is stupid and return True for empty user.
+        # Even when guest account is disabled.
+        if not username:
+            return False
         try:
-            win32net.NetUserGetInfo(None, username, 0)
+            win32security.LookupAccountName('', username)
             return True
-        except win32net.error, (number, name, messsage):
-            if number == 2221:
+        except win32security.error, (number, name, messsage):
+            if number == 1332:
                 return False
             else:
                 raise

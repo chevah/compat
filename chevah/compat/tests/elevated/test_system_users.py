@@ -46,6 +46,9 @@ class TestSystemUsers(ChevahTestCase):
         '''Test userExists.'''
         self.assertTrue(system_users.userExists(TEST_ACCOUNT_USERNAME))
         self.assertFalse(system_users.userExists('non-existent-patricia'))
+        self.assertFalse(system_users.userExists('non-existent@no-domain'))
+        self.assertFalse(system_users.userExists('non-existent@chevah'))
+        self.assertFalse(system_users.userExists(''))
 
     def test_getHomeFolder_linux(self):
         """
