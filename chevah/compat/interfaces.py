@@ -58,15 +58,6 @@ class IProcess(Interface):
         parameters.
         '''
 
-    def logProcessStart():
-        '''Log the product starting event.'''
-
-    def logProcessStop():
-        '''Log the propduct stopping event.'''
-
-    def logListenError(error):
-        '''Log the error of listening for incoming connections.'''
-
 
 class IProcessCapabilities(Interface):
     '''Provides information about current process capabilities.'''

@@ -227,7 +227,7 @@ class NTUsers(object):
         """
         parts = upn.split('@', 1)
         if len(parts) == 2:
-            domain = win32net.NetGetDCName(None, parts[2])
+            domain = win32net.NetGetDCName(None, parts[1])
             username = parts[1]
             return (domain, username)
         else:
