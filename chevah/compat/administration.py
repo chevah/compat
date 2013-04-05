@@ -401,8 +401,13 @@ class OSAdministration(object):
 
         For not this works, but this code is not 100% valid.
         """
-        import win32net
-        win32net.NetUserChangePassword(None, username, password, password)
+        try:
+            import win32net
+            win32net.NetUserChangePassword(None, username, password, password)
+        except:
+            print 'Failed to set password "%s" for user "%s".' % (
+                password, username)
+            raise
 
     def deleteUser(self, user):
         '''Delete user from the local operating system.'''

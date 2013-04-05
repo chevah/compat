@@ -635,7 +635,7 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
     def test_openFileForWriting_truncate(self):
         """
         When a file is opened for writing, the previous file is truncated
-        to 0 lenght and we write as a fresh file.
+        to 0 length and we write as a fresh file.
         """
         content = manufacture.getUniqueString(100)
         new_content = manufacture.getUniqueString(50)
