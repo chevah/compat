@@ -148,7 +148,7 @@ class NTUsers(object):
             try:
                 group_sid, group_domain, group_type = (
                     win32security.LookupAccountName(None, group))
-            except win32net.error:
+            except win32security.error:
                 continue
             if win32security.CheckTokenMembership(token, group_sid):
                 return True
@@ -200,7 +200,9 @@ class NTUsers(object):
     def _createLocalProfile(self, username, token):
         '''Create the local profile if it does not exists.'''
 
-        user_info_4 = win32net.NetUserGetInfo(None, username, 4)
+        domain, name = self._parseUPN(username)
+
+        user_info_4 = win32net.NetUserGetInfo(domain, name, 4)
         profile_path = user_info_4['profile']
         # LoadUserProfile apparently doesn't like an empty string.
         if not profile_path:
@@ -209,12 +211,28 @@ class NTUsers(object):
         profile = win32profile.LoadUserProfile(
             token,
             {
-                'UserName': username,
+                'UserName': name,
+                'ServerName': domain,
                 'Flags': 0,
                 'ProfilePath': profile_path,
             })
         win32profile.UnloadUserProfile(token, profile)
         return True
+
+    def _parseUPN(self, upn):
+        """
+        Return domain and username for UPN username format.
+
+        Return (None, username) is UPN does not contain a domain.
+        """
+        parts = upn.split('@', 1)
+        if len(parts) == 2:
+            domain = win32net.NetGetDCName(None, parts[2])
+            username = parts[1]
+            return (domain, username)
+        else:
+            # This is not an UPN name.
+            return (None, upn)
 
     def _getToken(self, username, password):
         '''Return user token.'''
