@@ -192,7 +192,13 @@ class NTUsers(object):
         return _ExecuteAsUser(token)
 
     def getPrimaryGroup(self, username):
-        '''Return the primary group for username.'''
+        """
+        Return the primary group for username.
+
+        This just returns WINDOWS_PRIMARY_GROUP.
+        """
+        # FIXME:1250:
+        # I don't know how to get primary group on Windows.
         if not self.userExists(username):
             raise_failed_to_get_primary_group(username)
         return WINDOWS_PRIMARY_GROUP
