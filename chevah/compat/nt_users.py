@@ -231,6 +231,8 @@ class NTUsers(object):
 
         Return (None, username) is UPN does not contain a domain.
         """
+        # FIXME:1273:
+        # Add tests after we have a working DC slave.
         parts = upn.split('@', 1)
         if len(parts) == 2:
             domain = win32net.NetGetDCName(None, parts[1])

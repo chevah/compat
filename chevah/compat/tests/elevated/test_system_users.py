@@ -43,7 +43,9 @@ class TestSystemUsers(ChevahTestCase):
     '''Test system users operations.'''
 
     def test_userExists(self):
-        '''Test userExists.'''
+        """Test userExists."""
+        # FIXME:1273:
+        # Add tests for domain accounts after we have a working DC slave.
         self.assertTrue(system_users.userExists(TEST_ACCOUNT_USERNAME))
         self.assertFalse(system_users.userExists('non-existent-patricia'))
         self.assertFalse(system_users.userExists('non-existent@no-domain'))
