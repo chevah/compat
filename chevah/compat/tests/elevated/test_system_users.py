@@ -255,6 +255,10 @@ class TestSystemUsers(ChevahTestCase):
 
         Centrify client is only installed on SLES-11-x64.
         '''
+        # FIXME:1265:
+        # The Centrify server was accidentally removed. We wait for it
+        # to be reinstalled and re-enabled this test.
+        raise self.skipTest()
         if not 'sles-11-x64' in self.getHostname():
             raise self.skipTest()
 
