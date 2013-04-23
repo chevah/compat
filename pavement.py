@@ -9,7 +9,8 @@ import sys
 
 # Marker for paver.sh.
 # This value is pavers by bash. Use a strict format.
-BRINK_VERSION = '0.11.3'
+BRINK_VERSION = '0.19.0'
+PYTHON_VERSION = '2.7'
 
 EXTRA_PACKAGES = [
     'chevah-empirical==0.8.0',
@@ -19,7 +20,6 @@ if os.name == 'posix':
     EXTRA_PACKAGES.extend(['pam>=0.1.4.chevah'])
 
 from brink.pavement_commons import (
-    _p,
     buildbot_list,
     buildbot_try,
     default,
@@ -92,7 +92,7 @@ def build():
     """
     Copy new source code to build folder.
     """
-    build_target = _p([pave.path.build, 'setup-build'])
+    build_target = pave.fs.join([pave.path.build, 'setup-build'])
     sys.argv = ['setup.py', 'build', '--build-base', build_target]
     print "Building in " + build_target
     import setup
