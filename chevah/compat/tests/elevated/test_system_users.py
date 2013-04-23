@@ -43,9 +43,14 @@ class TestSystemUsers(ChevahTestCase):
     '''Test system users operations.'''
 
     def test_userExists(self):
-        '''Test userExists.'''
+        """Test userExists."""
+        # FIXME:1273:
+        # Add tests for domain accounts after we have a working DC slave.
         self.assertTrue(system_users.userExists(TEST_ACCOUNT_USERNAME))
         self.assertFalse(system_users.userExists('non-existent-patricia'))
+        self.assertFalse(system_users.userExists('non-existent@no-domain'))
+        self.assertFalse(system_users.userExists('non-existent@chevah'))
+        self.assertFalse(system_users.userExists(''))
 
     def test_getHomeFolder_linux(self):
         """
@@ -250,6 +255,10 @@ class TestSystemUsers(ChevahTestCase):
 
         Centrify client is only installed on SLES-11-x64.
         '''
+        # FIXME:1265:
+        # The Centrify server was accidentally removed. We wait for it
+        # to be reinstalled and re-enabled this test.
+        raise self.skipTest()
         if not 'sles-11-x64' in self.getHostname():
             raise self.skipTest()
 

@@ -129,11 +129,15 @@ class NTUsers(object):
 
     def userExists(self, username):
         '''Returns `True` if username exists on this system.'''
+        # Windows is stupid and return True for empty user.
+        # Even when guest account is disabled.
+        if not username:
+            return False
         try:
-            win32net.NetUserGetInfo(None, username, 0)
+            win32security.LookupAccountName('', username)
             return True
-        except win32net.error, (number, name, messsage):
-            if number == 2221:
+        except win32security.error, (number, name, messsage):
+            if number == 1332:
                 return False
             else:
                 raise
@@ -144,7 +148,7 @@ class NTUsers(object):
             try:
                 group_sid, group_domain, group_type = (
                     win32security.LookupAccountName(None, group))
-            except win32net.error:
+            except win32security.error:
                 continue
             if win32security.CheckTokenMembership(token, group_sid):
                 return True
@@ -188,7 +192,13 @@ class NTUsers(object):
         return _ExecuteAsUser(token)
 
     def getPrimaryGroup(self, username):
-        '''Return the primary group for username.'''
+        """
+        Return the primary group for username.
+
+        This just returns WINDOWS_PRIMARY_GROUP.
+        """
+        # FIXME:1250:
+        # I don't know how to get primary group on Windows.
         if not self.userExists(username):
             raise_failed_to_get_primary_group(username)
         return WINDOWS_PRIMARY_GROUP
@@ -196,7 +206,9 @@ class NTUsers(object):
     def _createLocalProfile(self, username, token):
         '''Create the local profile if it does not exists.'''
 
-        user_info_4 = win32net.NetUserGetInfo(None, username, 4)
+        domain, name = self._parseUPN(username)
+
+        user_info_4 = win32net.NetUserGetInfo(domain, name, 4)
         profile_path = user_info_4['profile']
         # LoadUserProfile apparently doesn't like an empty string.
         if not profile_path:
@@ -205,12 +217,30 @@ class NTUsers(object):
         profile = win32profile.LoadUserProfile(
             token,
             {
-                'UserName': username,
+                'UserName': name,
+                'ServerName': domain,
                 'Flags': 0,
                 'ProfilePath': profile_path,
             })
         win32profile.UnloadUserProfile(token, profile)
         return True
+
+    def _parseUPN(self, upn):
+        """
+        Return domain and username for UPN username format.
+
+        Return (None, username) is UPN does not contain a domain.
+        """
+        # FIXME:1273:
+        # Add tests after we have a working DC slave.
+        parts = upn.split('@', 1)
+        if len(parts) == 2:
+            domain = win32net.NetGetDCName(None, parts[1])
+            username = parts[1]
+            return (domain, username)
+        else:
+            # This is not an UPN name.
+            return (None, upn)
 
     def _getToken(self, username, password):
         '''Return user token.'''
