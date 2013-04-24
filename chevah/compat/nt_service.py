@@ -16,13 +16,19 @@ from chevah.compat.helpers import _
 
 
 class ChevahNTService(win32serviceutil.ServiceFramework):
-
+    """
+    Basic NT service implementation.
+    """
     __version__ = u'Define version here.'
     _svc_name_ = u'Define service name here.'
     _svc_display_name_ = u'Define service display name here.'
+    _win32serviceutil = win32serviceutil
+    _servicemanager = servicemanager
+    _reactor = reactor
 
     def __init__(self, *args, **kwargs):
-        win32serviceutil.ServiceFramework.__init__(self, *args, **kwargs)
+        self._win32serviceutil.ServiceFramework.__init__(
+            self, *args, **kwargs)
         self.process = None
         self._stopped = threading.Event()
         try:
@@ -37,22 +43,32 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
             self.SvcStop()
 
     def error(self, message):
-        '''Log an Error event.'''
-        servicemanager.LogErrorMsg(message)
+        """
+        Log an Error event.
+        """
+        self._servicemanager.LogErrorMsg(message)
 
     def info(self, message):
-        '''Log an Information event.'''
-        servicemanager.LogInfoMsg(message)
+        """
+        Log an Information event.
+        """
+        self._servicemanager.LogInfoMsg(message)
 
     def SvcStop(self):
-        '''Main entry point for service stopping.'''
+        """
+        Main entry point for service stopping.
+        """
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-        reactor.callFromThread(reactor.stop)
-        self._stopped.wait(5)
-        self.info('Service stoped.')
+        # We're shutting down.
+        # ... do any shutdown processing ...
+        self._reactor.callFromThread(self.stop)
+        self._stopped.wait(2)
+        self.info('Service stopped.')
 
     def SvcDoRun(self):
-        '''Main entry point for service execution'''
+        """
+        Main entry point for service execution.
+        """
         self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
         try:
             # Start everything up
@@ -61,10 +77,6 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
 
             # After start this thread execution will be blocked.
             self.start()
-
-            # We're shutting down.
-            # ... do any shutdown processing ...
-            self.stop()
 
             # Flag that we're exiting so service thread can be more
             # accurate in terms of declaring shutdown.
@@ -79,19 +91,25 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
                 'the service in debug mode. %s' % (sys.exc_info()[0]))
 
     def initialize(self):
-        '''Initialize the service.'''
+        """
+        Initialize the service.
+        """
         raise NotImplementedError(
             'Use this method for initializing your service.')
 
     def start(self):
-        '''Starts the service.'''
+        """
+        Starts the service.
+        """
         raise NotImplementedError(
             'Use this method for starting your service.')
 
     def stop(self):
-        '''Stops the service.'''
+        """
+        Stops the service.
+        """
         raise NotImplementedError(
-            'Use this method for stoping your service.')
+            'Use this method for stopping your service.')
 
 
 def install_nt_service(service_class, options):
