@@ -10,8 +10,6 @@ import threading
 import win32service
 import win32serviceutil
 
-from twisted.internet import reactor
-
 from chevah.compat.helpers import _
 
 
@@ -24,12 +22,10 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
     _svc_display_name_ = u'Define service display name here.'
     _win32serviceutil = win32serviceutil
     _servicemanager = servicemanager
-    _reactor = reactor
 
     def __init__(self, *args, **kwargs):
         self._win32serviceutil.ServiceFramework.__init__(
             self, *args, **kwargs)
-        self.process = None
         self._stopped = threading.Event()
         try:
             self.initialize()
@@ -59,9 +55,7 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
         Main entry point for service stopping.
         """
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-        # We're shutting down.
-        # ... do any shutdown processing ...
-        self._reactor.callFromThread(self.stop)
+        self.stop()
         self._stopped.wait(2)
         self.info('Service stopped.')
 
