@@ -12,10 +12,12 @@ from chevah.compat.nt_service import ChevahNTService
 from chevah.compat.testing import CompatTestCase
 from chevah.compat.testing import manufacture as mk
 
+
 class DummyChevahNTService(ChevahNTService):
     _win32serviceutil = mk.makeMock()
     _servicemanager = mk.makeMock()
     initialize = mk.makeMock()
+
 
 class FailChevahNTService(ChevahNTService):
     _win32serviceutil = mk.makeMock()
