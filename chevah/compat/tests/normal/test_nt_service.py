@@ -11,10 +11,10 @@ import os
 try:
     from chevah.compat.nt_service import ChevahNTService
     ChevahNTService
+    __skip = False
 except ImportError:
     __skip = True
     ChevahNTService = object
-    ChevahNTService
 
 from chevah.compat.testing import CompatTestCase
 from chevah.compat.testing import manufacture as mk
