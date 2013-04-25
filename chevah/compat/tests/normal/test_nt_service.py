@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2011 Adi Roiban.
-# See LICENSE for details.
 """
 Unit tests for Windows NT service functionality.
 """
