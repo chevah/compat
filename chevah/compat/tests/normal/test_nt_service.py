@@ -8,7 +8,12 @@ Unit tests for Windows NT service functionality.
 from __future__ import with_statement
 import os
 
-from chevah.compat.nt_service import ChevahNTService
+try:
+    from chevah.compat.nt_service import ChevahNTService
+except ImportError:
+    __skip = True
+    ChevahNTService = object
+
 from chevah.compat.testing import CompatTestCase
 from chevah.compat.testing import manufacture as mk
 
@@ -110,3 +115,8 @@ class TestChevahNTService(CompatTestCase):
             win32service.SERVICE_STOP_PENDING)
         self.assertTrue(self.service.stop.called)
         self.service.info.assert_called_once_with('Service stopped.')
+
+def setup_module():
+    # Don't run these tests on non Windows OSes.
+    if __skip:
+        raise CompatTestCase.skipTest()
