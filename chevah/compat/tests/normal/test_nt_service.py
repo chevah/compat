@@ -10,9 +10,11 @@ import os
 
 try:
     from chevah.compat.nt_service import ChevahNTService
+    ChevahNTService
 except ImportError:
     __skip = True
     ChevahNTService = object
+    ChevahNTService
 
 from chevah.compat.testing import CompatTestCase
 from chevah.compat.testing import manufacture as mk
@@ -115,6 +117,7 @@ class TestChevahNTService(CompatTestCase):
             win32service.SERVICE_STOP_PENDING)
         self.assertTrue(self.service.stop.called)
         self.service.info.assert_called_once_with('Service stopped.')
+
 
 def setup_module():
     # Don't run these tests on non Windows OSes.
