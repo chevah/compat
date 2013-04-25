@@ -6,7 +6,7 @@ Unit tests for Windows NT service functionality.
 """
 
 from __future__ import with_statement
-import win32service
+import os
 
 from chevah.compat.nt_service import ChevahNTService
 from chevah.compat.testing import CompatTestCase
@@ -42,6 +42,9 @@ class TestChevahNTService(CompatTestCase):
 
     def setUp(self):
         super(TestChevahNTService, self).setUp()
+
+        if os.name != 'nt':
+            raise self.skipTest("Only Windows platforms supported.")
 
         self.service = DummyChevahNTService()
         self.service.start = mk.makeMock()
@@ -99,6 +102,8 @@ class TestChevahNTService(CompatTestCase):
         `SvcStop` calls `stop` and reports that service has initiated stopping
         sequence.
         """
+        import win32service
+
         self.service.SvcStop()
 
         self.service.ReportServiceStatus.assert_called_once_with(
