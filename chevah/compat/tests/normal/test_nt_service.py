@@ -99,6 +99,7 @@ class TestChevahNTService(CompatTestCase):
         """
         self.service.SvcStop()
 
-        self.assertTrue(self.service.ReportServiceStatus.called)
+        self.service.ReportServiceStatus.assert_called_once_with(
+            win32service.SERVICE_STOP_PENDING)
         self.assertTrue(self.service.stop.called)
         self.service.info.assert_called_once_with('Service stopped.')
