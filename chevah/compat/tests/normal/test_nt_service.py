@@ -88,19 +88,18 @@ class TestChevahNTService(CompatTestCase):
 
     def test_SvcDoRun_system_exit(self):
         """
-        `SystemExit` exception is suppressed as it's regular way of signaling
-        exit from the service process.
+        If there's a problem starting the service `error` is called.
         """
         def start():
-            raise SystemExit()
+            raise AssertionError("Error starting the service.")
 
         self.service.start = start
 
         self.service.SvcDoRun()
 
         self.assertTrue(self.service.info.called)
+        self.assertTrue(self.service.error.called)
         self.assertFalse(self.service.stop.called)
-        self.assertFalse(self.service.error.called)
 
     def test_SvcStop(self):
         """

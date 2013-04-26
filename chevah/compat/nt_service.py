@@ -6,7 +6,6 @@ import os
 import pywintypes
 import servicemanager
 import sys
-import threading
 import win32service
 import win32serviceutil
 
@@ -26,7 +25,6 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
     def __init__(self, *args, **kwargs):
         self._win32serviceutil.ServiceFramework.__init__(
             self, *args, **kwargs)
-        self._stopped = threading.Event()
         try:
             self.initialize()
         except:
@@ -56,7 +54,6 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
         """
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         self.stop()
-        self._stopped.wait(2)
         self.info('Service stopped.')
 
     def SvcDoRun(self):
@@ -71,13 +68,6 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
 
             # After start this thread execution will be blocked.
             self.start()
-
-            # Flag that we're exiting so service thread can be more
-            # accurate in terms of declaring shutdown.
-            self._stopped.set()
-        except SystemExit:
-            # This is a normal exception.
-            pass
         except:
             # For right now just log the error.
             self.error(
