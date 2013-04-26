@@ -20,9 +20,18 @@ class ChevahNTService(win32serviceutil.ServiceFramework, object):
     _svc_name_ = u'Define service name here.'
     _svc_display_name_ = u'Define service display name here.'
     _win32serviceutil = win32serviceutil
+    _service_manager = servicemanager
 
-    def __init__(self, *args, **kwargs):
-        self._win32serviceutil.ServiceFramework.__init__(self, *args, **kwargs)
+    def __init__(self, *args):
+
+        # This is the upstream __init__ code.
+        # It is copied here to help with testing as the upstream code
+        # is untestable since it imports servicemanager inside the method.
+        self.ssh = self._servicemanager.RegisterServiceCtrlHandler(
+            args[0], self.ServiceCtrlHandlerEx, True)
+        self._servicemanager.SetEventSourceName(self._svc_name_)
+        self.checkPoint = 0
+
         try:
             self.initialize()
         except:
