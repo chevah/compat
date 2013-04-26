@@ -12,7 +12,7 @@ import win32serviceutil
 from chevah.compat.helpers import _
 
 
-class ChevahNTService(win32serviceutil.ServiceFramework):
+class ChevahNTService(win32serviceutil.ServiceFramework, object):
     """
     Basic NT service implementation.
     """
@@ -20,11 +20,9 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
     _svc_name_ = u'Define service name here.'
     _svc_display_name_ = u'Define service display name here.'
     _win32serviceutil = win32serviceutil
-    _servicemanager = servicemanager
 
     def __init__(self, *args, **kwargs):
-        self._win32serviceutil.ServiceFramework.__init__(
-            self, *args, **kwargs)
+        self._win32serviceutil.ServiceFramework.__init__(self, *args, **kwargs)
         try:
             self.initialize()
         except:
@@ -40,13 +38,13 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
         """
         Log an Error event.
         """
-        self._servicemanager.LogErrorMsg(message)
+        servicemanager.LogErrorMsg(message)
 
     def info(self, message):
         """
         Log an Information event.
         """
-        self._servicemanager.LogInfoMsg(message)
+        servicemanager.LogInfoMsg(message)
 
     def SvcStop(self):
         """
@@ -54,7 +52,7 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
         """
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         self.stop()
-        self.info('Service stopped.')
+        self.info(u'Service stopped.')
 
     def SvcDoRun(self):
         """
@@ -116,7 +114,7 @@ def install_nt_service(service_class, options):
                 startType=win32service.SERVICE_AUTO_START,
                 )
         print _(
-            'Service "%s" succesfuly installed.\n'
+            'Service "%s" successfully installed.\n'
             'Please use "sc" command or Windows Services to manage '
             'this service.' % (service_class._svc_name_))
     except pywintypes.error, error:

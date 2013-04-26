@@ -1,43 +1,83 @@
 # Copyright (c) 2011 Adi Roiban.
 """
-Unit tests for Windows NT service functionality.
+Unit tests for Windows NT Service.
 """
-
-from __future__ import with_statement
 import os
-
-try:
-    from chevah.compat.nt_service import ChevahNTService
-    ChevahNTService
-    __skip = False
-except ImportError:
-    __skip = True
-    ChevahNTService = object
 
 from chevah.compat.testing import CompatTestCase
 from chevah.compat.testing import manufacture as mk
 
+if os.name == 'nt':
+    import win32service
+    from chevah.compat.nt_service import ChevahNTService
+    # Silence the linter.
+    ChevahNTService
+else:
+    # This is here to allow defining test classes.
+    ChevahNTService = object
 
-class DummyChevahNTService(ChevahNTService):
-    _win32serviceutil = mk.makeMock()
-    _servicemanager = mk.makeMock()
-    initialize = mk.makeMock()
+
+class ChevahNTServiceImplementation(ChevahNTService):
+    """
+    A simple implementation of ChevahNTService to help testing.
+    """
+
+    # This is here to avoid triggering the real
+    # win32serviceutil.ServiceFramework and create registers and other
+    # side effects.
+    #_win32serviceutil = object
+
+    def __init__(self, *args, **kwargs):
+        super(ChevahNTServiceImplementation, self).__init__(*args, **kwargs)
+
+        # Keep track of method calls.
+        self._reported_service_status = []
+        self._info_messages = []
+        self._error_messages = []
+
+        # Keep track of service state.
+        self._started = False
+        self._stopped = False
+        self._running = False
+        self._initialized = False
+
+    def ReportServiceStatus(self, status):
+        self._reported_service_status.append(status)
+
+    def error(self, message):
+        self._error_messages.append(message)
+
+    def info(self, message):
+        self._info_messages.append(message)
+
+    def initialize(self):
+        self._initialized = True
+
+    def start(self):
+        self._started = True
+        self._running = True
+
+    def stop(self):
+        self._stopped = True
+        self._running = False
 
 
-class FailChevahNTService(ChevahNTService):
-    _win32serviceutil = mk.makeMock()
-    _servicemanager = mk.makeMock()
-    ReportServiceStatus = mk.makeMock()
-    start = mk.makeMock()
-    stop = mk.makeMock()
-    info = mk.makeMock()
-    error = mk.makeMock()
-    SvcStop = mk.makeMock()
+class FailingInitializeChevahNTService(ChevahNTServiceImplementation):
+    """
+    An implementation of ChevahNTService which fails at initialization.
+    """
 
-    def initialize_fail(self):
-        raise AssertionError("Initialization error.")
+    def initialize(self):
+        raise AssertionError('test-initialize-error')
 
-    initialize = initialize_fail
+
+class FailingStartChevahNTService(ChevahNTServiceImplementation):
+    """
+    An implementation of ChevahNTService which fails at start.
+    """
+
+    def start(self):
+        raise AssertionError('test-start-error')
 
 
 class TestChevahNTService(CompatTestCase):
@@ -45,78 +85,85 @@ class TestChevahNTService(CompatTestCase):
     Unit tests for `ChevahNTService`.
     """
 
-    def setUp(self):
-        super(TestChevahNTService, self).setUp()
-
+    @classmethod
+    def setUpClass(cls):
         if os.name != 'nt':
-            raise self.skipTest("Only Windows platforms supported.")
+            raise cls.skipTest()
 
-        self.service = DummyChevahNTService()
-        self.service.start = mk.makeMock()
-        self.service.ReportServiceStatus = mk.makeMock()
-        self.service.stop = mk.makeMock()
-        self.service.info = mk.makeMock()
-        self.service.error = mk.makeMock()
-
-    def test_initialization_ok(self):
+    def test_initialize_ok(self):
         """
-        Service initialization test.
-        """
-        self.assertTrue(self.service.initialize.called)
-        self.assertFalse(self.service.start.called)
-        self.assertFalse(self.service.stop.called)
+        On successful initialization the `initialize` method is called
+        and service is not started yet.
 
-    def test_initialization_failure(self):
+        No error or information message is sent.
         """
-        Service is stopped if initialization fails.
+        service = ChevahNTServiceImplementation()
+
+        self.assertTrue(service._initialized)
+        self.assertFalse(service._running)
+        self.assertFalse(service._started)
+        self.assertFalse(service._stopped)
+        self.assertIsEmpty(service._info_messages)
+        self.assertIsEmpty(service._error_messages)
+
+    def test_initialize_failure(self):
         """
-        service = FailChevahNTService()
+        When service fails to initialize, service is stopped,
+        a single error and a single informational message is reported.
+        """
+        service = FailingInitializeChevahNTService()
+        service.SvcStop = mk.makeMock()
 
-        self.assertTrue(service.error.called)
-        self.assertTrue(service.SvcStop.called)
+        self.assertEqual(1, service._error_message)
+        self.assertContains(
+            'Failed to initialize the service',
+            service._error_message[0])
+        self.assertContains(
+            'debug mode. test-initialize-error', service._error_message[0])
 
-    def test_SvcDoRun(self):
+        service.SvcStop.assert_called_once_with([])
+
+    def test_SvcDoRun_ok(self):
         """
         `SvcDoRun` reports starting sequence initiated and calls specialized
         `start` method.
         """
-        self.service.SvcDoRun()
+        service = ChevahNTServiceImplementation()
 
-        self.assertTrue(self.service.start.called)
-        self.assertTrue(self.service.info.called)
-        self.assertFalse(self.service.stop.called)
+        service.SvcDoRun()
 
-    def test_SvcDoRun_system_exit(self):
+        self.assertEqual(
+            [win32service.SERVICE_START_PENDING,
+                win32service.SERVICE_RUNNING],
+            service._reported_service_status,
+            )
+        self.assertEqual([u'Service started.'], service._info_messages)
+        self.assertTrue(service._started)
+        self.assertTrue(service._running)
+        self.assertTrue(service._stopped)
+
+    def test_SvcDoRun_failure(self):
         """
-        If there's a problem starting the service `error` is called.
+        If there's a problem running the service `error` is called.
         """
-        def start():
-            raise AssertionError("Error starting the service.")
+        service = FailingStartChevahNTService()
 
-        self.service.start = start
+        service.SvcDoRun()
 
-        self.service.SvcDoRun()
-
-        self.assertTrue(self.service.info.called)
-        self.assertTrue(self.service.error.called)
-        self.assertFalse(self.service.stop.called)
+        self.assertEqual([u'Service started.'], service._info_messages)
 
     def test_SvcStop(self):
         """
         `SvcStop` calls `stop` and reports that service has initiated stopping
         sequence.
         """
-        import win32service
+        service = ChevahNTServiceImplementation()
 
-        self.service.SvcStop()
+        service.SvcStop()
 
-        self.service.ReportServiceStatus.assert_called_once_with(
-            win32service.SERVICE_STOP_PENDING)
-        self.assertTrue(self.service.stop.called)
-        self.service.info.assert_called_once_with('Service stopped.')
-
-
-def setup_module():
-    # Don't run these tests on non Windows OSes.
-    if __skip:
-        raise CompatTestCase.skipTest()
+        self.assertEqual(
+            [win32service.SERVICE_STOP_PENDING],
+            service._reported_service_status,
+            )
+        self.assertTrue(service._stopped)
+        self.assertEqual([u'Service stopped.'], service._info_messages)
