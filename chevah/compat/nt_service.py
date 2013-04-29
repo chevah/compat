@@ -1,6 +1,8 @@
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
-'''Module for launching Windows services.'''
+"""
+Module for launching Windows services.
+"""
 
 import os
 import pywintypes
@@ -23,13 +25,14 @@ class ChevahNTService(win32serviceutil.ServiceFramework, object):
     _service_manager = servicemanager
 
     def __init__(self, *args):
-
         # This is the upstream __init__ code.
         # It is copied here to help with testing as the upstream code
         # is untestable since it imports servicemanager inside the method.
-        self.ssh = self._servicemanager.RegisterServiceCtrlHandler(
-            args[0], self.ServiceCtrlHandlerEx, True)
-        self._servicemanager.SetEventSourceName(self._svc_name_)
+        service_name, = args[0]
+
+        self.ssh = self._service_manager.RegisterServiceCtrlHandler(
+            service_name, self.ServiceCtrlHandlerEx, True)
+        self._service_manager.SetEventSourceName(service_name)
         self.checkPoint = 0
 
         try:
@@ -47,13 +50,13 @@ class ChevahNTService(win32serviceutil.ServiceFramework, object):
         """
         Log an Error event.
         """
-        servicemanager.LogErrorMsg(message)
+        self._service_manager.LogErrorMsg(message)
 
     def info(self, message):
         """
         Log an Information event.
         """
-        servicemanager.LogInfoMsg(message)
+        self._service_manager.LogInfoMsg(message)
 
     def SvcStop(self):
         """
