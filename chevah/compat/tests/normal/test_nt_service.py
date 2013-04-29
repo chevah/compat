@@ -60,7 +60,7 @@ class ChevahNTServiceImplementation(ChevahNTService):
         # win32serviceutil.ServiceFramework and create registers and other
         # side effects.
         self._win32serviceutil = dummy_win32serviceutil()
-        self._servicemanager = dummy_servicemanager()
+        self._service_manager = dummy_servicemanager()
 
         # Now that testing variables are set, we can call the low level
         # initialization.
@@ -122,7 +122,7 @@ class TestChevahNTService(CompatTestCase):
 
         No error or information message is sent.
         """
-        service = ChevahNTServiceImplementation('some-name')
+        service = ChevahNTServiceImplementation((u'some-name',))
 
         self.assertTrue(service._initialized)
         self.assertFalse(service._running)
@@ -131,17 +131,17 @@ class TestChevahNTService(CompatTestCase):
         self.assertIsEmpty(service._info_messages)
         self.assertIsEmpty(service._error_messages)
 
-        sm = service._servicemanager
+        sm = service._service_manager
         sm.RegisterServiceCtrlHandler.assert_called_once_with(
-            'some-name', service.ServiceCtrlHandlerEx, True)
-        sm.SetEventSourceName.assert_called_once_with('test service name')
+            u'some-name', service.ServiceCtrlHandlerEx, True)
+        sm.SetEventSourceName.assert_called_once_with(u'some-name')
 
     def test_initialize_failure(self):
         """
         When service fails to initialize, service is stopped,
         a single error and a single informational message is reported.
         """
-        service = FailingInitializeChevahNTService('some-name')
+        service = FailingInitializeChevahNTService((u'some-name',))
 
         self.assertEqual(1, len(service._error_messages))
         self.assertContains(
@@ -156,7 +156,7 @@ class TestChevahNTService(CompatTestCase):
         `SvcDoRun` reports starting sequence initiated and calls specialized
         `start` method.
         """
-        service = ChevahNTServiceImplementation('some-name')
+        service = ChevahNTServiceImplementation((u'some-name',))
 
         service.SvcDoRun()
 
@@ -174,7 +174,7 @@ class TestChevahNTService(CompatTestCase):
         """
         If there's a problem running the service `error` is called.
         """
-        service = FailingStartChevahNTService('some-name')
+        service = FailingStartChevahNTService((u'some-name',))
 
         service.SvcDoRun()
 
@@ -185,7 +185,7 @@ class TestChevahNTService(CompatTestCase):
         `SvcStop` calls `stop` and reports that service has initiated stopping
         sequence.
         """
-        service = ChevahNTServiceImplementation('some-name')
+        service = ChevahNTServiceImplementation((u'some-name',))
 
         service.SvcStop()
 
