@@ -9,7 +9,7 @@ import sys
 
 # Marker for paver.sh.
 # This value is pavers by bash. Use a strict format.
-BRINK_VERSION = '0.19.0'
+BRINK_VERSION = '0.20.1'
 PYTHON_VERSION = '2.7'
 
 EXTRA_PACKAGES = [
