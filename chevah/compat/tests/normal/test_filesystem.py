@@ -648,8 +648,7 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
         test_file.write(new_content.encode('utf-8'))
         test_file.close()
 
-        file_content = ''.join(
-            manufacture.fs.getFileContent(self.test_segments))
+        file_content = manufacture.fs.getFileContent(self.test_segments)
         self.assertEqual(new_content, file_content)
 
     def test_openFileForAppending_impersonate(self):

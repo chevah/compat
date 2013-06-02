@@ -96,4 +96,4 @@ class CompatManufacture(ChevahCommonsFactory):
                     username, password))
         return token
 
-manufacture = CompatManufacture()
+mk = manufacture = CompatManufacture()
