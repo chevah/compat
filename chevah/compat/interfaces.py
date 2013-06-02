@@ -47,34 +47,35 @@ class IDaemon(Interface):
 
 
 class IProcess(Interface):
-    '''A process represent a running Chevah application.
+    """
+    A process represents a running Chevah application.
 
     It can include a service, a local administration server and other
     utilities that are required by the application.
 
-    The name is somehow misleading as the IProcees can trigger and contain
+    The name is somehow misleading as the IProcess can trigger and contain
     multiple OS processes or threads.
-    '''
-
-    server_class = Attribute('Class user for launching main server process.')
-    configuration_class = Attribute(
-        'Class user for configuring the process.')
+    """
 
     def start():
-        '''Start the process.'''
+        """
+        Start the process.
+        """
 
     def stop():
-        '''Stops the process.
+        """
+        Stops the process.
 
-        Stopping the process will end product exection.
-        '''
+        Stopping the process will end product execution.
+        """
 
     def configure(configuration_path, configuration_file):
-        '''Configure the process.
+        """
+        Configure the process.
 
-        `configuration_path` and `configuration_file` are mutualy exclusive
+        `configuration_path` and `configuration_file` are mutually exclusive
         parameters.
-        '''
+        """
 
 
 class IProcessCapabilities(Interface):
