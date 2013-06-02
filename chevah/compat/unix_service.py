@@ -9,6 +9,7 @@ import sys
 
 from zope.interface import implements
 
+from chevah.compat import local_filesystem
 from chevah.compat.exceptions import CompatError
 from chevah.compat.helpers import _
 from chevah.compat.interfaces import IDaemon
@@ -21,6 +22,8 @@ class Daemon(object):
 
     implements(IDaemon)
 
+    DaemonContext = daemon.DaemonContext
+
     PRESERVE_STANDARD_STREAMS = False
     DETACH_PROCESS = True
 
@@ -29,7 +32,7 @@ class Daemon(object):
         See `IDaemon`.
         """
         self.options = options
-        self._process = None
+        self._daemon_context = None
 
     def _onStopSignal(self, signum, frame):
         """
@@ -49,54 +52,55 @@ class Daemon(object):
             stdout = sys.stdout
             stderr = sys.stderr
 
-        daemon_context = daemon.DaemonContext(
+        self._daemon_context = self.DaemonContext(
             stdin=stdin,
             stdout=stdout,
             stderr=stderr,
             )
-        daemon_context.detach_process = self.DETACH_PROCESS
-        daemon_context.signal_map = {
+        self._daemon_context.detach_process = self.DETACH_PROCESS
+        self._daemon_context.signal_map = {
             signal.SIGINT: self._onStopSignal,
             signal.SIGTERM: self._onStopSignal,
             }
-        daemon_context.working_directory = os.getcwd()
+        self._daemon_context.working_directory = os.getcwd()
 
-        pid_path = os.path.abspath(self.options.pid)
-        try:
-            pid_file = open(pid_path, 'w')
-            pid_file.close()
-        except IOError:
-            raise CompatError(1008,
-                _(u'Could not open PID file at %s.' % (pid_path)))
+        self.onInitialize()
 
-        self.initialize()
+        self._daemon_context.files_preserve = self.getOpenFiles()
 
-        daemon_context.files_preserve = self.getOpenFiles()
-
-        with daemon_context:
-            try:
-                pid_file = open(self.options.pid, 'w')
-                pid_file.write('%d' % os.getpid())
-                pid_file.close()
-            except IOError:
-                raise CompatError(1008,
-                    _(u'Could not write PID file at %s.' % (pid_path)))
-
+        with self._daemon_context:
+            self._writePID()
             self.onStart()
-
-            try:
-                os.remove(self.options.pid)
-            except:
-                # We don't care if remove operation fail or success.
-                # We are going to close the server anyway.
-                # Just change the exit value to signal that something went
-                # wrong.
-                self.onStop(1)
-                CompatError(1009,
-                    _(u'Could not remove PID file at %s.' % (pid_path)))
+            self._deletePID()
             self.onStop(0)
 
-    def initialize(self):
+    def _writePID(self):
+        """
+        Write process ID in pid file.
+        """
+        pid_path = os.path.abspath(self.options.pid)
+        pid_segments = local_filesystem.getSegmentsFromRealPath(pid_path)
+        try:
+            pid_file = local_filesystem.openFileForWriting(pid_segments)
+            pid_file.write('%d' % os.getpid())
+            pid_file.close()
+        except (OSError, IOError):
+            raise CompatError(1008,
+                _(u'Could not write PID file at %s.' % (pid_path)))
+
+    def _deletePID(self):
+        pid_path = os.path.abspath(self.options.pid)
+        pid_segments = local_filesystem.getSegmentsFromRealPath(pid_path)
+        try:
+            local_filesystem.deleteFile(pid_segments)
+        except:
+            # We don't care if remove operation fail or success.
+            # We are going to close the server anyway.
+            # Just change the exit value to signal that something went
+            # wrong.
+            self.onStop(1)
+
+    def onInitialize(self):
         '''Initialize the daemon.'''
         raise NotImplementedError(
             'Use this method for initializing your daemon.')

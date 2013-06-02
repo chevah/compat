@@ -25,14 +25,14 @@ class IDaemon(Interface):
         Initialize with the command line options.
         """
 
-    def initialize():
-        """
-        Called before forking the process.
-        """
-
     def launch():
         """
         Start the daemon.
+        """
+
+    def onInitialize():
+        """
+        Called before forking the process.
         """
 
     def onStart():
