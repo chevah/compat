@@ -126,6 +126,9 @@ class OSAdministration(object):
         self._getUnixGroup(group.name)
 
     def _getUnixGroup(self, name):
+        """
+        Return grp data for group with `name`.
+        """
         import grp
         import time
         name_encoded = name.encode('utf-8')
@@ -265,6 +268,26 @@ class OSAdministration(object):
                     ['sudo', 'chgrp', str(user.uid),
                         user.home_path.encode('utf-8'),
                     ])
+
+        self._waitForUser(user.name)
+
+    def _waitForUser(self, name):
+        """
+        Wait for user to be visible in the system.
+        """
+        import pwd
+        import time
+        name_encoded = name.encode('utf-8')
+        for iterator in xrange(5):
+            try:
+                pwd.getpwnam(name_encoded)
+                return
+            except KeyError:
+                pass
+            time.sleep(0.5)
+
+        raise AssertionError('Failed to create group %s' % (
+            name.encode('utf-8')))
 
     def _addUser_aix(self, user):
         # AIX will only allow creating users with shells from
