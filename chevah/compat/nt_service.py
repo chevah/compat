@@ -1,30 +1,41 @@
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
-'''Module for launching Windows services.'''
+"""
+Module for launching Windows services.
+"""
 
 import os
 import pywintypes
 import servicemanager
 import sys
-import threading
 import win32service
 import win32serviceutil
-
-from twisted.internet import reactor
 
 from chevah.compat.helpers import _
 
 
-class ChevahNTService(win32serviceutil.ServiceFramework):
-
+class ChevahNTService(win32serviceutil.ServiceFramework, object):
+    """
+    Basic NT service implementation.
+    """
     __version__ = u'Define version here.'
     _svc_name_ = u'Define service name here.'
     _svc_display_name_ = u'Define service display name here.'
+    _win32serviceutil = win32serviceutil
+    _service_manager = servicemanager
 
-    def __init__(self, *args, **kwargs):
-        win32serviceutil.ServiceFramework.__init__(self, *args, **kwargs)
-        self.process = None
-        self._stopped = threading.Event()
+    def __init__(self, *args):
+        # This is the upstream __init__ code.
+        # It is copied here to help with testing as the upstream code
+        # is untestable since it imports servicemanager inside the method.
+        service_name, = args[0]
+
+        #FIXME:1328: isolate registry creating code
+        self.ssh = self._service_manager.RegisterServiceCtrlHandler(
+            service_name, self.ServiceCtrlHandlerEx, True)
+        self._service_manager.SetEventSourceName(service_name)
+        self.checkPoint = 0
+
         try:
             self.initialize()
         except:
@@ -37,22 +48,29 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
             self.SvcStop()
 
     def error(self, message):
-        '''Log an Error event.'''
-        servicemanager.LogErrorMsg(message)
+        """
+        Log an Error event.
+        """
+        self._service_manager.LogErrorMsg(message)
 
     def info(self, message):
-        '''Log an Information event.'''
-        servicemanager.LogInfoMsg(message)
+        """
+        Log an Information event.
+        """
+        self._service_manager.LogInfoMsg(message)
 
     def SvcStop(self):
-        '''Main entry point for service stopping.'''
+        """
+        Main entry point for service stopping.
+        """
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-        reactor.callFromThread(reactor.stop)
-        self._stopped.wait(5)
-        self.info('Service stoped.')
+        self.stop()
+        self.info(u'Service stopped.')
 
     def SvcDoRun(self):
-        '''Main entry point for service execution'''
+        """
+        Main entry point for service execution.
+        """
         self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
         try:
             # Start everything up
@@ -61,17 +79,6 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
 
             # After start this thread execution will be blocked.
             self.start()
-
-            # We're shutting down.
-            # ... do any shutdown processing ...
-            self.stop()
-
-            # Flag that we're exiting so service thread can be more
-            # accurate in terms of declaring shutdown.
-            self._stopped.set()
-        except SystemExit:
-            # This is a normal exception.
-            pass
         except:
             # For right now just log the error.
             self.error(
@@ -79,19 +86,25 @@ class ChevahNTService(win32serviceutil.ServiceFramework):
                 'the service in debug mode. %s' % (sys.exc_info()[0]))
 
     def initialize(self):
-        '''Initialize the service.'''
+        """
+        Initialize the service.
+        """
         raise NotImplementedError(
             'Use this method for initializing your service.')
 
     def start(self):
-        '''Starts the service.'''
+        """
+        Starts the service.
+        """
         raise NotImplementedError(
             'Use this method for starting your service.')
 
     def stop(self):
-        '''Stops the service.'''
+        """
+        Stops the service.
+        """
         raise NotImplementedError(
-            'Use this method for stoping your service.')
+            'Use this method for stopping your service.')
 
 
 def install_nt_service(service_class, options):
@@ -114,7 +127,7 @@ def install_nt_service(service_class, options):
                 startType=win32service.SERVICE_AUTO_START,
                 )
         print _(
-            'Service "%s" succesfuly installed.\n'
+            'Service "%s" successfully installed.\n'
             'Please use "sc" command or Windows Services to manage '
             'this service.' % (service_class._svc_name_))
     except pywintypes.error, error:
