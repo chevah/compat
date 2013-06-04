@@ -9,17 +9,22 @@ import sys
 
 # Marker for paver.sh.
 # This value is pavers by bash. Use a strict format.
-BRINK_VERSION = '0.20.1'
+BRINK_VERSION = '0.22.0'
 PYTHON_VERSION = '2.7'
 
 RUN_PACKAGES = [
+    'chevah-empirical==0.13.0',
+
     'zope.interface==3.8.0',
     'twisted==12.1.0-chevah3',
-    'chevah-empirical==0.8.0',
     ]
 
 if os.name == 'posix':
-    RUN_PACKAGES.extend(['pam>=0.1.4.chevah'])
+    RUN_PACKAGES.extend([
+        'python-daemon==1.5.5',
+        'pam>=0.1.4.chevah',
+        ])
+
 
 BUILD_PACKAGES = [
     'sphinx==1.1.3-chevah1',
@@ -43,7 +48,7 @@ BUILD_PACKAGES = [
 TEST_PACKAGES = [
     'pyflakes>=0.5.0-chevah2',
     'closure_linter==2.3.9',
-    'pocketlint==0.5.31-chevah7',
+    'pocketlint==0.5.31-chevah8',
     'pocketlint-jshint',
 
     # Never version of nose, hangs on closing some tests
@@ -59,6 +64,7 @@ TEST_PACKAGES = [
 
     'bunch',
     ]
+
 
 from brink.pavement_commons import (
     buildbot_list,
@@ -78,7 +84,7 @@ from brink.pavement_commons import (
     test_normal,
     test_super,
     )
-from paver.easy import task, needs
+from paver.easy import needs, task
 
 # Make pylint shut up.
 buildbot_list
@@ -105,6 +111,7 @@ SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
+SETUP['github']['url'] = 'https://github.com/chevah/compat'
 
 
 @task
