@@ -35,6 +35,12 @@ class IDaemon(Interface):
         Called before forking the process.
         """
 
+    def getOpenFiles():
+        """
+        Return a list with files that should be kept open while starting
+        the daemon.
+        """
+
     def onStart():
         """
         Called after forking the process.

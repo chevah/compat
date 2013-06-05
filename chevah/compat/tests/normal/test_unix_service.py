@@ -102,7 +102,8 @@ class TestDaemon(CompatTestCase):
 
     def test_launch_DETACH_PROCESS(self):
         """
-        DETACH_PROCESS is set at launch to the DeamonContext.
+        At launch, DETACH_PROCESS is copied to the internal DeamonContext
+        instance.
         """
         pid_path = self.getPIDPath()
         options = self.Bunch(pid=pid_path)

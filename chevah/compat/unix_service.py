@@ -101,7 +101,9 @@ class Daemon(object):
             self.onStop(1)
 
     def onInitialize(self):
-        '''Initialize the daemon.'''
+        """
+        See: `IDaemon`.
+        """
         raise NotImplementedError(
             'Use this method for initializing your daemon.')
 
