@@ -6,26 +6,50 @@ from zope.interface import Interface, Attribute
 
 
 class IDaemon(Interface):
-    '''Daemon creates a unix daemon process.
+    """
+    Daemon creates a Unix daemon process.
 
-    To stop the damone you must send the KILL signal. No dedicated method
-    is available for stoping the daemon itself.
-    '''
+    To stop the daemon you must send the KILL signal.
+    """
+
+    PRESERVE_STANDARD_STREAMS = Attribute(
+        """
+        True if standard streams (input, output, error) should be redirected
+        to the new daemon process.
+        """)
+
+    DETACH_PROCESS = Attribute('True if process should detach from console.')
 
     def __init__(options):
-        '''Initialize the set command line options.'''
+        """
+        Initialize with the command line options.
+        """
 
-    def initialize():
-        '''Initialize the process.'''
+    def launch():
+        """
+        Start the daemon.
+        """
 
-    def launch(self):
-        '''Start the daemon.'''
+    def onInitialize():
+        """
+        Called before forking the process.
+        """
 
-    def start(self):
-        '''Start the process.'''
+    def getOpenFiles():
+        """
+        Return a list with files that should be kept open while starting
+        the daemon.
+        """
 
-    def stop():
-        '''Stop the process.'''
+    def onStart():
+        """
+        Called after forking the process.
+        """
+
+    def onStop(exit_code):
+        """
+        Called before exiting the forked process.
+        """
 
 
 class IProcess(Interface):
