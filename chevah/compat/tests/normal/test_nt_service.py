@@ -5,7 +5,6 @@ Unit tests for Windows NT Service.
 import os
 
 from chevah.compat.testing import CompatTestCase
-from chevah.compat.testing import manufacture as mk
 
 if os.name == 'nt':
     import win32service
@@ -32,8 +31,8 @@ class dummy_servicemanager(object):
         """
         Create fresh mocks.
         """
-        self.RegisterServiceCtrlHandler = mk.makeMock()
-        self.SetEventSourceName = mk.makeMock()
+        self.RegisterServiceCtrlHandler = CompatTestCase.Mock()
+        self.SetEventSourceName = CompatTestCase.Mock()
 
 
 class ChevahNTServiceImplementation(ChevahNTService):

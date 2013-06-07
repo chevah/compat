@@ -42,11 +42,11 @@ class DaemonImplementation(Daemon):
 
         # The methods are mocked at init time to have different mocks for
         # each instance.
-        self.getOpenFiles = mk.makeMock()
+        self.getOpenFiles = CompatTestCase.Mock()
         self.getOpenFiles.return_value = [100, 123]
-        self.onInitialize = mk.makeMock()
-        self.onStart = mk.makeMock()
-        self.onStop = mk.makeMock()
+        self.onInitialize = CompatTestCase.Mock()
+        self.onStart = CompatTestCase.Mock()
+        self.onStop = CompatTestCase.Mock()
 
 
 class TestDaemon(CompatTestCase):
