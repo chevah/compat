@@ -34,6 +34,12 @@ class dummy_servicemanager(object):
         self.RegisterServiceCtrlHandler = CompatTestCase.Mock()
         self.SetEventSourceName = CompatTestCase.Mock()
 
+    def LogErrorMsg(self, text):
+        """
+        Raise an error.
+        """
+        raise AssertionError(text)
+
 
 class ChevahNTServiceImplementation(ChevahNTService):
     """
