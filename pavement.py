@@ -7,6 +7,11 @@ from __future__ import with_statement
 import os
 import sys
 
+if os.name == 'nt':
+    # Use shorter temp folder on Windows.
+    import tempfile
+    tempfile.tempdir = "c:\\temp"
+
 # Marker for paver.sh.
 # This value is pavers by bash. Use a strict format.
 BRINK_VERSION = '0.22.0'
