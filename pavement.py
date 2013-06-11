@@ -14,7 +14,7 @@ if os.name == 'nt':
 
 # Marker for paver.sh.
 # This value is pavers by bash. Use a strict format.
-BRINK_VERSION = '0.22.0'
+BRINK_VERSION = '0.24.0'
 PYTHON_VERSION = '2.7'
 
 RUN_PACKAGES = [
@@ -84,12 +84,12 @@ from brink.pavement_commons import (
     pave,
     pqm,
     SETUP,
-    test,
+    test_python,
     test_remote,
     test_normal,
     test_super,
     )
-from paver.easy import needs, task
+from paver.easy import consume_args, needs, task
 
 # Make pylint shut up.
 buildbot_list
@@ -102,7 +102,7 @@ lint
 merge_init
 merge_commit
 pqm
-test
+test_python
 test_remote
 test_normal
 test_super
@@ -120,7 +120,15 @@ SETUP['github']['url'] = 'https://github.com/chevah/compat'
 
 
 @task
+@needs('deps_testing', 'deps_build')
 def deps():
+    """
+    Install all dependencies.
+    """
+
+
+@task
+def deps_testing():
     """
     Install dependencies for testing.
     """
@@ -136,7 +144,7 @@ def deps():
 
 
 @task
-@needs('deps')
+@needs('deps_testing')
 def deps_build():
     """
     Install dependencies for build environment.
@@ -153,8 +161,35 @@ def build():
     """
     Copy new source code to build folder.
     """
+    # Clean previous files.
+    pave.fs.deleteFolder([
+        pave.path.build,
+        pave.getPythonLibPath(python_version=PYTHON_VERSION),
+        'chevah',
+        'compat',
+        ])
+    pave.fs.deleteFolder([pave.path.build, 'setup-build'])
+
     build_target = pave.fs.join([pave.path.build, 'setup-build'])
     sys.argv = ['setup.py', 'build', '--build-base', build_target]
     print "Building in " + build_target
     import setup
     setup.distribution.run_command('install')
+
+
+@task
+@needs('deps_testing', 'test_python')
+@consume_args
+def test_os_dependent(args):
+    """
+    Run os dependent tests.
+    """
+
+
+@task
+@needs('deps_build', 'lint')
+@consume_args
+def test_os_independent(args):
+    """
+    Run os independent tests.
+    """
