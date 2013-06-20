@@ -343,7 +343,7 @@ class OSAdministration(object):
             'flags': win32netcon.UF_SCRIPT,
             'script_path': None,
         }
-        win32net.NetUserAdd('\\\\chevah', 1, user_info)
+        win32net.NetUserAdd('\\\\chevah-dc', 1, user_info)
         if user.password and create_profile:
             result, token = system_users.authenticateWithUsernameAndPassword(
                 username=user.name, password=user.password)
