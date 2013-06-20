@@ -12,9 +12,25 @@ from chevah.empirical.testcase import (
     teardown_os,
     )
 from chevah.empirical.constants import (
-    TEST_GROUPS,
-    TEST_USERS,
+    TestGroup,
+    TestUser,
     )
+
+TEST_USERS = [
+    TestUser(
+            name='trial-user',
+            uid=1222,
+            password='t#$%ddfdaQDd2324SDrial-password',
+            ),
+    ]
+
+TEST_GROUPS = [
+    TestGroup(
+        name='trial-group',
+        gid=1233,
+        members=['trial-user'],
+        ),
+    ]
 
 
 def runElevatedTest():
