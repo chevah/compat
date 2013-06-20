@@ -18,7 +18,7 @@ from chevah.empirical.constants import (
 
 TEST_USERS = [
     TestUser(
-            name='trial-user',
+            name='chevah\trial-user',
             uid=1222,
             password='qwe123QWE',
             ),
@@ -26,9 +26,9 @@ TEST_USERS = [
 
 TEST_GROUPS = [
     TestGroup(
-        name='trial-group',
+        name='chevah\trial-group',
         gid=1233,
-        members=['trial-user'],
+        members=['chevah\trial-user'],
         ),
     ]
 
