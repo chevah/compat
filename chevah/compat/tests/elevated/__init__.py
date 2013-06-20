@@ -20,7 +20,7 @@ TEST_USERS = [
     TestUser(
             name='trial-user',
             uid=1222,
-            password='t#$%ddfdaQDd2324SDrial-password',
+            password='qwe123QWE',
             ),
     ]
 
