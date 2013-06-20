@@ -164,7 +164,7 @@ class OSAdministration(object):
         data = {
             'name': group.name,
         }
-        win32net.NetLocalGroupAdd(None, 0, data)
+        #win32net.NetLocalGroupAdd(None, 0, data)
 
     def addUsersToGroup(self, group, users=None):
         '''Add the group to the local operating system.'''
