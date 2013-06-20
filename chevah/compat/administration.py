@@ -454,7 +454,8 @@ class OSAdministration(object):
         """
         import win32net
         try:
-            win32net.NetUserDel(None, user.name)
+            #win32net.NetUserDel(None, user.name)
+            pass
         except win32net.error, (number, context, message):
             # Ignore user not found error.
             if number != 2221:
@@ -504,7 +505,7 @@ class OSAdministration(object):
         Remove a group from Windows local system.
         """
         import win32net
-        win32net.NetLocalGroupDel(None, group.name)
+        #win32net.NetLocalGroupDel(None, group.name)
 
     def _appendUnixEntry(self, segments, new_line):
         '''Add the new_line to the end of `segments`.'''
