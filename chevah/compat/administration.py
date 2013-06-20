@@ -219,7 +219,7 @@ class OSAdministration(object):
             members_info.append({
                 'domainandname': member
                 })
-        win32net.NetLocalGroupAddMembers(None, group.name, 3, members_info)
+        #win32net.NetLocalGroupAddMembers(None, group.name, 3, members_info)
 
     def addUser(self, user):
         '''Add the user and set the corresponding passwords.'''
