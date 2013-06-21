@@ -106,10 +106,17 @@ class OSAdministration(object):
 
         return name
 
-    def addGroup(self, group):
-        '''Add the group to the local operating system.'''
-        add_user_method = getattr(self, '_addGroup_' + self.name)
-        add_user_method(group)
+    def addGroup(self, group, server=None):
+        """
+        Add the group to the local computer or domain.
+        If server is None the local computer is used.
+        """
+        add_group_method = getattr(self, '_addGroup_' + self.name)
+
+        if self.name == 'windows':
+            add_group_method(group=group, server=server)
+        else:
+            add_group_method(group=group)
 
     def _addGroup_unix(self, group):
         group_segments = ['etc', 'group']
@@ -156,7 +163,7 @@ class OSAdministration(object):
     def _addGroup_solaris(self, group):
         self._addGroup_unix(group)
 
-    def _addGroup_windows(self, group):
+    def _addGroup_windows(self, group, server=None):
         """
         Add a group to Windows local system.
         """
@@ -164,15 +171,21 @@ class OSAdministration(object):
         data = {
             'name': group.name,
         }
-        win32net.NetLocalGroupAdd(None, 0, data)
 
-    def addUsersToGroup(self, group, users=None):
-        '''Add the group to the local operating system.'''
+        win32net.NetLocalGroupAdd(server, 0, data)
+
+    def addUsersToGroup(self, group, users=None, server=None):
+        """
+        Add the group to the local computer or domain.
+        """
         if users is None:
             users = []
 
         add_user_method = getattr(self, '_addUsersToGroup_' + self.name)
-        add_user_method(group, users)
+        if self.name == 'windows':
+            add_user_method(group=group, users=users, server=server)
+        else:
+            add_user_method(group=group, users=users)
 
     def _addUsersToGroup_unix(self, group, users):
         segments = ['etc', 'group']
@@ -209,7 +222,7 @@ class OSAdministration(object):
     def _addUsersToGroup_solaris(self, group, users):
         self._addUsersToGroup_unix(group, users)
 
-    def _addUsersToGroup_windows(self, group, users):
+    def _addUsersToGroup_windows(self, group, users, server=None):
         """
         Add `users` to group.
         """
@@ -219,15 +232,25 @@ class OSAdministration(object):
             members_info.append({
                 'domainandname': member
                 })
-        win32net.NetLocalGroupAddMembers(None, group.name, 3, members_info)
+        win32net.NetLocalGroupAddMembers(server, group.name, 3, members_info)
 
-    def addUser(self, user):
-        '''Add the user and set the corresponding passwords.'''
+    def addUser(self, user, server=None):
+        """
+        Add the user and set the corresponding passwords to local computer
+        or domain. If server is None the local computer is used.
+        """
         add_user_method = getattr(self, '_addUser_' + self.name)
-        add_user_method(user)
 
-        if user.password:
-            self.setUserPassword(user.name, user.password)
+        if self.name == 'windows':
+            add_user_method(user=user, server=server)
+            if user.password:
+                self.setUserPassword(
+                    username=user.name, password=user.password, server=server)
+        else:
+            add_user_method(user=user)
+            if user.password:
+                self.setUserPassword(
+                    username=user.name, password=user.password)
 
     def _addUser_unix(self, user):
         group = OSGroup(name=user.name, gid=user.uid)
@@ -323,7 +346,7 @@ class OSAdministration(object):
     def _addUser_solaris(self, user):
         self._addUser_unix(user)
 
-    def _addUser_windows(self, user, create_profile=True):
+    def _addUser_windows(self, user, create_profile=True, server=None):
         """
         Create an local Windows account.
 
@@ -334,6 +357,7 @@ class OSAdministration(object):
         """
         import win32net
         import win32netcon
+
         user_info = {
             'name': user.name,
             'password': user.password,
@@ -343,15 +367,21 @@ class OSAdministration(object):
             'flags': win32netcon.UF_SCRIPT,
             'script_path': None,
         }
-        win32net.NetUserAdd(None, 1, user_info)
+        win32net.NetUserAdd(server, 1, user_info)
         if user.password and create_profile:
             result, token = system_users.authenticateWithUsernameAndPassword(
-                username=user.name, password=user.password)
-            system_users._createLocalProfile(username=user.name, token=token)
+                username=user.name, password=user.password, server=server)
+            system_users._createLocalProfile(
+                username=user.name, token=token, server=server)
 
-    def setUserPassword(self, username, password):
+    def setUserPassword(self, username, password, server=None):
         set_password_method = getattr(self, '_setUserPassword_' + self.name)
-        set_password_method(username, password)
+
+        if self.name == 'windows':
+            set_password_method(
+                username=username, password=password, server=server)
+        else:
+            set_password_method(username=username, password=password)
 
     def _setUserPassword_unix(self, username, password):
         import crypt
@@ -394,7 +424,7 @@ class OSAdministration(object):
     def _setUserPassword_solaris(self, username, password):
         self._setUserPassword_unix(username, password)
 
-    def _setUserPassword_windows(self, username, password):
+    def _setUserPassword_windows(self, username, password, server=None):
         """
         On Windows we can not change the password without having the
         old password.
@@ -403,16 +433,20 @@ class OSAdministration(object):
         """
         try:
             import win32net
-            win32net.NetUserChangePassword(None, username, password, password)
+            win32net.NetUserChangePassword(server, username, password, password)
         except:
             print 'Failed to set password "%s" for user "%s".' % (
                 password, username)
             raise
 
-    def deleteUser(self, user):
+    def deleteUser(self, user, server=None):
         '''Delete user from the local operating system.'''
         delete_user_method = getattr(self, '_deleteUser_' + self.name)
-        delete_user_method(user)
+
+        if self.name == 'windows':
+            delete_user_method(user=user, server=server)
+        else:
+            delete_user_method(user)
 
     def _deleteUser_unix(self, user):
         self._deleteUnixEntry(
@@ -446,7 +480,7 @@ class OSAdministration(object):
     def _deleteUser_solaris(self, user):
         self._deleteUser_unix(user)
 
-    def _deleteUser_windows(self, user):
+    def _deleteUser_windows(self, user, server=None):
         """
         Removes an account from Windows together.
 
@@ -454,7 +488,7 @@ class OSAdministration(object):
         """
         import win32net
         try:
-            win32net.NetUserDel(None, user.name)
+            win32net.NetUserDel(server, user.name)
         except win32net.error, (number, context, message):
             # Ignore user not found error.
             if number != 2221:
@@ -475,10 +509,14 @@ class OSAdministration(object):
                 'cmd.exe /C rmdir /S /Q "' + home_path.encode('utf-8') + '"',
                 shell=True)
 
-    def deleteGroup(self, group):
+    def deleteGroup(self, group, server=None):
         '''Delete group from the local operating system.'''
         delete_group_method = getattr(self, '_deleteGroup_' + self.name)
-        delete_group_method(group)
+
+        if self.name == 'windows':
+            delete_group_method(group=group, server=server)
+        else :
+            delete_group_method(group=group)
 
     def _deleteGroup_unix(self, group):
         self._deleteUnixEntry(
@@ -499,12 +537,12 @@ class OSAdministration(object):
     def _deleteGroup_solaris(self, group):
         self._deleteGroup_unix(group)
 
-    def _deleteGroup_windows(self, group):
+    def _deleteGroup_windows(self, group, server=None):
         """
         Remove a group from Windows local system.
         """
         import win32net
-        win32net.NetLocalGroupDel(None, group.name)
+        win32net.NetLocalGroupDel(server, group.name)
 
     def _appendUnixEntry(self, segments, new_line):
         '''Add the new_line to the end of `segments`.'''

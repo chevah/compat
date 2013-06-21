@@ -154,8 +154,9 @@ class NTUsers(object):
                 return True
         return False
 
-    def authenticateWithUsernameAndPassword(self, username, password):
-        '''Check the username and password agains local accounts.
+    def authenticateWithUsernameAndPassword(self,
+            username, password, server=None):
+        '''Check the username and password against local accounts.
 
         Returns True if credentials are accepted, False otherwise.
         '''
@@ -163,7 +164,7 @@ class NTUsers(object):
             return (False, None)
 
         try:
-            token = self._getToken(username, password)
+            token = self._getToken(username, password, server)
         except win32security.error:
             return (False, None)
         return (True, token)
@@ -203,13 +204,13 @@ class NTUsers(object):
             raise_failed_to_get_primary_group(username)
         return WINDOWS_PRIMARY_GROUP
 
-    def _createLocalProfile(self, username, token):
-        '''Create the local profile if it does not exists.'''
-
-        domain, name = self._parseUPN(username)
-
-        user_info_4 = win32net.NetUserGetInfo(domain, name, 4)
+    def _createLocalProfile(self, username, token, server):
+        """
+        Create the local profile if it does not exists.
+        """
+        user_info_4 = win32net.NetUserGetInfo(server, username, 4)
         profile_path = user_info_4['profile']
+
         # LoadUserProfile apparently doesn't like an empty string.
         if not profile_path:
             profile_path = None
@@ -217,36 +218,22 @@ class NTUsers(object):
         profile = win32profile.LoadUserProfile(
             token,
             {
-                'UserName': name,
-                'ServerName': domain,
+                'UserName': username,
+                'ServerName': server,
                 'Flags': 0,
                 'ProfilePath': profile_path,
             })
         win32profile.UnloadUserProfile(token, profile)
         return True
 
-    def _parseUPN(self, upn):
-        """
-        Return domain and username for UPN username format.
-
-        Return (None, username) is UPN does not contain a domain.
-        """
-        # FIXME:1273:
-        # Add tests after we have a working DC slave.
-        parts = upn.split('@', 1)
-        if len(parts) == 2:
-            domain = win32net.NetGetDCName(None, parts[1])
-            username = parts[1]
-            return (domain, username)
-        else:
-            # This is not an UPN name.
-            return (None, upn)
-
-    def _getToken(self, username, password):
+    def _getToken(self, username, password, server=None):
         '''Return user token.'''
         return win32security.LogonUser(
             username,
-            None,
+            # FIXME:1273:
+            # Replace the hardcoded name with code. Need to find how to get
+            # the domain name having a server name
+            'chevah',
             password,
             win32security.LOGON32_LOGON_NETWORK,
             win32security.LOGON32_PROVIDER_DEFAULT,
