@@ -19,7 +19,7 @@ from chevah.compat.constants import (
 from chevah.compat.administration import os_administration, OSUser
 from chevah.compat.helpers import NoOpContext
 from chevah.compat.testing import ChevahTestCase, manufacture
-from chevah.empirical.constants import (
+from chevah.compat.constants_empirical import (
     TEST_ACCOUNT_CENTRIFY_USERNAME,
     TEST_ACCOUNT_CENTRIFY_PASSWORD,
     TEST_ACCOUNT_UID,
@@ -126,8 +126,8 @@ class TestSystemUsers(ChevahTestCase):
         if not process_capabilities.create_home_folder:
             raise self.skipTest()
 
-        username = u'no-home'
-        password = u'no-home'
+        username = u'nohome'
+        password = u'qwe123QWE'
         home_path = None
         user = OSUser(
             name=username, uid=None, password=password, home_path=home_path)

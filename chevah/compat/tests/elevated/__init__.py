@@ -8,29 +8,11 @@ functions.
 from chevah.compat import process_capabilities
 from chevah.empirical.testcase import (
     ChevahTestCase,
-    setup_os,
-    teardown_os,
     )
-from chevah.empirical.constants import (
-    TestGroup,
-    TestUser,
+from chevah.compat.constants_empirical import (
+    TEST_GROUPS,
+    TEST_USERS,
     )
-
-TEST_USERS = [
-    TestUser(
-            name='trial-user',
-            uid=1222,
-            password='qwe123QWE',
-            ),
-    ]
-
-TEST_GROUPS = [
-    TestGroup(
-        name='trial-group',
-        gid=1233,
-        members=['trial-user'],
-        ),
-    ]
 
 
 def runElevatedTest():
@@ -45,6 +27,37 @@ def runElevatedTest():
 
     return True
 
+
+def setup_os(users, groups):
+    '''Create testing environemnt
+
+    Add users, groups, create temporary folders and other things required
+    by the testing system.
+    '''
+    from chevah.compat.administration import OSAdministration
+
+    os_administration = OSAdministration()
+    for group in groups:
+        os_administration.addGroup(group)
+
+    for user in users:
+        os_administration.addUser(user)
+
+    for group in groups:
+        os_administration.addUsersToGroup(group, group.members)
+
+def teardown_os(users, groups):
+    '''Revert changes from setUpOS.'''
+
+    from chevah.compat.administration import OSAdministration
+
+    os_administration = OSAdministration()
+
+    for group in groups:
+        os_administration.deleteGroup(group)
+
+    for user in users:
+        os_administration.deleteUser(user)
 
 def setup_package():
     # Don't run these tests if we can not access privileged OS part.

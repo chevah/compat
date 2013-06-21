@@ -164,7 +164,7 @@ class OSAdministration(object):
         data = {
             'name': group.name,
         }
-        #win32net.NetLocalGroupAdd(None, 0, data)
+        win32net.NetLocalGroupAdd('chevah-dc', 0, data)
 
     def addUsersToGroup(self, group, users=None):
         '''Add the group to the local operating system.'''
@@ -219,7 +219,7 @@ class OSAdministration(object):
             members_info.append({
                 'domainandname': member
                 })
-        #win32net.NetLocalGroupAddMembers(None, group.name, 3, members_info)
+        win32net.NetLocalGroupAddMembers('chevah-dc', group.name, 3, members_info)
 
     def addUser(self, user):
         '''Add the user and set the corresponding passwords.'''
@@ -336,18 +336,26 @@ class OSAdministration(object):
         import win32netcon
         user_info = {
             'name': user.name,
-            'password': user.password,
+            'password': u'qwe123QWE',
             'priv': win32netcon.USER_PRIV_USER,
             'home_dir': None,
             'comment': None,
             'flags': win32netcon.UF_SCRIPT,
             'script_path': None,
         }
-        win32net.NetUserAdd('\\\\chevah-dc', 1, user_info)
-        if user.password and create_profile:
+
+        print user.name
+        print user.password
+
+        win32net.NetUserAdd('chevah-dc', 1, user_info)
+
+        if user.password:
             result, token = system_users.authenticateWithUsernameAndPassword(
-                username=user.name, password=user.password)
-            system_users._createLocalProfile(username=user.name, token=token)
+                    username=user.name, password=user.password)
+
+            if create_profile:
+                system_users._createLocalProfile(
+                    username=user.name, token=token)
 
     def setUserPassword(self, username, password):
         set_password_method = getattr(self, '_setUserPassword_' + self.name)
@@ -403,7 +411,7 @@ class OSAdministration(object):
         """
         try:
             import win32net
-            win32net.NetUserChangePassword(None, username, password, password)
+            win32net.NetUserChangePassword('chevah-dc', username, password, password)
         except:
             print 'Failed to set password "%s" for user "%s".' % (
                 password, username)
@@ -454,7 +462,7 @@ class OSAdministration(object):
         """
         import win32net
         try:
-            #win32net.NetUserDel(None, user.name)
+            win32net.NetUserDel('chevah-dc', user.name)
             pass
         except win32net.error, (number, context, message):
             # Ignore user not found error.
@@ -505,7 +513,7 @@ class OSAdministration(object):
         Remove a group from Windows local system.
         """
         import win32net
-        #win32net.NetLocalGroupDel(None, group.name)
+        win32net.NetLocalGroupDel('chevah-dc', group.name)
 
     def _appendUnixEntry(self, segments, new_line):
         '''Add the new_line to the end of `segments`.'''

@@ -5,14 +5,14 @@ Constants used for testing.
 import sys
 
 # Test accounts and passwords.
-TEST_ACCOUNT_USERNAME = u'testuse'
-TEST_ACCOUNT_PASSWORD = u'testpassword'
+TEST_ACCOUNT_USERNAME = u'testuser'
+TEST_ACCOUNT_PASSWORD = u'qwe123QWE'
 TEST_ACCOUNT_GROUP = u'testgroup'
 TEST_ACCOUNT_UID = 2000
 TEST_ACCOUNT_GID = 2010
 TEST_ACCOUNT_GROUP_WIN = u'Users'
 TEST_ACCOUNT_USERNAME_OTHER = u'testuserother'
-TEST_ACCOUNT_PASSWORD_OTHER = u'testpasswordother'
+TEST_ACCOUNT_PASSWORD_OTHER = u'qwe123QWE'
 TEST_ACCOUNT_UID_OTHER = 2001
 TEST_ACCOUNT_GID_OTHER = 2011
 TEST_ACCOUNT_GROUP_OTHER = u'testgroupother'
@@ -74,23 +74,23 @@ class TestGroup(object):
         self.members = members
 
 
-if sys.platform.startswith('aix'):
-    fix_username = lambda name: name.replace(' ', '_')[:5]
-    fix_groupname = fix_username
-if sys.platform.startswith('win'):
-    # FIXME:927:
+#if sys.platform.startswith('aix'):
+#    fix_username = lambda name: name.replace(' ', '_')[:5]
+#    fix_groupname = fix_username
+#if sys.platform.startswith('win'):
+#    # FIXME:927:
     # On Windows, we can't delete home folders with unicode names.
-    from unidecode import unidecode
-    fix_username = lambda name: unicode(unidecode(name))
-    fix_groupname = fix_username
-else:
-    fix_username = lambda name: name
-    fix_groupname = fix_username
+#    from unidecode import unidecode
+#    fix_username = lambda name: unicode(unidecode(name))
+#    fix_groupname = fix_username
+#else:
+#    fix_username = lambda name: name
+#    fix_groupname = fix_username
 
-TEST_ACCOUNT_USERNAME = fix_username(TEST_ACCOUNT_USERNAME)
-TEST_ACCOUNT_GROUP = fix_groupname(TEST_ACCOUNT_GROUP)
-TEST_ACCOUNT_USERNAME_OTHER = fix_username(TEST_ACCOUNT_USERNAME_OTHER)
-TEST_ACCOUNT_GROUP_OTHER = fix_groupname(TEST_ACCOUNT_GROUP_OTHER)
+#TEST_ACCOUNT_USERNAME = fix_username(TEST_ACCOUNT_USERNAME)
+#TEST_ACCOUNT_GROUP = fix_groupname(TEST_ACCOUNT_GROUP)
+#TEST_ACCOUNT_USERNAME_OTHER = fix_username(TEST_ACCOUNT_USERNAME_OTHER)
+#TEST_ACCOUNT_GROUP_OTHER = fix_groupname(TEST_ACCOUNT_GROUP_OTHER)
 
 if sys.platform.startswith('sunos'):
     TEST_ACCOUNT_HOME_PATH = u'/export/home/' + TEST_ACCOUNT_USERNAME

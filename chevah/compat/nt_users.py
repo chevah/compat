@@ -208,7 +208,7 @@ class NTUsers(object):
 
         domain, name = self._parseUPN(username)
 
-        user_info_4 = win32net.NetUserGetInfo(domain, name, 4)
+        user_info_4 = win32net.NetUserGetInfo('chevah-dc', username, 4)
         profile_path = user_info_4['profile']
         # LoadUserProfile apparently doesn't like an empty string.
         if not profile_path:
@@ -218,7 +218,7 @@ class NTUsers(object):
             token,
             {
                 'UserName': name,
-                'ServerName': domain,
+                'ServerName': 'chevah-dc',
                 'Flags': 0,
                 'ProfilePath': profile_path,
             })
@@ -246,7 +246,7 @@ class NTUsers(object):
         '''Return user token.'''
         return win32security.LogonUser(
             username,
-            None,
+            'chevah',
             password,
             win32security.LOGON32_LOGON_NETWORK,
             win32security.LOGON32_PROVIDER_DEFAULT,
