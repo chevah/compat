@@ -207,7 +207,6 @@ class NTUsers(object):
         """
         Create the local profile if it does not exists.
         """
-        
         # FIXME:1460:
         # _parseUPN is not working. `domain` should be 'chevah-dc'.
         domain, name = self._parseUPN(username)
@@ -235,8 +234,6 @@ class NTUsers(object):
 
         Return (None, username) is UPN does not contain a domain.
         """
-        # FIXME:1273:
-        # Add tests after we have a working DC slave.
         parts = upn.split('@', 1)
         if len(parts) == 2:
             domain = win32net.NetGetDCName(None, parts[1])

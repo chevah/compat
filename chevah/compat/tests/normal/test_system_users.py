@@ -55,6 +55,37 @@ class TestSystemUsers(CompatTestCase):
             home_folder.lower().find(manufacture.username.lower()),
             '%s not in %s' % (manufacture.username, home_folder))
 
+    def test_parseUPN_no_domain(self):
+        """
+        Return the exact username and domain `None` when username UPN
+        is not a domain.
+        """
+        if os.name != 'nt':
+            raise self.skipTest()
+        name = manufacture.string()
+
+        (domain, username) = system_users._parseUPN(name)
+
+        self.assertIsNone(domain)
+        self.assertEqual(name, username)
+
+    def test_parseUPN_domain(self):
+        """
+        Return the domain and username when username UPN contains
+        a domain.
+        """
+        # This test is only running on the domain controller slave.
+        if '-dc-' not in self.getHostname():
+            raise self.skipTest()
+
+        name = manufacture.string()
+        upn = u'%s@chevah' % (name)
+
+        (domain, username) = system_users._parseUPN(upn)
+
+        self.assertEqual(u'\\\\CHEVAH-DC', domain)
+        self.assertEqual(name, username)
+
     def test_getHomeFolder_osx(self):
         """
         Check getHomeFolder for OSX.
