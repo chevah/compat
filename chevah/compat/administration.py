@@ -41,44 +41,6 @@ def execute(command, input_text=None, output=None,
     return (exit_code, stdoutdata)
 
 
-class OSUser(object):
-    '''An object storing all user information.'''
-
-    def __init__(self, name, uid, gid=None, home_path=None, home_group=None,
-                shell=None, shadow=None, password=None):
-        if home_path is None:
-            home_path = u'/tmp'
-
-        if shell is None:
-            shell = u'/bin/sh'
-
-        if shadow is None:
-            shadow = '!'
-
-        self.name = name
-        self.uid = uid
-        self.gid = gid
-        self.home_path = home_path
-        self.home_group = home_group
-        self.shell = shell
-        self.shadow = shadow
-        self.password = password
-
-
-class OSGroup(object):
-    '''An object storing all user information.'''
-
-    def __init__(self, name, gid, members=None, password=None):
-
-        if members is None:
-            members = []
-
-        self.name = name
-        self.gid = gid
-        self.members = members
-        self.password = password
-
-
 class OSAdministration(object):
 
     def __init__(self):
@@ -106,30 +68,25 @@ class OSAdministration(object):
 
         return name
 
-    def getAuthenticationServerName(self):
-        server = None
+    def getPrimaryDomainName(self):
+        """
+        Return the name of the primary domain for this computer.
 
-        if os.name == 'nt':
-            import platform
-            import win32net
+        Return None, if this computer is not part of a domain.
+        """
+        if os.name != 'nt':
+            return None
 
-            computer_name = platform.node()
-            if computer_name == 'bs-win-dc-x64':
-                server = win32net.NetGetDCName(None, 'chevah')[2:]
+        import win32net
+        return win32net.NetGetDCName(None, 'chevah')[2:]
 
-        return server
-
-    def addGroup(self, group, server=None):
+    def addGroup(self, group):
         """
         Add the group to the local computer or domain.
         If server is None the local computer is used.
         """
         add_group_method = getattr(self, '_addGroup_' + self.name)
-
-        if self.name == 'windows':
-            add_group_method(group=group, server=server)
-        else:
-            add_group_method(group=group)
+        add_group_method(group=group)
 
     def _addGroup_unix(self, group):
         group_segments = ['etc', 'group']
@@ -185,9 +142,14 @@ class OSAdministration(object):
             'name': group.name,
         }
 
-        win32net.NetLocalGroupAdd(group.domain, 0, data)
+        try:
+            win32net.NetLocalGroupAdd(group.domain, 0, data)
+        except Exception, error:
+            raise AssertionError(
+                'Failed to add group %s in domain %s. %s' % (
+                    group.name, group.domain, error))
 
-    def addUsersToGroup(self, group, users=None, server=None):
+    def addUsersToGroup(self, group, users=None):
         """
         Add the group to the local computer or domain.
         """
@@ -195,10 +157,7 @@ class OSAdministration(object):
             users = []
 
         add_user_method = getattr(self, '_addUsersToGroup_' + self.name)
-        if self.name == 'windows':
-            add_user_method(group=group, users=users, server=server)
-        else:
-            add_user_method(group=group, users=users)
+        add_user_method(group=group, users=users)
 
     def _addUsersToGroup_unix(self, group, users):
         segments = ['etc', 'group']
@@ -260,6 +219,8 @@ class OSAdministration(object):
             self.setUserPassword(user=user)
 
     def _addUser_unix(self, user):
+        # Prevent circular import.
+        from chevah.compat.testing import OSGroup
         group = OSGroup(name=user.name, gid=user.uid)
         self._addGroup_linux(group)
 
@@ -364,7 +325,6 @@ class OSAdministration(object):
         """
         import win32net
         import win32netcon
-
         user_info = {
             'name': user.name,
             'password': user.password,
@@ -374,7 +334,6 @@ class OSAdministration(object):
             'flags': win32netcon.UF_SCRIPT,
             'script_path': None,
         }
-
         win32net.NetUserAdd(user.domain, 1, user_info)
         if user.password and create_profile:
             result, token = system_users.authenticateWithUsernameAndPassword(
@@ -444,14 +403,10 @@ class OSAdministration(object):
                 user.password, user.username)
             raise
 
-    def deleteUser(self, user, server=None):
+    def deleteUser(self, user):
         '''Delete user from the local operating system.'''
         delete_user_method = getattr(self, '_deleteUser_' + self.name)
-
-        if self.name == 'windows':
-            delete_user_method(user=user, server=server)
-        else:
-            delete_user_method(user)
+        delete_user_method(user)
 
     def _deleteUser_unix(self, user):
         self._deleteUnixEntry(
@@ -459,6 +414,8 @@ class OSAdministration(object):
             name=user.name,
             files=[['etc', 'passwd'], ['etc', 'shadow']])
 
+        # Prevent circular import.
+        from chevah.compat.testing import OSGroup
         group = OSGroup(name=user.name, gid=user.uid)
         self._deleteGroup_linux(group)
 
@@ -485,7 +442,7 @@ class OSAdministration(object):
     def _deleteUser_solaris(self, user):
         self._deleteUser_unix(user)
 
-    def _deleteUser_windows(self, user, server=None):
+    def _deleteUser_windows(self, user):
         """
         Removes an account from Windows together.
 
@@ -493,7 +450,7 @@ class OSAdministration(object):
         """
         import win32net
         try:
-            win32net.NetUserDel('chevah-dc', user.name)
+            win32net.NetUserDel(user.domain, user.name)
         except win32net.error, (number, context, message):
             # Ignore user not found error.
             if number != 2221:
@@ -514,14 +471,10 @@ class OSAdministration(object):
                 'cmd.exe /C rmdir /S /Q "' + home_path.encode('utf-8') + '"',
                 shell=True)
 
-    def deleteGroup(self, group, server=None):
+    def deleteGroup(self, group):
         '''Delete group from the local operating system.'''
         delete_group_method = getattr(self, '_deleteGroup_' + self.name)
-
-        if self.name == 'windows':
-            delete_group_method(group=group, server=server)
-        else:
-            delete_group_method(group=group)
+        delete_group_method(group=group)
 
     def _deleteGroup_unix(self, group):
         self._deleteUnixEntry(
@@ -542,12 +495,12 @@ class OSAdministration(object):
     def _deleteGroup_solaris(self, group):
         self._deleteGroup_unix(group)
 
-    def _deleteGroup_windows(self, group, server=None):
+    def _deleteGroup_windows(self, group):
         """
         Remove a group from Windows local system.
         """
         import win32net
-        win32net.NetLocalGroupDel('chevah-dc', group.name)
+        win32net.NetLocalGroupDel(group.domain, group.name)
 
     def _appendUnixEntry(self, segments, new_line):
         '''Add the new_line to the end of `segments`.'''

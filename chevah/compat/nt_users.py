@@ -250,7 +250,7 @@ class NTUsers(object):
         '''Return user token.'''
         domain, name = self._parseUPN(username)
         return win32security.LogonUser(
-            user,
+            name,
             domain,
             password,
             win32security.LOGON32_LOGON_NETWORK,

@@ -16,11 +16,12 @@ from chevah.compat import (
 from chevah.compat.constants import (
     WINDOWS_PRIMARY_GROUP,
     )
-from chevah.compat.administration import os_administration, OSUser
+from chevah.compat.administration import os_administration
 from chevah.compat.helpers import NoOpContext
 from chevah.compat.testing import (
     ChevahTestCase,
     manufacture,
+    TestUser,
     TEST_ACCOUNT_CENTRIFY_USERNAME,
     TEST_ACCOUNT_CENTRIFY_PASSWORD,
     TEST_ACCOUNT_UID,
@@ -130,7 +131,7 @@ class TestSystemUsers(ChevahTestCase):
         username = u'no-home'
         password = u'no-home'
         home_path = None
-        user = OSUser(
+        user = TestUser(
             name=username, uid=None, password=password, home_path=home_path)
 
         try:

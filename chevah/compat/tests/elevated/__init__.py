@@ -4,6 +4,7 @@
 Code for testing compat module that requires access to system security
 functions.
 """
+
 from chevah.compat import process_capabilities
 from chevah.empirical.testcase import (
     ChevahTestCase,
