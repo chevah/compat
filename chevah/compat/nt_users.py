@@ -207,11 +207,10 @@ class NTUsers(object):
         """
         Create the local profile if it does not exists.
         """
-        # FIXME:1460:
-        # _parseUPN is not working. `domain` should be 'chevah-dc'.
-        domain, name = self._parseUPN(username)
+        primary_domain_controller, name = self._parseUPN(username)
 
-        user_info_4 = win32net.NetUserGetInfo(domain, name, 4)
+        user_info_4 = win32net.NetUserGetInfo(
+            primary_domain_controller, name, 4)
         profile_path = user_info_4['profile']
         # LoadUserProfile apparently doesn't like an empty string.
         if not profile_path:
@@ -221,7 +220,7 @@ class NTUsers(object):
             token,
             {
                 'UserName': name,
-                'ServerName': domain,
+                'ServerName': primary_domain_controller,
                 'Flags': 0,
                 'ProfilePath': profile_path,
             })
@@ -230,25 +229,29 @@ class NTUsers(object):
 
     def _parseUPN(self, upn):
         """
-        Return domain and username for UPN username format.
+        Return a tuple of (primary_domain_controller, username) for the
+        account name specified in upn format.
 
         Return (None, username) is UPN does not contain a domain.
         """
         parts = upn.split('@', 1)
         if len(parts) == 2:
-            domain = win32net.NetGetDCName(None, parts[1])
-            username = parts[1]
-            return (domain, username)
+            primary_domain_controller = win32net.NetGetDCName(None, parts[1])
+            username = parts[0]
+            return (primary_domain_controller, username)
         else:
             # This is not an UPN name.
             return (None, upn)
 
     def _getToken(self, username, password):
-        '''Return user token.'''
-        domain, name = self._parseUPN(username)
+        """
+        Return the impersonation token for `username`.
+
+        The `username` is specified in UPN format.
+        """
         return win32security.LogonUser(
-            name,
-            domain,
+            username,
+            None,
             password,
             win32security.LOGON32_LOGON_NETWORK,
             win32security.LOGON32_PROVIDER_DEFAULT,

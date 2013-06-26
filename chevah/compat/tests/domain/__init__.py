@@ -12,12 +12,12 @@ from chevah.empirical.testcase import (
 from chevah.compat.testing import (
     TestGroup,
     TestUser,
+    TEST_PDC,
+    TEST_DOMAIN,
+    TEST_ACCOUNT_USERNAME_DOMAIN,
+    TEST_ACCOUNT_PASSWORD_DOMAIN,
+    TEST_ACCOUNT_GROUP_DOMAIN,
     )
-
-TEST_DOMAIN = 'chevah-dc'
-TEST_ACCOUNT_USERNAME_DOMAIN = 'domaintestuser'
-TEST_ACCOUNT_PASSWORD_DOMAIN = u'qwe123QWE'
-TEST_ACCOUNT_GROUP_DOMAIN = 'domaintestgroup'
 
 
 TEST_USERS = [
@@ -25,13 +25,15 @@ TEST_USERS = [
         name=TEST_ACCOUNT_USERNAME_DOMAIN,
         password=TEST_ACCOUNT_PASSWORD_DOMAIN,
         domain=TEST_DOMAIN,
+        pdc=TEST_PDC,
         )
     ]
 
 TEST_GROUPS = [
     TestGroup(
         name=TEST_ACCOUNT_GROUP_DOMAIN,
-        members=[TEST_ACCOUNT_USERNAME_DOMAIN]
+        members=[TEST_ACCOUNT_USERNAME_DOMAIN],
+        pdc=TEST_PDC,
         )
     ]
 

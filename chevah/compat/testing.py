@@ -49,13 +49,20 @@ TEST_ACCOUNT_CENTRIFY_UID = 1363149908
 TEST_ACCOUNT_GROUP_ANOTHER = u'g-another-test'
 TEST_ACCOUNT_GID_ANOTHER = 2012
 
+# Domain controller helpers.
+TEST_PDC = u'\\\\CHEVAH-DC'
+TEST_DOMAIN = u'chevah'
+TEST_ACCOUNT_USERNAME_DOMAIN = 'domaintestuser'
+TEST_ACCOUNT_PASSWORD_DOMAIN = u'qwe123QWE'
+TEST_ACCOUNT_GROUP_DOMAIN = 'domaintestgroup'
+
 
 class TestUser(object):
     '''An object storing all user information.'''
 
     def __init__(self, name, uid=None, gid=None, home_path=None,
             home_group=None, shell=None, shadow=None, password=None,
-            domain=None):
+            domain=None, pdc=None):
         if home_path is None:
             home_path = u'/tmp'
 
@@ -77,12 +84,13 @@ class TestUser(object):
         self.shadow = shadow
         self.password = password
         self.domain = domain
+        self.pdc = pdc
 
 
 class TestGroup(object):
     '''An object storing all user information.'''
 
-    def __init__(self, name, gid=None, members=None, domain=None):
+    def __init__(self, name, gid=None, members=None, pdc=None):
 
         if members is None:
             members = []
@@ -90,7 +98,7 @@ class TestGroup(object):
         self.name = name
         self.gid = gid
         self.members = members
-        self.domain = domain
+        self.pdc = pdc
 
 
 if sys.platform.startswith('aix'):

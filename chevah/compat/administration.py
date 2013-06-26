@@ -68,18 +68,6 @@ class OSAdministration(object):
 
         return name
 
-    def getPrimaryDomainName(self):
-        """
-        Return the name of the primary domain for this computer.
-
-        Return None, if this computer is not part of a domain.
-        """
-        if os.name != 'nt':
-            return None
-
-        import win32net
-        return win32net.NetGetDCName(None, 'chevah')[2:]
-
     def addGroup(self, group):
         """
         Add the group to the local computer or domain.
@@ -143,11 +131,11 @@ class OSAdministration(object):
         }
 
         try:
-            win32net.NetLocalGroupAdd(group.domain, 0, data)
+            win32net.NetLocalGroupAdd(group.pdc, 0, data)
         except Exception, error:
             raise AssertionError(
                 'Failed to add group %s in domain %s. %s' % (
-                    group.name, group.domain, error))
+                    group.name, group.pdc, error))
 
     def addUsersToGroup(self, group, users=None):
         """
@@ -205,7 +193,7 @@ class OSAdministration(object):
                 'domainandname': member
                 })
         win32net.NetLocalGroupAddMembers(
-            group.domain, group.name, 3, members_info)
+            group.pdc, group.name, 3, members_info)
 
     def addUser(self, user):
         """
@@ -334,12 +322,20 @@ class OSAdministration(object):
             'flags': win32netcon.UF_SCRIPT,
             'script_path': None,
         }
-        win32net.NetUserAdd(user.domain, 1, user_info)
+        win32net.NetUserAdd(user.pdc, 1, user_info)
         if user.password and create_profile:
+            if user.domain:
+                username = user.name + '@' + user.domain
+            else:
+                username = user.name
             result, token = system_users.authenticateWithUsernameAndPassword(
-                username=user.name, password=user.password)
+                username=username, password=user.password)
+            if token is None:
+                raise AssertionError(
+                    u'Failed to get a valid token while creating account '
+                    u'for %s' % (username))
             system_users._createLocalProfile(
-                username=user.name, token=token)
+                username=username, token=token)
 
     def setUserPassword(self, user):
         set_password_method = getattr(self, '_setUserPassword_' + self.name)
@@ -397,7 +393,7 @@ class OSAdministration(object):
         try:
             import win32net
             win32net.NetUserChangePassword(
-                user.domain, user.name, user.password, user.password)
+                user.pdc, user.name, user.password, user.password)
         except:
             print 'Failed to set password "%s" for user "%s".' % (
                 user.password, user.username)
@@ -450,7 +446,7 @@ class OSAdministration(object):
         """
         import win32net
         try:
-            win32net.NetUserDel(user.domain, user.name)
+            win32net.NetUserDel(user.pdc, user.name)
         except win32net.error, (number, context, message):
             # Ignore user not found error.
             if number != 2221:
@@ -500,7 +496,7 @@ class OSAdministration(object):
         Remove a group from Windows local system.
         """
         import win32net
-        win32net.NetLocalGroupDel(group.domain, group.name)
+        win32net.NetLocalGroupDel(group.pdc, group.name)
 
     def _appendUnixEntry(self, segments, new_line):
         '''Add the new_line to the end of `segments`.'''
