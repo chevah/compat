@@ -12,12 +12,18 @@ from chevah.compat import (
     system_users,
     SuperAvatar,
     )
-from chevah.compat.interfaces import IFileSystemAvatar
+from chevah.compat.interfaces import IFileSystemAvatar, IOSUsers
 from chevah.compat.testing import CompatTestCase, manufacture
 
 
 class TestSystemUsers(CompatTestCase):
     '''Test system users operations.'''
+
+    def test_init(self):
+        """
+        Check initialization of system users.
+        """
+        self.assertProvides(IOSUsers, system_users)
 
     def test_getHomeFolder_linux(self):
         """

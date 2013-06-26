@@ -145,11 +145,11 @@ class IOSUsers(Interface):
         '''Returns `True` if username exists on this system.'''
 
     def authenticateWithUsernameAndPassword(username, password):
-        '''Check the username and password agains local accounts.
+        '''Check the username and password against local accounts.
 
         Returns a tuple of (result, token).
         `result` is `True` if credentials are accepted, False otherwise.
-        `token` is None on Unix system and a tokenhandler on Windows.
+        `token` is None on Unix system and a token handler on Windows.
         '''
 
     def dropPrivileges(username):
@@ -159,15 +159,15 @@ class IOSUsers(Interface):
         switching to user.
         '''
 
-    def executeAsUser(username, token=None):
-        '''Returns a context manager for chaning current process privileges
+    def executeAsUser(username, token):
+        '''Returns a context manager for changing current process privileges
         to `username`.
 
         Return `ChangeUserException` is there are no permissions for
         switching to user.
         '''
 
-    def isUserInGroups(username, groups, token=None):
+    def isUserInGroups(username, groups, token):
         '''Return true if `username` or 'token' is a member of `groups`.'''
 
     def getPrimaryGroup(username):

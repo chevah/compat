@@ -176,7 +176,7 @@ class OSAdministration(object):
     def _addGroup_solaris(self, group):
         self._addGroup_unix(group)
 
-    def _addGroup_windows(self, group, server=None):
+    def _addGroup_windows(self, group):
         """
         Add a group to Windows local system.
         """
@@ -185,7 +185,7 @@ class OSAdministration(object):
             'name': group.name,
         }
 
-        win32net.NetLocalGroupAdd(server, 0, data)
+        win32net.NetLocalGroupAdd(group.domain, 0, data)
 
     def addUsersToGroup(self, group, users=None, server=None):
         """
@@ -235,7 +235,7 @@ class OSAdministration(object):
     def _addUsersToGroup_solaris(self, group, users):
         self._addUsersToGroup_unix(group, users)
 
-    def _addUsersToGroup_windows(self, group, users, server=None):
+    def _addUsersToGroup_windows(self, group, users):
         """
         Add `users` to group.
         """
@@ -245,25 +245,19 @@ class OSAdministration(object):
             members_info.append({
                 'domainandname': member
                 })
-        win32net.NetLocalGroupAddMembers(server, group.name, 3, members_info)
+        win32net.NetLocalGroupAddMembers(
+            group.domain, group.name, 3, members_info)
 
-    def addUser(self, user, server=None):
+    def addUser(self, user):
         """
         Add the user and set the corresponding passwords to local computer
         or domain. If server is None the local computer is used.
         """
         add_user_method = getattr(self, '_addUser_' + self.name)
 
-        if self.name == 'windows':
-            add_user_method(user=user, server=server)
-            if user.password:
-                self.setUserPassword(
-                    username=user.name, password=user.password, server=server)
-        else:
-            add_user_method(user=user)
-            if user.password:
-                self.setUserPassword(
-                    username=user.name, password=user.password)
+        add_user_method(user=user)
+        if user.password:
+            self.setUserPassword(user=user)
 
     def _addUser_unix(self, user):
         group = OSGroup(name=user.name, gid=user.uid)
@@ -359,7 +353,7 @@ class OSAdministration(object):
     def _addUser_solaris(self, user):
         self._addUser_unix(user)
 
-    def _addUser_windows(self, user, create_profile=True, server=None):
+    def _addUser_windows(self, user, create_profile=True):
         """
         Create an local Windows account.
 
@@ -381,23 +375,18 @@ class OSAdministration(object):
             'script_path': None,
         }
 
-        win32net.NetUserAdd(server, 1, user_info)
+        win32net.NetUserAdd(user.domain, 1, user_info)
         if user.password and create_profile:
             result, token = system_users.authenticateWithUsernameAndPassword(
-                username=user.name, password=user.password, server=server)
+                username=user.name, password=user.password)
             system_users._createLocalProfile(
-                username=user.name, token=token, server=server)
+                username=user.name, token=token)
 
-    def setUserPassword(self, username, password, server=None):
+    def setUserPassword(self, user):
         set_password_method = getattr(self, '_setUserPassword_' + self.name)
+        set_password_method(user)
 
-        if self.name == 'windows':
-            set_password_method(
-                username=username, password=password, server=server)
-        else:
-            set_password_method(username=username, password=password)
-
-    def _setUserPassword_unix(self, username, password):
+    def _setUserPassword_unix(self, user):
         import crypt
         ALPHABET = (
             '0123456789'
@@ -406,39 +395,40 @@ class OSAdministration(object):
             )
         salt = ''.join(random.choice(ALPHABET) for i in range(8))
         shadow_password = crypt.crypt(
-            password.encode('utf-8'),
+            user.password.encode('utf-8'),
             '$1$' + salt + '$',
             )
 
         segments = ['etc', 'shadow']
         self._changeUnixEntry(
             segments=segments,
-            name=username,
+            name=user.name,
             field=2,
             value_to_replace=shadow_password,
             )
 
-    def _setUserPassword_aix(self, username, password):
-        input_text = username.encode('utf-8') + ':' + password.encode('utf-8')
+    def _setUserPassword_aix(self, user):
+        input_text = (
+            user.name.encode('utf-8') + ':' + user.password.encode('utf-8'))
         execute(
             command=['sudo', 'chpasswd', '-c'],
             input_text=input_text,
             )
 
-    def _setUserPassword_linux(self, username, password):
-        self._setUserPassword_unix(username, password)
+    def _setUserPassword_linux(self, user):
+        self._setUserPassword_unix(user)
 
-    def _setUserPassword_osx(self, username, password):
-        userdb_name = u'/Users/' + username
+    def _setUserPassword_osx(self, user):
+        userdb_name = u'/Users/' + user.name
         execute([
             'sudo', 'dscl', '.', '-passwd', userdb_name,
-            password,
+            user.password,
             ])
 
-    def _setUserPassword_solaris(self, username, password):
-        self._setUserPassword_unix(username, password)
+    def _setUserPassword_solaris(self, user):
+        self._setUserPassword_unix(user)
 
-    def _setUserPassword_windows(self, username, password, server=None):
+    def _setUserPassword_windows(self, user):
         """
         On Windows we can not change the password without having the
         old password.
@@ -448,10 +438,10 @@ class OSAdministration(object):
         try:
             import win32net
             win32net.NetUserChangePassword(
-                server, username, password, password)
+                user.domain, user.name, user.password, user.password)
         except:
             print 'Failed to set password "%s" for user "%s".' % (
-                password, username)
+                user.password, user.username)
             raise
 
     def deleteUser(self, user, server=None):
@@ -503,7 +493,7 @@ class OSAdministration(object):
         """
         import win32net
         try:
-            win32net.NetUserDel(server, user.name)
+            win32net.NetUserDel('chevah-dc', user.name)
         except win32net.error, (number, context, message):
             # Ignore user not found error.
             if number != 2221:
@@ -557,7 +547,7 @@ class OSAdministration(object):
         Remove a group from Windows local system.
         """
         import win32net
-        win32net.NetLocalGroupDel(server, group.name)
+        win32net.NetLocalGroupDel('chevah-dc', group.name)
 
     def _appendUnixEntry(self, segments, new_line):
         '''Add the new_line to the end of `segments`.'''
