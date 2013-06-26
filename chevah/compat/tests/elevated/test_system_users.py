@@ -42,6 +42,10 @@ from chevah.compat.interfaces import IHasImpersonatedAvatar
 class TestSystemUsers(ChevahTestCase):
     '''Test system users operations.'''
 
+    def setUp(self):
+        super(TestSystemUsers, self).setUp()
+        self.server = os_administration.getAuthenticationServerName()
+
     def test_userExists(self):
         """Test userExists."""
         # FIXME:1273:
@@ -128,7 +132,7 @@ class TestSystemUsers(ChevahTestCase):
 
         username = u'no-home'
         password = u'qwe123QWE'
-        pdc='chevah-dc'
+
         home_path = None
         user = OSUser(
             name=username, uid=None, password=password, home_path=home_path)
@@ -136,19 +140,20 @@ class TestSystemUsers(ChevahTestCase):
         try:
             # We don't want to create the profile here since this is
             # what we are testing.
-            os_administration._addUser_windows(user, create_profile=False)
+            os_administration._addUser_windows(
+                user, create_profile=False, server=self.server)
             token = manufacture.makeToken(
-                username=username, password=password)
+                username=username, password=password, server=self.server)
 
             home_path = system_users.getHomeFolder(
-                username=username, token=token)
+                username=username, token=token, server=self.server)
 
             self.assertTrue(
                 username.lower() in home_path.lower(),
                 'Home folder "%s" is not good for user "%s"' % (
                     home_path, username))
         finally:
-            os_administration.deleteUser(user)
+            os_administration.deleteUser(user, server=self.server)
             # Delete user does not removed the user home folder,
             # so we explictly remove it here.
             if home_path:

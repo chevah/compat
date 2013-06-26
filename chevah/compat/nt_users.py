@@ -54,7 +54,7 @@ class NTUsers(object):
         """
         return get_current_username()
 
-    def getHomeFolder(self, username, token=None):
+    def getHomeFolder(self, username, token=None, server=None):
         '''Get home folder for local user.'''
         # In windows, you can choose to care about local versus
         # roaming profiles.
@@ -95,7 +95,7 @@ class NTUsers(object):
 
         def _createProfile():
             try:
-                self._createLocalProfile(username, token)
+                self._createLocalProfile(username, token, server=server)
             except win32security.error, (error_id, error_call, error_message):
                 error_text = _(
                     u'Failed to create user profile. '
@@ -109,7 +109,7 @@ class NTUsers(object):
                 # Get home folder if profile already exists.
                 home_folder_path = _getHomeFolderPath()
             except CompatError:
-                # On erros we try to create the profile
+                # On errors we try to create the profile
                 # and try one last time.
                 _createProfile()
                 home_folder_path = _getHomeFolderPath()

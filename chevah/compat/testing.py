@@ -76,11 +76,11 @@ class CompatManufacture(ChevahCommonsFactory):
             root_folder_path=root_folder_path,
             )
 
-    def makeToken(self, username, password):
+    def makeToken(self, username, password, server=None):
         """
         Generate the Windows token for username and password.
 
-        Only useful on WIndows.
+        Only useful on Windows.
         On Unix it should return None.
         """
         if os.name != 'nt':
@@ -89,6 +89,7 @@ class CompatManufacture(ChevahCommonsFactory):
         result, token = system_users.authenticateWithUsernameAndPassword(
             username=username,
             password=password,
+            server=server
             )
         if not result:
             raise AssertionError(

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2013 Adi Roiban.
 # See LICENSE for details.
 """
@@ -167,4 +168,3 @@ TEST_GROUPS = [
     ]
 
 TEST_NAME_MARKER = u'-cpț'
-

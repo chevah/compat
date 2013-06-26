@@ -106,6 +106,19 @@ class OSAdministration(object):
 
         return name
 
+    def getAuthenticationServerName(self):
+        server = None
+
+        if os.name == 'nt':
+            import platform
+            import win32net
+
+            computer_name = platform.node()
+            if computer_name == 'bs-win-dc-x64':
+                server = win32net.NetGetDCName(None, 'chevah')[2:]
+
+        return server
+
     def addGroup(self, group, server=None):
         """
         Add the group to the local computer or domain.
@@ -367,6 +380,7 @@ class OSAdministration(object):
             'flags': win32netcon.UF_SCRIPT,
             'script_path': None,
         }
+
         win32net.NetUserAdd(server, 1, user_info)
         if user.password and create_profile:
             result, token = system_users.authenticateWithUsernameAndPassword(
@@ -433,7 +447,8 @@ class OSAdministration(object):
         """
         try:
             import win32net
-            win32net.NetUserChangePassword(server, username, password, password)
+            win32net.NetUserChangePassword(
+                server, username, password, password)
         except:
             print 'Failed to set password "%s" for user "%s".' % (
                 password, username)
@@ -515,7 +530,7 @@ class OSAdministration(object):
 
         if self.name == 'windows':
             delete_group_method(group=group, server=server)
-        else :
+        else:
             delete_group_method(group=group)
 
     def _deleteGroup_unix(self, group):
