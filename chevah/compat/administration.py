@@ -208,8 +208,8 @@ class OSAdministration(object):
 
     def _addUser_unix(self, user):
         # Prevent circular import.
-        from chevah.compat.testing import OSGroup
-        group = OSGroup(name=user.name, gid=user.uid)
+        from chevah.compat.testing import TestGroup
+        group = TestGroup(name=user.name, gid=user.uid)
         self._addGroup_linux(group)
 
         passwd_segments = ['etc', 'passwd']
@@ -411,8 +411,8 @@ class OSAdministration(object):
             files=[['etc', 'passwd'], ['etc', 'shadow']])
 
         # Prevent circular import.
-        from chevah.compat.testing import OSGroup
-        group = OSGroup(name=user.name, gid=user.uid)
+        from chevah.compat.testing import TestGroup
+        group = TestGroup(name=user.name, gid=user.uid)
         self._deleteGroup_linux(group)
 
         if not u'tmp' in user.home_path:
