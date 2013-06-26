@@ -396,7 +396,7 @@ class OSAdministration(object):
                 user.pdc, user.name, user.password, user.password)
         except:
             print 'Failed to set password "%s" for user "%s".' % (
-                user.password, user.username)
+                user.password, user.name)
             raise
 
     def deleteUser(self, user):

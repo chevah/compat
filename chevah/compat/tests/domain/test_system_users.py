@@ -24,5 +24,6 @@ class TestSystemUsers(CompatTestCase):
         Return `True` when user exists.
         """
         upn = u'%s@%s' % (TEST_ACCOUNT_USERNAME_DOMAIN, TEST_DOMAIN)
-
+        non_existent = u'nonexistent@%s' % (TEST_DOMAIN)
         self.assertTrue(system_users.userExists(upn))
+        self.assertFalse(system_users.userExists(non_existent))

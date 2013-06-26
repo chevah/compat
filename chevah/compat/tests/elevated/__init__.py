@@ -21,6 +21,7 @@ def runElevatedTest():
     """
     Return true if we can access privileged OS operations.
     """
+    # FIXME:1462:
     # For now, elevated tests are skipped on domain controller,
     # and we have a separate set of tests.
     if '-dc-' in ChevahTestCase.getHostname():
