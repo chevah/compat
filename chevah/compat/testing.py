@@ -52,9 +52,9 @@ TEST_ACCOUNT_GID_ANOTHER = 2012
 # Domain controller helpers.
 TEST_PDC = u'\\\\CHEVAH-DC'
 TEST_DOMAIN = u'chevah'
-TEST_ACCOUNT_USERNAME_DOMAIN = 'domaintestuser'
+TEST_ACCOUNT_USERNAME_DOMAIN = u'domain test-user'
 TEST_ACCOUNT_PASSWORD_DOMAIN = u'qwe123QWE'
-TEST_ACCOUNT_GROUP_DOMAIN = 'domaintestgroup'
+TEST_ACCOUNT_GROUP_DOMAIN = 'domain test_group'
 
 
 class TestUser(object):
