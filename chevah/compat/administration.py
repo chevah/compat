@@ -97,6 +97,9 @@ class OSAdministration(object):
         self._getUnixGroup(group.name)
 
     def _getUnixGroup(self, name):
+        """
+        Get unix group entry, retrying if group is not available yet.
+        """
         import grp
         import time
         name_encoded = name.encode('utf-8')
@@ -106,8 +109,8 @@ class OSAdministration(object):
                     return group
             time.sleep(0.5)
 
-        raise AssertionError('Failed to create group %s' % (
-            name.encode('utf-8')))
+        raise AssertionError('Failed to get group %s' % (
+            name_encoded))
 
     def _addGroup_aix(self, group):
         group_name = group.name.encode('utf-8')
@@ -231,6 +234,9 @@ class OSAdministration(object):
         if self.fs.exists(shadow_segments):
             self._appendUnixEntry(shadow_segments, shadow_line)
 
+        # Wait for user to be available before.
+        self._getUnixUser(user.name)
+
         if user.home_path != u'/tmp':
             execute(['sudo', 'mkdir', user.home_path.encode('utf-8')])
             execute(
@@ -250,6 +256,22 @@ class OSAdministration(object):
                     ['sudo', 'chgrp', str(user.uid),
                         user.home_path.encode('utf-8'),
                     ])
+
+    def _getUnixUser(self, name):
+        """
+        Get Unix user entry, retrying if user is not available yet.
+        """
+        import pwd
+        import time
+        name_encoded = name.encode('utf-8')
+        for iterator in xrange(5):
+            try:
+                user = pwd.getpwnam(name_encoded)
+                return user
+            except:
+                pass
+            time.sleep(0.5)
+        raise AssertionError('Could not get user %s' % (name_encoded))
 
     def _addUser_aix(self, user):
         # AIX will only allow creating users with shells from
