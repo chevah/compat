@@ -1,11 +1,11 @@
 # Copyright (c) 2012 Adi Roiban.
 # See LICENSE for details.
-'''
+"""
 Portable implementation of operating system administration.
 
 For not this code should only be used to help with testing and is not
 designed to be used in production.
-'''
+"""
 from __future__ import with_statement
 import os
 import random
@@ -21,6 +21,10 @@ from chevah.compat import (
 
 def execute(command, input_text=None, output=None,
         ignore_errors=False, verbose=False):
+    """
+    Execute a command having stdout redirected and using 'input_test' as
+    input.
+    """
     if verbose:
         print 'Calling: %s' % command
 
@@ -48,7 +52,9 @@ class OSAdministration(object):
         self.fs = LocalFilesystem(SuperAvatar())
 
     def getName(self):
-        '''Return the name of the platform.'''
+        """
+        Return the name of the platform.
+        """
         name = sys.platform
         if name.startswith('linux'):
             name = 'linux'
@@ -400,7 +406,9 @@ class OSAdministration(object):
             raise
 
     def deleteUser(self, user):
-        '''Delete user from the local operating system.'''
+        """
+        Delete user from the local operating system.
+        """
         delete_user_method = getattr(self, '_deleteUser_' + self.name)
         delete_user_method(user)
 
@@ -441,7 +449,6 @@ class OSAdministration(object):
     def _deleteUser_windows(self, user):
         """
         Removes an account from Windows together.
-
         Home folder is not removed.
         """
         import win32net
@@ -468,7 +475,9 @@ class OSAdministration(object):
                 shell=True)
 
     def deleteGroup(self, group):
-        '''Delete group from the local operating system.'''
+        """
+        Delete group from the local operating system.
+        """
         delete_group_method = getattr(self, '_deleteGroup_' + self.name)
         delete_group_method(group=group)
 
@@ -499,7 +508,9 @@ class OSAdministration(object):
         win32net.NetLocalGroupDel(group.pdc, group.name)
 
     def _appendUnixEntry(self, segments, new_line):
-        '''Add the new_line to the end of `segments`.'''
+        """
+        Add the new_line to the end of `segments`.
+        """
         temp_segments = segments[:]
         temp_segments[-1] = temp_segments[-1] + '-'
         content = self._getFileContent(segments)
@@ -514,7 +525,9 @@ class OSAdministration(object):
         self._replaceFile(temp_segments, segments)
 
     def _deleteUnixEntry(self, files, name, kind):
-        '''Delete a generic unix entry with 'name' from all `files`.'''
+        """
+        Delete a generic unix entry with 'name' from all `files`.
+        """
         exists = False
         for segments in files:
 
@@ -551,10 +564,10 @@ class OSAdministration(object):
             value_when_empty=None, value_to_append=None,
             value_to_replace=None,
             ):
-        '''Update entry 'name' with a new value or an appened value.
-
+        """
+        Update entry 'name' with a new value or an appened value.
         Field is the number of entry filed to update, counting with 1.
-        '''
+        """
         exists = False
         temp_segments = segments[:]
         temp_segments[-1] = temp_segments[-1] + '-'
