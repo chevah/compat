@@ -154,10 +154,13 @@ class NTUsers(object):
         """
         Return true if `username` is a member of `groups`.
         """
+        primary_domain_controller, name = self._parseUPN(username)
+
         for group in groups:
             try:
                 group_sid, group_domain, group_type = (
-                    win32security.LookupAccountName(None, group))
+                    win32security.LookupAccountName(
+                        primary_domain_controller, group))
             except win32security.error:
                 continue
             if win32security.CheckTokenMembership(token, group_sid):
@@ -187,7 +190,7 @@ class NTUsers(object):
 
     def executeAsUser(self, username=None, token=None):
         """
-        Returns a context manager for chaning current process privileges
+        Returns a context manager for changing current process privileges
         to `username`
         Return `ChangeUserException` is there are no permissions for
         switching to user.
