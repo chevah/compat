@@ -267,10 +267,11 @@ class OSAdministration(object):
             try:
                 user = pwd.getpwnam(name_encoded)
                 return user
-            except:
+            except OSError, e:
                 pass
             time.sleep(0.5)
-        raise AssertionError('Could not get user %s' % (name_encoded))
+        raise AssertionError(
+            'Could not get user %s: %s' % (name_encoded, e.strerror))
 
     def _addUser_aix(self, user):
         # AIX will only allow creating users with shells from

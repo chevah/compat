@@ -12,8 +12,8 @@ from chevah.compat.administration import os_administration
 from chevah.compat.testing import (
     CompatTestCase,
     mk,
-    TEST_ACCOUNT_USERNAME_DOMAIN,
     TEST_ACCOUNT_PASSWORD_DOMAIN,
+    TEST_ACCOUNT_USERNAME_DOMAIN,
     TEST_DOMAIN,
     TEST_PDC,
     TestUser,
