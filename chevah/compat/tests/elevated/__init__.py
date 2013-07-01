@@ -29,11 +29,12 @@ def runElevatedTest():
 
 
 def setup_os(users, groups):
-    '''Create testing environemnt
+    """
+    Create testing environment
 
     Add users, groups, create temporary folders and other things required
     by the testing system.
-    '''
+    """
     from chevah.compat.administration import OSAdministration
 
     os_administration = OSAdministration()
@@ -46,8 +47,11 @@ def setup_os(users, groups):
     for group in groups:
         os_administration.addUsersToGroup(group, group.members)
 
+
 def teardown_os(users, groups):
-    '''Revert changes from setUpOS.'''
+    """
+    Revert changes from `setup_os`.
+    """
 
     from chevah.compat.administration import OSAdministration
 
@@ -58,6 +62,7 @@ def teardown_os(users, groups):
 
     for user in users:
         os_administration.deleteUser(user)
+
 
 def setup_package():
     # Don't run these tests if we can not access privileged OS part.

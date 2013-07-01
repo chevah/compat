@@ -219,7 +219,8 @@ class OSAdministration(object):
             members_info.append({
                 'domainandname': member
                 })
-        win32net.NetLocalGroupAddMembers('chevah-dc', group.name, 3, members_info)
+        win32net.NetLocalGroupAddMembers(
+            'chevah-dc', group.name, 3, members_info)
 
     def addUser(self, user):
         '''Add the user and set the corresponding passwords.'''
@@ -411,7 +412,8 @@ class OSAdministration(object):
         """
         try:
             import win32net
-            win32net.NetUserChangePassword('chevah-dc', username, password, password)
+            win32net.NetUserChangePassword(
+                'chevah-dc', username, password, password)
         except:
             print 'Failed to set password "%s" for user "%s".' % (
                 password, username)
