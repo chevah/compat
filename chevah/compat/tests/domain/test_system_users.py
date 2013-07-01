@@ -36,8 +36,8 @@ class TestSystemUsers(CompatTestCase):
 
     def test_isUserInGroups(self):
         """
-        Return `True` when the user used for testing is included in required
-        group and `False` otherwise.
+        Return `True` when the user is member of the group and
+        `False` otherwise.
         """
         upn = u'%s@%s' % (TEST_ACCOUNT_USERNAME_DOMAIN, TEST_DOMAIN)
         # FIXME:1471:
@@ -152,8 +152,9 @@ class TestSystemUsers(CompatTestCase):
             os_administration._addUser_windows(user, create_profile=False)
             token = mk.makeToken(username=username, password=password)
 
+            upn = u'%s@%s' % (username, domain)
             home_path = system_users.getHomeFolder(
-                username=username + '@' + domain, token=token)
+                username=upn, token=token)
 
             self.assertTrue(
                 username.lower() in home_path.lower(),
@@ -164,4 +165,7 @@ class TestSystemUsers(CompatTestCase):
             # Delete user does not removed the user home folder,
             # so we explicitly remove it here.
             if home_path:
+                # If filesystem.deleteFolder is used then 'Access denied'
+                # is return because Windows sees some opened files inside the
+                # directory.
                 os.system('rmdir /S /Q ' + home_path.encode('utf-8'))

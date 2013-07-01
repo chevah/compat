@@ -13,7 +13,12 @@ from chevah.compat import (
     SuperAvatar,
     )
 from chevah.compat.interfaces import IFileSystemAvatar, IOSUsers
-from chevah.compat.testing import CompatTestCase, manufacture
+from chevah.compat.testing import (
+    CompatTestCase,
+    manufacture,
+    TEST_DOMAIN,
+    TEST_PDC,
+    )
 
 
 class TestSystemUsers(CompatTestCase):
@@ -78,12 +83,15 @@ class TestSystemUsers(CompatTestCase):
         if '-dc-' not in self.getHostname():
             raise self.skipTest()
 
+        test_domain = TEST_DOMAIN
+        test_pdc = TEST_PDC
+
         name = manufacture.string()
-        upn = u'%s@chevah' % (name)
+        upn = u'%s@%s' % (name, test_domain)
 
-        (domain, username) = system_users._parseUPN(upn)
+        (pdc, username) = system_users._parseUPN(upn)
 
-        self.assertEqual(u'\\\\CHEVAH-DC', domain)
+        self.assertEqual(pdc, test_pdc)
         self.assertEqual(name, username)
 
     def test_getHomeFolder_osx(self):

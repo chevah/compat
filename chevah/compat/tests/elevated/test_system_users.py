@@ -149,6 +149,9 @@ class TestSystemUsers(ChevahTestCase):
             # Delete user does not removed the user home folder,
             # so we explicitly remove it here.
             if home_path:
+                # If filesystem.deleteFolder is used then 'Access denied'
+                # is return because Windows sees some opened files inside the
+                # directory.
                 os.system('rmdir /S /Q ' + home_path.encode('utf-8'))
 
     def test_getHomeFolder_osx(self):
