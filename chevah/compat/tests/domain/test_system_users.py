@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2013 Adi Roiban.
 # See LICENSE for details.
 """
 Test for portable system users access for Domain Controller.
 """
-
 import os
+
 from chevah.compat import (
     system_users,
     )
@@ -16,6 +15,7 @@ from chevah.compat.testing import (
     TEST_ACCOUNT_USERNAME_DOMAIN,
     TEST_ACCOUNT_PASSWORD_DOMAIN,
     TEST_DOMAIN,
+    TEST_PDC,
     TestUser,
     )
 
@@ -38,12 +38,12 @@ class TestSystemUsers(CompatTestCase):
     def test_isUserInGroups(self):
         """
         Return `True` when the user used for testing is included in required
-        group.
+        group and `False` otherwise.
         """
         upn = u'%s@%s' % (TEST_ACCOUNT_USERNAME_DOMAIN, TEST_DOMAIN)
-        # FIXME: 1273:
-        # not working with 'TEST_ACCOUNT_GROUP_DOMAIN'
-        #groups = [TEST_ACCOUNT_GROUP_DOMAIN]
+        # FIXME:1471:
+        # Don't know why is not working with TEST_ACCOUNT_GROUP_DOMAIN so
+        # for now we use the default group.
         groups = [u'Domain Users']
         groups_non_existent = [u'non-existent-group']
 
@@ -56,53 +56,57 @@ class TestSystemUsers(CompatTestCase):
 
     def test_authenticateWithUsernameAndPassword_good(self):
         """
-        Check successful call to authenticateWithUsernameAndPassword.
+        Return `True` when username and passwords are valid, together
+        with a token that can be used for impersonating the account.
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
             username=TEST_ACCOUNT_USERNAME_DOMAIN,
             password=TEST_ACCOUNT_PASSWORD_DOMAIN,
             )
 
+        self.assertIsTrue(result)
         self.assertIsNotNone(token)
+
+        with system_users.executeAsUser(
+                username=TEST_ACCOUNT_USERNAME_DOMAIN, token=token):
+            self.assertEqual(
+                TEST_ACCOUNT_USERNAME_DOMAIN,
+                system_users.getCurrentUserName(),
+                )
 
     def test_authenticateWithUsernameAndPassword_bad_password(self):
         """
-         Check authentication with bad password.
+        `False` is returned when a bad password is provided.
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
-                username=TEST_ACCOUNT_USERNAME_DOMAIN,
-                password=u'mțș',
-                )
+            username=TEST_ACCOUNT_USERNAME_DOMAIN, password=mk.string())
 
         self.assertFalse(result)
         self.assertIsNone(token)
 
     def test_authenticateWithUsernameAndPassword_bad_user(self):
         """
-        Check authentication for bad user.
+        `False` is returned when a bad user is provided.
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
-                username=u'other-mșț', password=u'other-mțs')
+            username=mk.string(), password=mk.string())
 
         self.assertFalse(result)
         self.assertIsNone(token)
 
     def test_executeAsUser(self):
         """
-        Test executing as a different user.
+        It uses the token to impersonate the account under which this
+        process is executed..
         """
-
-        # FIXME : 1273:
-        # Not a good test. The test should run as Administrator and execute
-        # a command as a normal user.
         username = TEST_ACCOUNT_USERNAME_DOMAIN
         token = mk.makeToken(
             username=username, password=TEST_ACCOUNT_PASSWORD_DOMAIN)
 
-        with system_users.executeAsUser(
-            username=username, token=token):
-            self.assertEqual(
-                username, system_users.getCurrentUserName())
+        self.assertNotEqual(username, system_users.getCurrentUserName())
+
+        with system_users.executeAsUser(username=username, token=token):
+            self.assertEqual(username, system_users.getCurrentUserName())
 
     def test_getHomeFolder_good(self):
         """
@@ -112,7 +116,7 @@ class TestSystemUsers(CompatTestCase):
         """
         token = mk.makeToken(
             username=TEST_ACCOUNT_USERNAME_DOMAIN,
-            password=TEST_ACCOUNT_PASSWORD_DOMAIN
+            password=TEST_ACCOUNT_PASSWORD_DOMAIN,
             )
 
         home_folder = system_users.getHomeFolder(
@@ -128,11 +132,11 @@ class TestSystemUsers(CompatTestCase):
         This tests creates a temporary account and in the end it deletes
         the account and home folder.
         """
-        username = u'no-home'
+        username = u'domain no-home'
         password = u'qwe123QWE'
         home_path = None
-        domain = 'chevah'
-        pdc = 'chevah-dc'
+        domain = TEST_DOMAIN
+        pdc = TEST_PDC
 
         user = TestUser(
             name=username,
@@ -140,7 +144,8 @@ class TestSystemUsers(CompatTestCase):
             password=password,
             home_path=home_path,
             domain=domain,
-            pdc=pdc)
+            pdc=pdc,
+            )
 
         try:
             # We don't want to create the profile here since this is

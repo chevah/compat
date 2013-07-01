@@ -54,7 +54,8 @@ class NTUsers(object):
 
     def getCurrentUserName(self):
         """
-        The name of current user.
+        Return the name of the account under which the current
+        process is executed.
         """
         return get_current_username()
 
