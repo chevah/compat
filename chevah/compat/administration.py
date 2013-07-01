@@ -22,7 +22,7 @@ from chevah.compat import (
 def execute(command, input_text=None, output=None,
         ignore_errors=False, verbose=False):
     """
-    Execute a command having stdout redirected and using 'input_test' as
+    Execute a command having stdout redirected and using 'input_text' as
     input.
     """
     if verbose:
@@ -77,7 +77,6 @@ class OSAdministration(object):
     def addGroup(self, group):
         """
         Add the group to the local computer or domain.
-        If server is None the local computer is used.
         """
         add_group_method = getattr(self, '_addGroup_' + self.name)
         add_group_method(group=group)
@@ -148,7 +147,7 @@ class OSAdministration(object):
 
     def addUsersToGroup(self, group, users=None):
         """
-        Add the group to the local computer or domain.
+        Add the users to the specified group.
         """
         if users is None:
             users = []
@@ -207,7 +206,7 @@ class OSAdministration(object):
     def addUser(self, user):
         """
         Add the user and set the corresponding passwords to local computer
-        or domain. If server is None the local computer is used.
+        or domain.
         """
         add_user_method = getattr(self, '_addUser_' + self.name)
 
@@ -219,7 +218,7 @@ class OSAdministration(object):
         # Prevent circular import.
         from chevah.compat.testing import TestGroup
         group = TestGroup(name=user.name, gid=user.uid)
-        self._addGroup_linux(group)
+        self._addGroup_unix(group)
 
         passwd_segments = ['etc', 'passwd']
         passwd_line = (
@@ -235,7 +234,7 @@ class OSAdministration(object):
             self._appendUnixEntry(shadow_segments, shadow_line)
 
         # Wait for user to be available before.
-        self._getUnixUser(user.name)
+        self._getUserUnix(user.name)
 
         if user.home_path != u'/tmp':
             execute(['sudo', 'mkdir', user.home_path.encode('utf-8')])
@@ -257,7 +256,7 @@ class OSAdministration(object):
                         user.home_path.encode('utf-8'),
                     ])
 
-    def _getUnixUser(self, name):
+    def _getUserUnix(self, name):
         """
         Get Unix user entry, retrying if user is not available yet.
         """
@@ -353,7 +352,7 @@ class OSAdministration(object):
         win32net.NetUserAdd(user.pdc, 1, user_info)
         if user.password and create_profile:
             if user.domain:
-                username = user.name + '@' + user.domain
+                username = u'%s@%s' % (user.name, user.domain)
             else:
                 username = user.name
             result, token = system_users.authenticateWithUsernameAndPassword(
@@ -366,10 +365,18 @@ class OSAdministration(object):
                 username=username, token=token)
 
     def setUserPassword(self, user):
+        """
+        Set a password for the user. The password is an attribute of the
+        'user'.
+        """
         set_password_method = getattr(self, '_setUserPassword_' + self.name)
         set_password_method(user)
 
     def _setUserPassword_unix(self, user):
+        """
+        Set a password for the user on Unix. The password is an attribute
+        of the 'user'. This function is common for Unix compliant OSes.
+        """
         import crypt
         ALPHABET = (
             '0123456789'
@@ -391,17 +398,28 @@ class OSAdministration(object):
             )
 
     def _setUserPassword_aix(self, user):
-        input_text = (
-            user.name.encode('utf-8') + ':' + user.password.encode('utf-8'))
+        """
+        Set a password for the user on AIX. The password is an attribute
+        of the 'user'.
+        """
+        input_text = u'%s:%s' % (user.name, user.password)
         execute(
             command=['sudo', 'chpasswd', '-c'],
             input_text=input_text,
             )
 
     def _setUserPassword_linux(self, user):
+        """
+        Set a password for the user on Linux. The password is an attribute
+        of the 'user'.
+        """
         self._setUserPassword_unix(user)
 
     def _setUserPassword_osx(self, user):
+        """
+        Set a password for the user on Mac OS X. The password is an attribute
+        of the 'user'.
+        """
         userdb_name = u'/Users/' + user.name
         execute([
             'sudo', 'dscl', '.', '-passwd', userdb_name,
@@ -409,6 +427,10 @@ class OSAdministration(object):
             ])
 
     def _setUserPassword_solaris(self, user):
+        """
+        Set a password for the user on Solaris. The password is an attribute
+        of the 'user'.
+        """
         self._setUserPassword_unix(user)
 
     def _setUserPassword_windows(self, user):
@@ -443,7 +465,7 @@ class OSAdministration(object):
         # Prevent circular import.
         from chevah.compat.testing import TestGroup
         group = TestGroup(name=user.name, gid=user.uid)
-        self._deleteGroup_linux(group)
+        self._deleteGroup_unix(group)
 
         if not u'tmp' in user.home_path:
             execute(['sudo', 'rm', '-rf', user.home_path.encode('utf-8')])

@@ -10,13 +10,13 @@ from chevah.empirical.testcase import (
     teardown_os,
     )
 from chevah.compat.testing import (
-    TestGroup,
-    TestUser,
-    TEST_PDC,
-    TEST_DOMAIN,
     TEST_ACCOUNT_USERNAME_DOMAIN,
     TEST_ACCOUNT_PASSWORD_DOMAIN,
     TEST_ACCOUNT_GROUP_DOMAIN,
+    TEST_DOMAIN,
+    TEST_PDC,
+    TestGroup,
+    TestUser,
     )
 
 

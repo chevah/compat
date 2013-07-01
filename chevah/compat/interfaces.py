@@ -85,7 +85,9 @@ class IProcess(Interface):
 
 
 class IProcessCapabilities(Interface):
-    '''Provides information about current process capabilities.'''
+    """
+    Provides information about current process capabilities.
+    """
 
     impersonate_local_account = Attribute(
         'True if it can impersonate any local account.')
@@ -134,44 +136,55 @@ class IFileSystemAvatar(IHasImpersonatedAvatar):
 
 
 class IOSUsers(Interface):
-    '''
+    """
     Non-object oriented methods for retrieving system accounts.
-    '''
+    """
 
     def getHomeFolder(username, token=None):
-        '''Get home folder for local (or NIS) user.'''
+        """
+        Get home folder for local (or NIS) user.
+        """
 
     def userExists(username):
-        '''Returns `True` if username exists on this system.'''
+        """
+        Returns `True` if username exists on this system.
+        """
 
     def authenticateWithUsernameAndPassword(username, password):
-        '''Check the username and password against local accounts.
+        """
+        Check the username and password against local accounts.
 
         Returns a tuple of (result, token).
         `result` is `True` if credentials are accepted, False otherwise.
         `token` is None on Unix system and a token handler on Windows.
-        '''
+        """
 
     def dropPrivileges(username):
-        '''Change process privileges to `username`.
+        """
+        Change process privileges to `username`.
 
         Return `ChangeUserException` if current process has no permissions for
         switching to user.
-        '''
+        """
 
     def executeAsUser(username, token):
-        '''Returns a context manager for changing current process privileges
+        """
+        Returns a context manager for changing current process privileges
         to `username`.
 
         Return `ChangeUserException` is there are no permissions for
         switching to user.
-        '''
+        """
 
     def isUserInGroups(username, groups, token):
-        '''Return true if `username` or 'token' is a member of `groups`.'''
+        """
+        Return true if `username` or 'token' is a member of `groups`.
+        """
 
     def getPrimaryGroup(username):
-        '''Return the primary group for username.'''
+        """
+        Return the primary group for username.
+        """
 
 
 class IFilesystemNode(Interface):
@@ -315,7 +328,8 @@ class IFilesystemNode(Interface):
 
 
 class ILocalFilesystem(Interface):
-    '''Portable acces to local filesystem.
+    """
+    Portable acces to local filesystem.
 
     This is designed to provide a single interface for accessing local files.
 
@@ -338,7 +352,7 @@ class ILocalFilesystem(Interface):
     they differ from one os to another.
      * On Unix - /some/path
      * on Windows c:\some\path
-    '''
+    """
 
     avatar = Attribute('Avatar associated with this filesytem.')
     system_users = Attribute('Module for handling system users `IOSUsers`.')
@@ -348,86 +362,119 @@ class ILocalFilesystem(Interface):
     _authentication_token = Attribute('Cached value')
 
     def getRealPathFromSegments(segments):
-        '''Return the real path for the segments.'''
+        """
+        Return the real path for the segments.
+        """
 
     def getSegmentsFromRealPath(real_path):
-        '''Return the segments coresponding to an real absolute path.'''
+        """
+        Return the segments coresponding to an real absolute path.
+        """
 
     def getAbsoluteRealPath(real_path):
-        '''Return the absolute real path from `real_path`.
+        """
+        Return the absolute real path from `real_path`.
 
         `real_path` is a path valid in the local operating system.
-        '''
+        """
 
     def getPath(self, segments):
-        '''Return the ChevahPath for the segment.
+        """
+        Return the ChevahPath for the segment.
 
         It always uses the forward slash '/' as a separator.
-        '''
+        """
 
     def getSegments(path):
-        '''Return the segments from the root path to the passed `path`.
+        """
+        Return the segments from the root path to the passed `path`.
 
         `path` is a ChevahPath and can be a relative path of the home folder.
-        '''
+        """
 
     def isFile(segments):
-        '''Return True if segments points to a file.'''
+        """
+        Return True if segments points to a file.
+        """
 
     def isFolder(segments):
-        '''Return True if segments points to a folder.'''
+        """
+        Return True if segments points to a folder.
+        """
 
     def isLink(segments):
-        '''Return True if segments points to a link.'''
+        """
+        Return True if segments points to a link.
+        """
 
     def exists(segments):
-        '''Return True if segments points to an existing path.'''
+        """
+        Return True if segments points to an existing path.
+        """
 
     def createFolder(segments, recursive):
-        '''Create a folder at the path specified by segments.
+        """
+        Create a folder at the path specified by segments.
 
         If `recursive` is True it will try to create parent folder.
         If `recursive` is False and parent folder does not exists it will
         raise `OSError`.
-        '''
+        """
 
     def deleteFolder(segments, recursive):
-        '''Delete the folder at `segments`.
+        """
+        Delete the folder at `segments`.
         If `recursive` is True the whole folder and its content will be
         deleted.
         If `resursice` is False and folder is not empty it will raise
         `OSError`.
-        '''
+        """
 
     def deleteFile(segments):
-        '''Delete the folder at `segments`.'''
+        """
+        Delete the folder at `segments`.
+        """
 
     def rename(from_segments, to_segments):
-        '''Rename file or folder.'''
+        """
+        Rename file or folder.
+        """
 
     def openFile(self, segments, flags, mode):
-        '''Return a file object for `segments`.
+        """
+        Return a file object for `segments`.
 
         `flags` and `mode` are used for os.open function.
-        '''
+        """
 
     def openFileForReading(segments, utf8=False):
-        '''Return a file object for reading the file.'''
+        """
+        Return a file object for reading the file.
+        """
 
     def openFileForWriting(segments, utf8=False):
-        '''Return a file object for writing into the file.'''
+        """
+        Return a file object for writing into the file.
+        """
 
     def openFileForAppending(segments, utf8=False):
-        '''Return a file object for writing at the end a file.'''
+        """
+        Return a file object for writing at the end a file.
+        """
 
     def getFileSize(segments):
-        '''Return the file size, in bytes.'''
+        """
+        Return the file size, in bytes.
+        """
 
     def getFolderContent(segments):
-        '''Return a list of files and folders contained by folder.'''
+        """
+        Return a list of files and folders contained by folder.
+        """
 
     def getAttributes(segments, attributes, follow_symlinks):
-        '''Return a list of attributes for segment.
+        """
+        Return a list of attributes for segment.
 
         Values are returned in the same order as attibutes list.
         Valid atrributes:
@@ -443,10 +490,11 @@ class ILocalFilesystem(Interface):
         `stat` structure.
         If `follow_symlinks` it will return attributes for symlinks targets,
         not the symlink itself.
-        '''
+        """
 
     def setAttributes(self, segments, attributes):
-        '''Set `attributes` for segment.
+        """
+        Set `attributes` for segment.
 
         `attributes` is a dictionary of:
          * size -> s.st_size
@@ -455,35 +503,47 @@ class ILocalFilesystem(Interface):
          * permissions -> s.st_mode
          * atime -> int(s.st_atime)
          * mtime -> int(s.st_mtime)
-        '''
+        """
 
     def readLink(segments):
-        '''Return the value of link at `segments'.'''
+        """
+        Return the value of link at `segments'.
+        """
 
     def makeLink(target_segments, link_segments):
-        '''Create a link at `link_segments` pointing to `target_segments`.'''
+        """
+        Create a link at `link_segments` pointing to `target_segments`.
+        """
 
     def setOwner(segments, owner):
-        '''Set file/folder owner'''
+        """
+        Set file/folder owner.
+        """
 
     def getOwner(segments):
-        '''Get file/folder owner'''
+        """
+        Get file/folder owner
+        """
 
     def addGroup(segments, group, permissions):
-        '''Add `group` to file/folder at `segments` using `permissions`.
+        """
+        Add `group` to file/folder at `segments` using `permissions`.
 
         On Unix it will replace the current group and
         is equivalent to setGroup.
-        '''
+        """
 
     def removeGroup(segments, group):
-        '''Remove group from file/folder acl.
+        """
+        Remove group from file/folder acl.
 
         On Unix it will only remove the group from extended acl.
-        '''
+        """
 
     def hasGroup(segments, group):
-        '''Return True if file at `segments` has group in ACL.'''
+        """
+        Return True if file at `segments` has group in ACL.
+        """
 
 
 class IFilesystemNodeAttributes(Interface):

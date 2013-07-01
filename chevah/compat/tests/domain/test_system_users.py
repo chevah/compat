@@ -27,8 +27,7 @@ class TestSystemUsers(CompatTestCase):
 
     def test_userExists(self):
         """
-        Return `True` when the user used for testing exists and a non existent
-        generated user doesn't exists.
+        Returns `True` if the user exists and `False` otherwise.
         """
         upn = u'%s@%s' % (TEST_ACCOUNT_USERNAME_DOMAIN, TEST_DOMAIN)
         non_existent = u'nonexistent@%s' % (TEST_DOMAIN)

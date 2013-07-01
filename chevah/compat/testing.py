@@ -58,7 +58,9 @@ TEST_ACCOUNT_GROUP_DOMAIN = 'domain test_group'
 
 
 class TestUser(object):
-    '''An object storing all user information.'''
+    """
+    An object storing all user information.
+    """
 
     def __init__(self, name, uid=None, gid=None, home_path=None,
             home_group=None, shell=None, shadow=None, password=None,
@@ -88,7 +90,9 @@ class TestUser(object):
 
 
 class TestGroup(object):
-    '''An object storing all user information.'''
+    """
+    An object storing all group information.
+    """
 
     def __init__(self, name, gid=None, members=None, pdc=None):
 
