@@ -11,8 +11,9 @@ from chevah.compat import (
     system_users,
     SuperAvatar,
     )
-from chevah.compat.testing import ChevahTestCase, manufacture
-from chevah.empirical.constants import (
+from chevah.compat.testing import (
+    ChevahTestCase,
+    manufacture,
     TEST_ACCOUNT_GROUP,
     TEST_ACCOUNT_GROUP_OTHER,
     TEST_ACCOUNT_USERNAME,

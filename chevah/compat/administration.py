@@ -1,11 +1,11 @@
 # Copyright (c) 2012 Adi Roiban.
 # See LICENSE for details.
-'''
+"""
 Portable implementation of operating system administration.
 
 For not this code should only be used to help with testing and is not
 designed to be used in production.
-'''
+"""
 from __future__ import with_statement
 import os
 import random
@@ -21,6 +21,10 @@ from chevah.compat import (
 
 def execute(command, input_text=None, output=None,
         ignore_errors=False, verbose=False):
+    """
+    Execute a command having stdout redirected and using 'input_text' as
+    input.
+    """
     if verbose:
         print 'Calling: %s' % command
 
@@ -41,44 +45,6 @@ def execute(command, input_text=None, output=None,
     return (exit_code, stdoutdata)
 
 
-class OSUser(object):
-    '''An object storing all user information.'''
-
-    def __init__(self, name, uid, gid=None, home_path=None, home_group=None,
-                shell=None, shadow=None, password=None):
-        if home_path is None:
-            home_path = u'/tmp'
-
-        if shell is None:
-            shell = u'/bin/sh'
-
-        if shadow is None:
-            shadow = '!'
-
-        self.name = name
-        self.uid = uid
-        self.gid = gid
-        self.home_path = home_path
-        self.home_group = home_group
-        self.shell = shell
-        self.shadow = shadow
-        self.password = password
-
-
-class OSGroup(object):
-    '''An object storing all user information.'''
-
-    def __init__(self, name, gid, members=None, password=None):
-
-        if members is None:
-            members = []
-
-        self.name = name
-        self.gid = gid
-        self.members = members
-        self.password = password
-
-
 class OSAdministration(object):
 
     def __init__(self):
@@ -86,7 +52,9 @@ class OSAdministration(object):
         self.fs = LocalFilesystem(SuperAvatar())
 
     def getName(self):
-        '''Return the name of the platform.'''
+        """
+        Return the name of the platform.
+        """
         name = sys.platform
         if name.startswith('linux'):
             name = 'linux'
@@ -107,9 +75,11 @@ class OSAdministration(object):
         return name
 
     def addGroup(self, group):
-        '''Add the group to the local operating system.'''
-        add_user_method = getattr(self, '_addGroup_' + self.name)
-        add_user_method(group)
+        """
+        Add the group to the local computer or domain.
+        """
+        add_group_method = getattr(self, '_addGroup_' + self.name)
+        add_group_method(group=group)
 
     def _addGroup_unix(self, group):
         group_segments = ['etc', 'group']
@@ -126,6 +96,9 @@ class OSAdministration(object):
         self._getUnixGroup(group.name)
 
     def _getUnixGroup(self, name):
+        """
+        Get unix group entry, retrying if group is not available yet.
+        """
         import grp
         import time
         name_encoded = name.encode('utf-8')
@@ -135,8 +108,8 @@ class OSAdministration(object):
                     return group
             time.sleep(0.5)
 
-        raise AssertionError('Failed to create group %s' % (
-            name.encode('utf-8')))
+        raise AssertionError('Failed to get group %s' % (
+            name_encoded))
 
     def _addGroup_aix(self, group):
         group_name = group.name.encode('utf-8')
@@ -164,15 +137,23 @@ class OSAdministration(object):
         data = {
             'name': group.name,
         }
-        win32net.NetLocalGroupAdd(None, 0, data)
+
+        try:
+            win32net.NetLocalGroupAdd(group.pdc, 0, data)
+        except Exception, error:
+            raise AssertionError(
+                'Failed to add group %s in domain %s. %s' % (
+                    group.name, group.pdc, error))
 
     def addUsersToGroup(self, group, users=None):
-        '''Add the group to the local operating system.'''
+        """
+        Add the users to the specified group.
+        """
         if users is None:
             users = []
 
         add_user_method = getattr(self, '_addUsersToGroup_' + self.name)
-        add_user_method(group, users)
+        add_user_method(group=group, users=users)
 
     def _addUsersToGroup_unix(self, group, users):
         segments = ['etc', 'group']
@@ -219,19 +200,25 @@ class OSAdministration(object):
             members_info.append({
                 'domainandname': member
                 })
-        win32net.NetLocalGroupAddMembers(None, group.name, 3, members_info)
+        win32net.NetLocalGroupAddMembers(
+            group.pdc, group.name, 3, members_info)
 
     def addUser(self, user):
-        '''Add the user and set the corresponding passwords.'''
+        """
+        Add the user and set the corresponding passwords to local computer
+        or domain.
+        """
         add_user_method = getattr(self, '_addUser_' + self.name)
-        add_user_method(user)
 
+        add_user_method(user=user)
         if user.password:
-            self.setUserPassword(user.name, user.password)
+            self.setUserPassword(user=user)
 
     def _addUser_unix(self, user):
-        group = OSGroup(name=user.name, gid=user.uid)
-        self._addGroup_linux(group)
+        # Prevent circular import.
+        from chevah.compat.testing import TestGroup
+        group = TestGroup(name=user.name, gid=user.uid)
+        self._addGroup_unix(group)
 
         passwd_segments = ['etc', 'passwd']
         passwd_line = (
@@ -245,6 +232,9 @@ class OSAdministration(object):
 
         if self.fs.exists(shadow_segments):
             self._appendUnixEntry(shadow_segments, shadow_line)
+
+        # Wait for user to be available before.
+        self._getUserUnix(user.name)
 
         if user.home_path != u'/tmp':
             execute(['sudo', 'mkdir', user.home_path.encode('utf-8')])
@@ -265,6 +255,23 @@ class OSAdministration(object):
                     ['sudo', 'chgrp', str(user.uid),
                         user.home_path.encode('utf-8'),
                     ])
+
+    def _getUserUnix(self, name):
+        """
+        Get Unix user entry, retrying if user is not available yet.
+        """
+        import pwd
+        import time
+        name_encoded = name.encode('utf-8')
+        for iterator in xrange(5):
+            try:
+                user = pwd.getpwnam(name_encoded)
+                return user
+            except OSError, e:
+                pass
+            time.sleep(0.5)
+        raise AssertionError(
+            'Could not get user %s: %s' % (name_encoded, e.strerror))
 
     def _addUser_aix(self, user):
         # AIX will only allow creating users with shells from
@@ -343,17 +350,34 @@ class OSAdministration(object):
             'flags': win32netcon.UF_SCRIPT,
             'script_path': None,
         }
-        win32net.NetUserAdd(None, 1, user_info)
+        win32net.NetUserAdd(user.pdc, 1, user_info)
         if user.password and create_profile:
+            if user.domain:
+                username = u'%s@%s' % (user.name, user.domain)
+            else:
+                username = user.name
             result, token = system_users.authenticateWithUsernameAndPassword(
-                username=user.name, password=user.password)
-            system_users._createLocalProfile(username=user.name, token=token)
+                username=username, password=user.password)
+            if token is None:
+                raise AssertionError(
+                    u'Failed to get a valid token while creating account '
+                    u'for %s' % (username))
+            system_users._createLocalProfile(
+                username=username, token=token)
 
-    def setUserPassword(self, username, password):
+    def setUserPassword(self, user):
+        """
+        Set a password for the user. The password is an attribute of the
+        'user'.
+        """
         set_password_method = getattr(self, '_setUserPassword_' + self.name)
-        set_password_method(username, password)
+        set_password_method(user)
 
-    def _setUserPassword_unix(self, username, password):
+    def _setUserPassword_unix(self, user):
+        """
+        Set a password for the user on Unix. The password is an attribute
+        of the 'user'. This function is common for Unix compliant OSes.
+        """
         import crypt
         ALPHABET = (
             '0123456789'
@@ -362,39 +386,55 @@ class OSAdministration(object):
             )
         salt = ''.join(random.choice(ALPHABET) for i in range(8))
         shadow_password = crypt.crypt(
-            password.encode('utf-8'),
+            user.password.encode('utf-8'),
             '$1$' + salt + '$',
             )
 
         segments = ['etc', 'shadow']
         self._changeUnixEntry(
             segments=segments,
-            name=username,
+            name=user.name,
             field=2,
             value_to_replace=shadow_password,
             )
 
-    def _setUserPassword_aix(self, username, password):
-        input_text = username.encode('utf-8') + ':' + password.encode('utf-8')
+    def _setUserPassword_aix(self, user):
+        """
+        Set a password for the user on AIX. The password is an attribute
+        of the 'user'.
+        """
+        input_text = u'%s:%s' % (user.name, user.password)
         execute(
             command=['sudo', 'chpasswd', '-c'],
             input_text=input_text,
             )
 
-    def _setUserPassword_linux(self, username, password):
-        self._setUserPassword_unix(username, password)
+    def _setUserPassword_linux(self, user):
+        """
+        Set a password for the user on Linux. The password is an attribute
+        of the 'user'.
+        """
+        self._setUserPassword_unix(user)
 
-    def _setUserPassword_osx(self, username, password):
-        userdb_name = u'/Users/' + username
+    def _setUserPassword_osx(self, user):
+        """
+        Set a password for the user on Mac OS X. The password is an attribute
+        of the 'user'.
+        """
+        userdb_name = u'/Users/' + user.name
         execute([
             'sudo', 'dscl', '.', '-passwd', userdb_name,
-            password,
+            user.password,
             ])
 
-    def _setUserPassword_solaris(self, username, password):
-        self._setUserPassword_unix(username, password)
+    def _setUserPassword_solaris(self, user):
+        """
+        Set a password for the user on Solaris. The password is an attribute
+        of the 'user'.
+        """
+        self._setUserPassword_unix(user)
 
-    def _setUserPassword_windows(self, username, password):
+    def _setUserPassword_windows(self, user):
         """
         On Windows we can not change the password without having the
         old password.
@@ -403,14 +443,17 @@ class OSAdministration(object):
         """
         try:
             import win32net
-            win32net.NetUserChangePassword(None, username, password, password)
+            win32net.NetUserChangePassword(
+                user.pdc, user.name, user.password, user.password)
         except:
             print 'Failed to set password "%s" for user "%s".' % (
-                password, username)
+                user.password, user.name)
             raise
 
     def deleteUser(self, user):
-        '''Delete user from the local operating system.'''
+        """
+        Delete user from the local operating system.
+        """
         delete_user_method = getattr(self, '_deleteUser_' + self.name)
         delete_user_method(user)
 
@@ -420,8 +463,10 @@ class OSAdministration(object):
             name=user.name,
             files=[['etc', 'passwd'], ['etc', 'shadow']])
 
-        group = OSGroup(name=user.name, gid=user.uid)
-        self._deleteGroup_linux(group)
+        # Prevent circular import.
+        from chevah.compat.testing import TestGroup
+        group = TestGroup(name=user.name, gid=user.uid)
+        self._deleteGroup_unix(group)
 
         if not u'tmp' in user.home_path:
             execute(['sudo', 'rm', '-rf', user.home_path.encode('utf-8')])
@@ -449,12 +494,11 @@ class OSAdministration(object):
     def _deleteUser_windows(self, user):
         """
         Removes an account from Windows together.
-
         Home folder is not removed.
         """
         import win32net
         try:
-            win32net.NetUserDel(None, user.name)
+            win32net.NetUserDel(user.pdc, user.name)
         except win32net.error, (number, context, message):
             # Ignore user not found error.
             if number != 2221:
@@ -476,9 +520,11 @@ class OSAdministration(object):
                 shell=True)
 
     def deleteGroup(self, group):
-        '''Delete group from the local operating system.'''
+        """
+        Delete group from the local operating system.
+        """
         delete_group_method = getattr(self, '_deleteGroup_' + self.name)
-        delete_group_method(group)
+        delete_group_method(group=group)
 
     def _deleteGroup_unix(self, group):
         self._deleteUnixEntry(
@@ -504,10 +550,12 @@ class OSAdministration(object):
         Remove a group from Windows local system.
         """
         import win32net
-        win32net.NetLocalGroupDel(None, group.name)
+        win32net.NetLocalGroupDel(group.pdc, group.name)
 
     def _appendUnixEntry(self, segments, new_line):
-        '''Add the new_line to the end of `segments`.'''
+        """
+        Add the new_line to the end of `segments`.
+        """
         temp_segments = segments[:]
         temp_segments[-1] = temp_segments[-1] + '-'
         content = self._getFileContent(segments)
@@ -522,7 +570,9 @@ class OSAdministration(object):
         self._replaceFile(temp_segments, segments)
 
     def _deleteUnixEntry(self, files, name, kind):
-        '''Delete a generic unix entry with 'name' from all `files`.'''
+        """
+        Delete a generic unix entry with 'name' from all `files`.
+        """
         exists = False
         for segments in files:
 
@@ -559,10 +609,10 @@ class OSAdministration(object):
             value_when_empty=None, value_to_append=None,
             value_to_replace=None,
             ):
-        '''Update entry 'name' with a new value or an appened value.
-
+        """
+        Update entry 'name' with a new value or an appened value.
         Field is the number of entry filed to update, counting with 1.
-        '''
+        """
         exists = False
         temp_segments = segments[:]
         temp_segments[-1] = temp_segments[-1] + '-'

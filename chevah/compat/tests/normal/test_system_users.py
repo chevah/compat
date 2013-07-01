@@ -12,12 +12,23 @@ from chevah.compat import (
     system_users,
     SuperAvatar,
     )
-from chevah.compat.interfaces import IFileSystemAvatar
-from chevah.compat.testing import CompatTestCase, manufacture
+from chevah.compat.interfaces import IFileSystemAvatar, IOSUsers
+from chevah.compat.testing import (
+    CompatTestCase,
+    manufacture,
+    TEST_DOMAIN,
+    TEST_PDC,
+    )
 
 
 class TestSystemUsers(CompatTestCase):
     '''Test system users operations.'''
+
+    def test_init(self):
+        """
+        Check initialization of system users.
+        """
+        self.assertProvides(IOSUsers, system_users)
 
     def test_getHomeFolder_linux(self):
         """
@@ -48,6 +59,40 @@ class TestSystemUsers(CompatTestCase):
             -1,
             home_folder.lower().find(manufacture.username.lower()),
             '%s not in %s' % (manufacture.username, home_folder))
+
+    def test_parseUPN_no_domain(self):
+        """
+        Return the exact username and domain `None` when username UPN
+        is not a domain.
+        """
+        if os.name != 'nt':
+            raise self.skipTest()
+        name = manufacture.string()
+
+        (domain, username) = system_users._parseUPN(name)
+
+        self.assertIsNone(domain)
+        self.assertEqual(name, username)
+
+    def test_parseUPN_domain(self):
+        """
+        Return the domain and username when username UPN contains
+        a domain.
+        """
+        # This test is only running on the domain controller slave.
+        if '-dc-' not in self.getHostname():
+            raise self.skipTest()
+
+        test_domain = TEST_DOMAIN
+        test_pdc = TEST_PDC
+
+        name = manufacture.string()
+        upn = u'%s@%s' % (name, test_domain)
+
+        (pdc, username) = system_users._parseUPN(upn)
+
+        self.assertEqual(pdc, test_pdc)
+        self.assertEqual(name, username)
 
     def test_getHomeFolder_osx(self):
         """

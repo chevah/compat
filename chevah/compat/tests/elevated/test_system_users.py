@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
 '''Test system users portable code code.'''
@@ -16,10 +15,12 @@ from chevah.compat import (
 from chevah.compat.constants import (
     WINDOWS_PRIMARY_GROUP,
     )
-from chevah.compat.administration import os_administration, OSUser
+from chevah.compat.administration import os_administration
 from chevah.compat.helpers import NoOpContext
-from chevah.compat.testing import ChevahTestCase, manufacture
-from chevah.empirical.constants import (
+from chevah.compat.testing import (
+    ChevahTestCase,
+    manufacture,
+    TestUser,
     TEST_ACCOUNT_CENTRIFY_USERNAME,
     TEST_ACCOUNT_CENTRIFY_PASSWORD,
     TEST_ACCOUNT_UID,
@@ -44,12 +45,9 @@ class TestSystemUsers(ChevahTestCase):
 
     def test_userExists(self):
         """Test userExists."""
-        # FIXME:1273:
-        # Add tests for domain accounts after we have a working DC slave.
         self.assertTrue(system_users.userExists(TEST_ACCOUNT_USERNAME))
         self.assertFalse(system_users.userExists('non-existent-patricia'))
         self.assertFalse(system_users.userExists('non-existent@no-domain'))
-        self.assertFalse(system_users.userExists('non-existent@chevah'))
         self.assertFalse(system_users.userExists(''))
 
     def test_getHomeFolder_linux(self):
@@ -129,7 +127,7 @@ class TestSystemUsers(ChevahTestCase):
         username = u'no-home'
         password = u'no-home'
         home_path = None
-        user = OSUser(
+        user = TestUser(
             name=username, uid=None, password=password, home_path=home_path)
 
         try:
@@ -149,8 +147,11 @@ class TestSystemUsers(ChevahTestCase):
         finally:
             os_administration.deleteUser(user)
             # Delete user does not removed the user home folder,
-            # so we explictly remove it here.
+            # so we explicitly remove it here.
             if home_path:
+                # If filesystem.deleteFolder is used then 'Access denied'
+                # is return because Windows sees some opened files inside the
+                # directory.
                 os.system('rmdir /S /Q ' + home_path.encode('utf-8'))
 
     def test_getHomeFolder_osx(self):
@@ -167,9 +168,9 @@ class TestSystemUsers(ChevahTestCase):
 
     def test_getHomeFolder_return_type(self):
         """
-        getHomeFolder will always return an unicode path.
+        getHomeFolder will always return an Unicode path.
         """
-        # This test is skiped if we can not get the home folder.
+        # This test is skipped if we can not get the home folder.
         if not process_capabilities.get_home_folder:
             raise self.skipTest()
 
@@ -213,7 +214,7 @@ class TestSystemUsers(ChevahTestCase):
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
                 username=TEST_ACCOUNT_USERNAME,
-                password=u'mțș',
+                password=manufacture.string(),
                 )
         self.assertFalse(result)
         self.assertIsNone(token)
@@ -227,7 +228,7 @@ class TestSystemUsers(ChevahTestCase):
         PAM modules.
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
-                username=u'other-mșț', password=u'other-mțs')
+                username=manufacture.string(), password=manufacture.string())
         self.assertFalse(result)
         self.assertIsNone(token)
 
@@ -283,7 +284,9 @@ class TestSystemUsers(ChevahTestCase):
             pass
 
     def test_getCurrentUserName_NT(self):
-        '''Test executing as a different user.'''
+        """
+        Check for helper method.
+        """
         if os.name != 'nt':
             raise self.skipTest()
 
