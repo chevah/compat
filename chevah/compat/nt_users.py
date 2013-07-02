@@ -1,6 +1,8 @@
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
-'''Adapter for working with NT users.'''
+"""
+Adapter for working with NT users.
+"""
 from __future__ import with_statement
 
 from win32com.shell import shell, shellcon
@@ -44,18 +46,23 @@ process_capabilities = NTProcessCapabilities()
 
 
 class NTUsers(object):
-    '''Container for NT users specific methods.'''
+    """
+    Container for NT users specific methods.
+    """
 
     implements(IOSUsers)
 
     def getCurrentUserName(self):
         """
-        The name of current user.
+        Return the name of the account under which the current
+        process is executed.
         """
         return get_current_username()
 
     def getHomeFolder(self, username, token=None):
-        '''Get home folder for local user.'''
+        """
+        Get home folder for local user.
+        """
         # In windows, you can choose to care about local versus
         # roaming profiles.
         # You can fetch the current user's through PyWin32.
@@ -109,7 +116,7 @@ class NTUsers(object):
                 # Get home folder if profile already exists.
                 home_folder_path = _getHomeFolderPath()
             except CompatError:
-                # On erros we try to create the profile
+                # On errors we try to create the profile
                 # and try one last time.
                 _createProfile()
                 home_folder_path = _getHomeFolderPath()
@@ -128,7 +135,9 @@ class NTUsers(object):
                     )
 
     def userExists(self, username):
-        '''Returns `True` if username exists on this system.'''
+        """
+        Returns `True` if username exists on this system.
+        """
         # Windows is stupid and return True for empty user.
         # Even when guest account is disabled.
         if not username:
@@ -143,11 +152,16 @@ class NTUsers(object):
                 raise
 
     def isUserInGroups(self, username, groups, token):
-        '''Return true if `username` is a member of `groups`.'''
+        """
+        Return true if `username` is a member of `groups`.
+        """
+        primary_domain_controller, name = self._parseUPN(username)
+
         for group in groups:
             try:
                 group_sid, group_domain, group_type = (
-                    win32security.LookupAccountName(None, group))
+                    win32security.LookupAccountName(
+                        primary_domain_controller, group))
             except win32security.error:
                 continue
             if win32security.CheckTokenMembership(token, group_sid):
@@ -155,10 +169,10 @@ class NTUsers(object):
         return False
 
     def authenticateWithUsernameAndPassword(self, username, password):
-        '''Check the username and password agains local accounts.
-
+        """
+        Check the username and password against local accounts.
         Returns True if credentials are accepted, False otherwise.
-        '''
+        """
         if password is None:
             return (False, None)
 
@@ -169,19 +183,19 @@ class NTUsers(object):
         return (True, token)
 
     def dropPrivileges(self, username):
-        '''Change process privileges to `username`.
-
+        """
+        Change process privileges to `username`
         On Windows this does nothing.
-        '''
+        """
         win32security.RevertToSelf()
 
     def executeAsUser(self, username=None, token=None):
-        '''Returns a context manager for chaning current process privileges
-        to `username`.
-
+        """
+        Returns a context manager for changing current process privileges
+        to `username`
         Return `ChangeUserException` is there are no permissions for
         switching to user.
-        '''
+        """
         if username and username == self.getCurrentUserName():
             return NoOpContext()
 
@@ -194,7 +208,6 @@ class NTUsers(object):
     def getPrimaryGroup(self, username):
         """
         Return the primary group for username.
-
         This just returns WINDOWS_PRIMARY_GROUP.
         """
         # FIXME:1250:
@@ -204,11 +217,13 @@ class NTUsers(object):
         return WINDOWS_PRIMARY_GROUP
 
     def _createLocalProfile(self, username, token):
-        '''Create the local profile if it does not exists.'''
+        """
+        Create the local profile if it does not exists.
+        """
+        primary_domain_controller, name = self._parseUPN(username)
 
-        domain, name = self._parseUPN(username)
-
-        user_info_4 = win32net.NetUserGetInfo(domain, name, 4)
+        user_info_4 = win32net.NetUserGetInfo(
+            primary_domain_controller, name, 4)
         profile_path = user_info_4['profile']
         # LoadUserProfile apparently doesn't like an empty string.
         if not profile_path:
@@ -218,7 +233,7 @@ class NTUsers(object):
             token,
             {
                 'UserName': name,
-                'ServerName': domain,
+                'ServerName': primary_domain_controller,
                 'Flags': 0,
                 'ProfilePath': profile_path,
             })
@@ -227,23 +242,26 @@ class NTUsers(object):
 
     def _parseUPN(self, upn):
         """
-        Return domain and username for UPN username format.
+        Return a tuple of (primary_domain_controller, username) for the
+        account name specified in upn format.
 
         Return (None, username) is UPN does not contain a domain.
         """
-        # FIXME:1273:
-        # Add tests after we have a working DC slave.
         parts = upn.split('@', 1)
         if len(parts) == 2:
-            domain = win32net.NetGetDCName(None, parts[1])
-            username = parts[1]
-            return (domain, username)
+            primary_domain_controller = win32net.NetGetDCName(None, parts[1])
+            username = parts[0]
+            return (primary_domain_controller, username)
         else:
             # This is not an UPN name.
             return (None, upn)
 
     def _getToken(self, username, password):
-        '''Return user token.'''
+        """
+        Return the impersonation token for `username`.
+
+        The `username` is specified in UPN format.
+        """
         return win32security.LogonUser(
             username,
             None,
@@ -254,21 +272,29 @@ class NTUsers(object):
 
 
 class _ExecuteAsUser(object):
-    '''Context manager for running under a different user.'''
+    """
+    Context manager for running under a different user.
+    """
 
     def __init__(self, token):
-        '''Initialize the context manager.'''
+        """
+        Initialize the context manager.
+        """
         self.token = token
         self.profile = None
 
     def __enter__(self):
-        '''Change process effective user.'''
+        """
+        Change process effective user.
+        """
         win32security.RevertToSelf()
         win32security.ImpersonateLoggedOnUser(self.token)
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
-        '''Reverting previous effective ID.'''
+        """
+        Reverting previous effective ID.
+        """
         win32security.RevertToSelf()
         return False
 
