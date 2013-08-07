@@ -12,6 +12,9 @@ import random
 import subprocess
 import sys
 
+from chevah.empirical.testcase import (
+    ChevahTestCase,
+    )
 from chevah.compat import (
     LocalFilesystem,
     system_users,
@@ -350,6 +353,7 @@ class OSAdministration(object):
             'flags': win32netcon.UF_SCRIPT,
             'script_path': None,
         }
+
         win32net.NetUserAdd(user.pdc, 1, user_info)
         if user.password and create_profile:
             if user.domain:
@@ -442,9 +446,13 @@ class OSAdministration(object):
         For not this works, but this code is not 100% valid.
         """
         try:
+            pdc = user.pdc
+            if not pdc:
+                pdc = ChevahTestCase.getHostname()
+
             import win32net
             win32net.NetUserChangePassword(
-                user.pdc, user.name, user.password, user.password)
+                pdc, user.name, user.password, user.password)
         except:
             print 'Failed to set password "%s" for user "%s".' % (
                 user.password, user.name)
