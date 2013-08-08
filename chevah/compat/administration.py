@@ -445,17 +445,22 @@ class OSAdministration(object):
 
         For not this works, but this code is not 100% valid.
         """
-        try:
-            pdc = user.pdc
-            if not pdc:
-                pdc = ChevahTestCase.getHostname()
 
+        # NetUserChangePassword works a little different that other
+        # Net* functions. In order to work on local computer it requires
+        # that the first argument be the computer name and not 'None'
+        # like the rest of Net* functions.
+        pdc = user.pdc
+        if not pdc:
+            pdc = ChevahTestCase.getHostname()
+
+        try:
             import win32net
             win32net.NetUserChangePassword(
                 pdc, user.name, user.password, user.password)
         except:
-            print 'Failed to set password "%s" for user "%s".' % (
-                user.password, user.name)
+            print 'Failed to set password "%s" for user "%s" on pdc "%s".' % (
+                user.password, user.name, pdc)
             raise
 
     def deleteUser(self, user):
