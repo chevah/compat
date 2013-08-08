@@ -147,17 +147,6 @@ TEST_USERS = [
             home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
             password=TEST_ACCOUNT_PASSWORD_OTHER,
             ),
-    TestUser(
-            name=TEST_ACCOUNT_USERNAME_TEMP,
-            uid=TEST_ACCOUNT_UID_TEMP,
-            shell=u'/bin/false',
-            shadow=u'!',
-            ),
-    TestUser(
-            name=TEST_ACCOUNT_CENTRIFY_USERNAME,
-            uid=TEST_ACCOUNT_CENTRIFY_UID,
-            shadow=u'NP',
-            ),
     ]
 
 TEST_GROUPS = [
