@@ -263,7 +263,7 @@ class OSAdministration(object):
         import pwd
         import time
         name_encoded = name.encode('utf-8')
-        for iterator in xrange(5):
+        for iterator in xrange(20):
             try:
                 user = pwd.getpwnam(name_encoded)
                 return user
@@ -271,7 +271,7 @@ class OSAdministration(object):
                 pass
             time.sleep(0.5)
         raise AssertionError(
-            'Could not get user %s: %s' % (name_encoded, e.strerror))
+            'Could not get user %s: %s' % (name_encoded, e))
 
     def _addUser_aix(self, user):
         # AIX will only allow creating users with shells from
