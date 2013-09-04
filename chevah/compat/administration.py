@@ -234,7 +234,7 @@ class OSAdministration(object):
             self._appendUnixEntry(shadow_segments, shadow_line)
 
         # Wait for user to be available before.
-        self._getUserUnix(user.name)
+        self._getUnixUser(user.name)
 
         if user.home_path != u'/tmp':
             execute(['sudo', 'mkdir', user.home_path.encode('utf-8')])
@@ -256,7 +256,7 @@ class OSAdministration(object):
                         user.home_path.encode('utf-8'),
                     ])
 
-    def _getUserUnix(self, name):
+    def _getUnixUser(self, name):
         """
         Get Unix user entry, retrying if user is not available yet.
         """
@@ -267,7 +267,7 @@ class OSAdministration(object):
             try:
                 user = pwd.getpwnam(name_encoded)
                 return user
-            except OSError, e:
+            except (KeyError, OSError), e:
                 pass
             time.sleep(0.5)
         raise AssertionError(
