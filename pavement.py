@@ -19,7 +19,6 @@ PYTHON_VERSION = '2.7'
 
 RUN_PACKAGES = [
     'chevah-empirical==0.15.1',
-
     'zope.interface==3.8.0',
     'twisted==12.1.0-chevah3',
     ]
@@ -111,7 +110,7 @@ SETUP['product']['name'] = 'chevah-compat'
 SETUP['folders']['source'] = u'chevah/compat'
 SETUP['repository']['name'] = u'compat'
 SETUP['github']['repo'] = 'chevah/compat'
-SETUP['pocket-lint']['include_files'] = ['pavement.py']
+SETUP['pocket-lint']['include_files'] = ['pavement.py', 'release-notes.rst']
 SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.compat.tests'
