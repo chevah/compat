@@ -1,6 +1,11 @@
 Release notes for chevah.empirical
 ==================================
 
+0.10.2 - 23/09/2013
+-------------------
+
+* Try 2 different API calls to wait for group creation.
+
 
 0.10.1 - 23/09/2013
 -------------------

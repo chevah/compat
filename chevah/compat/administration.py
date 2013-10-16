@@ -108,7 +108,8 @@ class OSAdministration(object):
         for iterator in xrange(5):
             for group in grp.getgrall():
                 if group[0] == name_encoded:
-                    return group
+                    # Use different API to make sure we have the group.
+                    return grp.getgrnam(name_encoded)
             time.sleep(0.5)
 
         raise AssertionError('Failed to get group %s' % (
