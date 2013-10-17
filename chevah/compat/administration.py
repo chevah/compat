@@ -105,15 +105,38 @@ class OSAdministration(object):
         import grp
         import time
         name_encoded = name.encode('utf-8')
-        for iterator in xrange(5):
+
+        # Try for 5 seconds to get the group in list of all groups.
+        group_found = False
+        for iterator in xrange(50):
+            if group_found:
+                break
             for group in grp.getgrall():
                 if group[0] == name_encoded:
-                    # Use different API to make sure we have the group.
-                    return grp.getgrnam(name_encoded)
-            time.sleep(0.5)
+                    group_found = True
+                    break
+            time.sleep(0.1)
 
-        raise AssertionError('Failed to get group %s' % (
-            name_encoded))
+        if not group_found:
+            raise AssertionError('Failed to get group from all: %s' % (
+                name_encoded))
+
+        # Try another 10 seconds.
+        # Now we find the group in list of all groups, but
+        # we need to make sure it is also available to be
+        # retrieved by name.
+        for iterator in xrange(100):
+
+            try:
+                return grp.getgrnam(name_encoded)
+            except KeyError:
+                # Group not ready yet.
+                pass
+            time.sleep(0.1)
+
+        raise AssertionError(
+            'Group found in all, but not available by name %s' % (
+                name_encoded))
 
     def _addGroup_aix(self, group):
         group_name = group.name.encode('utf-8')
