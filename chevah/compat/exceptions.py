@@ -35,8 +35,9 @@ class CompatError(Exception):
         self.message = message
 
     def __repr__(self):
-        return 'CompatError %s - %s' % (
-            str(self.event_id), self.message.encode('utf-8'))
+        result = u'CompatError %s - %s' % (
+            str(self.event_id), self.message)
+        return result.encode('utf-8')
 
     def __str__(self):
         return self.__repr__()
