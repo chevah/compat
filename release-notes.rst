@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.10.5 - 17/09/2013
+-------------------
+
+* Wait 30 seconds 2nd API call for getting a group.
+
+
 0.10.4 - 17/09/2013
 -------------------
 

@@ -106,7 +106,7 @@ class OSAdministration(object):
         import time
         name_encoded = name.encode('utf-8')
 
-        # Try for 5 seconds to get the group in list of all groups.
+        # Try to get the group in list of all groups.
         group_found = False
         for iterator in xrange(50):
             if group_found:
@@ -121,12 +121,10 @@ class OSAdministration(object):
             raise AssertionError('Failed to get group from all: %s' % (
                 name_encoded))
 
-        # Try another 10 seconds.
         # Now we find the group in list of all groups, but
         # we need to make sure it is also available to be
         # retrieved by name.
-        for iterator in xrange(100):
-
+        for iterator in xrange(300):
             try:
                 return grp.getgrnam(name_encoded)
             except KeyError:
