@@ -2,6 +2,37 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.10.6 - 17/09/2013
+-------------------
+
+* Wait 100 seconds for account creation.
+* Wait 100 seconds for group creation.
+
+
+0.10.5 - 17/09/2013
+-------------------
+
+* Wait 30 seconds 2nd API call for getting a group.
+
+
+0.10.4 - 17/09/2013
+-------------------
+
+* Wait 10 seconds 2nd API call for getting a group.
+
+
+0.10.3 - 17/09/2013
+-------------------
+
+* Wait 5 seconds for 2nd API call for getting a group.
+
+
+0.10.2 - 16/09/2013
+-------------------
+
+* Try 2 different API calls to wait for group creation.
+
+
 0.10.1 - 23/09/2013
 -------------------
 
