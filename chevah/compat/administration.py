@@ -108,7 +108,7 @@ class OSAdministration(object):
 
         # Try to get the group in list of all groups.
         group_found = False
-        for iterator in xrange(50):
+        for iterator in xrange(1000):
             if group_found:
                 break
             for group in grp.getgrall():
@@ -124,7 +124,7 @@ class OSAdministration(object):
         # Now we find the group in list of all groups, but
         # we need to make sure it is also available to be
         # retrieved by name.
-        for iterator in xrange(300):
+        for iterator in xrange(1000):
             try:
                 return grp.getgrnam(name_encoded)
             except KeyError:
@@ -258,7 +258,7 @@ class OSAdministration(object):
         if self.fs.exists(shadow_segments):
             self._appendUnixEntry(shadow_segments, shadow_line)
 
-        # Wait for user to be available before.
+        # Wait for user to be available before creating home folder.
         self._getUnixUser(user.name)
 
         if user.home_path != u'/tmp':
@@ -288,13 +288,13 @@ class OSAdministration(object):
         import pwd
         import time
         name_encoded = name.encode('utf-8')
-        for iterator in xrange(20):
+        for iterator in xrange(1000):
             try:
                 user = pwd.getpwnam(name_encoded)
                 return user
             except (KeyError, OSError), e:
                 pass
-            time.sleep(0.5)
+            time.sleep(0.1)
         raise AssertionError(
             'Could not get user %s: %s' % (name_encoded, e))
 

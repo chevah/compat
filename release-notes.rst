@@ -2,6 +2,13 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.10.6 - 17/09/2013
+-------------------
+
+* Wait 100 seconds for account creation.
+* Wait 100 seconds for group creation.
+
+
 0.10.5 - 17/09/2013
 -------------------
 
