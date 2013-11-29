@@ -31,20 +31,6 @@ from chevah.compat.posix_filesystem import PosixFilesystemBase
 LOCAL_DRIVE = 3
 
 
-def raise_failed_to_set_owner(owner, path, message=u''):
-    '''Helper for raising the exception from a single place.'''
-    raise CompatError(1016,
-        _(u'Failed to set owner to "%s" for "%s". %s' % (
-            owner, path, message)))
-
-
-def raise_failed_to_add_group(group, path, message=u''):
-    '''Helper for raising the exception from a single place.'''
-    raise CompatError(1017,
-        _(u'Failed to add group "%s" for "%s". %s' % (
-            group, path, message)))
-
-
 class NTFilesystem(PosixFilesystemBase):
     """
     Implementation if ILocalFilesystem for local NT filesystems.
@@ -255,7 +241,7 @@ class NTFilesystem(PosixFilesystemBase):
         try:
             self._setOwner(path, owner)
         except CompatException, error:
-            raise_failed_to_set_owner(owner, path, error.message)
+            self.raiseFailedToSetOwner(owner, path, error.message)
 
     def _setOwner(self, path, owner):
         """
@@ -303,9 +289,9 @@ class NTFilesystem(PosixFilesystemBase):
                     )
             except win32net.error, error:
                 if error.winerror == 1332:
-                    raise_failed_to_set_owner(owner, path, u'No such owner.')
+                    self.raiseFailedToSetOwner(owner, path, u'No such owner.')
                 if error.winerror == 1307:
-                    raise_failed_to_set_owner(owner, path, u'Not permitted.')
+                    self.raiseFailedToSetOwner(owner, path, u'Not permitted.')
                 else:
                     raise OSError(error.winerror, error.strerror)
 
@@ -333,7 +319,8 @@ class NTFilesystem(PosixFilesystemBase):
             group_sid, group_domain, group_type = (
                 win32security.LookupAccountName(None, group))
         except win32net.error:
-            raise_failed_to_add_group(group, path, u'Could not get group ID.')
+            self.raiseFailedToAddGroup(
+                group, path, u'Could not get group ID.')
 
         with self._impersonateUser():
             try:
@@ -348,7 +335,7 @@ class NTFilesystem(PosixFilesystemBase):
                 win32security.SetFileSecurity(
                     path, win32security.DACL_SECURITY_INFORMATION, security)
             except win32net.error, error:
-                raise_failed_to_add_group(
+                self.raiseFailedToAddGroup(
                     group, path, u'%s: %s' % (error.winerror, error.strerror))
 
     def removeGroup(self, segments, group):

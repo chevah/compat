@@ -1,8 +1,8 @@
 # Copyright (c) 2010 Adi Roiban.
 # See LICENSE for details.
-'''Tests for portable filesystem access.'''
-
-from __future__ import with_statement
+"""
+Tests for portable filesystem access.
+"""
 import os
 
 from chevah.compat import (
@@ -24,8 +24,10 @@ from chevah.empirical.filesystem import LocalTestFilesystem
 from chevah.compat.exceptions import CompatError, CompatException
 
 
-class TestPosixFilesystem(ChevahTestCase):
-    '''Tests for path independent, OS independent tests.'''
+class FilesytemTestCase(ChevahTestCase):
+    """
+    Common test case for all filesystem tests.
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -33,6 +35,8 @@ class TestPosixFilesystem(ChevahTestCase):
         # Disabled when we can not find the home folder path.
         if not process_capabilities.get_home_folder:
             raise cls.skipTest()
+
+        super(FilesytemTestCase, cls).setUpClass()
 
         user = TEST_ACCOUNT_USERNAME
         password = TEST_ACCOUNT_PASSWORD
@@ -44,13 +48,20 @@ class TestPosixFilesystem(ChevahTestCase):
             home_folder_path=home_folder_path,
             token=token,
             )
-        cls.avatar._root_folder_path = None
+        #cls.avatar._root_folder_path = None
         cls.filesystem = LocalFilesystem(avatar=cls.avatar)
 
     def setUp(self):
-        super(TestPosixFilesystem, self).setUp()
+        super(FilesytemTestCase, self).setUp()
+        # Initialized only to clean the home folder.
         test_filesystem = LocalTestFilesystem(avatar=self.avatar)
         test_filesystem.cleanHomeFolder()
+
+
+class TestPosixFilesystem(FilesytemTestCase):
+    """
+    Path independent, OS independent tests.
+    """
 
     def test_getOwner(self):
         """
@@ -72,8 +83,13 @@ class TestPosixFilesystem(ChevahTestCase):
         An error is raised when trying to set owner for an bad path.
         """
         segments = [u'non-existent-segment']
-        with self.assertRaises(OSError):
+        with self.assertRaises(CompatError) as context:
+
             self.filesystem.setOwner(segments, self.avatar.name)
+
+        self.assertExceptionID(1016, context.exception)
+        self.assertContains(
+            'No such file or directory', context.exception.message)
 
     def test_setOwner_bad_owner_file(self):
         """
@@ -236,30 +252,18 @@ class TestPosixFilesystem(ChevahTestCase):
         self.assertEqual(TEST_ACCOUNT_USERNAME_OTHER, new_owner)
 
 
-class TestUnixFilesystem(ChevahTestCase):
-    '''Tests for path independent Unix tests.'''
+class TestUnixFilesystem(FilesytemTestCase):
+    """
+    Path independent Unix tests.
+    """
 
     @classmethod
     def setUpClass(cls):
-        if os.name != 'posix':
+        # Skip on non-unix system.
+        if cls.os_name != 'posix':
             raise cls.skipTest()
 
-        user = TEST_ACCOUNT_USERNAME
-        password = TEST_ACCOUNT_PASSWORD
-        token = manufacture.makeToken(username=user, password=password)
-        home_folder_path = system_users.getHomeFolder(username=user)
-        cls.avatar = manufacture.makeFilesystemOSAvatar(
-            name=user,
-            home_folder_path=home_folder_path,
-            token=token,
-            )
-        cls.avatar._root_folder_path = None
-        cls.filesystem = LocalFilesystem(avatar=cls.avatar)
-
-    def setUp(self):
-        super(TestUnixFilesystem, self).setUp()
-        test_filesystem = LocalTestFilesystem(avatar=self.avatar)
-        test_filesystem.cleanHomeFolder()
+        super(TestUnixFilesystem, cls).setUpClass()
 
     def test_addGroup_denied_group_file(self):
         """
@@ -306,37 +310,18 @@ class TestUnixFilesystem(ChevahTestCase):
             u'no-such-group')
 
 
-class TestNTFilesystem(ChevahTestCase):
-    '''
-    Tests for path independent NT tests.
-    '''
+class TestNTFilesystem(FilesytemTestCase):
+    """
+    Path independent NT tests.
+    """
 
     @classmethod
     def setUpClass(cls):
-        if os.name != 'nt':
+        # Skip on NT system.
+        if cls.os_name != 'nt':
             raise cls.skipTest()
 
-        # FIXME:924:
-        # Disabled when we can not find the home folder path.
-        if not process_capabilities.get_home_folder:
-            raise cls.skipTest()
-
-        user = TEST_ACCOUNT_USERNAME
-        password = TEST_ACCOUNT_PASSWORD
-        token = manufacture.makeToken(username=user, password=password)
-        home_folder_path = system_users.getHomeFolder(
-            username=user, token=token)
-        cls.avatar = manufacture.makeFilesystemOSAvatar(
-            name=user,
-            home_folder_path=home_folder_path,
-            token=token,
-            )
-        cls.filesystem = LocalFilesystem(avatar=cls.avatar)
-
-    def setUp(self):
-        super(TestNTFilesystem, self).setUp()
-        test_filesystem = LocalTestFilesystem(avatar=self.avatar)
-        test_filesystem.cleanHomeFolder()
+        super(TestNTFilesystem, cls).setUpClass()
 
     def test_removeGroup_good(self):
         """
@@ -386,7 +371,7 @@ class TestNTFilesystem(ChevahTestCase):
             raise CompatException(message='test-message')
 
         with self.assertRaises(CompatError) as context:
-            with self.Patch.object(self.filesystem, '_setOwner', set_owner):
+            with self.Patch.object(self.filesystem, 'setOwner', set_owner):
                 self.filesystem.setOwner('something', 'don-t care')
 
         self.assertEqual(1016, context.exception.event_id)

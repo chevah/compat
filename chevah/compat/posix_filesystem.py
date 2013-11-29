@@ -381,3 +381,19 @@ class PosixFilesystemBase(object):
     def setGroup(self, segments, group, permissions=None):
         '''Informational method for not using setGroup.'''
         raise AssertionError(u'Use addGroup for setting a group.')
+
+    def raiseFailedToAddGroup(self, group, path, message=u''):
+        """
+        Helper for raising the exception from a single place.
+        """
+        raise CompatError(1017,
+            _(u'Failed to add group "%s" for "%s". %s' % (
+                group, path, message)))
+
+    def raiseFailedToSetOwner(self, owner, path, message=u''):
+        """
+        Helper for raising the exception from a single place.
+        """
+        raise CompatError(1016,
+            _(u'Failed to set owner to "%s" for "%s". %s' % (
+                owner, path, message)))

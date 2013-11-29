@@ -12,6 +12,7 @@ import win32net
 import win32profile
 import win32security
 
+from chevah.compat.compat_users import CompatUsers
 from chevah.compat.constants import WINDOWS_PRIMARY_GROUP
 from chevah.compat.exceptions import (
     ChangeUserException,
@@ -20,8 +21,6 @@ from chevah.compat.exceptions import (
 from chevah.compat.helpers import (
     _,
     NoOpContext,
-    raise_failed_to_get_home_folder,
-    raise_failed_to_get_primary_group,
     )
 from chevah.compat.interfaces import (
     IFileSystemAvatar,
@@ -45,7 +44,7 @@ GetUserNameW.restype = c_uint
 process_capabilities = NTProcessCapabilities()
 
 
-class NTUsers(object):
+class NTUsers(CompatUsers):
     """
     Container for NT users specific methods.
     """
@@ -80,7 +79,7 @@ class NTUsers(object):
             message = (
                 u'Operating system does not support getting home folder '
                 u'for account "%s"' % (username))
-            raise_failed_to_get_home_folder(username, message)
+            self.raiseFailedToGetHomeFolder(username, message)
 
         home_folder_path = None
 
@@ -98,7 +97,7 @@ class NTUsers(object):
                     return path
                 except pythoncom.com_error, (number, message, e1, e2):
                     error_text = _(u'%d:%s' % (number, message))
-                    raise_failed_to_get_home_folder(username, error_text)
+                    self.raiseFailedToGetHomeFolder(username, error_text)
 
         def _createProfile():
             try:
@@ -109,7 +108,7 @@ class NTUsers(object):
                     u'Make sure you have SeBackupPrivilege and '
                     u'SeRestorePrivilege. (%d:%s - %s)' % (
                         error_id, error_call, error_message))
-                raise_failed_to_get_home_folder(username, error_text)
+                self.raiseFailedToGetHomeFolder(username, error_text)
 
         try:
             try:
@@ -122,14 +121,14 @@ class NTUsers(object):
                 home_folder_path = _getHomeFolderPath()
         except ChangeUserException, error:
             # We fail to impersoante the user, so we exit early.
-            raise_failed_to_get_home_folder(username, error.message)
+            self.raiseFailedToGetHomeFolder(username, error.message)
 
         if home_folder_path:
             return home_folder_path
         else:
             # Maybe this should be an AssertionError since we should not
             # arrive here.
-            raise_failed_to_get_home_folder(
+            self.raiseFailedToGetHomeFolder(
                     username,
                     _(u'Failed to get home folder path.'),
                     )
@@ -213,7 +212,7 @@ class NTUsers(object):
         # FIXME:1250:
         # I don't know how to get primary group on Windows.
         if not self.userExists(username):
-            raise_failed_to_get_primary_group(username)
+            self.raiseFailedToGetPrimaryGroup(username)
         return WINDOWS_PRIMARY_GROUP
 
     def _createLocalProfile(self, username, token):
