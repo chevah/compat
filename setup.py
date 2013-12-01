@@ -3,7 +3,7 @@ from setuptools import Command, find_packages, setup
 import os
 import shutil
 
-VERSION = '0.10.6'
+VERSION = '0.11.0'
 
 
 class PublishCommand(Command):

@@ -271,6 +271,14 @@ class TestUnixFilesystem(FilesytemTestCase):
 
         super(TestUnixFilesystem, cls).setUpClass()
 
+    def test_temp_segments_location(self):
+        """
+        On Unix the normal temporary folder is used.
+        """
+        # We check that the elevated filesystem start with the same
+        # path as normal filesystem
+        self.assertEqual([u'tmp'], self.filesystem.temp_segments)
+
     def test_addGroup_denied_group_file(self):
         """
         On Unix we can not set the group for a file that we own.
@@ -328,6 +336,13 @@ class TestNTFilesystem(FilesytemTestCase):
             raise cls.skipTest()
 
         super(TestNTFilesystem, cls).setUpClass()
+
+    def test_temp_segments_location(self):
+        """
+        For elevated accounts temporary folder is not located insider
+        user default temp folder but in the hardcoded c:\temp folder..
+        """
+        self.assertEqual([u'c', u'temp'], self.filesystem.temp_segments)
 
     def test_removeGroup_good(self):
         """

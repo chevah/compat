@@ -16,7 +16,7 @@ from chevah.compat.exceptions import CompatError, CompatException
 from chevah.compat.helpers import _
 from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.nt_capabilities import NTProcessCapabilities
-from chevah.compat.nt_users import NTUsers
+from chevah.compat.nt_users import NTDefaultAvatar, NTUsers
 from chevah.compat.posix_filesystem import PosixFilesystemBase
 
 
@@ -79,6 +79,20 @@ class NTFilesystem(PosixFilesystemBase):
         # Fix folder separators.
         path = path.replace('/', '\\')
         return path
+
+    @property
+    def temp_segments(self):
+        """
+        Segments to temporary folder.
+        """
+        # FIXME:930:
+        # For impersonated account we can not return the default temporary
+        # folder, which is located in default account temp folder, since
+        # impersonated account don't have access to it.
+        if not isinstance(self._avatar, NTDefaultAvatar):
+            return [u'c', u'temp']
+        else:
+            return super(NTFilesystem, self).temp_segments
 
     @classmethod
     def getEncodedPath(cls, path):
