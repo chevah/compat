@@ -18,17 +18,17 @@ from chevah.compat.unix_users import UnixUsers
 
 
 class UnixFilesystem(PosixFilesystemBase):
-    '''Implementation if ILocalFilesystem for local Unix filesystems.
+    """
+    Implementation if ILocalFilesystem for local Unix filesystems.
 
     The filesystem absolute root is / and it is the same as the real
     filesystem.
 
     If avatar is None it will use the current logged in user.
-    '''
+    """
 
     implements(ILocalFilesystem)
     system_users = UnixUsers()
-    avatar = None
 
     def __init__(self, avatar):
         self._avatar = avatar

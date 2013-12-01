@@ -293,7 +293,7 @@ class NTFilesystem(PosixFilesystemBase):
                 if error.winerror == 1307:
                     self.raiseFailedToSetOwner(owner, path, u'Not permitted.')
                 else:
-                    raise OSError(error.winerror, error.strerror)
+                    self.raiseFailedToSetOwner(owner, path, unicode(error))
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''

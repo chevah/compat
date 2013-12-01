@@ -48,7 +48,6 @@ class FilesytemTestCase(ChevahTestCase):
             home_folder_path=home_folder_path,
             token=token,
             )
-        #cls.avatar._root_folder_path = None
         cls.filesystem = LocalFilesystem(avatar=cls.avatar)
 
     def setUp(self):
@@ -88,8 +87,15 @@ class TestPosixFilesystem(FilesytemTestCase):
             self.filesystem.setOwner(segments, self.avatar.name)
 
         self.assertExceptionID(1016, context.exception)
-        self.assertContains(
-            'No such file or directory', context.exception.message)
+
+        if self.os_name == 'posix':
+            self.assertContains(
+                u'No such file or directory', context.exception.message)
+        else:
+            self.assertContains(
+                u'directory name, or volume label syntax is incorrect',
+                context.exception.message,
+                )
 
     def test_setOwner_bad_owner_file(self):
         """
@@ -327,32 +333,31 @@ class TestNTFilesystem(FilesytemTestCase):
         """
         Check group removal for a file/folder.
         """
-        folder_name = manufacture.makeFilename()
-        folder_segments = self.filesystem.home_segments
-        folder_segments.append(folder_name)
-        self.filesystem.createFolder(folder_segments)
+        self.test_segments = self.filesystem.home_segments
+        self.test_segments.append(manufacture.makeFilename())
+        self.filesystem.createFolder(self.test_segments)
 
         self.assertFalse(
             self.filesystem.hasGroup(
-                folder_segments, TEST_ACCOUNT_GROUP_OTHER))
+                self.test_segments, TEST_ACCOUNT_GROUP_OTHER))
 
         self.filesystem.addGroup(
-            folder_segments, TEST_ACCOUNT_GROUP_OTHER)
+            self.test_segments, TEST_ACCOUNT_GROUP_OTHER)
 
         self.assertTrue(
             self.filesystem.hasGroup(
-                folder_segments, TEST_ACCOUNT_GROUP_OTHER))
+                self.test_segments, TEST_ACCOUNT_GROUP_OTHER))
 
         self.filesystem.removeGroup(
-            folder_segments, TEST_ACCOUNT_GROUP_OTHER)
+            self.test_segments, TEST_ACCOUNT_GROUP_OTHER)
 
         self.assertFalse(
             self.filesystem.hasGroup(
-                folder_segments, TEST_ACCOUNT_GROUP_OTHER))
+                self.test_segments, TEST_ACCOUNT_GROUP_OTHER))
 
         # Try to remove it again.
         self.filesystem.removeGroup(
-            folder_segments, TEST_ACCOUNT_GROUP_OTHER)
+            self.test_segments, TEST_ACCOUNT_GROUP_OTHER)
 
         with self.assertRaises(OSError):
             self.filesystem.removeGroup(
@@ -360,7 +365,7 @@ class TestNTFilesystem(FilesytemTestCase):
 
         with self.assertRaises(CompatError) as context:
             self.filesystem.removeGroup(
-                folder_segments, u'no-such-group')
+                self.test_segments, u'no-such-group')
         self.assertEqual(1013, context.exception.event_id)
 
     def test_setOwner_CompatError(self):
@@ -371,7 +376,7 @@ class TestNTFilesystem(FilesytemTestCase):
             raise CompatException(message='test-message')
 
         with self.assertRaises(CompatError) as context:
-            with self.Patch.object(self.filesystem, 'setOwner', set_owner):
+            with self.Patch.object(self.filesystem, '_setOwner', set_owner):
                 self.filesystem.setOwner('something', 'don-t care')
 
         self.assertEqual(1016, context.exception.event_id)
