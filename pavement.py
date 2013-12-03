@@ -18,7 +18,7 @@ BRINK_VERSION = '0.31.1'
 PYTHON_VERSION = '2.7'
 
 RUN_PACKAGES = [
-    'chevah-empirical==0.17.2',
+    'chevah-empirical==0.17.5',
     'zope.interface==3.8.0',
     'twisted==12.1.0-chevah3',
     ]

@@ -265,10 +265,7 @@ class TestUnixFilesystem(FilesytemTestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Skip on non-unix system.
-        if cls.os_name != 'posix':
-            raise cls.skipTest()
-
+        cls.runOnOS('posix')
         super(TestUnixFilesystem, cls).setUpClass()
 
     def test_temp_segments_location(self):
@@ -331,10 +328,7 @@ class TestNTFilesystem(FilesytemTestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Skip on NT system.
-        if cls.os_name != 'nt':
-            raise cls.skipTest()
-
+        cls.runOnOS('nt')
         super(TestNTFilesystem, cls).setUpClass()
 
     def test_temp_segments_location(self):
