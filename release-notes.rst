@@ -2,6 +2,13 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.11.0 - 01/12/2013
+-------------------
+
+* Upgrade to unique temporary folders based on latest empirical.
+* Fix temporary segments for impersonated accounts.
+
+
 0.10.6 - 17/09/2013
 -------------------
 

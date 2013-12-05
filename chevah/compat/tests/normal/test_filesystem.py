@@ -32,9 +32,29 @@ class TestDefaultFilesystem(ChevahTestCase):
         segments = self.filesystem.temp_segments
         self.assertTrue(self.filesystem.isFolder(segments))
 
+    def test_temp_segments_location_unix(self):
+        """
+        On unix the temporary folders are located inside the temp folder.
+        """
+        if os.name != 'posix':
+            raise self.skipTest()
+
+        self.assertEqual([u'tmp'], self.filesystem.temp_segments)
+
+    def test_temp_segments_location_nt(self):
+        """
+        On Windows for non impersonated account, the temporary folder
+        is located inside the user temporary folder and not on c:\temp.
+        """
+        if os.name != 'nt':
+            raise self.skipTest()
+
+        self.assertNotEqual(
+            [u'c', u'temp'], self.filesystem.temp_segments[0:2])
+
     def test_temp_segments_writeable(self):
         """
-        The temporary folder must allow creation of any files with writable
+        The temporary folder must allow creation of any files with writeable
         permissions.
         """
         segments = self.filesystem.temp_segments

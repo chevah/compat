@@ -23,12 +23,11 @@ try:
 except ImportError:
     HAS_PAM_SUPPORT = False
 
+from chevah.compat.compat_users import CompatUsers
 from chevah.compat.exceptions import ChangeUserException
 from chevah.compat.helpers import (
     _,
     NoOpContext,
-    raise_failed_to_get_home_folder,
-    raise_failed_to_get_primary_group,
     )
 from chevah.compat.interfaces import (
     IFileSystemAvatar,
@@ -98,8 +97,10 @@ def _change_effective_privileges(username=None, euid=None, egid=None,
         raise ChangeUserException(u'Could not switch user.')
 
 
-class UnixUsers(object):
-    '''Container for Unix users specific methods.'''
+class UnixUsers(CompatUsers):
+    """
+    Container for Unix users specific methods.
+    """
 
     implements(IOSUsers)
 
@@ -111,7 +112,7 @@ class UnixUsers(object):
                 username_encoded).pw_dir.decode('utf-8')
             return home_folder
         except KeyError:
-            raise_failed_to_get_home_folder(
+            self.raiseFailedToGetHomeFolder(
                 username, _(u'Username not found.'))
 
     def userExists(self, username):
@@ -202,7 +203,7 @@ class UnixUsers(object):
             user_struct = pwd.getpwnam(username_encode)
             group_struct = grp.getgrgid(user_struct.pw_gid)
         except KeyError:
-            raise_failed_to_get_primary_group(username)
+            self.raiseFailedToGetPrimaryGroup(username)
         group_name = group_struct.gr_name
         return group_name.decode('utf-8')
 

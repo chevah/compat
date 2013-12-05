@@ -1,6 +1,8 @@
-'''Module for hosting the Chevah FTP filesystem access.'''
-from __future__ import with_statement
-__metaclass__ = type
+# Copyright (c) 2013 Adi Roiban.
+# See LICENSE for details.
+"""
+Module for hosting the Unix specific filesystem access.
+"""
 
 import errno
 import os
@@ -10,27 +12,23 @@ import grp
 from zope.interface import implements
 from twisted.python.filepath import FilePath
 
-from chevah.compat.helpers import (
-    raise_failed_to_add_group,
-    raise_failed_to_set_owner,
-    )
 from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.posix_filesystem import PosixFilesystemBase
 from chevah.compat.unix_users import UnixUsers
 
 
 class UnixFilesystem(PosixFilesystemBase):
-    '''Implementation if ILocalFilesystem for local Unix filesystems.
+    """
+    Implementation if ILocalFilesystem for local Unix filesystems.
 
     The filesystem absolute root is / and it is the same as the real
     filesystem.
 
     If avatar is None it will use the current logged in user.
-    '''
+    """
 
     implements(ILocalFilesystem)
     system_users = UnixUsers()
-    avatar = None
 
     def __init__(self, avatar):
         self._avatar = avatar
@@ -99,9 +97,13 @@ class UnixFilesystem(PosixFilesystemBase):
         try:
             uid = pwd.getpwnam(encoded_owner).pw_uid
         except KeyError:
-            raise_failed_to_set_owner(owner, path)
+            self.raiseFailedToSetOwner(owner, path, u'Owner not found.')
+
         with self._impersonateUser():
-            return os.chown(path_encoded, uid, -1)
+            try:
+                return os.chown(path_encoded, uid, -1)
+            except Exception, error:
+                self.raiseFailedToSetOwner(owner, path, str(error))
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''
@@ -118,15 +120,15 @@ class UnixFilesystem(PosixFilesystemBase):
         try:
             gid = grp.getgrnam(encoded_group).gr_gid
         except KeyError:
-            raise_failed_to_add_group(group, path, u'No such group.')
+            self.raiseFailedToAddGroup(group, path, u'No such group.')
         with self._impersonateUser():
             try:
                 return os.chown(path_encoded, -1, gid)
             except OSError, error:
                 if error.errno == errno.ENOENT:
-                    raise_failed_to_add_group(group, path, u'No such path.')
+                    self.raiseFailedToAddGroup(group, path, u'No such path.')
                 elif error.errno == errno.EPERM:
-                    raise_failed_to_add_group(group, path, u'Not permitted.')
+                    self.raiseFailedToAddGroup(group, path, u'Not permitted.')
 
     def removeGroup(self, segments, group):
         '''See `ILocalFilesystem`.'''
