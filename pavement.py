@@ -13,7 +13,7 @@ if os.name == 'nt':
     tempfile.tempdir = "c:\\temp"
 
 # Marker for paver.sh.
-# This value is pavers by bash. Use a strict format.
+# This value is paver by bash. Use a strict format.
 BRINK_VERSION = '0.31.1'
 PYTHON_VERSION = '2.7'
 
