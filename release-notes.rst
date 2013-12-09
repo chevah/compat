@@ -2,6 +2,13 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.12.1 - 09/12/2013
+-------------------
+
+* Use lazy loading of pam module do mitigate the side effects generated when
+  load pam library on AIX.
+
+
 0.12.0 - 09/12/2013
 -------------------
 

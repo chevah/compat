@@ -17,12 +17,6 @@ except ImportError:
 
 from zope.interface import implements
 
-try:
-    from pam import authenticate as pam_authenticate
-    HAS_PAM_SUPPORT = True
-except ImportError:
-    HAS_PAM_SUPPORT = False
-
 from chevah.compat.compat_users import CompatUsers
 from chevah.compat.exceptions import ChangeUserException
 from chevah.compat.helpers import (
@@ -103,6 +97,9 @@ class UnixUsers(CompatUsers):
     """
 
     implements(IOSUsers)
+
+    # Lazy loaded method to pam authenticate.
+    _pam_authenticate = None
 
     def getHomeFolder(self, username, token=None):
         '''Get home folder for local (or NIS) user.'''
@@ -208,7 +205,7 @@ class UnixUsers(CompatUsers):
         return group_name.decode('utf-8')
 
     def _executeAsAdministrator(self):
-        '''Retruns a context manager for running under administrator user.
+        '''Returns a context manager for running under administrator user.
 
         Return `ChangeUserException` is there are no permissions for
         switching to user.
@@ -303,10 +300,29 @@ class UnixUsers(CompatUsers):
                 return True
         return False
 
+    def _getPAMAuthenticate(self):
+        """
+        FIXME:1848:
+        Lazy loading of pam library to mitigate module loading side effects
+        on AIX.
+        """
+        if self._pam_authenticate is None:
+            try:
+                from pam import authenticate as pam_authenticate
+                self._pam_authenticate = pam_authenticate
+            except ImportError:
+                self._pam_authenticate = False
+
+        return self._pam_authenticate
+
     def _checkPAM(self, username, password):
-        '''Authenticate against PAM.'''
-        if not HAS_PAM_SUPPORT:
+        """
+        Authenticate against PAM library.
+        """
+        pam_authenticate = self._getPAMAuthenticate()
+        if not pam_authenticate:
             return None
+
         username = username.encode('utf-8')
         password = password.encode('utf-8')
         with self._executeAsAdministrator():

@@ -120,12 +120,12 @@ class TestSystemUsers(CompatTestCase):
         """
         Check that PAM is supported on the Unix systems.
         """
-        if os.name != 'posix':
-            raise self.skipTest()
+        self.runOnOS('posix')
+        from pam import authenticate as expected_authenticate
 
-        from chevah.compat.unix_users import HAS_PAM_SUPPORT
+        pam_authenticate = system_users._getPAMAuthenticate()
 
-        self.assertTrue(HAS_PAM_SUPPORT)
+        self.assertEqual(expected_authenticate, pam_authenticate)
 
     def test_shadow_support_unix(self):
         """
