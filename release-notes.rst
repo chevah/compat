@@ -2,6 +2,13 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.12.0 - 09/12/2013
+-------------------
+
+* Move os access control setup/teardown from empirical into compat.
+* Fix support for AIX system.
+
+
 0.11.0 - 01/12/2013
 -------------------
 

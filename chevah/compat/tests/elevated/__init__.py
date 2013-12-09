@@ -8,10 +8,10 @@ functions.
 from chevah.compat import process_capabilities
 from chevah.empirical.testcase import (
     ChevahTestCase,
-    setup_os,
-    teardown_os,
     )
 from chevah.compat.testing import (
+    setup_access_control,
+    teardown_access_control,
     TEST_GROUPS,
     TEST_USERS,
     )
@@ -37,14 +37,14 @@ def setup_package():
     # Initialize the testing OS.
 
     try:
-        setup_os(users=TEST_USERS, groups=TEST_GROUPS)
+        setup_access_control(users=TEST_USERS, groups=TEST_GROUPS)
     except:
         import traceback
         print traceback.format_exc()
         print "Failed to initialized the system accounts!"
-        teardown_os(users=TEST_USERS, groups=TEST_GROUPS)
+        teardown_access_control(users=TEST_USERS, groups=TEST_GROUPS)
         raise
 
 
 def teardown_package():
-    teardown_os(users=TEST_USERS, groups=TEST_GROUPS)
+    teardown_access_control(users=TEST_USERS, groups=TEST_GROUPS)

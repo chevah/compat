@@ -40,7 +40,26 @@ from chevah.compat.exceptions import (
 from chevah.compat.interfaces import IHasImpersonatedAvatar
 
 
-class TestSystemUsers(ChevahTestCase):
+class SystemUsersTestCase(ChevahTestCase):
+    """
+    Common code for system users elevated tests.
+    """
+
+    def getGroupsIDForTestAccount(self):
+        """
+        Return a list with groups id for test account.
+        """
+        expected_groups = [
+            TEST_ACCOUNT_GID_ANOTHER,
+            TEST_ACCOUNT_GID,
+            ]
+        if sys.platform.startswith('aix'):
+            # On AIX normal accounts are also part of staff group id 1.
+            expected_groups.append(1)
+        return expected_groups
+
+
+class TestSystemUsers(SystemUsersTestCase):
     '''Test system users operations.'''
 
     def test_userExists(self):
@@ -330,9 +349,8 @@ class TestSystemUsers(ChevahTestCase):
             self.assertEqual(TEST_ACCOUNT_GROUP, impersonated_groupname)
             self.assertNotEqual(initial_uid, uid)
             self.assertNotEqual(initial_gid, gid)
-            self.assertEqual(2, len(impersonated_groups))
-            self.assertTrue(TEST_ACCOUNT_GID_ANOTHER in impersonated_groups)
-            self.assertTrue(TEST_ACCOUNT_GID in impersonated_groups)
+            self.assertItemsEqual(
+                self.getGroupsIDForTestAccount(), impersonated_groups)
 
         self.assertEqual(initial_uid, os.geteuid())
         self.assertEqual(initial_gid, os.getegid())
@@ -451,7 +469,7 @@ class ImpersonatedAvatarImplementation(HasImpersonatedAvatar):
         return self._use_impersonation
 
 
-class TestHasImpersonatedAvatar(ChevahTestCase):
+class TestHasImpersonatedAvatar(SystemUsersTestCase):
 
     def test_init_implementation(self):
         """
@@ -494,32 +512,18 @@ class TestHasImpersonatedAvatar(ChevahTestCase):
             name=TEST_ACCOUNT_USERNAME,
             use_impersonation=True,
             )
-        initial_uid, initial_gid = os.geteuid(), os.getegid()
-        initial_groups = os.getgroups()
 
-        with avatar.getImpersonationContext():
-            import pwd
-            import grp
-            uid, gid = os.geteuid(), os.getegid()
-            username = pwd.getpwuid(uid)[0].decode('utf-8')
-            groupname = grp.getgrgid(gid)[0].decode('utf-8')
-            groups = os.getgroups()
-            self.assertEqual(TEST_ACCOUNT_USERNAME, username)
-            self.assertEqual(TEST_ACCOUNT_GROUP, groupname)
-            self.assertNotEqual(initial_uid, uid)
-            self.assertNotEqual(initial_gid, gid)
-            self.assertEqual(2, len(groups))
-            self.assertTrue(TEST_ACCOUNT_GID_ANOTHER in groups)
-            self.assertTrue(TEST_ACCOUNT_GID in groups)
+        with self.patch('chevah.compat.unix_users._ExecuteAsUser') as (
+                mock_execute):
+            with avatar.getImpersonationContext():
+                pass
 
-        self.assertEqual(initial_uid, os.geteuid())
-        self.assertEqual(initial_gid, os.getegid())
-        self.assertEqual(initial_groups, os.getgroups())
-
-        self.assertEqual(TEST_ACCOUNT_UID, avatar._euid)
-        self.assertEqual(TEST_ACCOUNT_GID, avatar._egid)
-        self.assertContains(TEST_ACCOUNT_GID_ANOTHER, avatar._groups)
-        self.assertContains(TEST_ACCOUNT_GID, avatar._groups)
+        self.assertEqual(1, mock_execute.call_count)
+        _, kwargs = mock_execute.call_args
+        self.assertEqual(TEST_ACCOUNT_GID, kwargs['egid'])
+        self.assertEqual(TEST_ACCOUNT_UID, kwargs['euid'])
+        self.assertItemsEqual(
+            self.getGroupsIDForTestAccount(), kwargs['groups'])
 
     def test_getImpersonationContext_use_impersonation_nt(self):
         """

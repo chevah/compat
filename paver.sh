@@ -256,6 +256,7 @@ copy_python() {
             get_binary_dist "$setuptools_package"
         fi
 
+        echo "Copying bootstraping files... "
         cp -R ${python_distributable}/* ${BUILD_FOLDER}
 
         cp -RL "${CACHE_FOLDER}/$pip_package/pip" ${PYTHON_LIB}/site-packages/

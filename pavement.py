@@ -3,7 +3,6 @@
 """
 Build script for chevah-compat.
 """
-from __future__ import with_statement
 import os
 import sys
 
@@ -14,11 +13,11 @@ if os.name == 'nt':
 
 # Marker for paver.sh.
 # This value is paver by bash. Use a strict format.
-BRINK_VERSION = '0.31.1'
+BRINK_VERSION = '0.32.0'
 PYTHON_VERSION = '2.7'
 
 RUN_PACKAGES = [
-    'chevah-empirical==0.17.5',
+    'chevah-empirical==0.18.0',
     'zope.interface==3.8.0',
     'twisted==12.1.0-chevah3',
     ]
@@ -26,8 +25,11 @@ RUN_PACKAGES = [
 if os.name == 'posix':
     RUN_PACKAGES.extend([
         'python-daemon==1.5.5',
-        'pam>=0.1.4.chevah',
+        'pam>=0.1.4.c3',
         ])
+
+if sys.platform.startswith('aix'):
+    RUN_PACKAGES.append('arpy==1.1.1-c1')
 
 
 BUILD_PACKAGES = [

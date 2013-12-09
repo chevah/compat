@@ -6,10 +6,10 @@ Controller.
 """
 from chevah.empirical.testcase import (
     ChevahTestCase,
-    setup_os,
-    teardown_os,
     )
 from chevah.compat.testing import (
+    setup_access_control,
+    teardown_access_control,
     TEST_ACCOUNT_USERNAME_DOMAIN,
     TEST_ACCOUNT_PASSWORD_DOMAIN,
     TEST_ACCOUNT_GROUP_DOMAIN,
@@ -56,14 +56,14 @@ def setup_package():
     # Initialize the testing OS.
 
     try:
-        setup_os(users=TEST_USERS, groups=TEST_GROUPS)
+        setup_access_control(users=TEST_USERS, groups=TEST_GROUPS)
     except:
         import traceback
         print traceback.format_exc()
         print "Failed to initialized the system accounts!"
-        teardown_os(users=TEST_USERS, groups=TEST_GROUPS)
+        teardown_access_control(users=TEST_USERS, groups=TEST_GROUPS)
         raise
 
 
 def teardown_package():
-    teardown_os(users=TEST_USERS, groups=TEST_GROUPS)
+    teardown_access_control(users=TEST_USERS, groups=TEST_GROUPS)
