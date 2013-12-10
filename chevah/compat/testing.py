@@ -37,11 +37,6 @@ TEST_ACCOUNT_GID_OTHER = 2011
 TEST_ACCOUNT_GROUP_OTHER = u'g mițmotan'
 TEST_ACCOUNT_LDAP_USERNAME = u'ldap mâț test-account'
 TEST_ACCOUNT_LDAP_PASSWORD = u'ldap mâț test-password'
-# An ascii username with no shell.
-# To be used on system without Unicode suport.
-# It is also used for testing SSL based authentication.
-TEST_ACCOUNT_USERNAME_TEMP = u'test_user'
-TEST_ACCOUNT_UID_TEMP = 2002
 
 # Centrify testing account.
 TEST_ACCOUNT_CENTRIFY_USERNAME = u'centrify-user'
@@ -275,11 +270,23 @@ def setup_access_control(users, groups):
 def teardown_access_control(users, groups):
     """
     Revert changes from setup_access_control.
+
+    On failure it will raise an error will an error containing all errors.
     """
     # First remove the accounts as groups can not be removed first
     # since they are blocked by accounts.
+    errors = []
     for user in users:
-        os_administration.deleteUser(user)
+        try:
+            os_administration.deleteUser(user)
+        except Exception, error:
+            errors.append(error)
 
     for group in groups:
-        os_administration.deleteGroup(group)
+        try:
+            os_administration.deleteGroup(group)
+        except Exception, error:
+            errors.append(error)
+
+    if errors:
+        raise AssertionError(errors)

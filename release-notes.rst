@@ -2,6 +2,14 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.12.3 - 10/12/2013
+-------------------
+
+* Move TEST_ACCOUNT_USERNAME_TEMP to server as it is only used there.
+* Fix creation of accounts with default primary group.
+* Don't stop to teardown users and groups on first error.
+
+
 0.12.2 - 10/12/2013
 -------------------
 

@@ -316,14 +316,19 @@ class OSAdministration(object):
             user_shell = '/bin/sh'
 
         user_name = user.name.encode('utf-8')
-        execute([
+        command = [
             'sudo', 'mkuser',
             'id=' + str(user.uid),
             'home=' + user.home_path.encode('utf-8'),
             'shell=' + user_shell,
-            'pgrp=' + user.primary_group_name,
-            user_name,
-            ])
+            ]
+
+        if user.primary_group_name:
+            command.append('pgrp=' + user.primary_group_name)
+
+        command.append(user_name)
+
+        execute(command)
         if user.home_group:
             execute(
                 ['sudo', 'chgrp', user.home_group.encode('utf-8'),
