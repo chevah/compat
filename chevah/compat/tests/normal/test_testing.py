@@ -1,11 +1,8 @@
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
-'''Tests for the testing infrastructure.
-
-Stay tunes, the infinite loop is near...
-'''
-from __future__ import with_statement
-
+"""
+Tests for the testing infrastructure.
+"""
 from chevah.compat.testing import ChevahTestCase, manufacture
 
 

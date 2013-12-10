@@ -6,10 +6,8 @@ functions.
 """
 
 from chevah.compat import process_capabilities
-from chevah.empirical.testcase import (
-    ChevahTestCase,
-    )
 from chevah.compat.testing import (
+    CompatTestCase,
     setup_access_control,
     teardown_access_control,
     TEST_GROUPS,
@@ -33,7 +31,7 @@ def runElevatedTest():
 def setup_package():
     # Don't run these tests if we can not access privileged OS part.
     if not runElevatedTest():
-        raise ChevahTestCase.skipTest()
+        raise CompatTestCase.skipTest()
     # Initialize the testing OS.
 
     try:

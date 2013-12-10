@@ -143,3 +143,17 @@ class UnixFilesystem(PosixFilesystemBase):
             return True
         else:
             return False
+
+    def _getCurrentUmask(self):
+        """
+        Return current umask.
+
+        This code is not thread safe.
+        """
+        # Unix specifications for umask are stupid simple and there is only
+        # a single method wich does both get/set.
+        # We use 0002 since it is de default mask and statistically we should
+        # create less side effects.
+        current_umask = os.umask(0002)
+        os.umask(current_umask)
+        return current_umask

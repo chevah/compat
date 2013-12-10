@@ -24,7 +24,7 @@ from chevah.empirical.filesystem import LocalTestFilesystem
 from chevah.compat.exceptions import CompatError, CompatException
 
 
-class FilesytemTestCase(ChevahTestCase):
+class FilesystemTestCase(ChevahTestCase):
     """
     Common test case for all filesystem tests.
     """
@@ -36,7 +36,7 @@ class FilesytemTestCase(ChevahTestCase):
         if not process_capabilities.get_home_folder:
             raise cls.skipTest()
 
-        super(FilesytemTestCase, cls).setUpClass()
+        super(FilesystemTestCase, cls).setUpClass()
 
         user = TEST_ACCOUNT_USERNAME
         password = TEST_ACCOUNT_PASSWORD
@@ -51,13 +51,13 @@ class FilesytemTestCase(ChevahTestCase):
         cls.filesystem = LocalFilesystem(avatar=cls.avatar)
 
     def setUp(self):
-        super(FilesytemTestCase, self).setUp()
+        super(FilesystemTestCase, self).setUp()
         # Initialized only to clean the home folder.
         test_filesystem = LocalTestFilesystem(avatar=self.avatar)
         test_filesystem.cleanHomeFolder()
 
 
-class TestPosixFilesystem(FilesytemTestCase):
+class TestPosixFilesystem(FilesystemTestCase):
     """
     Path independent, OS independent tests.
     """
@@ -258,7 +258,7 @@ class TestPosixFilesystem(FilesytemTestCase):
         self.assertEqual(TEST_ACCOUNT_USERNAME_OTHER, new_owner)
 
 
-class TestUnixFilesystem(FilesytemTestCase):
+class TestUnixFilesystem(FilesystemTestCase):
     """
     Path independent Unix tests.
     """
@@ -321,7 +321,7 @@ class TestUnixFilesystem(FilesytemTestCase):
             u'no-such-group')
 
 
-class TestNTFilesystem(FilesytemTestCase):
+class TestNTFilesystem(FilesystemTestCase):
     """
     Path independent NT tests.
     """

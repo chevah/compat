@@ -209,7 +209,7 @@ class IFilesystemNode(Interface):
 
     path = Attribute(
         """
-        Path inside the rooted filesytem.
+        Path inside the rooted filesystem.
         """)
 
     absolute_path = Attribute(
@@ -344,7 +344,7 @@ class ILocalFilesystem(Interface):
      * Real Path (Operating System Path)
 
     A Chevah Path is the unified representation of paths across all Chevah
-    products. A Chevah Path uses the Posix filesytem conventions.
+    products. A Chevah Path uses the Posix filesystem conventions.
      * /some/path/ - path to a folder
      * /some/path  - path to a file
 
@@ -354,7 +354,7 @@ class ILocalFilesystem(Interface):
      * on Windows c:\some\path
     """
 
-    avatar = Attribute('Avatar associated with this filesytem.')
+    avatar = Attribute('Avatar associated with this filesystem.')
     system_users = Attribute('Module for handling system users `IOSUsers`.')
     home_segments = Attribute('Segments for user home folder.')
     temp_segments = Attribute('Segments to temp folder.')

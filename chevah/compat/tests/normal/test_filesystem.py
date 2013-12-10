@@ -1,8 +1,8 @@
 # Copyright (c) 2010 Adi Roiban.
 # See LICENSE for details.
-'''Tests for portable filesystem access.'''
-
-from __future__ import with_statement
+"""
+Tests for portable filesystem access.
+"""
 import os
 
 from mock import patch
@@ -75,6 +75,35 @@ class TestDefaultFilesystem(ChevahTestCase):
         self.assertTrue(manufacture.fs.isFolder(segments))
         folder_name = segments[-1]
         self.assertTrue(folder_name.startswith('build-'))
+
+    def test_file_mode(self):
+        """
+        Unix mode is returned for a file.
+        """
+        self.runOnOS('posix')
+        self.test_segments = manufacture.fs.createFileInTemp()
+        current_umask = manufacture.fs._getCurrentUmask()
+        expected_mode = 0100666 ^ current_umask
+
+        file_mode = self.filesystem.getAttributes(
+            self.test_segments, attributes=('permissions',))[0]
+
+        self.assertEqual(expected_mode, file_mode)
+
+    def test_folder_mode(self):
+        """
+        Unix mode is returned for a folder.
+        """
+        self.runOnOS('posix')
+        self.test_segments = manufacture.fs.createFolderInTemp()
+        current_umask = manufacture.fs._getCurrentUmask()
+        expected_mode = 040777 ^ current_umask
+
+        folder_mode = self.filesystem.getAttributes(
+            self.test_segments, attributes=('permissions',))[0]
+
+        # There is no way to get current umask
+        self.assertEqual(expected_mode, folder_mode)
 
 
 class TestPosixFilesystem(ChevahTestCase):
