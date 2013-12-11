@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
-'''Test system users portable code code.'''
-from __future__ import with_statement
+"""Test system users portable code code."""
 import os
 import sys
 
@@ -122,18 +120,19 @@ class TestSystemUsers(CompatTestCase):
         """
         Check that PAM is supported on the Unix systems.
         """
-        if os.name != 'posix':
-            raise self.skipTest()
+        self.runOnOS('posix')
+        from pam import authenticate as expected_authenticate
 
-        from chevah.compat.unix_users import HAS_PAM_SUPPORT
+        pam_authenticate = system_users._getPAMAuthenticate()
 
-        self.assertTrue(HAS_PAM_SUPPORT)
+        self.assertEqual(expected_authenticate, pam_authenticate)
 
     def test_shadow_support_unix(self):
         """
-        Check that shadow files are supported on the Unix systems.
+        Check that shadow files are supported on the Unix systems, with
+        the exception of AIX.
         """
-        if os.name != 'posix':
+        if os.name != 'posix' or sys.platform.startswith('aix'):
             raise self.skipTest()
 
         from chevah.compat.unix_users import HAS_SHADOW_SUPPORT

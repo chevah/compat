@@ -7,10 +7,13 @@ Helpers for testing.
 import os
 import sys
 
+from unidecode import unidecode
+
 from chevah.empirical.testcase import ChevahTestCase
 from chevah.empirical.mockup import ChevahCommonsFactory
 
 from chevah.compat import system_users
+from chevah.compat.administration import os_administration
 from chevah.compat.avatar import (
     FilesystemApplicationAvatar,
     FilesystemOSAvatar,
@@ -34,11 +37,6 @@ TEST_ACCOUNT_GID_OTHER = 2011
 TEST_ACCOUNT_GROUP_OTHER = u'g mițmotan'
 TEST_ACCOUNT_LDAP_USERNAME = u'ldap mâț test-account'
 TEST_ACCOUNT_LDAP_PASSWORD = u'ldap mâț test-password'
-# An ascii username with no shell.
-# To be used on system without Unicode suport.
-# It is also used for testing SSL based authentication.
-TEST_ACCOUNT_USERNAME_TEMP = u'test_user'
-TEST_ACCOUNT_UID_TEMP = 2002
 
 # Centrify testing account.
 TEST_ACCOUNT_CENTRIFY_USERNAME = u'centrify-user'
@@ -64,7 +62,7 @@ class TestUser(object):
 
     def __init__(self, name, uid=None, gid=None, home_path=None,
             home_group=None, shell=None, shadow=None, password=None,
-            domain=None, pdc=None):
+            domain=None, pdc=None, primary_group_name=None):
         if home_path is None:
             home_path = u'/tmp'
 
@@ -87,6 +85,7 @@ class TestUser(object):
         self.password = password
         self.domain = domain
         self.pdc = pdc
+        self.primary_group_name = primary_group_name
 
 
 class TestGroup(object):
@@ -106,12 +105,12 @@ class TestGroup(object):
 
 
 if sys.platform.startswith('aix'):
-    fix_username = lambda name: name.replace(' ', '_')[:5]
+    # By default aix is limited to 8 characters without spaces.
+    fix_username = lambda name: unicode(unidecode(name)).replace(' ', '_')[:8]
     fix_groupname = fix_username
-if sys.platform.startswith('win'):
+elif sys.platform.startswith('win'):
     # FIXME:927:
     # On Windows, we can't delete home folders with unicode names.
-    from unidecode import unidecode
     fix_username = lambda name: unicode(unidecode(name))
     fix_groupname = fix_username
 else:
@@ -122,6 +121,7 @@ TEST_ACCOUNT_USERNAME = fix_username(TEST_ACCOUNT_USERNAME)
 TEST_ACCOUNT_GROUP = fix_groupname(TEST_ACCOUNT_GROUP)
 TEST_ACCOUNT_USERNAME_OTHER = fix_username(TEST_ACCOUNT_USERNAME_OTHER)
 TEST_ACCOUNT_GROUP_OTHER = fix_groupname(TEST_ACCOUNT_GROUP_OTHER)
+TEST_ACCOUNT_GROUP_ANOTHER = fix_groupname(TEST_ACCOUNT_GROUP_ANOTHER)
 
 if sys.platform.startswith('sunos'):
     TEST_ACCOUNT_HOME_PATH = u'/export/home/' + TEST_ACCOUNT_USERNAME
@@ -136,6 +136,7 @@ TEST_USERS = [
             name=TEST_ACCOUNT_USERNAME,
             uid=TEST_ACCOUNT_UID,
             gid=TEST_ACCOUNT_GID,
+            primary_group_name=TEST_ACCOUNT_GROUP,
             home_path=TEST_ACCOUNT_HOME_PATH,
             home_group=TEST_ACCOUNT_GROUP,
             password=TEST_ACCOUNT_PASSWORD,
@@ -144,6 +145,7 @@ TEST_USERS = [
             name=TEST_ACCOUNT_USERNAME_OTHER,
             uid=TEST_ACCOUNT_UID_OTHER,
             gid=TEST_ACCOUNT_GID_OTHER,
+            primary_group_name=TEST_ACCOUNT_GROUP_OTHER,
             home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
             password=TEST_ACCOUNT_PASSWORD_OTHER,
             ),
@@ -246,3 +248,45 @@ class CompatManufacture(ChevahCommonsFactory):
         return token
 
 mk = manufacture = CompatManufacture()
+
+
+def setup_access_control(users, groups):
+    """
+    Create testing environment access control.
+
+    Add users, groups, create temporary folders and other things required
+    by the testing system.
+    """
+    for group in groups:
+        os_administration.addGroup(group)
+
+    for user in users:
+        os_administration.addUser(user)
+
+    for group in groups:
+        os_administration.addUsersToGroup(group, group.members)
+
+
+def teardown_access_control(users, groups):
+    """
+    Revert changes from setup_access_control.
+
+    It aggregates all teardown errors and report them at exit.
+    """
+    # First remove the accounts as groups can not be removed first
+    # since they are blocked by accounts.
+    errors = []
+    for user in users:
+        try:
+            os_administration.deleteUser(user)
+        except Exception, error:
+            errors.append(error)
+
+    for group in groups:
+        try:
+            os_administration.deleteGroup(group)
+        except Exception, error:
+            errors.append(error)
+
+    if errors:
+        raise AssertionError(errors)

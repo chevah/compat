@@ -5,8 +5,18 @@ Portable implementation of operating system administration.
 
 For not this code should only be used to help with testing and is not
 designed to be used in production.
+
+AIX
+---
+
+AIX security sub-system is a bit more complex than Linux and it keeps a lot of
+iles in /etc/security. This is why we use only system command for managing
+users and groups on AIX.
+
+Default groups and users have a maximum length of 9. Check `lsattr -El sys0`
+for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
+
 """
-from __future__ import with_statement
 import os
 import random
 import subprocess
@@ -306,13 +316,19 @@ class OSAdministration(object):
             user_shell = '/bin/sh'
 
         user_name = user.name.encode('utf-8')
-        execute([
+        command = [
             'sudo', 'mkuser',
             'id=' + str(user.uid),
             'home=' + user.home_path.encode('utf-8'),
             'shell=' + user_shell,
-            user_name,
-            ])
+            ]
+
+        if user.primary_group_name:
+            command.append('pgrp=' + user.primary_group_name)
+
+        command.append(user_name)
+
+        execute(command)
         if user.home_group:
             execute(
                 ['sudo', 'chgrp', user.home_group.encode('utf-8'),
@@ -432,7 +448,7 @@ class OSAdministration(object):
         input_text = u'%s:%s' % (user.name, user.password)
         execute(
             command=['sudo', 'chpasswd', '-c'],
-            input_text=input_text,
+            input_text=input_text.encode('utf-8'),
             )
 
     def _setUserPassword_linux(self, user):

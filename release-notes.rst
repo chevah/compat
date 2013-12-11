@@ -2,6 +2,34 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.12.3 - 10/12/2013
+-------------------
+
+* Move TEST_ACCOUNT_USERNAME_TEMP to server as it is only used there.
+* Fix creation of accounts with default primary group.
+* Don't stop to teardown users and groups on first error.
+
+
+0.12.2 - 10/12/2013
+-------------------
+
+* Fix folder mask on AIX.
+
+
+0.12.1 - 09/12/2013
+-------------------
+
+* Use lazy loading of pam module do mitigate the side effects generated when
+  load pam library on AIX.
+
+
+0.12.0 - 09/12/2013
+-------------------
+
+* Move os access control setup/teardown from empirical into compat.
+* Fix support for AIX system.
+
+
 0.11.0 - 01/12/2013
 -------------------
 

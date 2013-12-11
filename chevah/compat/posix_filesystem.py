@@ -7,6 +7,7 @@ import os
 import re
 import stat
 import shutil
+import sys
 
 from chevah.compat.constants import (
     DEFAULT_FILE_MODE,
@@ -348,16 +349,23 @@ class PosixFilesystemBase(object):
         if attributes is None:
             return stats
 
+        is_directory = bool(stats.st_mode & stat.S_IFDIR)
+        mode = stats.st_mode
+        if is_directory and sys.platform.startswith('aix'):
+            # On AIX mode contains an extra most significant bit
+            # which we don't use.
+            mode = mode & 0077777
+
         mapping = {
             'size': stats.st_size,
-            'permissions': stats.st_mode,
+            'permissions': mode,
             'hardlinks': stats.st_nlink,
             'modified': stats.st_mtime,
             'owner': str(stats.st_uid),
             'group': str(stats.st_gid),
             'uid': stats.st_uid,
             'gid': stats.st_gid,
-            'directory': bool(stats.st_mode & stat.S_IFDIR),
+            'directory': is_directory,
             }
 
         for attribute in attributes:
