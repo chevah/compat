@@ -271,7 +271,7 @@ def teardown_access_control(users, groups):
     """
     Revert changes from setup_access_control.
 
-    On failure it will raise an error will an error containing all errors.
+    It aggregates all teardown errors and report them at exit.
     """
     # First remove the accounts as groups can not be removed first
     # since they are blocked by accounts.
