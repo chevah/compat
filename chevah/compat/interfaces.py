@@ -89,6 +89,10 @@ class IProcessCapabilities(Interface):
     Provides information about current process capabilities.
     """
 
+    os_family = Attribute('General family of OS. nt or posix')
+    os_name = Attribute(
+        'Name of operating system. Ex: windows, linux, aix, solaris.')
+
     impersonate_local_account = Attribute(
         'True if it can impersonate any local account.')
     create_home_folder = Attribute(

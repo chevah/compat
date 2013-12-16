@@ -1,9 +1,7 @@
-from distutils import log
 from setuptools import Command, find_packages, setup
 import os
-import shutil
 
-VERSION = '0.12.3'
+VERSION = '0.13.0'
 
 
 class PublishCommand(Command):
@@ -26,16 +24,7 @@ class PublishCommand(Command):
         assert os.getcwd() == self.cwd, (
             'Must be in package root: %s' % self.cwd)
         self.run_command('sdist')
-        sdist_command = self.distribution.get_command_obj('sdist')
-        for archive in sdist_command.archive_files:
-            source = os.path.join(archive)
-            destination = os.path.expanduser(
-                self.destination_base + os.path.basename(archive))
-            shutil.copyfile(source, destination)
-        log.info(
-            "Distributables files copied to %s " % (self.destination_base))
-
-        # Upload package to Chevah PyPi server.
+        self.distribution.get_command_obj('sdist')
         upload_command = self.distribution.get_command_obj('upload')
         upload_command.repository = u'chevah'
         self.run_command('upload')
