@@ -13,7 +13,7 @@ from chevah.compat import (
 from chevah.compat.interfaces import IFileSystemAvatar, IOSUsers
 from chevah.compat.testing import (
     CompatTestCase,
-    decorator,
+    conditionals,
     manufacture,
     TEST_DOMAIN,
     TEST_PDC,
@@ -117,7 +117,7 @@ class TestSystemUsers(CompatTestCase):
 
         self.assertTrue(isinstance(home_folder, unicode))
 
-    @decorator.onOSFamily('posix')
+    @conditionals.onOSFamily('posix')
     def test_pam_support_unix(self):
         """
         Check that PAM is supported on the Unix systems.
@@ -169,7 +169,7 @@ class TestSuperAvatar(CompatTestCase):
         self.assertProvides(IFileSystemAvatar, avatar)
         self.assertFalse(avatar.lock_in_home_folder)
 
-    @decorator.onOSFamily('posix')
+    @conditionals.onOSFamily('posix')
     def test_unix(self):
         """
         Check Unix specific properties.
@@ -179,7 +179,7 @@ class TestSuperAvatar(CompatTestCase):
         self.assertEqual('root', avatar.name)
         self.assertTrue(avatar.use_impersonation)
 
-    @decorator.onOSFamily('nt')
+    @conditionals.onOSFamily('nt')
     def test_windows(self):
         """
         Check Windows specific properties.

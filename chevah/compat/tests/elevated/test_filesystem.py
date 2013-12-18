@@ -13,7 +13,7 @@ from chevah.compat import (
     )
 from chevah.compat.testing import (
     ChevahTestCase,
-    decorator,
+    conditionals,
     manufacture,
     TEST_ACCOUNT_GROUP,
     TEST_ACCOUNT_GROUP_OTHER,
@@ -265,7 +265,7 @@ class TestUnixFilesystem(FilesystemTestCase):
     """
 
     @classmethod
-    @decorator.onOSFamily('posix')
+    @conditionals.onOSFamily('posix')
     def setUpClass(cls):
         super(TestUnixFilesystem, cls).setUpClass()
 
@@ -328,7 +328,7 @@ class TestNTFilesystem(FilesystemTestCase):
     """
 
     @classmethod
-    @decorator.onOSFamily('nt')
+    @conditionals.onOSFamily('nt')
     def setUpClass(cls):
         super(TestNTFilesystem, cls).setUpClass()
 

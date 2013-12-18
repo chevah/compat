@@ -8,7 +8,7 @@ import os
 from mock import patch
 
 from chevah.compat import DefaultAvatar, LocalFilesystem
-from chevah.compat.testing import ChevahTestCase, decorator, manufacture
+from chevah.compat.testing import ChevahTestCase, conditionals, manufacture
 
 
 class TestDefaultFilesystem(ChevahTestCase):
@@ -76,7 +76,7 @@ class TestDefaultFilesystem(ChevahTestCase):
         folder_name = segments[-1]
         self.assertTrue(folder_name.startswith('build-'))
 
-    @decorator.onOSFamily('posix')
+    @conditionals.onOSFamily('posix')
     def test_file_mode(self):
         """
         Unix mode is returned for a file.
@@ -90,7 +90,7 @@ class TestDefaultFilesystem(ChevahTestCase):
 
         self.assertEqual(expected_mode, file_mode)
 
-    @decorator.onOSFamily('posix')
+    @conditionals.onOSFamily('posix')
     def test_folder_mode(self):
         """
         Unix mode is returned for a folder.
