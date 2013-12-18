@@ -2,6 +2,18 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.13.1 - 18/12/2013
+-------------------
+
+* Update to latest empirical.
+
+
+0.13.0 - 16/12/2013
+-------------------
+
+* Add os_type and os_family to process_capabilies.
+
+
 0.12.3 - 10/12/2013
 -------------------
 

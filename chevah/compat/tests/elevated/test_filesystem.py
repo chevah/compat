@@ -13,6 +13,7 @@ from chevah.compat import (
     )
 from chevah.compat.testing import (
     ChevahTestCase,
+    conditionals,
     manufacture,
     TEST_ACCOUNT_GROUP,
     TEST_ACCOUNT_GROUP_OTHER,
@@ -72,7 +73,7 @@ class TestPosixFilesystem(FilesystemTestCase):
         owner = self.filesystem.getOwner(self.filesystem.home_segments)
         # FIXME:928:
         # Unify this test after the Windows issue is fixed.
-        if self.os_name == 'posix':
+        if self.os_family == 'posix':
             self.assertEqual(self.avatar.name, owner)
         else:
             self.assertEqual(u'Administrators', owner)
@@ -88,7 +89,7 @@ class TestPosixFilesystem(FilesystemTestCase):
 
         self.assertExceptionID(1016, context.exception)
 
-        if self.os_name == 'posix':
+        if self.os_family == 'posix':
             self.assertContains(
                 u'No such file or directory', context.exception.message)
         else:
@@ -226,7 +227,7 @@ class TestPosixFilesystem(FilesystemTestCase):
 
         # FIXME:928:
         # Update this test after the Windows issues is fixed.
-        if self.os_name == 'posix':
+        if self.os_family == 'posix':
             self.assertTrue(
                 self.filesystem.hasGroup(
                     self.filesystem.home_segments,
@@ -264,8 +265,8 @@ class TestUnixFilesystem(FilesystemTestCase):
     """
 
     @classmethod
+    @conditionals.onOSFamily('posix')
     def setUpClass(cls):
-        cls.runOnOS('posix')
         super(TestUnixFilesystem, cls).setUpClass()
 
     def test_temp_segments_location(self):
@@ -327,8 +328,8 @@ class TestNTFilesystem(FilesystemTestCase):
     """
 
     @classmethod
+    @conditionals.onOSFamily('nt')
     def setUpClass(cls):
-        cls.runOnOS('nt')
         super(TestNTFilesystem, cls).setUpClass()
 
     def test_temp_segments_location(self):

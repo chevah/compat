@@ -13,6 +13,7 @@ import win32security
 
 from zope.interface import implements
 
+from chevah.compat.capabilities import BaseProcessCapabilities
 from chevah.compat.exceptions import (
     AdjustPrivilegeException,
     CompatException,
@@ -20,7 +21,7 @@ from chevah.compat.exceptions import (
 from chevah.compat.interfaces import IProcessCapabilities
 
 
-class NTProcessCapabilities(object):
+class NTProcessCapabilities(BaseProcessCapabilities):
     '''Container for NT capabilities detection.'''
 
     implements(IProcessCapabilities)

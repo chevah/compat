@@ -9,6 +9,7 @@ import sys
 
 from unidecode import unidecode
 
+from chevah.empirical import conditionals
 from chevah.empirical.testcase import ChevahTestCase
 from chevah.empirical.mockup import ChevahCommonsFactory
 
@@ -20,8 +21,9 @@ from chevah.compat.avatar import (
     )
 
 
-# Export ChevahTestCase from here.
+# Shut up the linter.
 ChevahTestCase
+conditionals
 
 # Test accounts and passwords.
 TEST_ACCOUNT_USERNAME = u'mâț mițișor'
