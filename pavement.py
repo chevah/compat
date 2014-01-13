@@ -11,11 +11,6 @@ if os.name == 'nt':
     import tempfile
     tempfile.tempdir = "c:\\temp"
 
-# Marker for paver.sh.
-# This value is paver by bash. Use a strict format.
-BRINK_VERSION = '0.32.0'
-PYTHON_VERSION = '2.7'
-
 RUN_PACKAGES = [
     'chevah-empirical==0.20.1',
     'zope.interface==3.8.0',
@@ -118,7 +113,9 @@ SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['github']['url'] = 'https://github.com/chevah/compat'
-
+SETUP['buildbot']['server'] = 'build.chevah.com'
+SETUP['buildbot']['web_url'] = 'http://build.chevah.com:10088'
+SETUP['pypi']['index_url'] = 'http://pypi.chevah.com:10042/simple'
 
 @task
 @needs('deps_testing', 'deps_build')
@@ -164,10 +161,7 @@ def build():
     """
     # Clean previous files.
     pave.fs.deleteFolder([
-        pave.path.build,
-        pave.getPythonLibPath(python_version=PYTHON_VERSION),
-        'chevah',
-        'compat',
+        pave.path.build, pave.getPythonLibPath(), 'chevah', 'compat',
         ])
     pave.fs.deleteFolder([pave.path.build, 'setup-build'])
 
