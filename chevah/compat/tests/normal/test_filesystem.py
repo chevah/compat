@@ -8,6 +8,7 @@ import os
 from mock import patch
 
 from chevah.compat import DefaultAvatar, LocalFilesystem
+from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.testing import ChevahTestCase, conditionals, manufacture
 
 
@@ -17,6 +18,12 @@ class TestDefaultFilesystem(ChevahTestCase):
     def setUp(self):
         super(TestDefaultFilesystem, self).setUp()
         self.filesystem = LocalFilesystem(avatar=DefaultAvatar())
+
+    def test_interface_implementation(self):
+        """
+        Checks that it implements the interface.
+        """
+        self.assertProvides(ILocalFilesystem, self.filesystem)
 
     def test_home_segments(self):
         """

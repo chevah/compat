@@ -2,7 +2,13 @@ Release notes for chevah.empirical
 ==================================
 
 
-0.13.2 - 18/12/2013
+0.13.3 - 13/01/2014
+-------------------
+
+* Fix ILocalFilesyste.openFile declaration.
+
+
+0.13.2 - 13/01/2014
 -------------------
 
 * Fix getSegmentsFromRealPath for locked filesystems.

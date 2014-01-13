@@ -363,8 +363,6 @@ class ILocalFilesystem(Interface):
     home_segments = Attribute('Segments for user home folder.')
     temp_segments = Attribute('Segments to temp folder.')
 
-    _authentication_token = Attribute('Cached value')
-
     def getRealPathFromSegments(segments):
         """
         Return the real path for the segments.
@@ -382,7 +380,7 @@ class ILocalFilesystem(Interface):
         `real_path` is a path valid in the local operating system.
         """
 
-    def getPath(self, segments):
+    def getPath(segments):
         """
         Return the ChevahPath for the segment.
 
@@ -444,7 +442,7 @@ class ILocalFilesystem(Interface):
         Rename file or folder.
         """
 
-    def openFile(self, segments, flags, mode):
+    def openFile(segments, flags, mode):
         """
         Return a file object for `segments`.
 
@@ -496,7 +494,7 @@ class ILocalFilesystem(Interface):
         not the symlink itself.
         """
 
-    def setAttributes(self, segments, attributes):
+    def setAttributes(segments, attributes):
         """
         Set `attributes` for segment.
 
