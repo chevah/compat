@@ -898,6 +898,25 @@ class TestLocalFilesystemLocked(ChevahTestCase):
         self.assertEqual(u'c:\\Temp', filesystem.getRealPathFromSegments([]))
         self.assertEqual([], filesystem.home_segments)
 
+    def test_getSegmentsFromRealPath(self):
+        """
+        Return locked segments for a real path.
+        """
+        separator = os.sep
+        root_path = self.locked_avatar.root_folder_path
+
+        result = self.locked_filesystem.getSegmentsFromRealPath(root_path)
+        self.assertEqual([], result)
+
+        result = self.locked_filesystem.getSegmentsFromRealPath(
+            root_path + separator)
+        self.assertEqual([], result)
+
+        name = manufacture.string()
+        result = self.locked_filesystem.getSegmentsFromRealPath(
+            root_path + separator + name)
+        self.assertEqual([name], result)
+
     def test_exists_false(self):
         """
         exists will return `False` if file or folder does not exists.

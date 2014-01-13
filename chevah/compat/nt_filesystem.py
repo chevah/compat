@@ -153,15 +153,19 @@ class NTFilesystem(PosixFilesystemBase):
         if path is None or path == u'':
             return segments
 
-        path = os.path.abspath(path)
-        drive, root_tail = os.path.splitdrive(path)
-        if drive == u'':
-            segments = [u'c']
-        else:
-            segments = [drive.strip(u':')]
-
         head = True
-        tail = root_tail
+        path = os.path.abspath(path)
+
+        if self._avatar.lock_in_home_folder:
+            tail = path[len(self._getRootPath()):]
+        else:
+            drive, root_tail = os.path.splitdrive(path)
+            if drive == u'':
+                segments = [u'c']
+            else:
+                segments = [drive.strip(u':')]
+            tail = root_tail
+
         while head not in [u'\\', u'']:
             head, tail = os.path.split(tail)
             if tail != '':

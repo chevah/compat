@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.13.2 - 18/12/2013
+-------------------
+
+* Fix getSegmentsFromRealPath for locked filesystems.
+
+
 0.13.1 - 18/12/2013
 -------------------
 
