@@ -165,7 +165,7 @@ class NTFilesystem(PosixFilesystemBase):
         else:
             # For unlocked filesystem, we use 'c' as default drive.
             drive, root_tail = os.path.splitdrive(path)
-            if drive == u'':
+            if not drive:
                 drive = u'c'
             else:
                 drive = drive.strip(u':')
