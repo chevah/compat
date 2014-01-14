@@ -147,7 +147,9 @@ class NTFilesystem(PosixFilesystemBase):
         return unicode(result)
 
     def getSegmentsFromRealPath(self, path):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         segments = []
 
         if path is None or path == u'':
@@ -157,20 +159,29 @@ class NTFilesystem(PosixFilesystemBase):
         path = os.path.abspath(path)
 
         if self._avatar.lock_in_home_folder:
+            # Locked filesystem have no drive.
             tail = path[len(self._getRootPath()):]
+            drive = ''
         else:
+            # For unlocked filesystem, we use 'c' as default drive.
             drive, root_tail = os.path.splitdrive(path)
             if drive == u'':
-                segments = [u'c']
+                drive = u'c'
             else:
-                segments = [drive.strip(u':')]
+                drive = drive.strip(u':')
             tail = root_tail
 
         while head not in [u'\\', u'']:
             head, tail = os.path.split(tail)
-            if tail != '':
-                segments.insert(1, tail)
+            if tail == '':
+                break
+            segments.insert(0, tail)
             tail = head
+
+        # Prepend drive at the end, due to the way os.path.split works.
+        if drive:
+            segments.insert(0, drive)
+
         return segments
 
     def readLink(self, segments):
