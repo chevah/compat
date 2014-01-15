@@ -2,6 +2,24 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.13.4 - 13/01/2014
+-------------------
+
+* Fix getSegmentsFromRealPath on Windows.
+
+
+0.13.3 - 13/01/2014
+-------------------
+
+* Fix ILocalFilesystem.openFile declaration.
+
+
+0.13.2 - 13/01/2014
+-------------------
+
+* Fix getSegmentsFromRealPath for locked filesystems.
+
+
 0.13.1 - 18/12/2013
 -------------------
 

@@ -8,6 +8,7 @@ import os
 from mock import patch
 
 from chevah.compat import DefaultAvatar, LocalFilesystem
+from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.testing import ChevahTestCase, conditionals, manufacture
 
 
@@ -17,6 +18,12 @@ class TestDefaultFilesystem(ChevahTestCase):
     def setUp(self):
         super(TestDefaultFilesystem, self).setUp()
         self.filesystem = LocalFilesystem(avatar=DefaultAvatar())
+
+    def test_interface_implementation(self):
+        """
+        Checks that it implements the interface.
+        """
+        self.assertProvides(ILocalFilesystem, self.filesystem)
 
     def test_home_segments(self):
         """
@@ -897,6 +904,31 @@ class TestLocalFilesystemLocked(ChevahTestCase):
 
         self.assertEqual(u'c:\\Temp', filesystem.getRealPathFromSegments([]))
         self.assertEqual([], filesystem.home_segments)
+
+    def test_getSegmentsFromRealPath(self):
+        """
+        Return locked segments for a real path.
+        """
+        separator = os.sep
+        root_path = self.locked_avatar.root_folder_path
+
+        result = self.locked_filesystem.getSegmentsFromRealPath(root_path)
+        self.assertEqual([], result)
+
+        result = self.locked_filesystem.getSegmentsFromRealPath(
+            root_path + separator)
+        self.assertEqual([], result)
+
+        name = manufacture.string()
+        result = self.locked_filesystem.getSegmentsFromRealPath(
+            root_path + separator + name)
+        self.assertEqual([name], result)
+
+        name = manufacture.string()
+        child = manufacture.string()
+        result = self.locked_filesystem.getSegmentsFromRealPath(
+            root_path + separator + name + separator + child + separator)
+        self.assertEqual([name, child], result)
 
     def test_exists_false(self):
         """

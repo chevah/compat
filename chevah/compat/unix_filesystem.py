@@ -64,6 +64,10 @@ class UnixFilesystem(PosixFilesystemBase):
 
         head = True
         tail = os.path.abspath(real_path)
+
+        if self._avatar.lock_in_home_folder:
+            tail = tail[len(self._root_handler.path):]
+
         while tail and head != u'/':
             head, tail = os.path.split(tail)
             if tail != u'':
