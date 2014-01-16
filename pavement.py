@@ -20,7 +20,7 @@ RUN_PACKAGES = [
 if os.name == 'posix':
     RUN_PACKAGES.extend([
         'python-daemon==1.5.5',
-        'pam>=0.1.4.c3',
+        'pam==0.1.4.c3',
         ])
 
 if sys.platform.startswith('aix'):

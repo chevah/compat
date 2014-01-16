@@ -252,15 +252,16 @@ class TestSystemUsers(SystemUsersTestCase):
         self.assertIsNone(token)
 
     def test_authenticateWithUsernameAndPasswordPAM(self):
-        '''Test username and password authentication using PAM.
+        """
+        Test username and password authentication using PAM.
 
-        This test is only executed on a single slave, which is configured
-        with PAM-LDAP. For now it is Ubuntu 10.04 x64.
+        This test is only executed on slaves which are configured
+        with PAM-LDAP.
 
         I tried to create a custom PAM module, which allows only a specific
         username, but I failed (adi).
-        '''
-        if 'ubuntu-1004-x64' not in self.getHostname():
+        """
+        if 'ldap' not in self.getHostname():
             raise self.skipTest()
 
         result, token = system_users.authenticateWithUsernameAndPassword(
