@@ -345,11 +345,12 @@ class PosixFilesystemBase(object):
                 stats = os.stat(path_encoded)
             else:
                 stats = os.lstat(path_encoded)
+            is_link = bool(stat.S_ISLNK(stats.st_mode))
 
         if attributes is None:
             return stats
 
-        is_directory = bool(stats.st_mode & stat.S_IFDIR)
+        is_directory = bool(stat.S_ISDIR(stats.st_mode))
         mode = stats.st_mode
         if is_directory and sys.platform.startswith('aix'):
             # On AIX mode contains an extra most significant bit
@@ -366,6 +367,7 @@ class PosixFilesystemBase(object):
             'uid': stats.st_uid,
             'gid': stats.st_gid,
             'directory': is_directory,
+            'link': is_link,
             }
 
         for attribute in attributes:
