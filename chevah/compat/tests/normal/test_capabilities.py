@@ -24,6 +24,17 @@ class TestProcessCapabilities(CompatTestCase):
         super(TestProcessCapabilities, self).setUp()
         self.capabilities = process_capabilities
 
+    def runAsAdministrator(self):
+        """
+        Return True if slave runs as administrator.
+        """
+        # Windows 2008 and DC client tests are done in administration mode,
+        # 2003 and XP under normal mode.
+        if 'win-2008' in self.hostname or 'win-dc' in self.hostname:
+            return True
+        else:
+            return False
+
     def test_init(self):
         """
         Check ProcessCapabilities initialization.
