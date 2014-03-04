@@ -3,10 +3,9 @@
 """
 Provides information about capabilities for a process on Windows.
 """
-from __future__ import with_statement
-
 from contextlib import contextmanager
 import platform
+import pywintypes
 import win32api
 import win32process
 import win32security
@@ -16,7 +15,6 @@ from zope.interface import implements
 from chevah.compat.capabilities import BaseProcessCapabilities
 from chevah.compat.exceptions import (
     AdjustPrivilegeException,
-    CompatException,
     )
 from chevah.compat.interfaces import IProcessCapabilities
 
@@ -32,16 +30,23 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         """
         result = []
 
-        with self._openProcess(win32security.TOKEN_QUERY) as process_token:
-            privileges = win32security.GetTokenInformation(
-                process_token, win32security.TokenPrivileges)
-
-            for privilege in privileges:
-                name = win32security.LookupPrivilegeName('', privilege[0])
-                value = unicode(privilege[1])
-                result.append(name + u':' + value)
+        for privilege in self._getAvailablePrivileges():
+            name = win32security.LookupPrivilegeName('', privilege[0])
+            value = unicode(privilege[1])
+            result.append(name + u':' + value)
 
         return u', '.join(result)
+
+    def _getAvailablePrivileges(self):
+        """
+        Return a list with tuples for privileges attached to process.
+
+        Each list item is in the format:
+        (PRIVILEGE_ID, PRIVILEGE_STATE)
+        """
+        with self._openProcess(win32security.TOKEN_QUERY) as process_token:
+            return win32security.GetTokenInformation(
+                process_token, win32security.TokenPrivileges)
 
     @property
     def impersonate_local_account(self):
@@ -105,7 +110,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
                 win32api.CloseHandle(process_token)
 
     @contextmanager
-    def _elevatePrivileges(self, *privileges):
+    def elevatePrivileges(self, *privileges):
         """
         Elevate current process privileges to include the specified ones.
 
@@ -116,16 +121,21 @@ class NTProcessCapabilities(BaseProcessCapabilities):
 
         missing_privileges = []
         try:
-            for privilege in privileges:
-                if not self._hasPrivilege(privilege):
-                    missing_privileges.append(privilege)
+            for privilege_name in privileges:
+                state = self._getPrivilegeState(privilege_name)
+                if not self._isPrivilegeStateAvaiable(state):
+                    raise AdjustPrivilegeException(
+                        'Process does not has %s privilege.' % privilege_name)
 
-            for privilege in missing_privileges:
-                self._adjustPrivilege(privilege, True)
+                if not self._isPrivilegeStateEnabled(state):
+                    missing_privileges.append(privilege_name)
+
+            for privilege_name in missing_privileges:
+                self._adjustPrivilege(privilege_name, True)
             yield
         finally:
-            for privilege in missing_privileges:
-                self._adjustPrivilege(privilege, False)
+            for privilege_name in missing_privileges:
+                self._adjustPrivilege(privilege_name, False)
 
     def _adjustPrivilege(self, privilege_name, enable=False):
         """
@@ -155,49 +165,125 @@ class NTProcessCapabilities(BaseProcessCapabilities):
             except win32security.error, error:
                 raise AdjustPrivilegeException(str(error))
 
+    def _getPrivilegeID(self, privilege_name):
+        """
+        Return numeric ID for `privilege_name`.
+
+        This is here since it is also used as helper in tests.
+
+        Available names are at:
+        http://msdn.microsoft.com/en-us/library/windows/
+            desktop/bb530716(v=vs.85).aspx
+        """
+        return win32security.LookupPrivilegeValue('', privilege_name)
+
+    def _getPrivilegeState(self, privilege_name):
+        """
+        Return state for `privilege_name`.
+
+        Status can be:
+        * 'present'
+        * 'enabled'
+        * 'enabled-by-default'
+        * 'removed'
+        * 'absent'
+
+        Try to avoid using this method and defer to _hasPrivilege* methods.
+
+        In Windows, state is a mask so a state can be both enabled and
+        enabled-by-default and removed. This tries to implement a priority,
+        so a privilege which was removed will only return removed.
+        """
+        result = u'absent'
+
+        try:
+            target_id = self._getPrivilegeID(privilege_name)
+        except pywintypes.error:
+            # We fail to query privilege so it does not exists.
+            return result
+
+        for privilege in self._getAvailablePrivileges():
+            privilege_id = privilege[0]
+            state = privilege[1]
+            # bitwise flag
+            # 0 - not set
+            # 1 - win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
+            # 2 - win32security.SE_PRIVILEGE_ENABLED
+            # 4 - win32security.SE_PRIVILEGE_REMOVED
+            # -2147483648 - win32security.SE_PRIVILEGE_USED_FOR_ACCESS
+
+            if privilege_id != target_id:
+                continue
+
+            if (state & win32security.SE_PRIVILEGE_REMOVED ==
+                win32security.SE_PRIVILEGE_REMOVED
+                    ):
+                return u'removed'
+
+            if (state & win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT ==
+                win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
+                    ):
+                return u'enabled-by-default'
+
+            if (state & win32security.SE_PRIVILEGE_ENABLED ==
+                win32security.SE_PRIVILEGE_ENABLED
+                    ):
+                return u'enabled'
+
+            # Set state as present and stop looking for other names.
+            result = u'present'
+            break
+
+        return result
+
+    def _isPrivilegeEnabled(self, privilege_name):
+        """
+        Return True if the process has the specified `privilege_name`
+        enabled.
+        """
+        state = self._getPrivilegeState(privilege_name)
+        return self._isPrivilegeStateEnabled(state)
+
+    def _isPrivilegeStateEnabled(self, state):
+        """
+        Retrun True if state is one of the enabled values.
+        """
+        if state in [u'enabled', u'enabled-by-default']:
+            return True
+        else:
+            return False
+
+    def _isPrivilegeStateAvaiable(sefl, state):
+        """
+        Retrun True if state is one of the values in which it is available
+        to the process.
+        """
+        if state in [u'present', u'enabled', u'enabled-by-default']:
+            return True
+        else:
+            return False
+
     def _hasPrivilege(self, privilege_name):
         """
-        Check if the current process has the specified privilege name.
-
-        Returns False otherwise.
+        Return True if `privilege` name is available and is enabled
+        or can be enabled.
         """
-        with self._openProcess(win32security.TOKEN_QUERY) as process_token:
-            try:
-                privilege_value = win32security.LookupPrivilegeValue(
-                    '',
-                    privilege_name
-                    )
+        state = self._getPrivilegeState(privilege_name)
+        if state in [u'present', u'enabled', u'enabled-by-default']:
+            return True
+        else:
+            return False
 
-                privileges = win32security.GetTokenInformation(
-                    process_token, win32security.TokenPrivileges)
+    @property
+    def symbolic_link(self):
+        """
+        See `IProcessCapabilities`.
 
-                for privilege in privileges:
-                    value = privilege[0]
-                    state = privilege[1]
-                    # bitwise flag
-                    # 0 - not set
-                    # 1 - win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
-                    # 2 - win32security.SE_PRIVILEGE_ENABLED
-                    # 4 - win32security.SE_PRIVILEGE_REMOVED
-                    # -2147483648 - win32security.SE_PRIVILEGE_USED_FOR_ACCESS
+        Enabled with SE_CREATE_SYMBOLIC_LINK_NAME.
 
-                    if privilege_value == value:
-                        enabled = (
-                            state &
-                            win32security.SE_PRIVILEGE_ENABLED ==
-                                win32security.SE_PRIVILEGE_ENABLED
-                            )
-                        enabled_by_default = (
-                            state &
-                            win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT ==
-                                win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
-                            )
-
-                        if enabled or enabled_by_default:
-                            return True
-                        else:
-                            return False
-            except win32security.error, error:
-                raise CompatException(error)
-
-        return False
+        Supported on Vista and above.
+        """
+        if self._hasPrivilege(win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
+            return True
+        else:
+            return False

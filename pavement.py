@@ -12,7 +12,7 @@ if os.name == 'nt':
     tempfile.tempdir = "c:\\temp"
 
 RUN_PACKAGES = [
-    'chevah-empirical==0.24.0',
+    'chevah-empirical==0.24.1',
     'zope.interface==3.8.0',
     'twisted==12.1.0-chevah3',
     ]
@@ -47,10 +47,8 @@ BUILD_PACKAGES = [
 
 
 TEST_PACKAGES = [
-    'pyflakes>=0.5.0-chevah2',
-    'closure_linter==2.3.9',
-    'pocketlint==0.5.31-chevah8',
-    'pocketlint-jshint',
+    'pyflakes==0.7.3',
+    'pocketlint==1.4.4.c4',
 
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
