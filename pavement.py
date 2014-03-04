@@ -86,7 +86,7 @@ from brink.pavement_commons import (
     test_normal,
     test_super,
     )
-from paver.easy import consume_args, needs, task
+from paver.easy import call_task, consume_args, needs, task
 
 # Make pylint shut up.
 buildbot_list
@@ -184,12 +184,13 @@ def test_os_dependent(args):
 
 
 @task
-@needs('deps_build', 'lint')
+@needs('deps_build')
 @consume_args
 def test_os_independent(args):
     """
     Run os independent tests.
     """
+    call_task('lint', options={'all': True})
 
 
 @task

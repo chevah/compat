@@ -33,7 +33,7 @@ from chevah.compat import (
 
 
 def execute(command, input_text=None, output=None,
-        ignore_errors=False, verbose=False):
+        ignore_errors=True, verbose=False):
     """
     Execute a command having stdout redirected and using 'input_text' as
     input.

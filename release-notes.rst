@@ -17,6 +17,13 @@ Release notes for chevah.empirical
 * Add LocalFilesystem.getStatus() method.
 
 
+0.13.5 - 04/03/2014
+-------------------
+
+* Use latest brink and linters.
+* Fix cleanup on account administration on AIX and OSX.
+
+
 0.13.4 - 13/01/2014
 -------------------
 
