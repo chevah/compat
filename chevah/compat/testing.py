@@ -181,6 +181,17 @@ class CompatTestCase(ChevahTestCase):
     For not, there is nothing special here.
     """
 
+    def runAsAdministrator(self):
+        """
+        Return True is slave runs as administrator.
+        """
+        # Windows 2008 and DC client tests are done in administration mode,
+        # 2003 and XP under normal mode.
+        if 'win-2008' in self.hostname or 'win-dc' in self.hostname:
+            return True
+        else:
+            return False
+
 
 class CompatManufacture(ChevahCommonsFactory):
     """

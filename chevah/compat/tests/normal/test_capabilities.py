@@ -15,26 +15,14 @@ from zope.interface.verify import verifyObject
 from chevah.compat import process_capabilities
 from chevah.compat.exceptions import AdjustPrivilegeException
 from chevah.compat.interfaces import IProcessCapabilities
-from chevah.compat.testing import manufacture
-from chevah.empirical.testcase import ChevahTestCase
+from chevah.compat.testing import CompatTestCase, manufacture
 
 
-class TestProcessCapabilities(ChevahTestCase):
+class TestProcessCapabilities(CompatTestCase):
 
     def setUp(self):
         super(TestProcessCapabilities, self).setUp()
         self.capabilities = process_capabilities
-
-    def runAsAdministrator(self):
-        """
-        Return True is slave runs as administrator.
-        """
-        # Windows 2008 and DC client tests are done in administration mode,
-        # 2003 and XP under normal mode.
-        if 'win-2008' in self.hostname or 'win-dc' in self.hostname:
-            return True
-        else:
-            return False
 
     def test_init(self):
         """

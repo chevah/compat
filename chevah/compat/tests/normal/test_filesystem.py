@@ -117,7 +117,8 @@ class TestDefaultFilesystem(CompatTestCase):
         """
         Can be used for linking a file.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
+        content = manufacture.string()
+        self.test_segments = manufacture.fs.createFileInTemp(content=content)
         link_segments = self.test_segments[:]
         link_segments[-1] = '%s-link' % self.test_segments[-1]
         manufacture.fs.makeLink(
@@ -126,7 +127,9 @@ class TestDefaultFilesystem(CompatTestCase):
             )
 
         self.assertTrue(manufacture.fs.exists(link_segments))
-
+        # Will point to the same content.
+        link_content = manufacture.fs.getFileContent(self.test_segments)
+        self.assertEqual(content, link_content)
         # Can be removed as a simple file and target file is not removed.
         manufacture.fs.deleteFile(link_segments)
         self.assertFalse(manufacture.fs.exists(link_segments))
@@ -136,7 +139,11 @@ class TestDefaultFilesystem(CompatTestCase):
         """
         Can be used for linking a folder.
         """
+        child_name = manufacture.makeFilename()
         self.test_segments = manufacture.fs.createFolderInTemp()
+        folder_child = self.test_segments[:]
+        folder_child.append(child_name)
+        manufacture.fs.createFolder(folder_child)
         link_segments = self.test_segments[:]
         link_segments[-1] = '%s-link' % self.test_segments[-1]
         manufacture.fs.makeLink(
@@ -145,9 +152,11 @@ class TestDefaultFilesystem(CompatTestCase):
             )
 
         self.assertTrue(manufacture.fs.exists(link_segments))
-
-        # Can be removed as a simple file and target file is not removed.
-        manufacture.fs.deleteFile(link_segments)
+        # Will have the same content.
+        content = manufacture.fs.getFolderContent(link_segments)
+        self.assertEqual([child_name], content)
+        # Can be removed as a simple folder and target folder is not removed.
+        manufacture.fs.deleteFolder(link_segments)
         self.assertFalse(manufacture.fs.exists(link_segments))
         self.assertTrue(manufacture.fs.exists(self.test_segments))
 
