@@ -185,12 +185,12 @@ class NTProcessCapabilities(BaseProcessCapabilities):
                         enabled = (
                             state &
                             win32security.SE_PRIVILEGE_ENABLED ==
-                                win32security.SE_PRIVILEGE_ENABLED
+                            win32security.SE_PRIVILEGE_ENABLED
                             )
                         enabled_by_default = (
                             state &
                             win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT ==
-                                win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
+                            win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
                             )
 
                         if enabled or enabled_by_default:

@@ -232,9 +232,9 @@ class TestSystemUsers(SystemUsersTestCase):
         credendials are not valid.
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
-                username=TEST_ACCOUNT_USERNAME,
-                password=manufacture.string(),
-                )
+            username=TEST_ACCOUNT_USERNAME,
+            password=manufacture.string(),
+            )
         self.assertFalse(result)
         self.assertIsNone(token)
 
@@ -247,7 +247,7 @@ class TestSystemUsers(SystemUsersTestCase):
         PAM modules.
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
-                username=manufacture.string(), password=manufacture.string())
+            username=manufacture.string(), password=manufacture.string())
         self.assertFalse(result)
         self.assertIsNone(token)
 
@@ -265,9 +265,9 @@ class TestSystemUsers(SystemUsersTestCase):
             raise self.skipTest()
 
         result, token = system_users.authenticateWithUsernameAndPassword(
-                username=TEST_ACCOUNT_LDAP_USERNAME,
-                password=TEST_ACCOUNT_LDAP_PASSWORD,
-                )
+            username=TEST_ACCOUNT_LDAP_USERNAME,
+            password=TEST_ACCOUNT_LDAP_PASSWORD,
+            )
         self.assertTrue(result)
         self.assertIsNone(token)
 
@@ -284,9 +284,9 @@ class TestSystemUsers(SystemUsersTestCase):
             raise self.skipTest()
 
         result, token = system_users.authenticateWithUsernameAndPassword(
-                username=TEST_ACCOUNT_CENTRIFY_USERNAME,
-                password=TEST_ACCOUNT_CENTRIFY_PASSWORD,
-                )
+            username=TEST_ACCOUNT_CENTRIFY_USERNAME,
+            password=TEST_ACCOUNT_CENTRIFY_PASSWORD,
+            )
         self.assertIsTrue(result)
         self.assertIsNone(token)
 
@@ -323,7 +323,8 @@ class TestSystemUsers(SystemUsersTestCase):
             username=username, password=TEST_ACCOUNT_PASSWORD)
 
         with system_users.executeAsUser(
-            username=username, token=token):
+            username=username, token=token
+                ):
             self.assertEqual(
                 username, system_users.getCurrentUserName())
 
