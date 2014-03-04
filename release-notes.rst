@@ -1,6 +1,14 @@
 Release notes for chevah.empirical
 ==================================
 
+0.14.0 - 04/03/2014
+-------------------
+
+* Refactor file/folder/link attributes retrieval.
+* Add 'link' and 'file' attributes to LocalFilesystem.getAttributes().
+* Remove follow_symlinks from LocalFilesystem.getAttributes().
+* Add LocalFilesystem.getStatus() method.
+
 
 0.13.4 - 13/01/2014
 -------------------
