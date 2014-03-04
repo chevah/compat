@@ -172,8 +172,7 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
 
     def test_isPrivilegeEnabled_enabled(self):
         """
-        hasPrivilege returns True for a privilege which is present and is
-        enabled.
+        Returns True for a privilege which is present and is enabled.
         """
         # We use SE_IMPERSONATE privilege as it is enabled by default.
         privilege = win32security.SE_IMPERSONATE_NAME
