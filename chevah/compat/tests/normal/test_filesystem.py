@@ -162,8 +162,8 @@ class TestDefaultFilesystem(CompatTestCase):
             is_directory,
             is_link,
             ) = self.filesystem.getAttributes(
-                self.test_segments,
-                attributes=('permissions', 'file', 'directory', 'link'))
+            self.test_segments,
+            attributes=('permissions', 'file', 'directory', 'link'))
 
         self.assertFalse(is_directory)
         self.assertTrue(is_file)
@@ -186,8 +186,8 @@ class TestDefaultFilesystem(CompatTestCase):
             is_directory,
             is_link,
             ) = self.filesystem.getAttributes(
-                self.test_segments,
-                attributes=('permissions', 'file', 'directory', 'link'))
+            self.test_segments,
+            attributes=('permissions', 'file', 'directory', 'link'))
 
         self.assertTrue(is_directory)
         self.assertFalse(is_file)
@@ -211,8 +211,8 @@ class TestDefaultFilesystem(CompatTestCase):
             is_directory,
             is_link,
             ) = self.filesystem.getAttributes(
-                link_segments,
-                attributes=('file', 'directory', 'link'))
+            link_segments,
+            attributes=('file', 'directory', 'link'))
 
         self.assertTrue(is_file)
         self.assertTrue(is_link)
@@ -221,7 +221,7 @@ class TestDefaultFilesystem(CompatTestCase):
     @conditionals.onOSFamily('posix')
     def test_getAttributes_link_folder(self):
         """
-        A link to a file is recognized as both a link and a file.
+        A link to a folder is recognized as both a link and a folder.
         """
         _, link_segments = manufacture.fs.makePathInTemp()
         manufacture.fs.makeLink(
@@ -235,8 +235,8 @@ class TestDefaultFilesystem(CompatTestCase):
             is_directory,
             is_link,
             ) = self.filesystem.getAttributes(
-                link_segments,
-                attributes=('file', 'directory', 'link'))
+            link_segments,
+            attributes=('file', 'directory', 'link'))
 
         self.assertFalse(is_file)
         self.assertTrue(is_link)
