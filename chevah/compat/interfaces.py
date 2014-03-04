@@ -99,6 +99,8 @@ class IProcessCapabilities(Interface):
         'True if it can create home folders for any local account.')
     get_home_folder = Attribute(
         'True if it can retrieve home folders for any local account.')
+    symbolic_link = Attribute(
+        'True if it supports symbolic links.')
 
 
 class IHasImpersonatedAvatar(Interface):

@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.15.0 - 04/03/2014
+-------------------
+
+* Add support for detecting symbolic link capabilities.
+
+
 0.14.0 - 04/03/2014
 -------------------
 

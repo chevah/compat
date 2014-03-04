@@ -12,6 +12,10 @@ class CompatException(Exception):
     def __init__(self, message=''):
         self.message = message
 
+    def __repr__(self):
+        result = u'CompatException %s' % (self.message)
+        return result.encode('utf-8')
+
 
 class ChangeUserException(CompatException):
     """

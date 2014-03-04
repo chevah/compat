@@ -285,9 +285,9 @@ class NTFilesystem(PosixFilesystemBase):
 
     def _setOwner(self, path, owner):
         """
-        Helper for catching exceptions raised by _elevatePrivileges.
+        Helper for catching exceptions raised by elevatePrivileges.
         """
-        with self.process_capabilities._elevatePrivileges(
+        with self.process_capabilities.elevatePrivileges(
                 win32security.SE_TAKE_OWNERSHIP_NAME,
                 win32security.SE_RESTORE_NAME,
                 ):
