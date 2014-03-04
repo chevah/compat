@@ -67,9 +67,11 @@ class PosixFilesystemBase(object):
         try:
             return self._avatar.getImpersonationContext()
         except ChangeUserException:
-            raise CompatError(1006,
+            raise CompatError(
+                1006,
                 _(u'Could not switch process to local account "%s".' % (
-                    self._avatar.name)))
+                    self._avatar.name)),
+                )
 
     def _touch(self, segments, times=None):
         '''Update modified time.'''
@@ -110,11 +112,15 @@ class PosixFilesystemBase(object):
         root_lower = self._avatar.root_folder_path.rstrip('/\\').lower()
         # Check that we have a valid home folder.
         if not home_lower.startswith(root_lower):
-            raise CompatError(20019,
-                _('User home folder "%s" is not withing the root folder '
-                  '"%s".' % (
-                    self._avatar.home_folder_path,
-                    self._avatar.root_folder_path)))
+            raise CompatError(
+                20019,
+                _(
+                    'User home folder "%s" is not withing the root folder '
+                    '"%s".' % (
+                        self._avatar.home_folder_path,
+                        self._avatar.root_folder_path),
+                    ),
+                )
 
         path = self._avatar.home_folder_path[len(root_lower):]
         return self._pathSplitRecursive(path)
@@ -216,8 +222,8 @@ class PosixFilesystemBase(object):
         '''See `ILocalFilesystem`.'''
         path = self.getRealPathFromSegments(segments)
         if path == u'/':
-            raise CompatError(1009,
-                _('Deleting Unix root folder is not allowed.'))
+            raise CompatError(
+                1009, _('Deleting Unix root folder is not allowed.'))
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
             if recursive:
@@ -278,8 +284,8 @@ class PosixFilesystemBase(object):
             else:
                 fd = os.open(
                     path_encoded,
-                    self.OPEN_WRITE_ONLY | self.OPEN_CREATE |
-                        self.OPEN_TRUNCATE,
+                    (self.OPEN_WRITE_ONLY | self.OPEN_CREATE |
+                        self.OPEN_TRUNCATE),
                     DEFAULT_FILE_MODE)
                 return os.fdopen(fd, 'wb')
 
@@ -287,7 +293,7 @@ class PosixFilesystemBase(object):
         '''See `ILocalFilesystem`.'''
         def fail_on_read():
             raise AssertionError(
-                    'File opened for appending. Read is not allowed.')
+                'File opened for appending. Read is not allowed.')
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
@@ -296,8 +302,8 @@ class PosixFilesystemBase(object):
             else:
                 fd = os.open(
                     path_encoded,
-                    self.OPEN_APPEND | self.OPEN_CREATE |
-                        self.OPEN_WRITE_ONLY,
+                    (self.OPEN_APPEND | self.OPEN_CREATE |
+                        self.OPEN_WRITE_ONLY),
                     DEFAULT_FILE_MODE)
                 new_file = os.fdopen(fd, 'ab')
                 return new_file
@@ -394,14 +400,18 @@ class PosixFilesystemBase(object):
         """
         Helper for raising the exception from a single place.
         """
-        raise CompatError(1017,
+        raise CompatError(
+            1017,
             _(u'Failed to add group "%s" for "%s". %s' % (
-                group, path, message)))
+                group, path, message)),
+            )
 
     def raiseFailedToSetOwner(self, owner, path, message=u''):
         """
         Helper for raising the exception from a single place.
         """
-        raise CompatError(1016,
+        raise CompatError(
+            1016,
             _(u'Failed to set owner to "%s" for "%s". %s' % (
-                owner, path, message)))
+                owner, path, message)),
+            )
