@@ -85,8 +85,10 @@ class Daemon(object):
             pid_file.write('%d' % os.getpid())
             pid_file.close()
         except (OSError, IOError):
-            raise CompatError(1008,
-                _(u'Could not write PID file at %s.' % (pid_path)))
+            raise CompatError(
+                1008,
+                _(u'Could not write PID file at %s.' % (pid_path)),
+                )
 
     def _deletePID(self):
         pid_path = os.path.abspath(self.options.pid)

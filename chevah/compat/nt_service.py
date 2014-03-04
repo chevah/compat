@@ -121,11 +121,11 @@ def install_nt_service(service_class, options):
 
     try:
         win32serviceutil.InstallService(
-                service_class._svc_reg_class_,
-                service_class._svc_name_,
-                service_class._svc_display_name_,
-                startType=win32service.SERVICE_AUTO_START,
-                )
+            service_class._svc_reg_class_,
+            service_class._svc_name_,
+            service_class._svc_display_name_,
+            startType=win32service.SERVICE_AUTO_START,
+            )
         print _(
             'Service "%s" successfully installed.\n'
             'Please use "sc" command or Windows Services to manage '

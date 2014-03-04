@@ -16,8 +16,10 @@ class FilesystemAvatar(HasImpersonatedAvatar):
 
     implements(IFileSystemAvatar)
 
-    def __init__(self, name, home_folder_path, root_folder_path=None,
-            lock_in_home_folder=True, token=None):
+    def __init__(
+        self, name, home_folder_path, root_folder_path=None,
+        lock_in_home_folder=True, token=None
+            ):
         self._name = name
         self._home_folder_path = home_folder_path
         self._root_folder_path = root_folder_path

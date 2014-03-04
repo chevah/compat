@@ -129,9 +129,9 @@ class NTUsers(CompatUsers):
             # Maybe this should be an AssertionError since we should not
             # arrive here.
             self.raiseFailedToGetHomeFolder(
-                    username,
-                    _(u'Failed to get home folder path.'),
-                    )
+                username,
+                _(u'Failed to get home folder path.'),
+                )
 
     def userExists(self, username):
         """
@@ -235,7 +235,8 @@ class NTUsers(CompatUsers):
                 'ServerName': primary_domain_controller,
                 'Flags': 0,
                 'ProfilePath': profile_path,
-            })
+                },
+            )
         win32profile.UnloadUserProfile(token, profile)
         return True
 
