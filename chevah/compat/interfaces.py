@@ -316,8 +316,8 @@ class IFilesystemNode(Interface):
     # copyTo(segments)
     # renameTo(segments)
     # # Only on Unix
-    # def linkTo(segments):
-    # def readLink():
+    # def linkTo(segments) linkFrom(segments)
+    # def readLink()
 
     # getAttributes
     # setAttributes
@@ -474,12 +474,18 @@ class ILocalFilesystem(Interface):
         Return a list of files and folders contained by folder.
         """
 
-    def getAttributes(segments, attributes, follow_symlinks):
+    def getStatus(segments):
+        """
+        Return a tuple status structure for segments in the format:
+        (resolved_stats, current_stats)
+        """
+
+    def getAttributes(segments, attributes):
         """
         Return a list of attributes for segment.
 
-        Values are returned in the same order as attibutes list.
-        Valid atrributes:
+        Values are returned in the same order as attributes list.
+        Valid attributes:
          * size
          * permissions
          * hardlinks
@@ -487,11 +493,8 @@ class ILocalFilesystem(Interface):
          * owner
          * group
          * directory
-
-        If no attributes are requests, it will return a raw access to the
-        `stat` structure.
-        If `follow_symlinks` it will return attributes for symlinks targets,
-        not the symlink itself.
+         * link
+         * file
         """
 
     def setAttributes(segments, attributes):
