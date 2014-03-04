@@ -93,13 +93,11 @@ class TestSystemUsers(CompatTestCase):
         self.assertEqual(pdc, test_pdc)
         self.assertEqual(name, username)
 
+    @conditionals.onOSName('osx')
     def test_getHomeFolder_osx(self):
         """
         Check getHomeFolder for OSX.
         """
-        if not sys.platform.startswith('darwin'):
-            raise self.skipTest()
-
         home_folder = system_users.getHomeFolder(
             username=manufacture.username)
 

@@ -4,20 +4,37 @@
 Tests for portable filesystem access.
 """
 import os
+import stat
 
 from mock import patch
 
 from chevah.compat import DefaultAvatar, LocalFilesystem
 from chevah.compat.interfaces import ILocalFilesystem
-from chevah.compat.testing import ChevahTestCase, conditionals, manufacture
+from chevah.compat.testing import CompatTestCase, conditionals, manufacture
 
 
-class TestDefaultFilesystem(ChevahTestCase):
-    '''Test for default local filesystem.'''
+class TestDefaultFilesystem(CompatTestCase):
+    """
+    Test for default local filesystem which does not depend on attached
+    avatar.
+    """
 
     def setUp(self):
         super(TestDefaultFilesystem, self).setUp()
         self.filesystem = LocalFilesystem(avatar=DefaultAvatar())
+
+    def makeLink(self, segments):
+        """
+        Create a symbolic link to `segments` and return the segments for it.
+        """
+        link_segments = segments[:]
+        link_segments[-1] = '%s-link' % segments[-1]
+        manufacture.fs.makeLink(
+            target_segments=segments,
+            link_segments=link_segments,
+            )
+        self.addCleanup(manufacture.fs.deleteFile, link_segments)
+        return link_segments
 
     def test_interface_implementation(self):
         """
@@ -83,37 +100,187 @@ class TestDefaultFilesystem(ChevahTestCase):
         folder_name = segments[-1]
         self.assertTrue(folder_name.startswith('build-'))
 
-    @conditionals.onOSFamily('posix')
-    def test_file_mode(self):
+    def test_isFile(self):
         """
-        Unix mode is returned for a file.
+        Check isFile.
         """
         self.test_segments = manufacture.fs.createFileInTemp()
-        current_umask = manufacture.fs._getCurrentUmask()
-        expected_mode = 0100666 ^ current_umask
+        _, non_existent_segments = manufacture.fs.makePathInTemp()
 
-        file_mode = self.filesystem.getAttributes(
-            self.test_segments, attributes=('permissions',))[0]
+        self.assertTrue(self.filesystem.isFile(self.test_segments))
+        # Non existent paths are not files.
+        self.assertFalse(self.filesystem.isFile(non_existent_segments))
+        # Folders are not files.
+        self.assertFalse(self.filesystem.isFile(manufacture.fs.temp_segments))
 
-        self.assertEqual(expected_mode, file_mode)
+    def test_isFolder(self):
+        """
+        Check isFolder.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+        _, non_existent_segments = manufacture.fs.makePathInTemp()
+
+        self.assertTrue(
+            self.filesystem.isFolder(manufacture.fs.temp_segments))
+        # Non existent folders are not files.
+        self.assertFalse(
+            self.filesystem.isFolder(non_existent_segments))
+        # Files are not folders.
+        self.assertFalse(
+            self.filesystem.isFolder(self.test_segments))
 
     @conditionals.onOSFamily('posix')
-    def test_folder_mode(self):
+    def test_isLink(self):
         """
-        Unix mode is returned for a folder.
+        Check isLink.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+        _, non_existent_segments = manufacture.fs.makePathInTemp()
+        file_link_segments = self.makeLink(self.test_segments)
+        folder_link_segments = self.test_segments[:]
+        folder_link_segments[-1] = '%s-folder-link' % folder_link_segments[-1]
+        manufacture.fs.makeLink(
+            target_segments=manufacture.fs.temp_segments,
+            link_segments=folder_link_segments,
+            )
+        self.addCleanup(manufacture.fs.deleteFile, folder_link_segments)
+
+        self.assertTrue(self.filesystem.isLink(file_link_segments))
+        self.assertTrue(self.filesystem.isLink(folder_link_segments))
+        self.assertFalse(self.filesystem.isLink(manufacture.fs.temp_segments))
+        self.assertFalse(self.filesystem.isLink(self.test_segments))
+        self.assertFalse(self.filesystem.isLink(non_existent_segments))
+
+    def test_getAttributes_file(self):
+        """
+        Check attributes for a file.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+        (
+            file_mode,
+            is_file,
+            is_directory,
+            is_link,
+            ) = self.filesystem.getAttributes(
+                self.test_segments,
+                attributes=('permissions', 'file', 'directory', 'link'))
+
+        self.assertFalse(is_directory)
+        self.assertTrue(is_file)
+        self.assertFalse(is_link)
+
+        if self.os_family == 'posix':
+            current_umask = manufacture.fs._getCurrentUmask()
+            expected_mode = 0100666 ^ current_umask
+            self.assertEqual(expected_mode, file_mode)
+
+    def test_getAttributes_folder(self):
+        """
+        Check attributes for a folder.
         """
         self.test_segments = manufacture.fs.createFolderInTemp()
-        current_umask = manufacture.fs._getCurrentUmask()
-        expected_mode = 040777 ^ current_umask
 
-        folder_mode = self.filesystem.getAttributes(
-            self.test_segments, attributes=('permissions',))[0]
+        (
+            folder_mode,
+            is_file,
+            is_directory,
+            is_link,
+            ) = self.filesystem.getAttributes(
+                self.test_segments,
+                attributes=('permissions', 'file', 'directory', 'link'))
 
-        # There is no way to get current umask
-        self.assertEqual(expected_mode, folder_mode)
+        self.assertTrue(is_directory)
+        self.assertFalse(is_file)
+        self.assertFalse(is_link)
+
+        if self.os_family == 'posix':
+            current_umask = manufacture.fs._getCurrentUmask()
+            expected_mode = 040777 ^ current_umask
+            self.assertEqual(expected_mode, folder_mode)
+
+    @conditionals.onOSFamily('posix')
+    def test_getAttributes_link_file(self):
+        """
+        A link to a file is recognized as both a link and a file.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+        link_segments = self.makeLink(self.test_segments)
+
+        (
+            is_file,
+            is_directory,
+            is_link,
+            ) = self.filesystem.getAttributes(
+                link_segments,
+                attributes=('file', 'directory', 'link'))
+
+        self.assertTrue(is_file)
+        self.assertTrue(is_link)
+        self.assertFalse(is_directory)
+
+    @conditionals.onOSFamily('posix')
+    def test_getAttributes_link_folder(self):
+        """
+        A link to a file is recognized as both a link and a file.
+        """
+        _, link_segments = manufacture.fs.makePathInTemp()
+        manufacture.fs.makeLink(
+            target_segments=manufacture.fs.temp_segments,
+            link_segments=link_segments,
+            )
+        self.addCleanup(manufacture.fs.deleteFile, link_segments)
+
+        (
+            is_file,
+            is_directory,
+            is_link,
+            ) = self.filesystem.getAttributes(
+                link_segments,
+                attributes=('file', 'directory', 'link'))
+
+        self.assertFalse(is_file)
+        self.assertTrue(is_link)
+        self.assertTrue(is_directory)
+
+    def test_getStatus_normal(self):
+        """
+        For non links will return the same status.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+
+        resolved, own = self.filesystem.getStatus(self.test_segments)
+
+        # We can not test to much here, but getStatus is used by other
+        # high level method and we should have specific tests there.
+        self.assertEqual(resolved, own)
+        self.assertTrue(stat.S_ISREG(resolved.st_mode))
+        self.assertFalse(stat.S_ISDIR(resolved.st_mode))
+        self.assertFalse(stat.S_ISLNK(resolved.st_mode))
+
+    @conditionals.onOSFamily('posix')
+    def test_getStatus_link(self):
+        """
+        For links will return different status.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+        link_segments = self.makeLink(self.test_segments)
+
+        resolved, own = self.filesystem.getStatus(link_segments)
+
+        # We can not test to much here, but getStatus is used by other
+        # high level method and we should have specific tests there.
+        self.assertNotEqual(resolved, own)
+
+        self.assertTrue(stat.S_ISREG(resolved.st_mode))
+        self.assertFalse(stat.S_ISDIR(resolved.st_mode))
+        self.assertFalse(stat.S_ISLNK(resolved.st_mode))
+
+        self.assertFalse(stat.S_ISREG(own.st_mode))
+        self.assertFalse(stat.S_ISDIR(own.st_mode))
+        self.assertTrue(stat.S_ISLNK(own.st_mode))
 
 
-class TestPosixFilesystem(ChevahTestCase):
+class TestPosixFilesystem(CompatTestCase):
     '''Tests for path independent, OS independent tests.'''
 
     @classmethod
@@ -180,7 +347,7 @@ class TestPosixFilesystem(ChevahTestCase):
         self.assertEqual([u'test'], filesystem.home_segments)
 
 
-class TestLocalFilesystemUnlocked(ChevahTestCase):
+class TestLocalFilesystemUnlocked(CompatTestCase):
     """
     Commons tests for both chrooted and non chrooted filesystem.
 
@@ -349,16 +516,6 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
             self.assertTrue(self.unlocked_filesystem.exists(segments))
         finally:
             self.unlocked_filesystem.deleteFolder(segments)
-
-    def test_isFolder(self):
-        """
-        Check isFolder.
-        """
-        segments = self.unlocked_filesystem._pathSplitRecursive(
-            self.unlocked_avatar.home_folder_path)
-        self.assertTrue(self.unlocked_filesystem.isFolder(segments))
-        self.assertTrue(self.unlocked_filesystem.isFolder([]))
-        self.assertFalse(self.unlocked_filesystem.isFolder([u'asdfasdfasdf']))
 
     def test_makeFolder(self):
         """
@@ -773,7 +930,7 @@ class TestLocalFilesystemUnlocked(ChevahTestCase):
             [u'c', u'Temp', u'some', u'path'], filesystem.home_segments)
 
 
-class TestLocalFilesystemLocked(ChevahTestCase):
+class TestLocalFilesystemLocked(CompatTestCase):
     """
     Tests for locked filesystem.
     """
@@ -978,25 +1135,6 @@ class TestLocalFilesystemLocked(ChevahTestCase):
         try:
             self.locked_filesystem._touch(segments)
             self.assertTrue(self.locked_filesystem.exists(segments))
-        finally:
-            self.locked_filesystem.deleteFile(segments)
-
-    def test_isFile(self):
-        """
-        System test for checking that a path is a file.
-        """
-        segments = [manufacture.makeFilename(length=10)]
-        self.assertFalse(self.locked_filesystem.isFile(segments))
-        try:
-            self.locked_filesystem.createFolder(segments)
-            self.assertFalse(self.locked_filesystem.isFile(segments))
-        finally:
-            self.locked_filesystem.deleteFolder(segments)
-
-        segments = [manufacture.makeFilename(length=10)]
-        try:
-            self.locked_filesystem._touch(segments)
-            self.assertTrue(self.locked_filesystem.isFile(segments))
         finally:
             self.locked_filesystem.deleteFile(segments)
 

@@ -12,7 +12,7 @@ if os.name == 'nt':
     tempfile.tempdir = "c:\\temp"
 
 RUN_PACKAGES = [
-    'chevah-empirical==0.20.1',
+    'chevah-empirical==0.24.0',
     'zope.interface==3.8.0',
     'twisted==12.1.0-chevah3',
     ]
@@ -56,6 +56,9 @@ TEST_PACKAGES = [
     # due to some thread handling.
     'nose==1.1.2-chevah1',
     'mock',
+
+    # We install wmi everywhere even though it is only used on Windows.
+    'wmi==1.4.9',
 
     # Test SFTP service using a 3rd party client.
     'paramiko',

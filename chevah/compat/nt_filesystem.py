@@ -186,17 +186,28 @@ class NTFilesystem(PosixFilesystemBase):
 
     def readLink(self, segments):
         '''See `ILocalFilesystem`.'''
+        # FIXME:2014:
+        # Add implementation.
         raise NotImplementedError
 
     def makeLink(self, target_segments, link_segments):
         '''See `ILocalFilesystem`.'''
+        # FIXME:2014:
+        # Add implementation.
         raise NotImplementedError
 
-    def getAttributes(self, segments, attributes=None, follow_links=False):
+    def getStatus(self, segments):
+        '''See `ILocalFilesystem`.'''
+        try:
+            return super(NTFilesystem, self).getStatus(segments)
+        except WindowsError, error:
+            raise OSError(error.errno, error.strerror)
+
+    def getAttributes(self, segments, attributes=None):
         '''See `ILocalFilesystem`.'''
         try:
             return super(NTFilesystem, self).getAttributes(
-                segments, attributes, follow_links)
+                segments, attributes)
         except WindowsError, error:
             raise OSError(error.errno, error.strerror)
 

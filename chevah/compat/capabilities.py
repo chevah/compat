@@ -18,6 +18,8 @@ def _get_os_name():
         return 'windows'
     elif family.startswith('aix'):
         return 'aix'
+    elif family.startswith('darwin'):
+        return 'osx'
     else:
         raise AssertionError('OS not supported.')
 

@@ -173,27 +173,26 @@ class PosixFilesystemBase(object):
 
         return absolute_path
 
-    def isFolder(self, segments=None, path=None):
+    def isFolder(self, segments):
         '''See `ILocalFilesystem`.'''
-        if path is None:
-            path = self.getRealPathFromSegments(segments)
-        path_encoded = self.getEncodedPath(path)
-        with self._impersonateUser():
-            return os.path.isdir(path_encoded)
+        try:
+            return self.getAttributes(segments, ('directory',))[0]
+        except OSError:
+            return False
 
     def isFile(self, segments):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
-        path_encoded = self.getEncodedPath(path)
-        with self._impersonateUser():
-            return os.path.isfile(path_encoded)
+        try:
+            return self.getAttributes(segments, ('file',))[0]
+        except OSError:
+            return False
 
     def isLink(self, segments):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
-        path_encoded = self.getEncodedPath(path)
-        with self._impersonateUser():
-            return os.path.islink(path_encoded)
+        try:
+            return self.getAttributes(segments, ('link',))[0]
+        except OSError:
+            return False
 
     def exists(self, segments):
         '''See `ILocalFilesystem`.'''
@@ -321,8 +320,9 @@ class PosixFilesystemBase(object):
                 result.append(entry)
         return result
 
-    def getAttributes(self, segments, attributes=None, follow_links=False):
-        '''Return a list of attributes for segment.
+    def getStatus(self, segments):
+        """
+        Return file status for segments.
 
         st_mode - protection bits,
         st_ino - inode number,
@@ -336,22 +336,23 @@ class PosixFilesystemBase(object):
         st_ctime - platform dependent;
                    time of most recent metadata change on Unix,
                    or the time of creation on Windows)
-        '''
-        results = []
+        """
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
-            if follow_links:
-                stats = os.stat(path_encoded)
-            else:
-                stats = os.lstat(path_encoded)
-            is_link = bool(stat.S_ISLNK(stats.st_mode))
+            resolved_stats = os.stat(path_encoded)
+            actual_stats = os.lstat(path_encoded)
 
-        if attributes is None:
-            return stats
+        return (resolved_stats, actual_stats)
 
-        is_directory = bool(stat.S_ISDIR(stats.st_mode))
+    def getAttributes(self, segments, attributes=None):
+        """
+        Return a list of attributes for segment.
+        """
+        results = []
+        stats, own_stats = self.getStatus(segments)
         mode = stats.st_mode
+        is_directory = bool(stat.S_ISDIR(mode))
         if is_directory and sys.platform.startswith('aix'):
             # On AIX mode contains an extra most significant bit
             # which we don't use.
@@ -367,7 +368,8 @@ class PosixFilesystemBase(object):
             'uid': stats.st_uid,
             'gid': stats.st_gid,
             'directory': is_directory,
-            'link': is_link,
+            'link': bool(stat.S_ISLNK(own_stats.st_mode)),
+            'file': bool(stat.S_ISREG(mode))
             }
 
         for attribute in attributes:
