@@ -61,3 +61,10 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
             return _(u'root capabilities enabled.')
         else:
             return _(u'root capabilities disabled.')
+
+    @property
+    def symbolic_link(self):
+        """
+        See `IProcessCapabilities`.
+        """
+        return True

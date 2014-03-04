@@ -251,8 +251,8 @@ class NTFilesystem(PosixFilesystemBase):
                 return super(NTFilesystem, self).getFolderContent(segments)
             else:
                 raw_drives = win32api.GetLogicalDriveStrings()
-                drives = [drive for drive in raw_drives.split("\000")
-                                if drive]
+                drives = [
+                    drive for drive in raw_drives.split("\000") if drive]
                 result = []
                 for drive in drives:
                     if win32file.GetDriveType(drive) == LOCAL_DRIVE:
@@ -307,9 +307,9 @@ class NTFilesystem(PosixFilesystemBase):
 
     def _setOwner(self, path, owner):
         """
-        Helper for catching exceptions raised by _elevatePrivileges.
+        Helper for catching exceptions raised by elevatePrivileges.
         """
-        with self.process_capabilities._elevatePrivileges(
+        with self.process_capabilities.elevatePrivileges(
                 win32security.SE_TAKE_OWNERSHIP_NAME,
                 win32security.SE_RESTORE_NAME,
                 ):
@@ -333,7 +333,8 @@ class NTFilesystem(PosixFilesystemBase):
                     win32file.FILE_ALL_ACCESS,
                     user_sid,
                     )
-                win32security.SetNamedSecurityInfo(path,
+                win32security.SetNamedSecurityInfo(
+                    path,
                     win32security.SE_FILE_OBJECT,
                     win32security.OWNER_SECURITY_INFORMATION,
                     user_sid,
@@ -341,7 +342,8 @@ class NTFilesystem(PosixFilesystemBase):
                     None,
                     None,
                     )
-                win32security.SetNamedSecurityInfo(path,
+                win32security.SetNamedSecurityInfo(
+                    path,
                     win32security.SE_FILE_OBJECT,
                     win32security.DACL_SECURITY_INFORMATION,
                     None,

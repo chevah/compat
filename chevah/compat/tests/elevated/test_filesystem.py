@@ -217,8 +217,8 @@ class TestPosixFilesystem(FilesystemTestCase):
         Check hasGroup.
         """
         with self.assertRaises(OSError):
-            self.filesystem.hasGroup([u'no-such-segment'],
-            TEST_ACCOUNT_USERNAME)
+            self.filesystem.hasGroup(
+                [u'no-such-segment'], TEST_ACCOUNT_USERNAME)
 
         self.assertFalse(
             self.filesystem.hasGroup(

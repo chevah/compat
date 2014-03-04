@@ -2,6 +2,28 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.15.0 - 04/03/2014
+-------------------
+
+* Add support for detecting symbolic link capabilities.
+
+
+0.14.0 - 04/03/2014
+-------------------
+
+* Refactor file/folder/link attributes retrieval.
+* Add 'link' and 'file' attributes to LocalFilesystem.getAttributes().
+* Remove follow_symlinks from LocalFilesystem.getAttributes().
+* Add LocalFilesystem.getStatus() method.
+
+
+0.13.5 - 04/03/2014
+-------------------
+
+* Use latest brink and linters.
+* Fix cleanup on account administration on AIX and OSX.
+
+
 0.13.4 - 13/01/2014
 -------------------
 
