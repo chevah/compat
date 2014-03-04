@@ -215,17 +215,20 @@ class NTProcessCapabilities(BaseProcessCapabilities):
             if privilege_id != target_id:
                 continue
 
-            if (state & win32security.SE_PRIVILEGE_REMOVED ==
+            if (
+                (state & win32security.SE_PRIVILEGE_REMOVED) ==
                 win32security.SE_PRIVILEGE_REMOVED
                     ):
                 return u'removed'
 
-            if (state & win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT ==
+            if (
+                (state & win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT) ==
                 win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
                     ):
                 return u'enabled-by-default'
 
-            if (state & win32security.SE_PRIVILEGE_ENABLED ==
+            if (
+                (state & win32security.SE_PRIVILEGE_ENABLED) ==
                 win32security.SE_PRIVILEGE_ENABLED
                     ):
                 return u'enabled'
