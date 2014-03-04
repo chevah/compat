@@ -4,6 +4,7 @@
 from __future__ import with_statement
 
 import os
+import pywintypes
 import win32api
 import win32file
 import win32net
@@ -191,10 +192,31 @@ class NTFilesystem(PosixFilesystemBase):
         raise NotImplementedError
 
     def makeLink(self, target_segments, link_segments):
-        '''See `ILocalFilesystem`.'''
-        # FIXME:2014:
-        # Add implementation.
-        raise NotImplementedError
+        """
+        See `ILocalFilesystem`.
+        """
+        if not self.process_capabilities.symbolic_link:
+            raise NotImplementedError
+
+        target_path = self.getRealPathFromSegments(target_segments)
+        link_path = self.getRealPathFromSegments(link_segments)
+
+        if self.isFolder(target_segments):
+            flags = win32file.SYMBOLIC_LINK_FLAG_DIRECTORY
+        else:
+            flags = 0
+
+        with self.process_capabilities._elevatePrivileges(
+                win32security.SE_CREATE_SYMBOLIC_LINK_NAME,
+                ):
+            with self._impersonateUser():
+                try:
+                    win32file.CreateSymbolicLink(
+                        target_path, link_path, flags)
+                except WindowsError, error:
+                    raise OSError(error.errno, error.strerror)
+                except pywintypes.error, error:
+                    raise OSError(error.winerror, error.strerror)
 
     def getStatus(self, segments):
         '''See `ILocalFilesystem`.'''
