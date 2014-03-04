@@ -23,6 +23,7 @@ class CompatUsers(object):
         """
         Helper for raising the exception from a single place.
         """
-        raise CompatError(1014,
+        raise CompatError(
+            1014,
             _(u'Could not get home folder for user "%s". %s' % (
                 username, text)))

@@ -62,9 +62,11 @@ class TestUser(object):
     An object storing all user information.
     """
 
-    def __init__(self, name, uid=None, gid=None, home_path=None,
-            home_group=None, shell=None, shadow=None, password=None,
-            domain=None, pdc=None, primary_group_name=None):
+    def __init__(
+        self, name, uid=None, gid=None, home_path=None,
+        home_group=None, shell=None, shadow=None, password=None,
+        domain=None, pdc=None, primary_group_name=None
+            ):
         if home_path is None:
             home_path = u'/tmp'
 
@@ -135,22 +137,22 @@ else:
 
 TEST_USERS = [
     TestUser(
-            name=TEST_ACCOUNT_USERNAME,
-            uid=TEST_ACCOUNT_UID,
-            gid=TEST_ACCOUNT_GID,
-            primary_group_name=TEST_ACCOUNT_GROUP,
-            home_path=TEST_ACCOUNT_HOME_PATH,
-            home_group=TEST_ACCOUNT_GROUP,
-            password=TEST_ACCOUNT_PASSWORD,
-            ),
+        name=TEST_ACCOUNT_USERNAME,
+        uid=TEST_ACCOUNT_UID,
+        gid=TEST_ACCOUNT_GID,
+        primary_group_name=TEST_ACCOUNT_GROUP,
+        home_path=TEST_ACCOUNT_HOME_PATH,
+        home_group=TEST_ACCOUNT_GROUP,
+        password=TEST_ACCOUNT_PASSWORD,
+        ),
     TestUser(
-            name=TEST_ACCOUNT_USERNAME_OTHER,
-            uid=TEST_ACCOUNT_UID_OTHER,
-            gid=TEST_ACCOUNT_GID_OTHER,
-            primary_group_name=TEST_ACCOUNT_GROUP_OTHER,
-            home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
-            password=TEST_ACCOUNT_PASSWORD_OTHER,
-            ),
+        name=TEST_ACCOUNT_USERNAME_OTHER,
+        uid=TEST_ACCOUNT_UID_OTHER,
+        gid=TEST_ACCOUNT_GID_OTHER,
+        primary_group_name=TEST_ACCOUNT_GROUP_OTHER,
+        home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
+        password=TEST_ACCOUNT_PASSWORD_OTHER,
+        ),
     ]
 
 TEST_GROUPS = [
@@ -185,10 +187,9 @@ class CompatManufacture(ChevahCommonsFactory):
     Generator of testing helpers for chevah.compat package.
     """
 
-    def makeFilesystemOSAvatar(self, name=None,
-            home_folder_path=None, root_folder_path=None,
-            lock_in_home_folder=False,
-            token=None,
+    def makeFilesystemOSAvatar(
+        self, name=None, home_folder_path=None, root_folder_path=None,
+        lock_in_home_folder=False, token=None,
             ):
         """
         Creates a valid FilesystemOSAvatar.
@@ -207,9 +208,8 @@ class CompatManufacture(ChevahCommonsFactory):
             token=token,
             )
 
-    def makeFilesystemApplicationAvatar(self, name=None,
-            home_folder_path=None, root_folder_path=None,
-            ):
+    def makeFilesystemApplicationAvatar(
+            self, name=None, home_folder_path=None, root_folder_path=None):
         """
         Creates a valid FilesystemApplicationAvatar.
         """

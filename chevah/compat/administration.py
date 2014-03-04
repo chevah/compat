@@ -32,8 +32,9 @@ from chevah.compat import (
     )
 
 
-def execute(command, input_text=None, output=None,
-        ignore_errors=True, verbose=False):
+def execute(
+    command, input_text=None, output=None, ignore_errors=True, verbose=False
+        ):
     """
     Execute a command having stdout redirected and using 'input_text' as
     input.
@@ -171,7 +172,7 @@ class OSAdministration(object):
         import win32net
         data = {
             'name': group.name,
-        }
+            }
 
         try:
             win32net.NetLocalGroupAdd(group.pdc, 0, data)
@@ -273,22 +274,22 @@ class OSAdministration(object):
 
         if user.home_path != u'/tmp':
             execute(['sudo', 'mkdir', user.home_path.encode('utf-8')])
-            execute(
-                ['sudo', 'chown', str(user.uid),
-                    user.home_path.encode('utf-8'),
+            execute([
+                'sudo', 'chown', str(user.uid),
+                user.home_path.encode('utf-8'),
                 ])
             if user.home_group:
                 # On some Unix system we can change group as unicode,
                 # so we get the ID and change using the group ID.
                 group = self._getUnixGroup(user.home_group)
-                execute(
-                    ['sudo', 'chgrp', str(group[2]),
-                        user.home_path.encode('utf-8'),
+                execute([
+                    'sudo', 'chgrp', str(group[2]),
+                    user.home_path.encode('utf-8'),
                     ])
             else:
-                execute(
-                    ['sudo', 'chgrp', str(user.uid),
-                        user.home_path.encode('utf-8'),
+                execute([
+                    'sudo', 'chgrp', str(user.uid),
+                    user.home_path.encode('utf-8'),
                     ])
 
     def _getUnixUser(self, name):
@@ -330,8 +331,8 @@ class OSAdministration(object):
 
         execute(command)
         if user.home_group:
-            execute(
-                ['sudo', 'chgrp', user.home_group.encode('utf-8'),
+            execute([
+                'sudo', 'chgrp', user.home_group.encode('utf-8'),
                 user.home_path.encode('utf-8')
                 ])
 
@@ -390,7 +391,7 @@ class OSAdministration(object):
             'comment': None,
             'flags': win32netcon.UF_SCRIPT,
             'script_path': None,
-        }
+            }
 
         win32net.NetUserAdd(user.pdc, 1, user_info)
         if user.password and create_profile:
@@ -656,9 +657,10 @@ class OSAdministration(object):
             raise AssertionError((
                 'No such %s: %s' % (kind, name)).encode('utf-8'))
 
-    def _changeUnixEntry(self, segments, name, field,
-            value_when_empty=None, value_to_append=None,
-            value_to_replace=None,
+    def _changeUnixEntry(
+        self, segments, name, field,
+        value_when_empty=None, value_to_append=None,
+        value_to_replace=None,
             ):
         """
         Update entry 'name' with a new value or an appened value.
@@ -711,10 +713,12 @@ class OSAdministration(object):
             to_segments, ('uid', 'gid', 'permissions'))
         self.fs.setAttributes(
             from_segments,
-            {'permissions': permissions,
-            'uid': uid,
-            'gid': gid,
-            })
+            {
+                'permissions': permissions,
+                'uid': uid,
+                'gid': gid,
+                },
+            )
         self.fs.rename(from_segments, to_segments)
 
     def _getFileContent(self, segments):
