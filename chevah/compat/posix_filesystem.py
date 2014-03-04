@@ -6,7 +6,6 @@ import codecs
 import os
 import re
 import stat
-import shutil
 import sys
 
 from chevah.compat.constants import (

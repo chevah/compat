@@ -49,7 +49,6 @@ class TestDefaultFilesystem(CompatTestCase):
         manufacture.fs.createFolder(child_segments)
         return (segments, child_name)
 
-
     def test_interface_implementation(self):
         """
         Checks that it implements the interface.
@@ -234,19 +233,6 @@ class TestDefaultFilesystem(CompatTestCase):
             [child_name],
             self.filesystem.getFolderContent(self.test_segments))
 
-    def test_isFile(self):
-        """
-        Check isFile.
-        """
-        self.test_segments = manufacture.fs.createFileInTemp()
-        _, non_existent_segments = manufacture.fs.makePathInTemp()
-
-        self.assertTrue(self.filesystem.isFile(self.test_segments))
-        # Non existent paths are not files.
-        self.assertFalse(self.filesystem.isFile(non_existent_segments))
-        # Folders are not files.
-        self.assertFalse(self.filesystem.isFile(manufacture.fs.temp_segments))
-
     @conditionals.onCapability('symbolic_link', True)
     def test_makeLink_file(self):
         """
@@ -291,12 +277,25 @@ class TestDefaultFilesystem(CompatTestCase):
         content = manufacture.fs.getFolderContent(link_segments)
         self.assertEqual([child_name], content)
         # Can be removed as a normal folder and target folder is not removed.
-        manufacture.fs.deleteFolder(link_segments, recursive=False)
+        manufacture.fs.deleteFolder(link_segments)
         self.assertFalse(manufacture.fs.exists(link_segments))
         self.assertTrue(manufacture.fs.exists(self.test_segments))
         # Will have the same content.
         content = manufacture.fs.getFolderContent(self.test_segments)
         self.assertEqual([child_name], content)
+
+    def test_isFile(self):
+        """
+        Check isFile.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+        _, non_existent_segments = manufacture.fs.makePathInTemp()
+
+        self.assertTrue(self.filesystem.isFile(self.test_segments))
+        # Non existent paths are not files.
+        self.assertFalse(self.filesystem.isFile(non_existent_segments))
+        # Folders are not files.
+        self.assertFalse(self.filesystem.isFile(manufacture.fs.temp_segments))
 
     def test_isFolder(self):
         """
@@ -314,6 +313,7 @@ class TestDefaultFilesystem(CompatTestCase):
         self.assertFalse(
             self.filesystem.isFolder(self.test_segments))
 
+    @conditionals.onCapability('symbolic_link', True)
     def test_isLink(self):
         """
         Check isLink.
@@ -328,13 +328,21 @@ class TestDefaultFilesystem(CompatTestCase):
             link_segments=folder_link_segments,
             )
         self.addCleanup(
-            manufacture.fs.deleteFolder, folder_link_segments, recursive=False)
+            manufacture.fs.deleteFolder, folder_link_segments)
 
         self.assertTrue(self.filesystem.isLink(file_link_segments))
         self.assertTrue(self.filesystem.isLink(folder_link_segments))
         self.assertFalse(self.filesystem.isLink(manufacture.fs.temp_segments))
         self.assertFalse(self.filesystem.isLink(self.test_segments))
         self.assertFalse(self.filesystem.isLink(non_existent_segments))
+
+    @conditionals.onCapability('symbolic_link', False)
+    def test_isLink_not_supported(self):
+        """
+        Raise NotImplementedError if not supported.
+        """
+        with self.assertRaises(NotImplementedError):
+            self.filesystem.makeLink(['some-target'], ['some-link'])
 
     def test_getAttributes_file(self):
         """
@@ -413,7 +421,7 @@ class TestDefaultFilesystem(CompatTestCase):
             target_segments=manufacture.fs.temp_segments,
             link_segments=link_segments,
             )
-        self.addCleanup(manufacture.fs.deleteFolder, link_segments, recursive=False)
+        self.addCleanup(manufacture.fs.deleteFolder, link_segments)
 
         (
             is_file,

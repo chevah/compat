@@ -15,6 +15,7 @@ import stat
 from zope.interface import implements
 from twisted.python.filepath import FilePath
 
+from chevah.compat.exceptions import CompatError
 from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.posix_filesystem import PosixFilesystemBase
 from chevah.compat.unix_users import UnixUsers
@@ -184,7 +185,7 @@ class UnixFilesystem(PosixFilesystemBase):
         path = self.getRealPathFromSegments(segments)
         if path == u'/':
             raise CompatError(
-                1009, _('Deleting Unix root folder is not allowed.'))
+                1009, 'Deleting Unix root folder is not allowed.')
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
             if self.isLink(segments):
