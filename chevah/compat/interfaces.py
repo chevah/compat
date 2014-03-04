@@ -100,7 +100,7 @@ class IProcessCapabilities(Interface):
     get_home_folder = Attribute(
         'True if it can retrieve home folders for any local account.')
     symbolic_link = Attribute(
-        'True if it support symbolic links.')
+        'True if it supports symbolic links.')
 
 
 class IHasImpersonatedAvatar(Interface):

@@ -27,7 +27,7 @@ class TestProcessCapabilities(ChevahTestCase):
 
     def runAsAdministrator(self):
         """
-        Return True is slave runs as administrator.
+        Return True if slave runs as administrator.
         """
         # Windows 2008 and DC client tests are done in administration mode,
         # 2003 and XP under normal mode.
@@ -184,8 +184,7 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
 
     def test_isPrivilegeEnabled_enabled(self):
         """
-        hasPrivilege returns True for a privilege which is present and is
-        enabled.
+        Returns True for a privilege which is present and is enabled.
         """
         # We use SE_IMPERSONATE privilege as it is enabled by default.
         privilege = win32security.SE_IMPERSONATE_NAME

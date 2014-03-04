@@ -123,9 +123,9 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         try:
             for privilege_name in privileges:
                 state = self._getPrivilegeState(privilege_name)
-                if not self._isPrivilegeStateAvaiable(state):
+                if not self._isPrivilegeStateAvailable(state):
                     raise AdjustPrivilegeException(
-                        'Process does not has %s privilege.' % privilege_name)
+                        'Process does not have %s privilege.' % privilege_name)
 
                 if not self._isPrivilegeStateEnabled(state):
                     missing_privileges.append(privilege_name)
@@ -253,7 +253,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         else:
             return False
 
-    def _isPrivilegeStateAvaiable(sefl, state):
+    def _isPrivilegeStateAvailable(self, state):
         """
         Retrun True if state is one of the values in which it is available
         to the process.
@@ -269,10 +269,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         or can be enabled.
         """
         state = self._getPrivilegeState(privilege_name)
-        if state in [u'present', u'enabled', u'enabled-by-default']:
-            return True
-        else:
-            return False
+        return self._isPrivilegeStateAvailable(state)
 
     @property
     def symbolic_link(self):
