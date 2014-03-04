@@ -206,13 +206,13 @@ class NTFilesystem(PosixFilesystemBase):
         else:
             flags = 0
 
-        with self.process_capabilities._elevatePrivileges(
-                win32security.SE_CREATE_SYMBOLIC_LINK_NAME,
-                ):
-            with self._impersonateUser():
+        with self._impersonateUser():
+            with self.process_capabilities.elevatePrivileges(
+                    win32security.SE_CREATE_SYMBOLIC_LINK_NAME,
+                    ):
                 try:
                     win32file.CreateSymbolicLink(
-                        target_path, link_path, flags)
+                        link_path, target_path, flags)
                 except WindowsError, error:
                     raise OSError(error.errno, error.strerror)
                 except pywintypes.error, error:
