@@ -203,7 +203,7 @@ class NTFilesystem(PosixFilesystemBase):
         except WindowsError, error:
             raise OSError(error.errno, error.strerror)
 
-    def getAttributes(self, segments, attributes=None):
+    def getAttributes(self, segments, attributes):
         '''See `ILocalFilesystem`.'''
         try:
             return super(NTFilesystem, self).getAttributes(

@@ -345,7 +345,7 @@ class PosixFilesystemBase(object):
 
         return (resolved_stats, actual_stats)
 
-    def getAttributes(self, segments, attributes=None):
+    def getAttributes(self, segments, attributes):
         """
         Return a list of attributes for segment.
         """
