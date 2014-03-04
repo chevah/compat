@@ -194,11 +194,10 @@ class PosixFilesystemBase(object):
             return False
 
     def isLink(self, segments):
-        '''See `ILocalFilesystem`.'''
-        try:
-            return self.getAttributes(segments, ('link',))[0]
-        except OSError:
-            return False
+        """
+        See `ILocalFilesystem`.
+        """
+        raise NotImplementedError()
 
     def exists(self, segments):
         '''See `ILocalFilesystem`.'''
@@ -218,17 +217,10 @@ class PosixFilesystemBase(object):
                 return os.mkdir(path_encoded, DEFAULT_FOLDER_MODE)
 
     def deleteFolder(self, segments, recursive=True):
-        '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
-        if path == u'/':
-            raise CompatError(
-                1009, _('Deleting Unix root folder is not allowed.'))
-        path_encoded = self.getEncodedPath(path)
-        with self._impersonateUser():
-            if recursive:
-                return shutil.rmtree(path_encoded)
-            else:
-                return os.rmdir(path_encoded)
+        """
+        See `ILocalFilesystem`.
+        """
+        raise NotImplementedError()
 
     def deleteFile(self, segments, ignore_errors=False):
         '''See `ILocalFilesystem`.'''
@@ -328,35 +320,19 @@ class PosixFilesystemBase(object):
 
     def getStatus(self, segments):
         """
-        Return file status for segments.
-
-        st_mode - protection bits,
-        st_ino - inode number,
-        st_dev - device,
-        st_nlink - number of hard links,
-        st_uid - user id of owner,
-        st_gid - group id of owner,
-        st_size - size of file, in bytes,
-        st_atime - time of most recent access,
-        st_mtime - time of most recent content modification,
-        st_ctime - platform dependent;
-                   time of most recent metadata change on Unix,
-                   or the time of creation on Windows)
+        See `ILocalFilesystem`.
         """
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
-            resolved_stats = os.stat(path_encoded)
-            actual_stats = os.lstat(path_encoded)
-
-        return (resolved_stats, actual_stats)
+            return os.stat(path_encoded)
 
     def getAttributes(self, segments, attributes):
         """
-        Return a list of attributes for segment.
+        See `ILocalFilesystem`.
         """
         results = []
-        stats, own_stats = self.getStatus(segments)
+        stats = self.getStatus(segments)
         mode = stats.st_mode
         is_directory = bool(stat.S_ISDIR(mode))
         if is_directory and sys.platform.startswith('aix'):
@@ -364,6 +340,7 @@ class PosixFilesystemBase(object):
             # which we don't use.
             mode = mode & 0077777
 
+        is_link = self.isLink(segments)
         mapping = {
             'size': stats.st_size,
             'permissions': mode,
@@ -374,7 +351,7 @@ class PosixFilesystemBase(object):
             'uid': stats.st_uid,
             'gid': stats.st_gid,
             'directory': is_directory,
-            'link': bool(stat.S_ISLNK(own_stats.st_mode)),
+            'link': is_link,
             'file': bool(stat.S_ISREG(mode))
             }
 

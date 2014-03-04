@@ -5,9 +5,12 @@ Module for hosting the Unix specific filesystem access.
 """
 
 import errno
+import grp
 import os
 import pwd
-import grp
+import shutil
+import stat
+
 
 from zope.interface import implements
 from twisted.python.filepath import FilePath
@@ -161,3 +164,32 @@ class UnixFilesystem(PosixFilesystemBase):
         current_umask = os.umask(0002)
         os.umask(current_umask)
         return current_umask
+
+    def isLink(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
+        path = self.getRealPathFromSegments(segments)
+        path_encoded = path.encode('utf-8')
+
+        with self._impersonateUser():
+            try:
+                stats = os.lstat(path_encoded)
+                return bool(stat.S_ISLNK(stats.st_mode))
+            except OSError:
+                return False
+
+    def deleteFolder(self, segments, recursive=True):
+        '''See `ILocalFilesystem`.'''
+        path = self.getRealPathFromSegments(segments)
+        if path == u'/':
+            raise CompatError(
+                1009, _('Deleting Unix root folder is not allowed.'))
+        path_encoded = self.getEncodedPath(path)
+        with self._impersonateUser():
+            if self.isLink(segments):
+                self.deleteFile(segments)
+            elif recursive:
+                return shutil.rmtree(path_encoded)
+            else:
+                return os.rmdir(path_encoded)

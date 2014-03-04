@@ -1,15 +1,16 @@
 # Copyright (c) 2010-2012 Adi Roiban.
 # See LICENSE for details.
-'''Module for hosting the Chevah FTP filesystem access.'''
-from __future__ import with_statement
-
+"""
+Windows specific implementation of filesystem access.
+"""
+import ntsecuritycon
 import os
 import pywintypes
+import shutil
 import win32api
 import win32file
 import win32net
 import win32security
-import ntsecuritycon
 
 from zope.interface import implements
 
@@ -30,6 +31,10 @@ from chevah.compat.posix_filesystem import PosixFilesystemBase
 # 5 Compact Disc
 # 6 RAM Disk
 LOCAL_DRIVE = 3
+
+# Not defined in win32api.
+# (0x400)
+FILE_ATTRIBUTE_REPARSE_POINT = 1024
 
 
 class NTFilesystem(PosixFilesystemBase):
@@ -187,7 +192,7 @@ class NTFilesystem(PosixFilesystemBase):
 
     def readLink(self, segments):
         '''See `ILocalFilesystem`.'''
-        # FIXME:2014:
+        # FIXME:2023:
         # Add implementation.
         raise NotImplementedError
 
@@ -208,8 +213,7 @@ class NTFilesystem(PosixFilesystemBase):
 
         with self._impersonateUser():
             with self.process_capabilities.elevatePrivileges(
-                    win32security.SE_CREATE_SYMBOLIC_LINK_NAME,
-                    ):
+                    win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
                 try:
                     win32file.CreateSymbolicLink(
                         link_path, target_path, flags)
@@ -271,19 +275,46 @@ class NTFilesystem(PosixFilesystemBase):
         except WindowsError, error:
             raise OSError(error.errno, error.strerror)
 
-    def deleteFolder(self, segments, recursive=True):
-        '''See `ILocalFilesystem`.'''
-        try:
-            return super(NTFilesystem, self).deleteFolder(
-                segments, recursive)
-        except WindowsError, error:
-            raise OSError(error.errno, error.strerror)
+    def _getWindowsAttributes(self, segments):
+        """
+        Return windows specific attributes for path.
 
-    def deleteFile(self, segments, ignore_errors=False):
-        '''See `ILocalFilesystem`.'''
+        Available results:
+        http://msdn.microsoft.com/en-us/library/windows/
+            desktop/gg258117(v=vs.85).aspx
+        """
+        path = self.getRealPathFromSegments(segments)
+        with self._impersonateUser():
+            return win32api.GetFileAttributes(path)
+
+    def isLink(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
         try:
-            return super(NTFilesystem, self).deleteFile(
-                segments, ignore_errors)
+            attributes = self._getWindowsAttributes(segments)
+            return bool(attributes & FILE_ATTRIBUTE_REPARSE_POINT)
+        except pywintypes.error:
+            return False
+
+    def deleteFolder(self, segments, recursive=True):
+        """
+        See `ILocalFilesystem`.
+
+        For symbolic links we always force non-recursive behaviour.
+        """
+        path = self.getRealPathFromSegments(segments)
+        path_encoded = self.getEncodedPath(path)
+
+        try:
+            with self._impersonateUser():
+                if self.isLink(segments):
+                    recursive = False
+
+                if recursive:
+                    return shutil.rmtree(path_encoded)
+                else:
+                    return os.rmdir(path_encoded)
         except WindowsError, error:
             raise OSError(error.errno, error.strerror)
 

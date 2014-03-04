@@ -23,7 +23,7 @@ class TestDefaultFilesystem(CompatTestCase):
         super(TestDefaultFilesystem, self).setUp()
         self.filesystem = LocalFilesystem(avatar=DefaultAvatar())
 
-    def makeLink(self, segments):
+    def makeLink(self, segments, cleanup=True):
         """
         Create a symbolic link to `segments` and return the segments for it.
         """
@@ -33,8 +33,22 @@ class TestDefaultFilesystem(CompatTestCase):
             target_segments=segments,
             link_segments=link_segments,
             )
-        self.addCleanup(manufacture.fs.deleteFile, link_segments)
+        if cleanup:
+            self.addCleanup(manufacture.fs.deleteFile, link_segments)
         return link_segments
+
+    def createFolderWithChild(self):
+        """
+        Create a folder with a child returning a tuple with segment for new
+        folder and name of child.
+        """
+        child_name = manufacture.makeFilename()
+        segments = manufacture.fs.createFolderInTemp()
+        child_segments = segments[:]
+        child_segments.append(child_name)
+        manufacture.fs.createFolder(child_segments)
+        return (segments, child_name)
+
 
     def test_interface_implementation(self):
         """
@@ -100,6 +114,126 @@ class TestDefaultFilesystem(CompatTestCase):
         folder_name = segments[-1]
         self.assertTrue(folder_name.startswith('build-'))
 
+    def test_deleteFile_regular(self):
+        """
+        It can delete a regular file.
+        """
+        segments = manufacture.fs.createFileInTemp()
+        self.assertTrue(self.filesystem.exists(segments))
+
+        self.filesystem.deleteFile(segments)
+
+        self.assertFalse(self.filesystem.exists(segments))
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_deleteFile_file_link(self):
+        """
+        It can delete a symlink to a file and original file is not removed.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+        link_segments = self.makeLink(self.test_segments, cleanup=False)
+        self.assertTrue(self.filesystem.exists(self.test_segments))
+        self.assertTrue(self.filesystem.exists(link_segments))
+
+        self.filesystem.deleteFile(link_segments)
+
+        self.assertTrue(self.filesystem.exists(self.test_segments))
+        self.assertFalse(self.filesystem.exists(link_segments))
+
+    @conditionals.onOSFamily('posix')
+    def test_deleteFile_folder_link(self):
+        """
+        It can delete a symlink to a folder and original folder is not
+        removed.
+
+        Only only on Unix.
+        """
+        self.test_segments, child_name = self.createFolderWithChild()
+        link_segments = self.makeLink(self.test_segments, cleanup=False)
+        self.assertTrue(self.filesystem.exists(self.test_segments))
+        self.assertTrue(self.filesystem.exists(link_segments))
+
+        self.filesystem.deleteFile(link_segments)
+
+        self.assertTrue(self.filesystem.exists(self.test_segments))
+        self.assertFalse(self.filesystem.exists(link_segments))
+        # Check that target content was not removed
+        self.assertEqual(
+            [child_name],
+            self.filesystem.getFolderContent(self.test_segments))
+
+    def test_deleteFolder_non_recursive_emtpy(self):
+        """
+        It can delete a folder non-recursive if folder is empty.
+        """
+        segments = manufacture.fs.createFolderInTemp()
+        self.assertTrue(self.filesystem.exists(segments))
+
+        self.filesystem.deleteFolder(segments, recursive=False)
+
+        self.assertFalse(self.filesystem.exists(segments))
+
+    def test_deleteFolder_non_recursive_non_emtpy(self):
+        """
+        It raise an error if folder is not empty.
+        """
+        self.test_segments, child_name = self.createFolderWithChild()
+        self.assertTrue(self.filesystem.exists(self.test_segments))
+
+        with self.assertRaises(OSError):
+            self.filesystem.deleteFolder(self.test_segments, recursive=False)
+
+        self.assertTrue(self.filesystem.exists(self.test_segments))
+        self.assertEqual(
+            [child_name],
+            self.filesystem.getFolderContent(self.test_segments),
+            )
+
+    def test_deleteFolder_recursive_emtpy(self):
+        """
+        It can delete a folder recursive if folder is empty.
+        """
+        segments = manufacture.fs.createFolderInTemp()
+        self.assertTrue(self.filesystem.exists(segments))
+
+        self.filesystem.deleteFolder(segments, recursive=True)
+
+        self.assertFalse(self.filesystem.exists(segments))
+
+    def test_deleteFolder_recursive_non_emtpy(self):
+        """
+        It can delete folder even if it is not empty.
+        """
+        segments, child_name = self.createFolderWithChild()
+        self.assertTrue(self.filesystem.exists(segments))
+
+        self.filesystem.deleteFolder(segments, recursive=True)
+
+        self.assertFalse(self.filesystem.exists(segments))
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_deleteFolder_link(self):
+        """
+        It can delete a symlink to a folder and original folder and its
+        content is not removed.
+        """
+        self.test_segments, child_name = self.createFolderWithChild()
+        link_segments = self.makeLink(self.test_segments, cleanup=False)
+        self.assertTrue(self.filesystem.exists(self.test_segments))
+        self.assertTrue(self.filesystem.exists(link_segments))
+        # Check that link has same content as target.
+        self.assertEqual(
+            [child_name], self.filesystem.getFolderContent(link_segments))
+
+        self.filesystem.deleteFolder(link_segments)
+
+        self.assertTrue(self.filesystem.exists(self.test_segments))
+        self.assertFalse(self.filesystem.exists(link_segments))
+        # Check that target content was not removed
+        self.assertEqual(
+            [child_name],
+            self.filesystem.getFolderContent(self.test_segments))
+
     def test_isFile(self):
         """
         Check isFile.
@@ -113,6 +247,7 @@ class TestDefaultFilesystem(CompatTestCase):
         # Folders are not files.
         self.assertFalse(self.filesystem.isFile(manufacture.fs.temp_segments))
 
+    @conditionals.onCapability('symbolic_link', True)
     def test_makeLink_file(self):
         """
         Can be used for linking a file.
@@ -121,12 +256,14 @@ class TestDefaultFilesystem(CompatTestCase):
         self.test_segments = manufacture.fs.createFileInTemp(content=content)
         link_segments = self.test_segments[:]
         link_segments[-1] = '%s-link' % self.test_segments[-1]
+
         manufacture.fs.makeLink(
             target_segments=self.test_segments,
             link_segments=link_segments,
             )
 
         self.assertTrue(manufacture.fs.exists(link_segments))
+        self.assertTrue(manufacture.fs.isLink(link_segments))
         # Will point to the same content.
         link_content = manufacture.fs.getFileContent(self.test_segments)
         self.assertEqual(content, link_content)
@@ -135,17 +272,15 @@ class TestDefaultFilesystem(CompatTestCase):
         self.assertFalse(manufacture.fs.exists(link_segments))
         self.assertTrue(manufacture.fs.exists(self.test_segments))
 
+    @conditionals.onCapability('symbolic_link', True)
     def test_makeLink_folder(self):
         """
         Can be used for linking a folder.
         """
-        child_name = manufacture.makeFilename()
-        self.test_segments = manufacture.fs.createFolderInTemp()
-        folder_child = self.test_segments[:]
-        folder_child.append(child_name)
-        manufacture.fs.createFolder(folder_child)
+        self.test_segments, child_name = self.createFolderWithChild()
         link_segments = self.test_segments[:]
         link_segments[-1] = '%s-link' % self.test_segments[-1]
+
         manufacture.fs.makeLink(
             target_segments=self.test_segments,
             link_segments=link_segments,
@@ -155,10 +290,13 @@ class TestDefaultFilesystem(CompatTestCase):
         # Will have the same content.
         content = manufacture.fs.getFolderContent(link_segments)
         self.assertEqual([child_name], content)
-        # Can be removed as a simple folder and target folder is not removed.
-        manufacture.fs.deleteFolder(link_segments)
+        # Can be removed as a normal folder and target folder is not removed.
+        manufacture.fs.deleteFolder(link_segments, recursive=False)
         self.assertFalse(manufacture.fs.exists(link_segments))
         self.assertTrue(manufacture.fs.exists(self.test_segments))
+        # Will have the same content.
+        content = manufacture.fs.getFolderContent(self.test_segments)
+        self.assertEqual([child_name], content)
 
     def test_isFolder(self):
         """
@@ -185,15 +323,15 @@ class TestDefaultFilesystem(CompatTestCase):
         file_link_segments = self.makeLink(self.test_segments)
         folder_link_segments = self.test_segments[:]
         folder_link_segments[-1] = '%s-folder-link' % folder_link_segments[-1]
-        # manufacture.fs.makeLink(
-        #     target_segments=manufacture.fs.temp_segments,
-        #     link_segments=folder_link_segments,
-        #     )
-        #self.addCleanup(manufacture.fs.deleteFolder, folder_link_segments)
-
+        manufacture.fs.makeLink(
+            target_segments=manufacture.fs.temp_segments,
+            link_segments=folder_link_segments,
+            )
+        self.addCleanup(
+            manufacture.fs.deleteFolder, folder_link_segments, recursive=False)
 
         self.assertTrue(self.filesystem.isLink(file_link_segments))
-        #self.assertTrue(self.filesystem.isLink(folder_link_segments))
+        self.assertTrue(self.filesystem.isLink(folder_link_segments))
         self.assertFalse(self.filesystem.isLink(manufacture.fs.temp_segments))
         self.assertFalse(self.filesystem.isLink(self.test_segments))
         self.assertFalse(self.filesystem.isLink(non_existent_segments))
@@ -245,7 +383,7 @@ class TestDefaultFilesystem(CompatTestCase):
             expected_mode = 040777 ^ current_umask
             self.assertEqual(expected_mode, folder_mode)
 
-    @conditionals.onOSFamily('posix')
+    @conditionals.onCapability('symbolic_link', True)
     def test_getAttributes_link_file(self):
         """
         A link to a file is recognized as both a link and a file.
@@ -265,7 +403,7 @@ class TestDefaultFilesystem(CompatTestCase):
         self.assertTrue(is_link)
         self.assertFalse(is_directory)
 
-    @conditionals.onOSFamily('posix')
+    @conditionals.onCapability('symbolic_link', True)
     def test_getAttributes_link_folder(self):
         """
         A link to a folder is recognized as both a link and a folder.
@@ -275,7 +413,7 @@ class TestDefaultFilesystem(CompatTestCase):
             target_segments=manufacture.fs.temp_segments,
             link_segments=link_segments,
             )
-        self.addCleanup(manufacture.fs.deleteFile, link_segments)
+        self.addCleanup(manufacture.fs.deleteFolder, link_segments, recursive=False)
 
         (
             is_file,
@@ -289,44 +427,19 @@ class TestDefaultFilesystem(CompatTestCase):
         self.assertTrue(is_link)
         self.assertTrue(is_directory)
 
-    def test_getStatus_normal(self):
+    def test_getStatus(self):
         """
         For non links will return the same status.
         """
         self.test_segments = manufacture.fs.createFileInTemp()
 
-        resolved, own = self.filesystem.getStatus(self.test_segments)
+        status = self.filesystem.getStatus(self.test_segments)
 
         # We can not test to much here, but getStatus is used by other
         # high level method and we should have specific tests there.
-        self.assertEqual(resolved, own)
-        self.assertTrue(stat.S_ISREG(resolved.st_mode))
-        self.assertFalse(stat.S_ISDIR(resolved.st_mode))
-        self.assertFalse(stat.S_ISLNK(resolved.st_mode))
-
-    def test_getStatus_link(self):
-        """
-        For links will return different status only on Unix.
-        """
-        self.test_segments = manufacture.fs.createFileInTemp()
-        link_segments = self.makeLink(self.test_segments)
-
-        resolved, own = self.filesystem.getStatus(link_segments)
-
-        if self.os_family == 'posix':
-            # We can not test to much here, but getStatus is used by other
-            # high level method and we should have specific tests there.
-            self.assertNotEqual(resolved, own)
-
-            self.assertTrue(stat.S_ISREG(resolved.st_mode))
-            self.assertFalse(stat.S_ISDIR(resolved.st_mode))
-            self.assertFalse(stat.S_ISLNK(resolved.st_mode))
-
-            self.assertFalse(stat.S_ISREG(own.st_mode))
-            self.assertFalse(stat.S_ISDIR(own.st_mode))
-            self.assertTrue(stat.S_ISLNK(own.st_mode))
-        else:
-            self.assertEqual(resolved, own)
+        self.assertTrue(stat.S_ISREG(status.st_mode))
+        self.assertFalse(stat.S_ISDIR(status.st_mode))
+        self.assertFalse(stat.S_ISLNK(status.st_mode))
 
 
 class TestPosixFilesystem(CompatTestCase):
