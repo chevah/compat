@@ -221,7 +221,7 @@ class TestDefaultFilesystem(CompatTestCase):
     @conditionals.onOSFamily('posix')
     def test_getAttributes_link_folder(self):
         """
-        A link to a file is recognized as both a link and a file.
+        A link to a folder is recognized as both a link and a folder.
         """
         _, link_segments = manufacture.fs.makePathInTemp()
         manufacture.fs.makeLink(
