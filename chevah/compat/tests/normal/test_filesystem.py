@@ -3,6 +3,7 @@
 """
 Tests for portable filesystem access.
 """
+import errno
 import os
 import stat
 
@@ -284,6 +285,41 @@ class TestDefaultFilesystem(CompatTestCase):
         content = manufacture.fs.getFolderContent(self.test_segments)
         self.assertEqual([child_name], content)
 
+    @conditionals.onCapability('symbolic_link', True)
+    def test_makeLink_invalid_link(self):
+        """
+        Raise an error if link can not be created.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+
+        with self.assertRaises(OSError):
+            manufacture.fs.makeLink(
+                target_segments=self.test_segments,
+                link_segments=['no-such', 'link'],
+                )
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_makeLink_invalid_target(self):
+        """
+        Will create a valid link to an invalid target.
+        """
+        _, self.test_segments = manufacture.fs.makePathInTemp()
+
+        self.filesystem.makeLink(
+            target_segments=['no-such', 'target'],
+            link_segments=self.test_segments,
+            )
+
+        self.assertTrue(self.filesystem.isLink(self.test_segments))
+        if self.os_family == 'posix':
+            # Path does not exists, since it will check for target.
+            self.assertFalse(self.filesystem.exists(self.test_segments))
+        else:
+            # FIXME:2023:
+            # On Windows, it will not check target, but current file.
+            # Should be fixed after we can read link's target.
+            self.assertTrue(self.filesystem.exists(self.test_segments))
+
     def test_isFile(self):
         """
         Check isFile.
@@ -313,6 +349,21 @@ class TestDefaultFilesystem(CompatTestCase):
         self.assertFalse(
             self.filesystem.isFolder(self.test_segments))
 
+    @conditionals.onOSFamily('nt')
+    def test_getFileData(self):
+        """
+        Return a dict with file data.
+        """
+        content = manufacture.string()
+        self.test_segments = manufacture.fs.createFileInTemp(content=content)
+        name = self.test_segments[-1]
+
+        result = self.filesystem._getFileData(self.test_segments)
+
+        self.assertEqual(len(content.encode('utf-8')), result['size'])
+        self.assertEqual(name, result['name'])
+        self.assertEqual(0, result['tag'])
+
     @conditionals.onCapability('symbolic_link', True)
     def test_isLink(self):
         """
@@ -335,6 +386,7 @@ class TestDefaultFilesystem(CompatTestCase):
         self.assertFalse(self.filesystem.isLink(manufacture.fs.temp_segments))
         self.assertFalse(self.filesystem.isLink(self.test_segments))
         self.assertFalse(self.filesystem.isLink(non_existent_segments))
+        self.assertFalse(self.filesystem.isLink(['invalid-drive-or-path']))
 
     @conditionals.onCapability('symbolic_link', False)
     def test_isLink_not_supported(self):

@@ -89,11 +89,14 @@ class UnixFilesystem(PosixFilesystemBase):
             return os.readlink(path_encoded)
 
     def makeLink(self, target_segments, link_segments):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         target_path = self.getRealPathFromSegments(target_segments)
-        target_path_encoded = target_path.encode('utf-8')
+        target_path_encoded = self.getEncodedPath(target_path)
         link_path = self.getRealPathFromSegments(link_segments)
-        link_path_encoded = link_path.encode('utf-8')
+        link_path_encoded = self.getEncodedPath(link_path)
+
         with self._impersonateUser():
             return os.symlink(target_path_encoded, link_path_encoded)
 

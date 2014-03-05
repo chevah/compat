@@ -3,6 +3,7 @@
 """
 Windows specific implementation of filesystem access.
 """
+import errno
 import ntsecuritycon
 import os
 import pywintypes
@@ -35,6 +36,10 @@ LOCAL_DRIVE = 3
 # Not defined in win32api.
 # (0x400)
 FILE_ATTRIBUTE_REPARSE_POINT = 1024
+# Not defined in winnt.h
+# http://msdn.microsoft.com/en-us/library/windows/
+#   desktop/aa365511(v=vs.85).aspx
+IO_REPARSE_TAG_SYMLINK = 0xA000000C
 
 
 class NTFilesystem(PosixFilesystemBase):
@@ -98,7 +103,10 @@ class NTFilesystem(PosixFilesystemBase):
         if not isinstance(self._avatar, NTDefaultAvatar):
             return [u'c', u'temp']
         else:
-            return super(NTFilesystem, self).temp_segments
+            # Default tempfile.gettempdir() return path with short names,
+            # due to win32api.GetTempPath().
+            return self._pathSplitRecursive(
+                win32api.GetLongPathName(win32api.GetTempPath()))
 
     @classmethod
     def getEncodedPath(cls, path):
@@ -199,7 +207,14 @@ class NTFilesystem(PosixFilesystemBase):
     def makeLink(self, target_segments, link_segments):
         """
         See `ILocalFilesystem`.
+
+        It only supports symbolic links.
+
+        Code example for handling reparse points:
+        http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista
         """
+        # FIXME:2025
+        # Add support for junctions.
         if not self.process_capabilities.symbolic_link:
             raise NotImplementedError
 
@@ -275,26 +290,71 @@ class NTFilesystem(PosixFilesystemBase):
         except WindowsError, error:
             raise OSError(error.errno, error.strerror)
 
-    def _getWindowsAttributes(self, segments):
+    def _getFileData(self, segments):
         """
-        Return windows specific attributes for path.
+        Return a dict with resolved WIN32_FIND_DATA structure for segments.
 
-        Available results:
+        Raise OSError if path does not exists or path is invalid.
+
+        Available attributes:
         http://msdn.microsoft.com/en-us/library/windows/
             desktop/gg258117(v=vs.85).aspx
         """
-        path = self.getRealPathFromSegments(segments)
-        with self._impersonateUser():
-            return win32api.GetFileAttributes(path)
+        path = self.getEncodedPath(self.getRealPathFromSegments(segments))
+
+        try:
+            with self._impersonateUser():
+                search = win32file.FindFilesW(path)
+                if len(search) != 1:
+                    message = 'Could not find %s' % path
+                    raise OSError(errno.ENOENT, message.encode('utf-8'))
+                data = search[0]
+        except pywintypes.error, error:
+            message = u'%s %s %s' % (error.winerror, error.strerror, path)
+            raise OSError(errno.EINVAL, message.encode('utf-8'))
+
+        # Raw data:
+        # [0] int : attributes
+        # [1] PyTime : createTime
+        # [2] PyTime : accessTime
+        # [3] PyTime : writeTime
+        # [4] int : nFileSizeHigh
+        # [5] int : nFileSizeLow
+        # [6] int : reserved0
+        #           Contains reparse tag if path is a reparse point
+        # [7] int : reserved1 - Reserved.
+        # [8] str/unicode : fileName
+        # [9] str/unicode : alternateFilename
+
+        size_high = data[4]
+        size_low = data[5]
+        size = (size_high << 32) + size_low
+        # size_low is SIGNED int.
+        if size_low < 0:
+             size += 0x100000000
+
+        return {
+            'attributes': data[0],
+            'create_time': data[1],
+            'access_time': data[2],
+            'write_time': data[3],
+            'size': size,
+            'tag': data[6],
+            'name': data[8],
+            'alternate_name': data[9],
+            }
 
     def isLink(self, segments):
         """
         See `ILocalFilesystem`.
         """
         try:
-            attributes = self._getWindowsAttributes(segments)
-            return bool(attributes & FILE_ATTRIBUTE_REPARSE_POINT)
-        except pywintypes.error:
+            data = self._getFileData(segments)
+            is_reparse_point = bool(
+                data['attributes'] & FILE_ATTRIBUTE_REPARSE_POINT)
+            has_symlink_tag = (data['tag'] == IO_REPARSE_TAG_SYMLINK)
+            return is_reparse_point and has_symlink_tag
+        except OSError:
             return False
 
     def deleteFolder(self, segments, recursive=True):
