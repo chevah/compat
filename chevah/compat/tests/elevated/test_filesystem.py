@@ -82,7 +82,7 @@ class TestPosixFilesystem(FilesystemTestCase):
         """
         An error is raised when trying to set owner for an bad path.
         """
-        segments = [u'non-existent-segment']
+        segments = [u'c', u'non-existent-segment']
         with self.assertRaises(CompatError) as context:
 
             self.filesystem.setOwner(segments, self.avatar.name)
@@ -94,7 +94,7 @@ class TestPosixFilesystem(FilesystemTestCase):
                 u'No such file or directory', context.exception.message)
         else:
             self.assertContains(
-                u'directory name, or volume label syntax is incorrect',
+                u'The system cannot find the file specified',
                 context.exception.message,
                 )
 
@@ -143,7 +143,7 @@ class TestPosixFilesystem(FilesystemTestCase):
         Changing the groups for an unknown file will raise an
         CompatError.
         """
-        segments = [u'no-such-segments']
+        segments = [u'c', u'no-such-segments']
 
         with self.assertRaises(CompatError) as context:
             self.filesystem.addGroup(segments, TEST_ACCOUNT_USERNAME_OTHER)

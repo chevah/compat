@@ -311,7 +311,7 @@ class TestDefaultFilesystem(FilesystemTestCase):
         _, self.test_segments = manufacture.fs.makePathInTemp()
 
         self.filesystem.makeLink(
-            target_segments=['no-such', 'target'],
+            target_segments=['c', 'no-such-target'],
             link_segments=self.test_segments,
             )
 
@@ -396,7 +396,7 @@ class TestDefaultFilesystem(FilesystemTestCase):
         Raise an error when path was not found.
         """
         with self.assertRaises(OSError) as context:
-            self.filesystem.readLink(['no-such', 'segments'])
+            self.filesystem.readLink(['c', 'no-such-segments'])
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
 
@@ -428,6 +428,24 @@ class TestDefaultFilesystem(FilesystemTestCase):
         result = self.filesystem.readLink(self.test_segments)
 
         self.assertEqual(target_segments, result)
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_readLink_bad_root_target(self):
+        """
+        Can be used for reading target for a link, event when target
+        does not exist.
+        """
+        if self.os_family != 'nt':
+            # This error is only present on Windows.
+            raise self.skipTest()
+
+        with self.assertRaises(OSError):
+            target_segments = ['bad', 'no-such', 'target']
+            _, test_segments = manufacture.fs.makePathInTemp()
+            self.filesystem.makeLink(
+                target_segments=target_segments,
+                link_segments=test_segments,
+                )
 
     def test_isFile(self):
         """
@@ -695,15 +713,6 @@ class TestLocalFilesystemUnlocked(FilesystemTestCase):
         super(TestLocalFilesystemUnlocked, self).setUp()
         self.test_segments = None
 
-    def tearDown(self):
-        if self.test_segments:
-            if self.unlocked_filesystem.isFile(self.test_segments):
-                self.unlocked_filesystem.deleteFile(self.test_segments)
-            else:
-                self.unlocked_filesystem.deleteFolder(self.test_segments)
-            self.test_segments = None
-        super(TestLocalFilesystemUnlocked, self).tearDown()
-
     def test_getSegments(self):
         """
         Check getSegments.
@@ -774,41 +783,69 @@ class TestLocalFilesystemUnlocked(FilesystemTestCase):
         path = self.unlocked_filesystem.getRealPathFromSegments(segments)
         self.assertEqual(u'/altceva', path)
 
+    @conditionals.onOSFamily('nt')
     def test_getRealPathFromSegments_nt(self):
         """
         Check getting real path for Windows.
         """
-        if os.name != 'nt':
-            raise self.skipTest()
-
         path = self.unlocked_filesystem.getRealPathFromSegments([])
         self.assertEqual(u'c:\\', path)
 
-        path = self.unlocked_filesystem.getRealPathFromSegments([u'caca'])
-        self.assertEqual(u'caca:\\', path)
+        path = self.unlocked_filesystem.getRealPathFromSegments([u'c'])
+        self.assertEqual(u'c:\\', path)
 
         path = self.unlocked_filesystem.getRealPathFromSegments(
-            [u'caca', u'maca raca'])
-        self.assertEqual(u'caca:\\maca raca', path)
+            [u'o', u'maca raca'])
+        self.assertEqual(u'o:\\maca raca', path)
 
         path = self.unlocked_filesystem.getRealPathFromSegments(None)
         self.assertEqual(u'c:\\', path)
 
-        segments = [u'ceva', u'..', u'altceva']
+        # Path is resolved to absolute path.
+        segments = [u'ceva', u'..', u'd', u'altceva']
         path = self.unlocked_filesystem.getRealPathFromSegments(segments)
-        self.assertEqual(u'altceva:\\', path)
+        self.assertEqual(u'd:\\altceva', path)
 
-        segments = [u'ceva', u'.', u'altceva']
+        # When path starts with a valid driver, it is kept.
+        segments = [u'c', u'..', u'..', u'dad']
         path = self.unlocked_filesystem.getRealPathFromSegments(segments)
-        self.assertEqual(u'ceva:\\altceva', path)
+        self.assertEqual(u'c:\\dad', path)
 
-        segments = [u'..', u'..', u'altceva']
+        segments = [u'g', u'.', u'altceva']
         path = self.unlocked_filesystem.getRealPathFromSegments(segments)
-        self.assertEqual(u'altceva:\\', path)
+        self.assertEqual(u'g:\\altceva', path)
 
-        segments = [u'..', u'..', u'altceva', u'dad']
+        segments = [u'..', u'..', u'd']
         path = self.unlocked_filesystem.getRealPathFromSegments(segments)
-        self.assertEqual(u'altceva:\\dad', path)
+        self.assertEqual(u'd:\\', path)
+
+        segments = [u'..', u'..', u't', u'dad']
+        path = self.unlocked_filesystem.getRealPathFromSegments(segments)
+        self.assertEqual(u't:\\dad', path)
+
+    @conditionals.onOSFamily('nt')
+    def test_getRealPathFromSegments_nt_invalid_drive(self):
+        """
+        An error is raised when trying to get an path with invalid drive.
+        """
+        with self.assertRaises(OSError):
+            segments = [u'..', u'..', u'bad']
+            self.unlocked_filesystem.getRealPathFromSegments(segments)
+
+        with self.assertRaises(OSError):
+            segments = [u'bad']
+            self.unlocked_filesystem.getRealPathFromSegments(segments)
+
+        with self.assertRaises(OSError):
+            segments = [u'bad', u'drive']
+            self.unlocked_filesystem.getRealPathFromSegments(segments)
+
+    def test_root_segments(self):
+        """
+        Does not allow creating new things into root.
+        """
+        with self.assertRaises(OSError):
+            self.unlocked_filesystem.createFolder(['new-root-element'])
 
     def test_exists_false(self):
         """
