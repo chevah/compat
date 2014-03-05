@@ -171,8 +171,9 @@ def build():
     pave.fs.deleteFolder([pave.path.build, 'setup-build'])
 
     build_target = pave.fs.join([pave.path.build, 'setup-build'])
-    sys.argv = ['setup.py', 'build', '--build-base', build_target]
+    sys.argv = ['setup.py', '-q', 'build', '--build-base', build_target]
     print "Building in " + build_target
+    # Importing setup will trigger executing commands from sys.argv.
     import setup
     setup.distribution.run_command('install')
 

@@ -86,7 +86,8 @@ class UnixFilesystem(PosixFilesystemBase):
         path = self.getRealPathFromSegments(segments)
         path_encoded = path.encode('utf-8')
         with self._impersonateUser():
-            return os.readlink(path_encoded)
+            target = os.readlink(path_encoded).decode('utf-8')
+        return self.getSegmentsFromRealPath(target)
 
     def makeLink(self, target_segments, link_segments):
         """

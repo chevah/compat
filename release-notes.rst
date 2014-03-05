@@ -2,6 +2,12 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.17.0 - 04/03/2014
+-------------------
+
+* Add support for readling symbolic links on Windows.
+
+
 0.16.0 - 04/03/2014
 -------------------
 
