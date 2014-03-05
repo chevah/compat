@@ -67,9 +67,7 @@ class TestDaemon(CompatTestCase):
         """
         Return path to a pid file.
         """
-        # We set the path to self.test_segments to be automatically
-        # cleaned.
-        (path, self.test_segments) = mk.fs.makePathInTemp()
+        (path, _) = mk.fs.makePathInTemp()
         return path
 
     def test_init(self):

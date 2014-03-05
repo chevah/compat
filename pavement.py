@@ -132,14 +132,16 @@ def deps_testing():
     """
     Install dependencies for testing.
     """
-    print('Installing dependencies to %s...' % (pave.path.build))
+    print('Installing testing dependencies to %s...' % (pave.path.build))
     pave.pip(
         command='install',
         arguments=RUN_PACKAGES,
+        silent=True,
         )
     pave.pip(
         command='install',
         arguments=TEST_PACKAGES,
+        silent=True,
         )
 
 
@@ -149,10 +151,11 @@ def deps_build():
     """
     Install dependencies for build environment.
     """
-    print('Installing dependencies to %s...' % (pave.path.build))
+    print('Installing build dependencies to %s...' % (pave.path.build))
     pave.pip(
         command='install',
         arguments=BUILD_PACKAGES,
+        silent=True,
         )
 
 

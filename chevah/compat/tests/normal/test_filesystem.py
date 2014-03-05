@@ -592,6 +592,12 @@ class TestLocalFilesystemUnlocked(CompatTestCase):
                 self.unlocked_filesystem.deleteFile(self.test_segments)
             elif self.unlocked_filesystem.isFolder(self.test_segments):
                 self.unlocked_filesystem.deleteFolder(self.test_segments)
+            else:
+                raise AssertionError(
+                    'Could not clean test_segments as it is nor a file '
+                    'nor a folder.'
+                    )
+            self.test_segments = None
         super(TestLocalFilesystemUnlocked, self).tearDown()
 
     def test_getSegments(self):
