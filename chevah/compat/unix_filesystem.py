@@ -5,13 +5,17 @@ Module for hosting the Unix specific filesystem access.
 """
 
 import errno
+import grp
 import os
 import pwd
-import grp
+import shutil
+import stat
+
 
 from zope.interface import implements
 from twisted.python.filepath import FilePath
 
+from chevah.compat.exceptions import CompatError
 from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.posix_filesystem import PosixFilesystemBase
 from chevah.compat.unix_users import UnixUsers
@@ -82,14 +86,18 @@ class UnixFilesystem(PosixFilesystemBase):
         path = self.getRealPathFromSegments(segments)
         path_encoded = path.encode('utf-8')
         with self._impersonateUser():
-            return os.readlink(path_encoded)
+            target = os.readlink(path_encoded).decode('utf-8')
+        return self.getSegmentsFromRealPath(target)
 
     def makeLink(self, target_segments, link_segments):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         target_path = self.getRealPathFromSegments(target_segments)
-        target_path_encoded = target_path.encode('utf-8')
+        target_path_encoded = self.getEncodedPath(target_path)
         link_path = self.getRealPathFromSegments(link_segments)
-        link_path_encoded = link_path.encode('utf-8')
+        link_path_encoded = self.getEncodedPath(link_path)
+
         with self._impersonateUser():
             return os.symlink(target_path_encoded, link_path_encoded)
 
@@ -161,3 +169,32 @@ class UnixFilesystem(PosixFilesystemBase):
         current_umask = os.umask(0002)
         os.umask(current_umask)
         return current_umask
+
+    def isLink(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
+        path = self.getRealPathFromSegments(segments)
+        path_encoded = path.encode('utf-8')
+
+        with self._impersonateUser():
+            try:
+                stats = os.lstat(path_encoded)
+                return bool(stat.S_ISLNK(stats.st_mode))
+            except OSError:
+                return False
+
+    def deleteFolder(self, segments, recursive=True):
+        '''See `ILocalFilesystem`.'''
+        path = self.getRealPathFromSegments(segments)
+        if path == u'/':
+            raise CompatError(
+                1009, 'Deleting Unix root folder is not allowed.')
+        path_encoded = self.getEncodedPath(path)
+        with self._impersonateUser():
+            if self.isLink(segments):
+                self.deleteFile(segments)
+            elif recursive:
+                return shutil.rmtree(path_encoded)
+            else:
+                return os.rmdir(path_encoded)

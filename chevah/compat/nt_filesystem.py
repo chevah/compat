@@ -1,14 +1,18 @@
 # Copyright (c) 2010-2012 Adi Roiban.
 # See LICENSE for details.
-'''Module for hosting the Chevah FTP filesystem access.'''
-from __future__ import with_statement
-
+"""
+Windows specific implementation of filesystem access.
+"""
+from winioctlcon import FSCTL_GET_REPARSE_POINT
+import errno
+import ntsecuritycon
 import os
+import pywintypes
+import shutil
 import win32api
 import win32file
 import win32net
 import win32security
-import ntsecuritycon
 
 from zope.interface import implements
 
@@ -29,6 +33,10 @@ from chevah.compat.posix_filesystem import PosixFilesystemBase
 # 5 Compact Disc
 # 6 RAM Disk
 LOCAL_DRIVE = 3
+
+# Not defined in win32api.
+# (0x400)
+FILE_ATTRIBUTE_REPARSE_POINT = 1024
 
 
 class NTFilesystem(PosixFilesystemBase):
@@ -92,7 +100,10 @@ class NTFilesystem(PosixFilesystemBase):
         if not isinstance(self._avatar, NTDefaultAvatar):
             return [u'c', u'temp']
         else:
-            return super(NTFilesystem, self).temp_segments
+            # Default tempfile.gettempdir() return path with short names,
+            # due to win32api.GetTempPath().
+            return self._pathSplitRecursive(
+                win32api.GetLongPathName(win32api.GetTempPath()))
 
     @classmethod
     def getEncodedPath(cls, path):
@@ -185,16 +196,84 @@ class NTFilesystem(PosixFilesystemBase):
         return segments
 
     def readLink(self, segments):
-        '''See `ILocalFilesystem`.'''
-        # FIXME:2014:
-        # Add implementation.
-        raise NotImplementedError
+        """
+        See `ILocalFilesystem`.
+
+        Tries to mimic behaviour of Unix readlink command.
+        """
+        path = self.getRealPathFromSegments(segments)
+
+        try:
+            handle = win32file.CreateFileW(
+                path,
+                win32file.GENERIC_READ,
+                win32file.FILE_SHARE_READ,
+                None,
+                win32file.OPEN_EXISTING,
+                (win32file.FILE_FLAG_OPEN_REPARSE_POINT |
+                    win32file.FILE_FLAG_BACKUP_SEMANTICS),
+                None,
+                )
+        except pywintypes.error as error:
+            message = '%s %s %s' % (error.winerror, error.strerror, path)
+            raise OSError(errno.ENOENT, message.encode('utf-8'))
+
+        if handle == win32file.INVALID_HANDLE_VALUE:
+            message = 'Failed to open symlink %s' % (path)
+            raise OSError(errno.EINVAL, message.encode('utf-8'))
+
+        try:
+            # MAXIMUM_REPARSE_DATA_BUFFER_SIZE = 16384 = (16*1024)
+            raw_reparse_data = win32file.DeviceIoControl(
+                handle, FSCTL_GET_REPARSE_POINT, None, 16 * 1024)
+        except pywintypes.error as error:
+            message = '%s %s %s' % (error.winerror, error.strerror, path)
+            raise OSError(errno.EINVAL, message.encode('utf-8'))
+        finally:
+            win32file.CloseHandle(handle)
+
+        result = None
+        try:
+            result = self._parseReparseData(raw_reparse_data)
+            result = self._parseSymbolicLinkReparse(result)
+        except CompatException as error:
+            message = u'%s %s' % (error.message, path)
+            raise OSError(errno.EINVAL, message.encode('utf-8'))
+
+        return self.getSegmentsFromRealPath(result['target'])
 
     def makeLink(self, target_segments, link_segments):
-        '''See `ILocalFilesystem`.'''
-        # FIXME:2014:
-        # Add implementation.
-        raise NotImplementedError
+        """
+        See `ILocalFilesystem`.
+
+        It only supports symbolic links.
+
+        Code example for handling reparse points:
+        http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista
+        """
+        # FIXME:2025:
+        # Add support for junctions.
+        if not self.process_capabilities.symbolic_link:
+            raise NotImplementedError
+
+        target_path = self.getRealPathFromSegments(target_segments)
+        link_path = self.getRealPathFromSegments(link_segments)
+
+        if self.isFolder(target_segments):
+            flags = win32file.SYMBOLIC_LINK_FLAG_DIRECTORY
+        else:
+            flags = 0
+
+        with self._impersonateUser():
+            with self.process_capabilities.elevatePrivileges(
+                    win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
+                try:
+                    win32file.CreateSymbolicLink(
+                        link_path, target_path, flags)
+                except WindowsError, error:
+                    raise OSError(error.errno, error.strerror)
+                except pywintypes.error, error:
+                    raise OSError(error.winerror, error.strerror)
 
     def getStatus(self, segments):
         '''See `ILocalFilesystem`.'''
@@ -249,19 +328,91 @@ class NTFilesystem(PosixFilesystemBase):
         except WindowsError, error:
             raise OSError(error.errno, error.strerror)
 
-    def deleteFolder(self, segments, recursive=True):
-        '''See `ILocalFilesystem`.'''
-        try:
-            return super(NTFilesystem, self).deleteFolder(
-                segments, recursive)
-        except WindowsError, error:
-            raise OSError(error.errno, error.strerror)
+    def _getFileData(self, segments):
+        """
+        Return a dict with resolved WIN32_FIND_DATA structure for segments.
 
-    def deleteFile(self, segments, ignore_errors=False):
-        '''See `ILocalFilesystem`.'''
+        Raise OSError if path does not exists or path is invalid.
+
+        Available attributes:
+        http://msdn.microsoft.com/en-us/library/windows/
+            desktop/gg258117(v=vs.85).aspx
+        """
+        path = self.getEncodedPath(self.getRealPathFromSegments(segments))
+
         try:
-            return super(NTFilesystem, self).deleteFile(
-                segments, ignore_errors)
+            with self._impersonateUser():
+                search = win32file.FindFilesW(path)
+                if len(search) != 1:
+                    message = 'Could not find %s' % path
+                    raise OSError(errno.ENOENT, message.encode('utf-8'))
+                data = search[0]
+        except pywintypes.error, error:
+            message = u'%s %s %s' % (error.winerror, error.strerror, path)
+            raise OSError(errno.EINVAL, message.encode('utf-8'))
+
+        # Raw data:
+        # [0] int : attributes
+        # [1] PyTime : createTime
+        # [2] PyTime : accessTime
+        # [3] PyTime : writeTime
+        # [4] int : nFileSizeHigh
+        # [5] int : nFileSizeLow
+        # [6] int : reserved0
+        #           Contains reparse tag if path is a reparse point
+        # [7] int : reserved1 - Reserved.
+        # [8] str/unicode : fileName
+        # [9] str/unicode : alternateFilename
+
+        size_high = data[4]
+        size_low = data[5]
+        size = (size_high << 32) + size_low
+        # size_low is SIGNED int.
+        if size_low < 0:
+            size += 0x100000000
+
+        return {
+            'attributes': data[0],
+            'create_time': data[1],
+            'access_time': data[2],
+            'write_time': data[3],
+            'size': size,
+            'tag': data[6],
+            'name': data[8],
+            'alternate_name': data[9],
+            }
+
+    def isLink(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
+        try:
+            data = self._getFileData(segments)
+            is_reparse_point = bool(
+                data['attributes'] & FILE_ATTRIBUTE_REPARSE_POINT)
+            has_symlink_tag = (data['tag'] == self.IO_REPARSE_TAG_SYMLINK)
+            return is_reparse_point and has_symlink_tag
+        except OSError:
+            return False
+
+    def deleteFolder(self, segments, recursive=True):
+        """
+        See `ILocalFilesystem`.
+
+        For symbolic links we always force non-recursive behaviour.
+        """
+        path = self.getRealPathFromSegments(segments)
+        path_encoded = self.getEncodedPath(path)
+
+        try:
+            with self._impersonateUser():
+                if self.isLink(segments):
+                    recursive = False
+
+                if recursive:
+                    return shutil.rmtree(path_encoded)
+                else:
+                    return os.rmdir(path_encoded)
         except WindowsError, error:
             raise OSError(error.errno, error.strerror)
 
@@ -450,3 +601,13 @@ class NTFilesystem(PosixFilesystemBase):
                 if group_sid == sid:
                     return True
         return False
+
+    def exists(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
+        if self.isLink(segments):
+            target_segments = self.readLink(segments)
+            return self.exists(target_segments)
+        else:
+            return super(NTFilesystem, self).exists(segments)

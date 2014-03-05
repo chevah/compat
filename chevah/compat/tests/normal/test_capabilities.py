@@ -15,11 +15,10 @@ from zope.interface.verify import verifyObject
 from chevah.compat import process_capabilities
 from chevah.compat.exceptions import AdjustPrivilegeException
 from chevah.compat.interfaces import IProcessCapabilities
-from chevah.compat.testing import manufacture
-from chevah.empirical.testcase import ChevahTestCase
+from chevah.compat.testing import CompatTestCase, manufacture
 
 
-class TestProcessCapabilities(ChevahTestCase):
+class TestProcessCapabilities(CompatTestCase):
 
     def setUp(self):
         super(TestProcessCapabilities, self).setUp()

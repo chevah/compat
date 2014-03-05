@@ -1,12 +1,14 @@
-'''Module for hosting the Chevah FTP filesystem access.'''
-from __future__ import with_statement
-__metaclass__ = type
-
+# Copyright (c) 2014 Adi Roiban.
+# See LICENSE for details.
+"""
+Filesystem code used by all operating systems, including Windows as
+Windows has its layer of POSIX compatibility.
+"""
 import codecs
 import os
 import re
 import stat
-import shutil
+import struct
 import sys
 
 from chevah.compat.constants import (
@@ -16,6 +18,7 @@ from chevah.compat.constants import (
 from chevah.compat.exceptions import (
     ChangeUserException,
     CompatError,
+    CompatException,
     )
 from chevah.compat.helpers import _, NoOpContext
 
@@ -37,6 +40,14 @@ class PosixFilesystemBase(object):
     OPEN_TRUNCATE = os.O_TRUNC
 
     INTERNAL_ENCODING = u'utf-8'
+
+    # Windows specific constants, placed here to help with unit testing
+    # of Windows specific data.
+    #
+    # Not defined in winnt.h
+    # http://msdn.microsoft.com/en-us/library/windows/
+    #   desktop/aa365511(v=vs.85).aspx
+    IO_REPARSE_TAG_SYMLINK = 0xA000000C
 
     @property
     def avatar(self):
@@ -194,11 +205,10 @@ class PosixFilesystemBase(object):
             return False
 
     def isLink(self, segments):
-        '''See `ILocalFilesystem`.'''
-        try:
-            return self.getAttributes(segments, ('link',))[0]
-        except OSError:
-            return False
+        """
+        See `ILocalFilesystem`.
+        """
+        raise NotImplementedError()
 
     def exists(self, segments):
         '''See `ILocalFilesystem`.'''
@@ -218,17 +228,10 @@ class PosixFilesystemBase(object):
                 return os.mkdir(path_encoded, DEFAULT_FOLDER_MODE)
 
     def deleteFolder(self, segments, recursive=True):
-        '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
-        if path == u'/':
-            raise CompatError(
-                1009, _('Deleting Unix root folder is not allowed.'))
-        path_encoded = self.getEncodedPath(path)
-        with self._impersonateUser():
-            if recursive:
-                return shutil.rmtree(path_encoded)
-            else:
-                return os.rmdir(path_encoded)
+        """
+        See `ILocalFilesystem`.
+        """
+        raise NotImplementedError()
 
     def deleteFile(self, segments, ignore_errors=False):
         '''See `ILocalFilesystem`.'''
@@ -328,35 +331,19 @@ class PosixFilesystemBase(object):
 
     def getStatus(self, segments):
         """
-        Return file status for segments.
-
-        st_mode - protection bits,
-        st_ino - inode number,
-        st_dev - device,
-        st_nlink - number of hard links,
-        st_uid - user id of owner,
-        st_gid - group id of owner,
-        st_size - size of file, in bytes,
-        st_atime - time of most recent access,
-        st_mtime - time of most recent content modification,
-        st_ctime - platform dependent;
-                   time of most recent metadata change on Unix,
-                   or the time of creation on Windows)
+        See `ILocalFilesystem`.
         """
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
-            resolved_stats = os.stat(path_encoded)
-            actual_stats = os.lstat(path_encoded)
-
-        return (resolved_stats, actual_stats)
+            return os.stat(path_encoded)
 
     def getAttributes(self, segments, attributes):
         """
-        Return a list of attributes for segment.
+        See `ILocalFilesystem`.
         """
         results = []
-        stats, own_stats = self.getStatus(segments)
+        stats = self.getStatus(segments)
         mode = stats.st_mode
         is_directory = bool(stat.S_ISDIR(mode))
         if is_directory and sys.platform.startswith('aix'):
@@ -364,6 +351,7 @@ class PosixFilesystemBase(object):
             # which we don't use.
             mode = mode & 0077777
 
+        is_link = self.isLink(segments)
         mapping = {
             'size': stats.st_size,
             'permissions': mode,
@@ -374,7 +362,7 @@ class PosixFilesystemBase(object):
             'uid': stats.st_uid,
             'gid': stats.st_gid,
             'directory': is_directory,
-            'link': bool(stat.S_ISLNK(own_stats.st_mode)),
+            'link': is_link,
             'file': bool(stat.S_ISREG(mode))
             }
 
@@ -419,3 +407,121 @@ class PosixFilesystemBase(object):
             _(u'Failed to set owner to "%s" for "%s". %s' % (
                 owner, path, message)),
             )
+
+    def _parseReparseData(self, raw_reparse_data):
+        """
+        Parse reparse buffer.
+
+        Return a dict in format:
+        {
+            'tag': TAG,
+            'length': LENGTH,
+            'data': actual_payload,
+            ...
+            'struct_member_1': VALUE_FOR_STRUCT_MEMBER,
+            ...
+            }
+        """
+        # Size of our types.
+        SIZE_ULONG = 4  # sizeof(ULONG)
+        SIZE_USHORT = 2  # sizeof(USHORT)
+        HEADER_SIZE = 20
+
+        # buffer structure:
+        #
+        # typedef struct _REPARSE_DATA_BUFFER {
+        #     ULONG  ReparseTag;
+        #     USHORT ReparseDataLength;
+        #     USHORT Reserved;
+        #     union {
+        #         struct {
+        #             USHORT SubstituteNameOffset;
+        #             USHORT SubstituteNameLength;
+        #             USHORT PrintNameOffset;
+        #             USHORT PrintNameLength;
+        #             ULONG Flags;
+        #             WCHAR PathBuffer[1];
+        #         } SymbolicLinkReparseBuffer;
+        #         struct {
+        #             USHORT SubstituteNameOffset;
+        #             USHORT SubstituteNameLength;
+        #             USHORT PrintNameOffset;
+        #             USHORT PrintNameLength;
+        #             WCHAR PathBuffer[1];
+        #         } MountPointReparseBuffer;
+        #         struct {
+        #             UCHAR  DataBuffer[1];
+        #         } GenericReparseBuffer;
+        #     } DUMMYUNIONNAME;
+        # } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
+
+        # Supported formats for reparse data.
+        # For now only SymbolicLinkReparseBuffer is supported.
+        formats = {
+            # http://msdn.microsoft.com/en-us/library/cc232006.aspx
+            self.IO_REPARSE_TAG_SYMLINK: [
+                ('substitute_name_offset', SIZE_USHORT),
+                ('substitute_name_length', SIZE_USHORT),
+                ('print_name_offset', SIZE_USHORT),
+                ('print_name_length', SIZE_USHORT),
+                ('flags', SIZE_ULONG),
+                ],
+            }
+
+        if len(raw_reparse_data) < HEADER_SIZE:
+            raise CompatException('Reparse buffer to small.')
+
+        result = {}
+        # Parse header.
+        result['tag'] = struct.unpack('<L', raw_reparse_data[:4])[0]
+        result['length'] = struct.unpack(
+            '<H', raw_reparse_data[4:6])[0]
+        # Reserved header member is ignored.
+        tail = raw_reparse_data[8:]
+
+        try:
+            structure = formats[result['tag']]
+        except KeyError:
+            structure = []
+
+        for member_name, member_size in structure:
+            member_data = tail[:member_size]
+            tail = tail[member_size:]
+
+            if member_size == SIZE_USHORT:
+                result[member_name] = struct.unpack('<H', member_data)[0]
+            else:
+                result[member_name] = struct.unpack('<L', member_data)[0]
+            # result[member_name] = 0
+            # for byte in member_data:
+            #     result[member_name] += ord(byte)
+
+        # Remaining tail is set as data.
+        result['data'] = tail
+        return result
+
+    def _parseSymbolicLinkReparse(self, symbolic_link_data):
+        """
+        Return a diction with 'name' and 'target' for `symbolic_link_data` as
+        Unicode strings.
+        """
+        result = {
+            'name': None,
+            'target': None,
+            }
+
+        offset = symbolic_link_data['print_name_offset']
+        ending = offset + symbolic_link_data['print_name_length']
+        result['name'] = (
+            symbolic_link_data['data'][offset:ending].decode('utf-16'))
+
+        offset = symbolic_link_data['substitute_name_offset']
+        ending = offset + symbolic_link_data['substitute_name_length']
+        target_path = (
+            symbolic_link_data['data'][offset:ending].decode('utf-16'))
+        # Have no idea why we get this magic marker.
+        if target_path.startswith('\\??\\'):
+            target_path = target_path[4:]
+        result['target'] = target_path
+
+        return result
