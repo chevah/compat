@@ -3,7 +3,6 @@
 """
 Tests for portable filesystem access.
 """
-import errno
 import os
 import stat
 

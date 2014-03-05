@@ -213,7 +213,7 @@ class NTFilesystem(PosixFilesystemBase):
         Code example for handling reparse points:
         http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista
         """
-        # FIXME:2025
+        # FIXME:2025:
         # Add support for junctions.
         if not self.process_capabilities.symbolic_link:
             raise NotImplementedError
@@ -331,7 +331,7 @@ class NTFilesystem(PosixFilesystemBase):
         size = (size_high << 32) + size_low
         # size_low is SIGNED int.
         if size_low < 0:
-             size += 0x100000000
+            size += 0x100000000
 
         return {
             'attributes': data[0],
