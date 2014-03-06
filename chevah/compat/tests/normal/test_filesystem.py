@@ -319,6 +319,25 @@ class TestDefaultFilesystem(FilesystemTestCase):
         # Path does not exists, since it will check for target.
         self.assertFalse(self.filesystem.exists(self.test_segments))
 
+    @conditionals.onCapability('symbolic_link', True)
+    @conditionals.onOSFamily('nt')
+    def test_makeLink_bad_root_target(self):
+        """
+        For unlocked accounts, will not create a valid link to a target
+        which does not have a valid drive letter.
+
+        This is a API inconsistency in Windows where CreateSymbolicLink will
+        consider bad:\\path as a relative path named `bad:` and not 'bad:'
+        as drive letter.
+        """
+        with self.assertRaises(OSError):
+            target_segments = ['bad', 'no-such', 'target']
+            _, test_segments = manufacture.fs.makePathInTemp()
+            self.filesystem.makeLink(
+                target_segments=target_segments,
+                link_segments=test_segments,
+                )
+
     # Raw data returned from reparse point.
     # print_name and target_name is  u'c:\\temp\\str1593-cp\u021b'
     raw_reparse_buffer = (
@@ -428,24 +447,6 @@ class TestDefaultFilesystem(FilesystemTestCase):
         result = self.filesystem.readLink(self.test_segments)
 
         self.assertEqual(target_segments, result)
-
-    @conditionals.onCapability('symbolic_link', True)
-    def test_readLink_bad_root_target(self):
-        """
-        Can be used for reading target for a link, event when target
-        does not exist.
-        """
-        if self.os_family != 'nt':
-            # This error is only present on Windows.
-            raise self.skipTest()
-
-        with self.assertRaises(OSError):
-            target_segments = ['bad', 'no-such', 'target']
-            _, test_segments = manufacture.fs.makePathInTemp()
-            self.filesystem.makeLink(
-                target_segments=target_segments,
-                link_segments=test_segments,
-                )
 
     def test_isFile(self):
         """
