@@ -311,7 +311,7 @@ class TestDefaultFilesystem(FilesystemTestCase):
         _, self.test_segments = manufacture.fs.makePathInTemp()
 
         self.filesystem.makeLink(
-            target_segments=['no-such', 'target'],
+            target_segments=['c', 'no-such-target'],
             link_segments=self.test_segments,
             )
 
@@ -396,7 +396,7 @@ class TestDefaultFilesystem(FilesystemTestCase):
         Raise an error when path was not found.
         """
         with self.assertRaises(OSError) as context:
-            self.filesystem.readLink(['no-such', 'segments'])
+            self.filesystem.readLink(['c', 'no-such-segments'])
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
 

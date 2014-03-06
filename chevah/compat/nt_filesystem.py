@@ -36,10 +36,6 @@ LOCAL_DRIVE = 3
 # Not defined in win32api.
 # (0x400)
 FILE_ATTRIBUTE_REPARSE_POINT = 1024
-# Not defined in winnt.h
-# http://msdn.microsoft.com/en-us/library/windows/
-#   desktop/aa365511(v=vs.85).aspx
-IO_REPARSE_TAG_SYMLINK = 0xA000000C
 
 
 class NTFilesystem(PosixFilesystemBase):
