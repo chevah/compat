@@ -1,11 +1,14 @@
-'''Module for hosting the Chevah FTP filesystem access.'''
-from __future__ import with_statement
-__metaclass__ = type
-
+# Copyright (c) 2014 Adi Roiban.
+# See LICENSE for details.
+"""
+Filesystem code used by all operating systems, including Windows as
+Windows has its layer of POSIX compatibility.
+"""
 import codecs
 import os
 import re
 import stat
+import struct
 import sys
 
 from chevah.compat.constants import (
@@ -15,6 +18,7 @@ from chevah.compat.constants import (
 from chevah.compat.exceptions import (
     ChangeUserException,
     CompatError,
+    CompatException,
     )
 from chevah.compat.helpers import _, NoOpContext
 
@@ -36,6 +40,14 @@ class PosixFilesystemBase(object):
     OPEN_TRUNCATE = os.O_TRUNC
 
     INTERNAL_ENCODING = u'utf-8'
+
+    # Windows specific constants, placed here to help with unit testing
+    # of Windows specific data.
+    #
+    # Not defined in winnt.h
+    # http://msdn.microsoft.com/en-us/library/windows/
+    #   desktop/aa365511(v=vs.85).aspx
+    IO_REPARSE_TAG_SYMLINK = 0xA000000C
 
     @property
     def avatar(self):
@@ -395,3 +407,120 @@ class PosixFilesystemBase(object):
             _(u'Failed to set owner to "%s" for "%s". %s' % (
                 owner, path, message)),
             )
+
+    def _parseReparseData(self, raw_reparse_data):
+        """
+        Parse reparse buffer.
+
+        Return a dict in format:
+        {
+            'tag': TAG,
+            'length': LENGTH,
+            'data': actual_payload_as_byte_string,
+            ...
+            'optional_struct_member_1': VALUE_FOR_STRUCT_MEMBER,
+            ...
+            }
+
+        When reparse data contains an unknown tag, it will parse the tag
+        and length headers and put everything else in data.
+        """
+        # Size of our types.
+        SIZE_ULONG = 4  # sizeof(ULONG)
+        SIZE_USHORT = 2  # sizeof(USHORT)
+        HEADER_SIZE = 20
+
+        # buffer structure:
+        #
+        # typedef struct _REPARSE_DATA_BUFFER {
+        #     ULONG  ReparseTag;
+        #     USHORT ReparseDataLength;
+        #     USHORT Reserved;
+        #     union {
+        #         struct {
+        #             USHORT SubstituteNameOffset;
+        #             USHORT SubstituteNameLength;
+        #             USHORT PrintNameOffset;
+        #             USHORT PrintNameLength;
+        #             ULONG Flags;
+        #             WCHAR PathBuffer[1];
+        #         } SymbolicLinkReparseBuffer;
+        #         struct {
+        #             USHORT SubstituteNameOffset;
+        #             USHORT SubstituteNameLength;
+        #             USHORT PrintNameOffset;
+        #             USHORT PrintNameLength;
+        #             WCHAR PathBuffer[1];
+        #         } MountPointReparseBuffer;
+        #         struct {
+        #             UCHAR  DataBuffer[1];
+        #         } GenericReparseBuffer;
+        #     } DUMMYUNIONNAME;
+        # } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
+
+        # Supported formats for reparse data.
+        formats = {
+            # http://msdn.microsoft.com/en-us/library/cc232006.aspx
+            self.IO_REPARSE_TAG_SYMLINK: [
+                ('substitute_name_offset', SIZE_USHORT),
+                ('substitute_name_length', SIZE_USHORT),
+                ('print_name_offset', SIZE_USHORT),
+                ('print_name_length', SIZE_USHORT),
+                ('flags', SIZE_ULONG),
+                ],
+            }
+
+        if len(raw_reparse_data) < HEADER_SIZE:
+            raise CompatException('Reparse buffer to small.')
+
+        result = {}
+        # Parse header.
+        result['tag'] = struct.unpack('<L', raw_reparse_data[:4])[0]
+        result['length'] = struct.unpack(
+            '<H', raw_reparse_data[4:6])[0]
+        # Reserved header member is ignored.
+        tail = raw_reparse_data[8:]
+
+        try:
+            structure = formats[result['tag']]
+        except KeyError:
+            structure = []
+
+        for member_name, member_size in structure:
+            member_data = tail[:member_size]
+            tail = tail[member_size:]
+
+            if member_size == SIZE_USHORT:
+                result[member_name] = struct.unpack('<H', member_data)[0]
+            else:
+                result[member_name] = struct.unpack('<L', member_data)[0]
+
+        # Remaining tail is set as data.
+        result['data'] = tail
+        return result
+
+    def _parseSymbolicLinkReparse(self, symbolic_link_data):
+        """
+        Return a diction with 'name' and 'target' for `symbolic_link_data` as
+        Unicode strings.
+        """
+        result = {
+            'name': None,
+            'target': None,
+            }
+
+        offset = symbolic_link_data['print_name_offset']
+        ending = offset + symbolic_link_data['print_name_length']
+        result['name'] = (
+            symbolic_link_data['data'][offset:ending].decode('utf-16'))
+
+        offset = symbolic_link_data['substitute_name_offset']
+        ending = offset + symbolic_link_data['substitute_name_length']
+        target_path = (
+            symbolic_link_data['data'][offset:ending].decode('utf-16'))
+        # Have no idea why we get this magic marker.
+        if target_path.startswith('\\??\\'):
+            target_path = target_path[4:]
+        result['target'] = target_path
+
+        return result

@@ -3,6 +3,7 @@
 """
 Windows specific implementation of filesystem access.
 """
+from winioctlcon import FSCTL_GET_REPARSE_POINT
 import errno
 import ntsecuritycon
 import os
@@ -199,10 +200,51 @@ class NTFilesystem(PosixFilesystemBase):
         return segments
 
     def readLink(self, segments):
-        '''See `ILocalFilesystem`.'''
-        # FIXME:2023:
-        # Add implementation.
-        raise NotImplementedError
+        """
+        See `ILocalFilesystem`.
+
+        Tries to mimic behaviour of Unix readlink command.
+        """
+        path = self.getRealPathFromSegments(segments)
+
+        try:
+            handle = win32file.CreateFileW(
+                path,
+                win32file.GENERIC_READ,
+                win32file.FILE_SHARE_READ,
+                None,
+                win32file.OPEN_EXISTING,
+                (win32file.FILE_FLAG_OPEN_REPARSE_POINT |
+                    win32file.FILE_FLAG_BACKUP_SEMANTICS),
+                None,
+                )
+        except pywintypes.error as error:
+            message = '%s %s %s' % (error.winerror, error.strerror, path)
+            raise OSError(errno.ENOENT, message.encode('utf-8'))
+
+        if handle == win32file.INVALID_HANDLE_VALUE:
+            message = 'Failed to open symlink %s' % (path)
+            raise OSError(errno.EINVAL, message.encode('utf-8'))
+
+        try:
+            # MAXIMUM_REPARSE_DATA_BUFFER_SIZE = 16384 = (16*1024)
+            raw_reparse_data = win32file.DeviceIoControl(
+                handle, FSCTL_GET_REPARSE_POINT, None, 16 * 1024)
+        except pywintypes.error as error:
+            message = '%s %s %s' % (error.winerror, error.strerror, path)
+            raise OSError(errno.EINVAL, message.encode('utf-8'))
+        finally:
+            win32file.CloseHandle(handle)
+
+        result = None
+        try:
+            result = self._parseReparseData(raw_reparse_data)
+            result = self._parseSymbolicLinkReparse(result)
+        except CompatException as error:
+            message = u'%s %s' % (error.message, path)
+            raise OSError(errno.EINVAL, message.encode('utf-8'))
+
+        return self.getSegmentsFromRealPath(result['target'])
 
     def makeLink(self, target_segments, link_segments):
         """
@@ -352,7 +394,7 @@ class NTFilesystem(PosixFilesystemBase):
             data = self._getFileData(segments)
             is_reparse_point = bool(
                 data['attributes'] & FILE_ATTRIBUTE_REPARSE_POINT)
-            has_symlink_tag = (data['tag'] == IO_REPARSE_TAG_SYMLINK)
+            has_symlink_tag = (data['tag'] == self.IO_REPARSE_TAG_SYMLINK)
             return is_reparse_point and has_symlink_tag
         except OSError:
             return False
@@ -563,3 +605,13 @@ class NTFilesystem(PosixFilesystemBase):
                 if group_sid == sid:
                     return True
         return False
+
+    def exists(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
+        if self.isLink(segments):
+            target_segments = self.readLink(segments)
+            return self.exists(target_segments)
+        else:
+            return super(NTFilesystem, self).exists(segments)

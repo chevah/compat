@@ -3,6 +3,7 @@
 """
 Tests for portable filesystem access.
 """
+import errno
 import os
 import stat
 
@@ -13,15 +14,9 @@ from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.testing import CompatTestCase, conditionals, manufacture
 
 
-class TestDefaultFilesystem(CompatTestCase):
+class FilesystemTestCase(CompatTestCase):
     """
-    Test for default local filesystem which does not depend on attached
-    avatar.
     """
-
-    def setUp(self):
-        super(TestDefaultFilesystem, self).setUp()
-        self.filesystem = LocalFilesystem(avatar=DefaultAvatar())
 
     def makeLink(self, segments, cleanup=True):
         """
@@ -36,6 +31,17 @@ class TestDefaultFilesystem(CompatTestCase):
         if cleanup:
             self.addCleanup(manufacture.fs.deleteFile, link_segments)
         return link_segments
+
+
+class TestDefaultFilesystem(FilesystemTestCase):
+    """
+    Test for default local filesystem which does not depend on attached
+    avatar.
+    """
+
+    def setUp(self):
+        super(TestDefaultFilesystem, self).setUp()
+        self.filesystem = LocalFilesystem(avatar=DefaultAvatar())
 
     def createFolderWithChild(self):
         """
@@ -310,14 +316,118 @@ class TestDefaultFilesystem(CompatTestCase):
             )
 
         self.assertTrue(self.filesystem.isLink(self.test_segments))
-        if self.os_family == 'posix':
-            # Path does not exists, since it will check for target.
-            self.assertFalse(self.filesystem.exists(self.test_segments))
-        else:
-            # FIXME:2023:
-            # On Windows, it will not check target, but current file.
-            # Should be fixed after we can read link's target.
-            self.assertTrue(self.filesystem.exists(self.test_segments))
+        # Path does not exists, since it will check for target.
+        self.assertFalse(self.filesystem.exists(self.test_segments))
+
+    # Raw data returned from reparse point.
+    # print_name and target_name is  u'c:\\temp\\str1593-cp\u021b'
+    raw_reparse_buffer = (
+        '\x0c\x00\x00\xa0`\x00\x00\x00&\x00.\x00\x00\x00&\x00\x00\x00\x00'
+        '\x00c\x00:\x00\\\x00t\x00e\x00m\x00p\x00\\\x00s\x00t\x00r\x001\x005'
+        '\x009\x003\x00-\x00c\x00p\x00\x1b\x02\\\x00?\x00?\x00\\\x00c\x00:'
+        '\x00\\\x00t\x00e\x00m\x00p\x00\\\x00s\x00t\x00r\x001\x005\x009\x003'
+        '\x00-\x00c\x00p\x00\x1b\x02'
+        )
+
+    def test_parseReparseData(self):
+        """
+        It parse raw reparse data buffer into a dict.
+        """
+        result = self.filesystem._parseReparseData(self.raw_reparse_buffer)
+
+        self.assertEqual(
+            self.filesystem.IO_REPARSE_TAG_SYMLINK, result['tag'])
+        # Encoded as UTF-16 so length is doubled.. but without UTF-16 BOM.
+        utf_16_length = (
+            len(u'c:\\temp\\str1593-cp\u021b'.encode('utf-16')) - 2)
+        self.assertEqual(0, result['print_name_offset'])
+        self.assertEqual(utf_16_length, result['print_name_length'])
+        # Target name has 4 extra UTF-16 characters.
+        self.assertEqual(utf_16_length, result['substitute_name_offset'])
+        self.assertEqual(
+            utf_16_length + 4 * 2, result['substitute_name_length'])
+
+    def test_parseSymbolicLinkReparse(self):
+        """
+        Parse target and print name for symlink reparse data.
+        """
+        if self.os_name == 'aix':
+            # FIXME:2027:
+            # This test fails on AIX with a strange encoding error,
+            # most probably due to CPU bit order.
+            raise self.skipTest()
+
+        symbolic_link_data = self.filesystem._parseReparseData(
+            self.raw_reparse_buffer)
+
+        result = self.filesystem._parseSymbolicLinkReparse(symbolic_link_data)
+
+        self.assertEqual(u'c:\\temp\\str1593-cp\u021b', result['name'])
+        self.assertEqual(u'c:\\temp\\str1593-cp\u021b', result['target'])
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_readLink_ok(self):
+        """
+        Can be used for reading target for a link.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+        link_segments = self.makeLink(self.test_segments)
+
+        result = self.filesystem.readLink(link_segments)
+
+        self.assertEqual(self.test_segments, result)
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_readLink_link_to_link(self):
+        """
+        Will only resolve link at first level.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+        link_segments = self.makeLink(self.test_segments)
+        link_link_segments = self.makeLink(link_segments)
+
+        result = self.filesystem.readLink(link_link_segments)
+
+        self.assertEqual(link_segments, result)
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_readLink_bad_path(self):
+        """
+        Raise an error when path was not found.
+        """
+        with self.assertRaises(OSError) as context:
+            self.filesystem.readLink(['no-such', 'segments'])
+
+        self.assertEqual(errno.ENOENT, context.exception.errno)
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_readLink_not_link(self):
+        """
+        Raise an error when path is not a link.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.readLink(self.test_segments)
+
+        self.assertEqual(errno.EINVAL, context.exception.errno)
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_readLink_bad_target(self):
+        """
+        Can be used for reading target for a link, event when target
+        does not exist.
+        """
+        target_segments = ['z', 'no-such', 'target']
+        _, self.test_segments = manufacture.fs.makePathInTemp()
+        self.filesystem.makeLink(
+            target_segments=target_segments,
+            link_segments=self.test_segments,
+            )
+
+        result = self.filesystem.readLink(self.test_segments)
+
+        self.assertEqual(target_segments, result)
 
     def test_isFile(self):
         """
@@ -568,7 +678,7 @@ class TestPosixFilesystem(CompatTestCase):
         self.assertEqual([u'test'], filesystem.home_segments)
 
 
-class TestLocalFilesystemUnlocked(CompatTestCase):
+class TestLocalFilesystemUnlocked(FilesystemTestCase):
     """
     Commons tests for both chrooted and non chrooted filesystem.
 
@@ -584,20 +694,6 @@ class TestLocalFilesystemUnlocked(CompatTestCase):
     def setUp(self):
         super(TestLocalFilesystemUnlocked, self).setUp()
         self.test_segments = None
-
-    def tearDown(self):
-        if self.test_segments:
-            if self.unlocked_filesystem.isFile(self.test_segments):
-                self.unlocked_filesystem.deleteFile(self.test_segments)
-            elif self.unlocked_filesystem.isFolder(self.test_segments):
-                self.unlocked_filesystem.deleteFolder(self.test_segments)
-            else:
-                raise AssertionError(
-                    'Could not clean test_segments as it is nor a file '
-                    'nor a folder.'
-                    )
-            self.test_segments = None
-        super(TestLocalFilesystemUnlocked, self).tearDown()
 
     def test_getSegments(self):
         """
@@ -743,6 +839,37 @@ class TestLocalFilesystemUnlocked(CompatTestCase):
             self.assertTrue(self.unlocked_filesystem.exists(segments))
         finally:
             self.unlocked_filesystem.deleteFolder(segments)
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_exists_broken_link(self):
+        """
+        Will return false when link target does not exists.
+        """
+        _, self.test_segments = manufacture.fs.makePathInTemp()
+        self.unlocked_filesystem.makeLink(
+            target_segments=['z', 'no-such', 'target'],
+            link_segments=self.test_segments,
+            )
+
+        self.assertFalse(self.unlocked_filesystem.exists(self.test_segments))
+        # Link still exists.
+        self.assertTrue(self.unlocked_filesystem.isLink(self.test_segments))
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_exists_link_broken_link(self):
+        """
+        Resolve recursive links to links.
+        """
+        _, self.test_segments = manufacture.fs.makePathInTemp()
+        self.unlocked_filesystem.makeLink(
+            target_segments=['z', 'no-such', 'target'],
+            link_segments=self.test_segments,
+            )
+        link_to_broken_link = self.makeLink(self.test_segments)
+
+        self.assertFalse(self.unlocked_filesystem.exists(link_to_broken_link))
+        # Link still exists.
+        self.assertTrue(self.unlocked_filesystem.isLink(link_to_broken_link))
 
     def test_makeFolder(self):
         """
