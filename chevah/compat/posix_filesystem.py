@@ -459,6 +459,7 @@ class PosixFilesystemBase(object):
         # } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
 
         # Supported formats for reparse data.
+        # For now only SymbolicLinkReparseBuffer is supported.
         formats = {
             # http://msdn.microsoft.com/en-us/library/cc232006.aspx
             self.IO_REPARSE_TAG_SYMLINK: [
@@ -494,6 +495,9 @@ class PosixFilesystemBase(object):
                 result[member_name] = struct.unpack('<H', member_data)[0]
             else:
                 result[member_name] = struct.unpack('<L', member_data)[0]
+            # result[member_name] = 0
+            # for byte in member_data:
+            #     result[member_name] += ord(byte)
 
         # Remaining tail is set as data.
         result['data'] = tail

@@ -27,6 +27,10 @@ class TestProcessCapabilities(CompatTestCase):
     def runningAsAdministrator(self):
         """
         Return True if slave runs as administrator.
+
+        This could have been implementing by checking the available,
+        capabilities, but here we are testing the capabilities itself so is
+        kind of chicken and egg problem.
         """
         # Windows 2008 and DC client tests are done in administration mode,
         # 2003 and XP under normal mode.

@@ -305,7 +305,7 @@ class OSAdministration(object):
                 return user
             except (KeyError, OSError), e:
                 pass
-            time.sleep(0.1)
+            time.sleep(0.2)
         raise AssertionError(
             'Could not get user %s: %s' % (name_encoded, e))
 

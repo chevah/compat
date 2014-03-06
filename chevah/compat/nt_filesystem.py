@@ -17,7 +17,6 @@ import win32security
 from zope.interface import implements
 
 from chevah.compat.exceptions import CompatError, CompatException
-from chevah.compat.helpers import _
 from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.nt_capabilities import NTProcessCapabilities
 from chevah.compat.nt_users import NTDefaultAvatar, NTUsers
@@ -37,10 +36,6 @@ LOCAL_DRIVE = 3
 # Not defined in win32api.
 # (0x400)
 FILE_ATTRIBUTE_REPARSE_POINT = 1024
-# Not defined in winnt.h
-# http://msdn.microsoft.com/en-us/library/windows/
-#   desktop/aa365511(v=vs.85).aspx
-IO_REPARSE_TAG_SYMLINK = 0xA000000C
 
 
 class NTFilesystem(PosixFilesystemBase):
@@ -159,7 +154,25 @@ class NTFilesystem(PosixFilesystemBase):
                         result = result + ':\\'
                     else:
                         result = result.replace('\\', ':\\', 1)
+            self._validateDrivePath(result)
+
         return unicode(result)
+
+    # Windows allows only 26 drive letters and is case insensitive.
+    _allowed_drive_letters = [
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+        'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+        'u', 'v', 'w', 'x', 'y', 'z',
+        ]
+
+    def _validateDrivePath(self, path):
+        """
+        Raise an error if path does not have valid driver.
+        """
+        letter, _ = os.path.splitdrive(path)
+        if letter.strip(':').lower() not in self._allowed_drive_letters:
+            message = 'Bad drive letter "%s" for %s' % (letter, path)
+            raise OSError(errno.EINVAL, message.encode('utf-8'))
 
     def getSegmentsFromRealPath(self, path):
         """
@@ -543,9 +556,10 @@ class NTFilesystem(PosixFilesystemBase):
             group_sid, group_domain, group_type = (
                 win32security.LookupAccountName(None, group))
         except win32net.error:
-            raise CompatError(1013, _(
+            raise CompatError(
+                1013,
                 u'Failed to remove group "%s" from "%s". %s' % (
-                    group, path, u'Group does not exists.')))
+                    group, path, u'Group does not exists.'))
 
         with self._impersonateUser():
             try:
