@@ -161,7 +161,7 @@ class TestDefaultFilesystem(CompatTestCase):
             [child_name],
             self.filesystem.getFolderContent(self.test_segments))
 
-    def test_deleteFolder_non_recursive_emtpy(self):
+    def test_deleteFolder_non_recursive_empty(self):
         """
         It can delete a folder non-recursive if folder is empty.
         """
@@ -172,7 +172,7 @@ class TestDefaultFilesystem(CompatTestCase):
 
         self.assertFalse(self.filesystem.exists(segments))
 
-    def test_deleteFolder_non_recursive_non_emtpy(self):
+    def test_deleteFolder_non_recursive_non_empty(self):
         """
         It raise an error if folder is not empty.
         """
@@ -188,7 +188,7 @@ class TestDefaultFilesystem(CompatTestCase):
             self.filesystem.getFolderContent(self.test_segments),
             )
 
-    def test_deleteFolder_recursive_emtpy(self):
+    def test_deleteFolder_recursive_empty(self):
         """
         It can delete a folder recursive if folder is empty.
         """
@@ -199,7 +199,7 @@ class TestDefaultFilesystem(CompatTestCase):
 
         self.assertFalse(self.filesystem.exists(segments))
 
-    def test_deleteFolder_recursive_non_emtpy(self):
+    def test_deleteFolder_recursive_non_empty(self):
         """
         It can delete folder even if it is not empty.
         """
@@ -535,7 +535,7 @@ class TestPosixFilesystem(CompatTestCase):
 
     def test_home_segments_root_is_home(self):
         """
-        Emtpy list is returned for home_segments if root folder is the same
+        Empty list is returned for home_segments if root folder is the same
         as home folder.
         """
         locked_avatar = manufacture.makeFilesystemOSAvatar()
@@ -809,7 +809,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase):
 
     def test_getSegmentsFromRealPath_none(self):
         """
-        The emtpy segments is return if path is None.
+        The empty segments is return if path is None.
         """
         path = None
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
