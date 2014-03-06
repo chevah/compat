@@ -15,26 +15,25 @@ from zope.interface.verify import verifyObject
 from chevah.compat import process_capabilities
 from chevah.compat.exceptions import AdjustPrivilegeException
 from chevah.compat.interfaces import IProcessCapabilities
-from chevah.compat.testing import manufacture
-from chevah.empirical.testcase import ChevahTestCase
+from chevah.compat.testing import CompatTestCase, manufacture
 
 
-class TestProcessCapabilities(ChevahTestCase):
+class TestProcessCapabilities(CompatTestCase):
 
     def setUp(self):
         super(TestProcessCapabilities, self).setUp()
         self.capabilities = process_capabilities
 
-    def runAsAdministrator(self):
+    def runningAsAdministrator(self):
         """
         Return True if slave runs as administrator.
         """
         # Windows 2008 and DC client tests are done in administration mode,
         # 2003 and XP under normal mode.
-        if 'win-2008' in self.hostname or 'win-dc' in self.hostname:
-            return True
-        else:
+        if 'win-2003' in self.hostname or 'win-xp' in self.hostname:
             return False
+        else:
+            return True
 
     def test_init(self):
         """
@@ -98,7 +97,7 @@ class TestProcessCapabilities(ChevahTestCase):
             self.assertContains('SeImpersonatePrivilege:3', text)
             self.assertContains('SeCreateGlobalPrivilege:3', text)
 
-            if self.runAsAdministrator():
+            if self.runningAsAdministrator():
                 self.assertContains('SeCreateSymbolicLinkPrivilege:0', text)
             else:
                 self.assertNotContains(
@@ -137,7 +136,7 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
             win32security.SE_SECURITY_NAME)
         self.assertContains((privilege, 0), result)
 
-        if self.runAsAdministrator():
+        if self.runningAsAdministrator():
             privilege = self.capabilities._getPrivilegeID(
                 win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
             self.assertContains((privilege, 0), result)
@@ -318,7 +317,7 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
             self.assertTrue(symbolic_link)
             return
 
-        if self.runAsAdministrator():
+        if self.runningAsAdministrator():
             self.assertTrue(symbolic_link)
         else:
             self.assertFalse(symbolic_link)

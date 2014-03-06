@@ -478,8 +478,15 @@ class ILocalFilesystem(Interface):
 
     def getStatus(segments):
         """
-        Return a tuple status structure for segments in the format:
-        (resolved_stats, current_stats)
+        Return a status structure for segments, resolving symbolic
+        links, an having the following members:
+
+        st_mode - protection bits,
+        st_uid - user id of owner,
+        st_gid - group id of owner,
+        st_size - size of file, in bytes,
+        st_atime - time of most recent access,
+        st_mtime - time of most recent content modification,
         """
 
     def getAttributes(segments, attributes):

@@ -12,7 +12,7 @@ if os.name == 'nt':
     tempfile.tempdir = "c:\\temp"
 
 RUN_PACKAGES = [
-    'chevah-empirical==0.24.1',
+    'chevah-empirical==0.25.1',
     'zope.interface==3.8.0',
     'twisted==12.1.0-chevah3',
     ]
@@ -132,14 +132,16 @@ def deps_testing():
     """
     Install dependencies for testing.
     """
-    print('Installing dependencies to %s...' % (pave.path.build))
+    print('Installing testing dependencies to %s...' % (pave.path.build))
     pave.pip(
         command='install',
         arguments=RUN_PACKAGES,
+        silent=True,
         )
     pave.pip(
         command='install',
         arguments=TEST_PACKAGES,
+        silent=True,
         )
 
 
@@ -149,10 +151,11 @@ def deps_build():
     """
     Install dependencies for build environment.
     """
-    print('Installing dependencies to %s...' % (pave.path.build))
+    print('Installing build dependencies to %s...' % (pave.path.build))
     pave.pip(
         command='install',
         arguments=BUILD_PACKAGES,
+        silent=True,
         )
 
 
