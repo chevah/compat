@@ -948,6 +948,37 @@ class TestLocalFilesystemUnlocked(FilesystemTestCase):
         # Link still exists.
         self.assertTrue(self.unlocked_filesystem.isLink(link_to_broken_link))
 
+    @conditionals.onCapability('symbolic_link', True)
+    def test_exists_broken_link(self):
+        """
+        Will return false when link target does not exists.
+        """
+        _, self.test_segments = manufacture.fs.makePathInTemp()
+        self.unlocked_filesystem.makeLink(
+            target_segments=['z', 'no-such', 'target'],
+            link_segments=self.test_segments,
+            )
+
+        self.assertFalse(self.unlocked_filesystem.exists(self.test_segments))
+        # Link still exists.
+        self.assertTrue(self.unlocked_filesystem.isLink(self.test_segments))
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_exists_link_broken_link(self):
+        """
+        Resolve recursive links to links.
+        """
+        _, self.test_segments = manufacture.fs.makePathInTemp()
+        self.unlocked_filesystem.makeLink(
+            target_segments=['z', 'no-such', 'target'],
+            link_segments=self.test_segments,
+            )
+        link_to_broken_link = self.makeLink(self.test_segments)
+
+        self.assertFalse(self.unlocked_filesystem.exists(link_to_broken_link))
+        # Link still exists.
+        self.assertTrue(self.unlocked_filesystem.isLink(link_to_broken_link))
+
     def test_makeFolder(self):
         """
         Check makeFolder.

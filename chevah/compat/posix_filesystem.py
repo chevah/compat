@@ -416,9 +416,9 @@ class PosixFilesystemBase(object):
         {
             'tag': TAG,
             'length': LENGTH,
-            'data': actual_payload,
+            'data': actual_payload_as_byte_string,
             ...
-            'struct_member_1': VALUE_FOR_STRUCT_MEMBER,
+            'optional_struct_member_1': VALUE_FOR_STRUCT_MEMBER,
             ...
             }
 
