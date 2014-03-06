@@ -416,11 +416,14 @@ class PosixFilesystemBase(object):
         {
             'tag': TAG,
             'length': LENGTH,
-            'data': actual_payload,
+            'data': actual_payload_as_byte_string,
             ...
-            'struct_member_1': VALUE_FOR_STRUCT_MEMBER,
+            'optional_struct_member_1': VALUE_FOR_STRUCT_MEMBER,
             ...
             }
+
+        When reparse data contains an unknown tag, it will parse the tag
+        and length headers and put everything else in data.
         """
         # Size of our types.
         SIZE_ULONG = 4  # sizeof(ULONG)
@@ -456,7 +459,6 @@ class PosixFilesystemBase(object):
         # } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
 
         # Supported formats for reparse data.
-        # For now only SymbolicLinkReparseBuffer is supported.
         formats = {
             # http://msdn.microsoft.com/en-us/library/cc232006.aspx
             self.IO_REPARSE_TAG_SYMLINK: [
@@ -492,9 +494,6 @@ class PosixFilesystemBase(object):
                 result[member_name] = struct.unpack('<H', member_data)[0]
             else:
                 result[member_name] = struct.unpack('<L', member_data)[0]
-            # result[member_name] = 0
-            # for byte in member_data:
-            #     result[member_name] += ord(byte)
 
         # Remaining tail is set as data.
         result['data'] = tail
