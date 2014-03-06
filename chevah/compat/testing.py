@@ -181,7 +181,7 @@ class CompatTestCase(ChevahTestCase):
     For not, there is nothing special here.
     """
 
-    def runAsAdministrator(self):
+    def runningAsAdministrator(self):
         """
         Return True if slave runs as administrator.
         """
