@@ -421,6 +421,9 @@ class PosixFilesystemBase(object):
             'struct_member_1': VALUE_FOR_STRUCT_MEMBER,
             ...
             }
+
+        When reparse data contains an unknown tag, it will parse the tag
+        and length headers and put everything else in data.
         """
         # Size of our types.
         SIZE_ULONG = 4  # sizeof(ULONG)

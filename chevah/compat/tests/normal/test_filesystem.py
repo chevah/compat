@@ -167,7 +167,7 @@ class TestDefaultFilesystem(FilesystemTestCase):
             [child_name],
             self.filesystem.getFolderContent(self.test_segments))
 
-    def test_deleteFolder_non_recursive_emtpy(self):
+    def test_deleteFolder_non_recursive_empty(self):
         """
         It can delete a folder non-recursive if folder is empty.
         """
@@ -178,7 +178,7 @@ class TestDefaultFilesystem(FilesystemTestCase):
 
         self.assertFalse(self.filesystem.exists(segments))
 
-    def test_deleteFolder_non_recursive_non_emtpy(self):
+    def test_deleteFolder_non_recursive_non_empty(self):
         """
         It raise an error if folder is not empty.
         """
@@ -194,7 +194,7 @@ class TestDefaultFilesystem(FilesystemTestCase):
             self.filesystem.getFolderContent(self.test_segments),
             )
 
-    def test_deleteFolder_recursive_emtpy(self):
+    def test_deleteFolder_recursive_empty(self):
         """
         It can delete a folder recursive if folder is empty.
         """
@@ -205,7 +205,7 @@ class TestDefaultFilesystem(FilesystemTestCase):
 
         self.assertFalse(self.filesystem.exists(segments))
 
-    def test_deleteFolder_recursive_non_emtpy(self):
+    def test_deleteFolder_recursive_non_empty(self):
         """
         It can delete folder even if it is not empty.
         """
@@ -311,7 +311,7 @@ class TestDefaultFilesystem(FilesystemTestCase):
         _, self.test_segments = manufacture.fs.makePathInTemp()
 
         self.filesystem.makeLink(
-            target_segments=['c', 'no-such-target'],
+            target_segments=['no-such', 'target'],
             link_segments=self.test_segments,
             )
 
@@ -396,7 +396,7 @@ class TestDefaultFilesystem(FilesystemTestCase):
         Raise an error when path was not found.
         """
         with self.assertRaises(OSError) as context:
-            self.filesystem.readLink(['c', 'no-such-segments'])
+            self.filesystem.readLink(['no-such', 'segments'])
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
 
@@ -663,7 +663,7 @@ class TestPosixFilesystem(CompatTestCase):
 
     def test_home_segments_root_is_home(self):
         """
-        Emtpy list is returned for home_segments if root folder is the same
+        Empty list is returned for home_segments if root folder is the same
         as home folder.
         """
         locked_avatar = manufacture.makeFilesystemOSAvatar()
@@ -917,6 +917,37 @@ class TestLocalFilesystemUnlocked(FilesystemTestCase):
         # Link still exists.
         self.assertTrue(self.unlocked_filesystem.isLink(link_to_broken_link))
 
+    @conditionals.onCapability('symbolic_link', True)
+    def test_exists_broken_link(self):
+        """
+        Will return false when link target does not exists.
+        """
+        _, self.test_segments = manufacture.fs.makePathInTemp()
+        self.unlocked_filesystem.makeLink(
+            target_segments=['z', 'no-such', 'target'],
+            link_segments=self.test_segments,
+            )
+
+        self.assertFalse(self.unlocked_filesystem.exists(self.test_segments))
+        # Link still exists.
+        self.assertTrue(self.unlocked_filesystem.isLink(self.test_segments))
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_exists_link_broken_link(self):
+        """
+        Resolve recursive links to links.
+        """
+        _, self.test_segments = manufacture.fs.makePathInTemp()
+        self.unlocked_filesystem.makeLink(
+            target_segments=['z', 'no-such', 'target'],
+            link_segments=self.test_segments,
+            )
+        link_to_broken_link = self.makeLink(self.test_segments)
+
+        self.assertFalse(self.unlocked_filesystem.exists(link_to_broken_link))
+        # Link still exists.
+        self.assertTrue(self.unlocked_filesystem.isLink(link_to_broken_link))
+
     def test_makeFolder(self):
         """
         Check makeFolder.
@@ -982,7 +1013,7 @@ class TestLocalFilesystemUnlocked(FilesystemTestCase):
 
     def test_getSegmentsFromRealPath_none(self):
         """
-        The emtpy segments is return if path is None.
+        The empty segments is return if path is None.
         """
         path = None
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
