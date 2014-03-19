@@ -258,8 +258,31 @@ class TestPosixFilesystem(FilesystemTestCase):
 
         self.assertEqual(TEST_ACCOUNT_USERNAME_OTHER, new_owner)
 
+    def test_makeLink_good(self):
+        """
+        Can create link under impersonated account.
+        """
+        target_segments = self.filesystem.home_segments
+        target_segments.append(manufacture.string())
+        file_object = self.filesystem.openFileForWriting(target_segments)
+        file_object.close()
+        self.addCleanup(self.filesystem.deleteFile, target_segments)
+        link_segments = self.filesystem.home_segments
+        link_segments.append(manufacture.string())
+
+        self.filesystem.makeLink(
+            target_segments=target_segments,
+            link_segments=link_segments,
+            )
+
+        self.addCleanup(self.filesystem.deleteFile, link_segments)
+        self.assertTrue(self.filesystem.isLink(link_segments))
+        self.assertTrue(self.filesystem.exists(link_segments))
+
+    @conditionals.onCapability('symbolic_link', True)
     def test_makeLink_bad_target(self):
         """
+        Can create broken links under impersonated account.
         """
         segments = self.filesystem.home_segments
         segments.append(manufacture.string())
@@ -272,6 +295,17 @@ class TestPosixFilesystem(FilesystemTestCase):
         self.addCleanup(self.filesystem.deleteFile, segments)
         self.assertTrue(self.filesystem.isLink(segments))
         self.assertFalse(self.filesystem.exists(segments))
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_makeLink_invalid_link(self):
+        """
+        Raise an error if link can not be created under impersonated account.
+        """
+        with self.assertRaises(OSError):
+            manufacture.fs.makeLink(
+                target_segments=self.filesystem.temp_segments,
+                link_segments=['no-such', 'link'],
+                )
 
 
 class TestUnixFilesystem(FilesystemTestCase):
