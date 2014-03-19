@@ -204,3 +204,24 @@ def test(args):
     """
     Run all Python tests.
     """
+
+
+@task
+# It needs consume_args to initialize the paver environment.
+@consume_args
+def test_ci(args):
+    """
+    Run tests in continuous integration environment.
+    """
+    env = os.environ.copy()
+    args = env.get('TEST_ARGUMENTS', '')
+    if not args:
+        args = []
+    else:
+        args = [args]
+    test_type = env.get('TEST_TYPE', 'normal')
+
+    if test_type == 'os-independent':
+        return call_task('test_os_independent')
+
+    return call_task('test_os_dependent', args=args)
