@@ -97,7 +97,7 @@ class TestProcessCapabilities(ChevahTestCase):
             self.assertEqual(u'sdf', text)
 
     @conditionals.onOSFamily('nt')
-    def test_elevatePrivileges_impersoanted(self):
+    def test_elevatePrivileges_impersonated(self):
         """
         Can elevate privileges while running under impersonated account.
         """
