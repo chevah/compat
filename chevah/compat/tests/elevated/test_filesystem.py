@@ -258,6 +258,21 @@ class TestPosixFilesystem(FilesystemTestCase):
 
         self.assertEqual(TEST_ACCOUNT_USERNAME_OTHER, new_owner)
 
+    def test_makeLink_bad_target(self):
+        """
+        """
+        segments = self.filesystem.home_segments
+        segments.append(manufacture.string())
+
+        self.filesystem.makeLink(
+            target_segments=['z', 'no-such', 'target'],
+            link_segments=segments,
+            )
+
+        self.addCleanup(self.filesystem.deleteFile, segments)
+        self.assertTrue(self.filesystem.isLink(segments))
+        self.assertFalse(self.filesystem.exists(segments))
+
 
 class TestUnixFilesystem(FilesystemTestCase):
     """
