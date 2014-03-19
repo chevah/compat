@@ -16,6 +16,7 @@ from chevah.compat.testing import CompatTestCase, conditionals, manufacture
 
 class FilesystemTestCase(CompatTestCase):
     """
+    Common code for filesystem tests.
     """
 
     def makeLink(self, segments, cleanup=True):
