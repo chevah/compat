@@ -412,6 +412,14 @@ class NTFilesystem(PosixFilesystemBase):
         except OSError:
             return False
 
+    def deleteFile(self, segments, ignore_errors=False):
+        '''See `ILocalFilesystem`.'''
+        try:
+            return super(NTFilesystem, self).deleteFile(
+                segments, ignore_errors=ignore_errors)
+        except WindowsError, error:
+            raise OSError(error.errno, error.strerror)
+
     def deleteFolder(self, segments, recursive=True):
         """
         See `ILocalFilesystem`.

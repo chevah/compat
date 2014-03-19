@@ -130,6 +130,17 @@ class TestDefaultFilesystem(FilesystemTestCase):
 
         self.assertFalse(self.filesystem.exists(segments))
 
+    def test_deleteFile_not_found(self):
+        """
+        Return OSError with errno.ENOENT.
+        """
+        segments = [manufacture.string()]
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.deleteFile(segments)
+
+        self.assertEqual(errno.ENOENT, context.exception.errno)
+
     @conditionals.onCapability('symbolic_link', True)
     def test_deleteFile_file_link(self):
         """
