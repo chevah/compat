@@ -197,8 +197,8 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         """
         Returns False for a privilege which is present but disabled.
         """
-        # By default SE_LOAD_DRIVER privilege is disabled.
-        privilege = win32security.SE_LOAD_DRIVER_NAME
+        # By default SE_SECURITY_NAME privilege is disabled.
+        privilege = win32security.SE_SECURITY_NAME
         self.assertFalse(self.capabilities._isPrivilegeEnabled(privilege))
 
     def test_isPrivilegeEnabled_absent(self):
