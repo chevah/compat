@@ -2,6 +2,14 @@ Release notes for chevah.empirical
 ==================================
 
 
+0.17.1 - 20/03/2014
+-------------------
+
+* Update build system to latest buildbot.
+* Convert WindowsError from deleteFile into OSError and convert error code
+  for file not found.
+
+
 0.17.0 - 04/03/2014
 -------------------
 
