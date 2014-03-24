@@ -1598,24 +1598,20 @@ class TestLocalFilesystemLocked(CompatTestCase):
             self.locked_filesystem.deleteFolder(segments)
 
     @conditionals.onCapability('symbolic_link', True)
-    def test_exists_broken_link(self):
+    def test_exists_ouside_link(self):
         """
-        Will return false when link target does not exists.
+        Will return false when link target is outside of home folder.
         """
-        name = manufacture.makeFilename(suffix='-link')
-        segments = self.locked_filesystem.home_segments[:]
-        segments.append(name)
-        # Register for cleanup.
-        self.test_segments = manufacture.fs.temp_segments
-        self.test_segments.append(name)
-        self.locked_filesystem.makeLink(
-            target_segments=['z', 'no-such', 'target'],
-            link_segments=segments,
+        _, self.test_segments = manufacture.fs.makePathInTemp()
+        link_segments = [self.test_segments[-1]]
+        manufacture.fs.makeLink(
+            target_segments=['z', 'no', 'such'],
+            link_segments=self.test_segments,
             )
+        # Make sure link was created.
+        self.assertTrue(self.locked_filesystem.isLink(link_segments))
 
-        self.assertFalse(self.locked_filesystem.exists(segments))
-        # Link still exists.
-        self.assertTrue(self.locked_filesystem.isLink(segments))
+        self.assertFalse(self.locked_filesystem.exists(link_segments))
 
     @conditionals.onCapability('symbolic_link', True)
     def test_readLink_outside_home(self):

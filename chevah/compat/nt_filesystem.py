@@ -640,7 +640,10 @@ class NTFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         if self.isLink(segments):
-            target_segments = self.readLink(segments)
-            return self.exists(target_segments)
+            try:
+                target_segments = self.readLink(segments)
+                return self.exists(target_segments)
+            except CompatError:
+                return False
         else:
             return super(NTFilesystem, self).exists(segments)

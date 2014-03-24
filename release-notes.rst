@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.18.1 - 24/03/2014
+-------------------
+
+* LocalFilesystem.exists() not return false on Windows for broken links.
+
+
 0.18.0 - 24/03/2014
 -------------------
 
