@@ -171,7 +171,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         letter, _ = os.path.splitdrive(path)
         if letter.strip(':').lower() not in self._allowed_drive_letters:
-            message = 'Bad drive letter "%s" for %s' % (letter, path)
+            message = u'Bad drive letter "%s" for %s' % (letter, path)
             raise OSError(errno.EINVAL, message.encode('utf-8'))
 
     def getSegmentsFromRealPath(self, path):
@@ -187,7 +187,8 @@ class NTFilesystem(PosixFilesystemBase):
         path = os.path.abspath(path)
 
         if self._avatar.lock_in_home_folder:
-            # Locked filesystem have no drive.
+            self._checkChildPath(self._getRootPath(), path)
+            # Locked filesystems have no drive.
             tail = path[len(self._getRootPath()):]
             drive = ''
         else:
