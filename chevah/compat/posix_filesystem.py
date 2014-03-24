@@ -408,6 +408,18 @@ class PosixFilesystemBase(object):
                 owner, path, message)),
             )
 
+    def _checkChildPath(self, root, child):
+        """
+        Check that child path is inside root path.
+        """
+        child_strip = os.path.abspath(child)
+        root_strip = os.path.abspath(root)
+
+        if not child_strip.startswith(root_strip):
+            raise CompatError(
+                1018, u'Path "%s" is outside of locked folder "%s"' % (
+                    child, root))
+
     def _parseReparseData(self, raw_reparse_data):
         """
         Parse reparse buffer.

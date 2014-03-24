@@ -1,5 +1,18 @@
-Release notes for chevah.empirical
-==================================
+Release notes for chevah.compat
+===============================
+
+
+0.18.1 - 24/03/2014
+-------------------
+
+* LocalFilesystem.exists() now returns false on Windows for broken links.
+
+
+0.18.0 - 24/03/2014
+-------------------
+
+* Raise CompatError in getSegmentsFromRealPath if path is outside of home
+  folder.
 
 
 0.17.1 - 20/03/2014
