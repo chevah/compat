@@ -642,7 +642,7 @@ class TestDefaultFilesystem(FilesystemTestCase):
         self.assertFalse(stat.S_ISDIR(status.st_mode))
         self.assertFalse(stat.S_ISLNK(status.st_mode))
 
-    #@conditionals.onOSFamily('posix')
+    @conditionals.onOSFamily('posix')
     def test_checkChildPath_unix(self):
         """
         Will raise an error if child is outside of root, or do nothing if
