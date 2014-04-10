@@ -102,8 +102,16 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         """
         process_token = None
         try:
-            process_token = win32security.OpenProcessToken(
-                win32process.GetCurrentProcess(), mode)
+            try:
+                # FIXME:2095:
+                # Implement distinct API for opening currently impersonated
+                # user token.
+                process_token = win32security.OpenThreadToken(
+                    win32api.GetCurrentThread(), mode, 0)
+            except:
+                process_token = win32security.OpenProcessToken(
+                    win32process.GetCurrentProcess(), mode)
+
             yield process_token
         finally:
             if process_token:

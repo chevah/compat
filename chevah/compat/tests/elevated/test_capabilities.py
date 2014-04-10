@@ -76,10 +76,13 @@ class TestProcessCapabilities(ChevahTestCase):
                 text,
                 )
 
+    @conditionals.onOSFamily('posix')
     def test_getCurrentPrivilegesDescription_impersonated(self):
         """
         getCurrentPrivilegesDescription can be used for impersonated accounts
         and will still get full process capabilities.
+
+        The process under impersonated account still has root capabilities.
         """
         username = TEST_ACCOUNT_USERNAME
         token = manufacture.makeToken(
@@ -88,13 +91,30 @@ class TestProcessCapabilities(ChevahTestCase):
         with system_users.executeAsUser(username=username, token=token):
             text = self.capabilities.getCurrentPrivilegesDescription()
 
-        if os.name == 'posix':
-            # On Unix the process under impersonated account still has
-            # root capabilities.
-            self.assertEqual(u'root capabilities enabled.', text)
-        else:
-            # This assertion is fragile. Feel free to improve it.
-            self.assertEqual(u'sdf', text)
+        self.assertEqual(u'root capabilities enabled.', text)
+
+    @conditionals.onOSFamily('nt')
+    def test_getCurrentPrivilegesDescription_impersonated(self):
+        """
+        getCurrentPrivilegesDescription can be used for impersonated accounts
+        and will return the impersonated user's capabilities instead.
+        """
+        username = TEST_ACCOUNT_USERNAME
+        token = manufacture.makeToken(
+            username=username, password=TEST_ACCOUNT_PASSWORD)
+
+        # FIXME:2095:
+        # Unify tests once proper capabilities support is implemented.
+        with system_users.executeAsUser(username=username, token=token):
+            text = self.capabilities.getCurrentPrivilegesDescription()
+
+        # This assertion is fragile. Feel free to improve it.
+        self.assertEqual(
+            u'SeShutdownPrivilege:3, SeChangeNotifyPrivilege:3, '
+            'SeUndockPrivilege:3, SeIncreaseWorkingSetPrivilege:3, '
+            'SeTimeZonePrivilege:3, SeCreateSymbolicLinkPrivilege:3',
+            text,
+            )
 
     @conditionals.onOSFamily('nt')
     def test_elevatePrivileges_impersonated(self):
@@ -116,4 +136,4 @@ class TestProcessCapabilities(ChevahTestCase):
                 update_state = self.capabilities._getPrivilegeState(
                     win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
 
-        self.assertEqual(u'sdf', update_state)
+        self.assertStartsWith(u'enabled', update_state)
