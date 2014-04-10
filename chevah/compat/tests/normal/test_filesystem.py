@@ -10,12 +10,14 @@ import stat
 from mock import patch
 
 from chevah.compat import DefaultAvatar, LocalFilesystem
+from chevah.compat.exceptions import CompatError
 from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.testing import CompatTestCase, conditionals, manufacture
 
 
 class FilesystemTestCase(CompatTestCase):
     """
+    Common code for filesystem tests.
     """
 
     def makeLink(self, segments, cleanup=True):
@@ -129,6 +131,17 @@ class TestDefaultFilesystem(FilesystemTestCase):
         self.filesystem.deleteFile(segments)
 
         self.assertFalse(self.filesystem.exists(segments))
+
+    def test_deleteFile_not_found(self):
+        """
+        Return OSError with errno.ENOENT.
+        """
+        segments = [manufacture.string()]
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.deleteFile(segments)
+
+        self.assertEqual(errno.ENOENT, context.exception.errno)
 
     @conditionals.onCapability('symbolic_link', True)
     def test_deleteFile_file_link(self):
@@ -628,6 +641,41 @@ class TestDefaultFilesystem(FilesystemTestCase):
         self.assertTrue(stat.S_ISREG(status.st_mode))
         self.assertFalse(stat.S_ISDIR(status.st_mode))
         self.assertFalse(stat.S_ISLNK(status.st_mode))
+
+    @conditionals.onOSFamily('posix')
+    def test_checkChildPath_unix(self):
+        """
+        Will raise an error if child is outside of root, or do nothing if
+        child is is root.
+        """
+        self.filesystem._checkChildPath(u'/root/path', '/root/path')
+        self.filesystem._checkChildPath(u'/root/path/', '/root/path')
+        self.filesystem._checkChildPath(u'/root/path', '/root/path/')
+        self.filesystem._checkChildPath(u'/root/path', '/root/path/../path/')
+
+        with self.assertRaises(CompatError):
+            self.filesystem._checkChildPath(u'/root/path', '/')
+
+        with self.assertRaises(CompatError):
+            self.filesystem._checkChildPath(u'/root/path', '/root/path/..')
+
+    @conditionals.onOSFamily('nt')
+    def test_checkChildPath_nt(self):
+        """
+        See: test_checkChildPath_unix
+        """
+        self.filesystem._checkChildPath(u'c:\\root\\path', 'c:\\root\\path')
+        self.filesystem._checkChildPath(u'c:\\root\\path\\', 'c:\\root\\path')
+        self.filesystem._checkChildPath(u'c:\\root\\path', 'c:\\root\\path\\')
+        self.filesystem._checkChildPath(
+            u'c:\\root\\path', 'c:\\root\\path\\..\\path')
+
+        with self.assertRaises(CompatError):
+            self.filesystem._checkChildPath(u'c:\\root\\path', 'c:\\')
+
+        with self.assertRaises(CompatError):
+            self.filesystem._checkChildPath(
+                u'c:\\root\\path', 'c:\\root\\path\\..')
 
 
 class TestPosixFilesystem(CompatTestCase):
@@ -1488,6 +1536,28 @@ class TestLocalFilesystemLocked(CompatTestCase):
             root_path + separator + name + separator + child + separator)
         self.assertEqual([name, child], result)
 
+    @conditionals.onOSFamily('posix')
+    def test_getSegmentsFromRealPath_outside_home_unix(self):
+        """
+        Raise CompatError when path is outside of home.
+        """
+        with self.assertRaises(CompatError):
+            self.locked_filesystem.getSegmentsFromRealPath('/outside/path')
+
+        with self.assertRaises(CompatError):
+            self.locked_filesystem.getSegmentsFromRealPath('../../outside')
+
+    @conditionals.onOSFamily('nt')
+    def test_getSegmentsFromRealPath_outside_home_nt(self):
+        """
+        Raise CompatError when path is outside of home.
+        """
+        with self.assertRaises(CompatError):
+            self.locked_filesystem.getSegmentsFromRealPath('c:\\outside\\home')
+
+        with self.assertRaises(CompatError):
+            self.locked_filesystem.getSegmentsFromRealPath('..\\..\\outside')
+
     def test_exists_false(self):
         """
         exists will return `False` if file or folder does not exists.
@@ -1526,6 +1596,39 @@ class TestLocalFilesystemLocked(CompatTestCase):
             self.assertTrue(self.locked_filesystem.exists(segments))
         finally:
             self.locked_filesystem.deleteFolder(segments)
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_exists_ouside_link(self):
+        """
+        Will return false when link target is outside of home folder.
+        """
+        _, self.test_segments = manufacture.fs.makePathInTemp()
+        link_segments = [self.test_segments[-1]]
+        manufacture.fs.makeLink(
+            target_segments=['z', 'no', 'such'],
+            link_segments=self.test_segments,
+            )
+        # Make sure link was created.
+        self.assertTrue(self.locked_filesystem.isLink(link_segments))
+
+        self.assertFalse(self.locked_filesystem.exists(link_segments))
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_readLink_outside_home(self):
+        """
+        Raise an error when target is outside of locked folder.
+        """
+        _, self.test_segments = manufacture.fs.makePathInTemp()
+        link_segments = [self.test_segments[-1]]
+        manufacture.fs.makeLink(
+            target_segments=['z', 'no', 'such'],
+            link_segments=self.test_segments,
+            )
+        # Make sure link was created.
+        self.assertTrue(self.locked_filesystem.isLink(link_segments))
+
+        with self.assertRaises(CompatError):
+            self.locked_filesystem.readLink(link_segments)
 
     def test_touch(self):
         """

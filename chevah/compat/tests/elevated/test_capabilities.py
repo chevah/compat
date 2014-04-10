@@ -94,7 +94,7 @@ class TestProcessCapabilities(ChevahTestCase):
         self.assertEqual(u'root capabilities enabled.', text)
 
     @conditionals.onOSFamily('nt')
-    def test_getCurrentPrivilegesDescription_impersonated(self):
+    def test_getCurrentPrivilegesDescription_impersonated_nt(self):
         """
         getCurrentPrivilegesDescription can be used for impersonated accounts
         and will return the impersonated user's capabilities instead.

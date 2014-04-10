@@ -60,16 +60,19 @@ class UnixFilesystem(PosixFilesystemBase):
             return unicode(
                 self._root_handler.path.rstrip('/') + relative_path)
 
-    def getSegmentsFromRealPath(self, real_path):
-        '''See `ILocalFilesystem`.'''
+    def getSegmentsFromRealPath(self, path):
+        """
+        See `ILocalFilesystem`.
+        """
         segments = []
-        if real_path is None or real_path is u'':
+        if path is None or path is u'':
             return segments
 
         head = True
-        tail = os.path.abspath(real_path)
+        tail = os.path.abspath(path)
 
         if self._avatar.lock_in_home_folder:
+            self._checkChildPath(self._root_handler.path, tail)
             tail = tail[len(self._root_handler.path):]
 
         while tail and head != u'/':

@@ -299,7 +299,8 @@ class TestPosixFilesystem(FilesystemTestCase):
     @conditionals.onCapability('symbolic_link', True)
     def test_makeLink_invalid_link(self):
         """
-        Raise an error when link can not be created under impersonated account.
+        Raise an error when link can not be created under impersonated
+        account.
         """
         with self.assertRaises(OSError):
             manufacture.fs.makeLink(
