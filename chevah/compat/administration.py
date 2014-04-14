@@ -408,6 +408,11 @@ class OSAdministration(object):
             system_users._createLocalProfile(
                 username=username, token=token)
 
+    def addUserRights(self, username, right):
+        """
+        """
+        system_users.addUserRight(username, right)
+
     def setUserPassword(self, user):
         """
         Set a password for the user. The password is an attribute of the

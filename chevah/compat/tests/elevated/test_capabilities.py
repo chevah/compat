@@ -112,14 +112,14 @@ class TestProcessCapabilities(ChevahTestCase):
         self.assertEqual(
             u'SeShutdownPrivilege:3, SeChangeNotifyPrivilege:3, '
             'SeUndockPrivilege:3, SeIncreaseWorkingSetPrivilege:3, '
-            'SeTimeZonePrivilege:3, SeCreateSymbolicLinkPrivilege:3',
+            'SeTimeZonePrivilege:3',
             text,
             )
 
     @conditionals.onOSFamily('nt')
     def test_elevatePrivileges_impersonated(self):
         """
-        Can elevate privileges while running under impersonated account.
+        Cannot elevate privileges while running under impersonated account.
         """
         import win32security
 
@@ -127,13 +127,13 @@ class TestProcessCapabilities(ChevahTestCase):
         token = manufacture.makeToken(
             username=username, password=TEST_ACCOUNT_PASSWORD)
         initial_state = self.capabilities._getPrivilegeState(
-            win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
+            win32security.SE_UNDOCK_NAME)
         self.assertEqual(u'present', initial_state)
 
         with system_users.executeAsUser(username=username, token=token):
             with self.capabilities.elevatePrivileges(
-                    win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
+                    win32security.SE_UNDOCK_NAME):
                 update_state = self.capabilities._getPrivilegeState(
-                    win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
+                    win32security.SE_UNDOCK_NAME)
 
         self.assertStartsWith(u'enabled', update_state)
