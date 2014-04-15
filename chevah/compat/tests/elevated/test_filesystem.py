@@ -440,6 +440,7 @@ class SymbolicLinkTestCase(ChevahTestCase):
             name=cls.username,
             password=cls.password,
             home_group=TEST_ACCOUNT_GROUP,
+            home_path=u'/home/%s' % cls.username,
             uid=3000 + manufacture.number(),
             gid=TEST_ACCOUNT_GID,
             )

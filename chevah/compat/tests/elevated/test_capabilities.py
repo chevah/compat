@@ -150,7 +150,7 @@ class TestProcessCapabilities(ChevahTestCase):
         token = manufacture.makeToken(
             username=username, password=TEST_ACCOUNT_PASSWORD)
         initial_state = self.capabilities._getPrivilegeState(
-            win32security.SE_UNDOCK_NAME)
+            win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
         self.assertEqual(u'present', initial_state)
 
         with system_users.executeAsUser(username=username, token=token):
@@ -158,4 +158,4 @@ class TestProcessCapabilities(ChevahTestCase):
                 with self.capabilities.elevatePrivileges(
                         win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
                     self.capabilities._getPrivilegeState(
-                        win32security.SE_UNDOCK_NAME)
+                        win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
