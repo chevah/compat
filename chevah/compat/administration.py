@@ -761,9 +761,6 @@ class OSAdministrationWindows(OSAdministration):
     Windows specific implementation for OS administration.
     """
 
-    import win32security as w32sec
-    w32sec
-
     def grantUserRight(self, user, right):
         """
         See: `OSAdministration`.
@@ -793,15 +790,16 @@ class OSAdministrationWindows(OSAdministration):
         """
         Context manager for opening LSA policy token in ALL ACCESS mode.
         """
+        import win32security
         policy_handle = None
         try:
-            policy_handle = self.w32sec.LsaOpenPolicy(
-                '', self.w32sec.POLICY_ALL_ACCESS)
+            policy_handle = win32security.LsaOpenPolicy(
+                '', win32security.POLICY_ALL_ACCESS)
 
             yield policy_handle
         finally:
             if policy_handle:
-                self.w32sec.LsaClose(policy_handle)
+                win32security.LsaClose(policy_handle)
 
     def _getUserSID(self, username):
         """
@@ -809,10 +807,11 @@ class OSAdministrationWindows(OSAdministration):
 
         Raises an error if user could not be found.
         """
+        import win32security
         try:
-            result = self.w32sec.LookupAccountName('', username)
+            result = win32security.LookupAccountName('', username)
             user_sid, _, _ = result
-        except self.w32sec.error:
+        except win32security.error:
             message = u'User %s could not be found.' % (username)
             raise AssertionError(message.encode('utf-8'))
 
@@ -823,12 +822,13 @@ class OSAdministrationWindows(OSAdministration):
         Returns a tuple with all the user's currently available
         rights/privileges.
         """
+        import win32security
         user_sid = self._getUserSID(username)
         with self._openLSAPolicy() as policy_handle:
             try:
-                rights = self.w32sec.LsaEnumerateAccountRights(
+                rights = win32security.LsaEnumerateAccountRights(
                     policy_handle, user_sid)
-            except self.w32sec.error:
+            except win32security.error:
                 rights = ()
 
         return rights
@@ -837,18 +837,20 @@ class OSAdministrationWindows(OSAdministration):
         """
         Grants `rights` to user with `username`.
         """
+        import win32security
         user_sid = self._getUserSID(username)
         with self._openLSAPolicy() as policy_handle:
-            self.w32sec.LsaAddAccountRights(
+            win32security.LsaAddAccountRights(
                 policy_handle, user_sid, rights)
 
     def _removeUserRights(self, username, rights):
         """
         Revokes `rights` from user with `username`.
         """
+        import win32security
         user_sid = self._getUserSID(username)
         with self._openLSAPolicy() as policy_handle:
-            self.w32sec.LsaRemoveAccountRights(
+            win32security.LsaRemoveAccountRights(
                 policy_handle, user_sid, 0, rights)
 
 

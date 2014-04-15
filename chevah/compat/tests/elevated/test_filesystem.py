@@ -15,6 +15,7 @@ from chevah.compat.testing import (
     ChevahTestCase,
     conditionals,
     manufacture,
+    TEST_ACCOUNT_GID,
     TEST_ACCOUNT_GROUP,
     TEST_ACCOUNT_GROUP_OTHER,
     TEST_ACCOUNT_USERNAME,
@@ -439,6 +440,8 @@ class SymbolicLinkTestCase(ChevahTestCase):
             name=cls.username,
             password=cls.password,
             home_group=TEST_ACCOUNT_GROUP,
+            uid=3000 + manufacture.number(),
+            gid=TEST_ACCOUNT_GID,
             )
         os_administration.addUser(cls.user)
 
@@ -548,3 +551,5 @@ class TestSymbolicLinkPosix(SymbolicLinkTestCase, SymbolicLinkMixin):
     def setUpClass(cls):
         if cls.os_family != 'posix':
             raise cls.skipTest()
+
+        super(TestSymbolicLinkPosix, cls).setUpClass()
