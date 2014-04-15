@@ -55,7 +55,9 @@ def _get_euid_and_egid(username_encoded):
 
 def _change_effective_privileges(username=None, euid=None, egid=None,
                                  groups=None):
-    '''Chage current process effective user and group.'''
+    """
+    Change current process effective user and group.
+    """
     if username:
         username_encoded = username.encode('utf-8')
         try:
@@ -410,7 +412,7 @@ class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
 
     This is the account under which the process is executed.
     It has full access to the filesystem.
-    It does not uses impersoantion.
+    It does not use impersonation.
     """
 
     implements(IFileSystemAvatar)

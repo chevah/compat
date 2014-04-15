@@ -24,10 +24,14 @@ from chevah.compat.testing import (
     )
 from chevah.empirical.filesystem import LocalTestFilesystem
 from chevah.compat.administration import os_administration
-from chevah.compat.exceptions import CompatError, CompatException
+from chevah.compat.exceptions import (
+    CompatError,
+    CompatException,
+    )
+from chevah.compat.testing import CompatTestCase
 
 
-class FilesystemTestCase(ChevahTestCase):
+class FilesystemTestCase(CompatTestCase):
     """
     Common test case for all filesystem tests.
     """
@@ -409,29 +413,46 @@ class SymbolicLinkTestCase(ChevahTestCase):
 
         super(SymbolicLinkTestCase, cls).setUpClass()
 
-        username = manufacture.string()
-        password = manufacture.string()
+        cls.username = manufacture.string()
+        cls.password = manufacture.string()
+
+        cls.setUpTestUser()
+
         token = manufacture.makeToken(
-            username=username, password=password)
+            username=cls.username, password=cls.password)
         home_folder_path = system_users.getHomeFolder(
-            username=username, token=token)
+            username=cls.username, token=token)
+
         cls.avatar = manufacture.makeFilesystemOSAvatar(
-            name=username,
+            name=cls.username,
             home_folder_path=home_folder_path,
             token=token,
             )
         cls.filesystem = LocalFilesystem(avatar=cls.avatar)
+
+    @classmethod
+    def setUpTestUser(cls):
+        """
+        Set-up OS user for symbolic link testing.
+        """
         cls.user = TestUser(
-            name=username,
-            password=password,
+            name=cls.username,
+            password=cls.password,
             home_group=TEST_ACCOUNT_GROUP,
             )
         os_administration.addUser(cls.user)
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownTestUser(cls):
+        """
+        Tear down OS user used for testing.
+        """
+        os_administration.revokeAllUserRights(cls.user)
         os_administration.deleteUser(cls.user)
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.tearDownTestUser()
         super(SymbolicLinkTestCase, cls).tearDownClass()
 
     def setUp(self):
@@ -441,8 +462,9 @@ class SymbolicLinkTestCase(ChevahTestCase):
         test_filesystem.cleanHomeFolder()
 
 
-class TestSymbolicLink(SymbolicLinkTestCase):
+class SymbolicLinkMixin(object):
     """
+    Unit tests for `makeLink`.
     """
 
     def test_makeLink_good(self):
@@ -496,18 +518,33 @@ class TestSymbolicLink(SymbolicLinkTestCase):
                 )
 
 
-class TestSymbolicLinkWindows(SymbolicLinkTestCase):
+class TestSymbolicLinkWindows(SymbolicLinkTestCase, SymbolicLinkMixin):
     """
+    Windows specific unit tests for `makeLink`.
     """
 
     @classmethod
     def setUpClass(cls):
-        if cls.os_name == 'nt':
+        if cls.os_family != 'nt':
             raise cls.skipTest()
 
         super(TestSymbolicLinkWindows, cls).setUpClass()
 
-        import win32security
-        os_administration.addUserRights(
-            cls.avatar.name, win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
+    @classmethod
+    def setUpTestUser(cls):
+        super(TestSymbolicLinkWindows, cls).setUpTestUser()
 
+        import win32security
+        os_administration.grantUserRight(
+            cls.user, win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
+
+
+class TestSymbolicLinkPosix(SymbolicLinkTestCase, SymbolicLinkMixin):
+    """
+    Unit tests for `makeLink`.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        if cls.os_family != 'posix':
+            raise cls.skipTest()

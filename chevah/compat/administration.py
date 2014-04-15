@@ -17,6 +17,7 @@ Default groups and users have a maximum length of 9. Check `lsattr -El sys0`
 for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 
 """
+from contextlib import contextmanager
 import os
 import random
 import subprocess
@@ -65,7 +66,8 @@ class OSAdministration(object):
         self.name = self.getName()
         self.fs = LocalFilesystem(SuperAvatar())
 
-    def getName(self):
+    @classmethod
+    def getName(cls):
         """
         Return the name of the platform.
         """
@@ -408,10 +410,23 @@ class OSAdministration(object):
             system_users._createLocalProfile(
                 username=username, token=token)
 
-    def addUserRights(self, username, right):
+    def grantUserRight(self, user, right):
         """
+        Grant `right` to `user` if not already granted.
         """
-        system_users.addUserRight(username, right)
+        pass
+
+    def revokeUserRight(self, user, right):
+        """
+        Revokes `right` from `user` if previously granted.
+        """
+        pass
+
+    def revokeAllUserRights(self, user):
+        """
+        Revokes all rights from `user`.
+        """
+        pass
 
     def setUserPassword(self, user):
         """
@@ -668,7 +683,7 @@ class OSAdministration(object):
         value_to_replace=None,
             ):
         """
-        Update entry 'name' with a new value or an appened value.
+        Update entry 'name' with a new value or an appended value.
         Field is the number of entry filed to update, counting with 1.
         """
         exists = False
@@ -741,5 +756,104 @@ class OSAdministration(object):
         return content
 
 
+class OSAdministrationWindows(OSAdministration):
+    """
+    Windows specific implementation for OS administration.
+    """
+
+    import win32security as w32sec
+    w32sec
+
+    def grantUserRight(self, user, right):
+        """
+        See: `OSAdministration`.
+        """
+        rights = self._getUserRights(user.name)
+        if not right in rights:
+            self._addUserRights(user.name, [right])
+
+    def revokeUserRight(self, user, right):
+        """
+        See: `OSAdministration`.
+        """
+        rights = self._getUserRights(user.name)
+        if right in rights:
+            self._removeUserRights(user.name, [right])
+
+    def revokeAllUserRights(self, user):
+        """
+        See: `OSAdministration`.
+        """
+        rights = self._getUserRights(user.name)
+        if rights:
+            self._removeUserRights(user.name, rights)
+
+    @contextmanager
+    def _openLSAPolicy(self):
+        """
+        Context manager for opening LSA policy token in ALL ACCESS mode.
+        """
+        policy_handle = None
+        try:
+            policy_handle = self.w32sec.LsaOpenPolicy(
+                '', self.w32sec.POLICY_ALL_ACCESS)
+
+            yield policy_handle
+        finally:
+            if policy_handle:
+                self.w32sec.LsaClose(policy_handle)
+
+    def _getUserSID(self, username):
+        """
+        Return the security id for user with `username`.
+
+        Raises an error if user could not be found.
+        """
+        try:
+            result = self.w32sec.LookupAccountName('', username)
+            user_sid, _, _ = result
+        except self.w32sec.error:
+            message = u'User %s could not be found.' % (username)
+            raise AssertionError(message.encode('utf-8'))
+
+        return user_sid
+
+    def _getUserRights(self, username):
+        """
+        Returns a tuple with all the user's currently available
+        rights/privileges.
+        """
+        user_sid = self._getUserSID(username)
+        with self._openLSAPolicy() as policy_handle:
+            try:
+                rights = self.w32sec.LsaEnumerateAccountRights(
+                    policy_handle, user_sid)
+            except self.w32sec.error:
+                rights = ()
+
+        return rights
+
+    def _addUserRights(self, username, rights):
+        """
+        Grants `rights` to user with `username`.
+        """
+        user_sid = self._getUserSID(username)
+        with self._openLSAPolicy() as policy_handle:
+            self.w32sec.LsaAddAccountRights(
+                policy_handle, user_sid, rights)
+
+    def _removeUserRights(self, username, rights):
+        """
+        Revokes `rights` from user with `username`.
+        """
+        user_sid = self._getUserSID(username)
+        with self._openLSAPolicy() as policy_handle:
+            self.w32sec.LsaRemoveAccountRights(
+                policy_handle, user_sid, 0, rights)
+
+
 # Create the singleton.
-os_administration = OSAdministration()
+if OSAdministration.getName() == 'windows':
+    os_administration = OSAdministrationWindows()
+else:
+    os_administration = OSAdministration()

@@ -6,6 +6,7 @@ Capabilities detection tests for accounts with elevated permissions.
 import os
 
 from chevah.compat import process_capabilities, system_users
+from chevah.compat.exceptions import AdjustPrivilegeException
 from chevah.compat.testing import (
     conditionals,
     manufacture,
@@ -111,15 +112,16 @@ class TestProcessCapabilities(ChevahTestCase):
         # This assertion is fragile. Feel free to improve it.
         self.assertEqual(
             u'SeShutdownPrivilege:3, SeChangeNotifyPrivilege:3, '
-            'SeUndockPrivilege:3, SeIncreaseWorkingSetPrivilege:3, '
-            'SeTimeZonePrivilege:3',
+            u'SeUndockPrivilege:3, SeIncreaseWorkingSetPrivilege:3, '
+            u'SeTimeZonePrivilege:3',
             text,
             )
 
     @conditionals.onOSFamily('nt')
     def test_elevatePrivileges_impersonated(self):
         """
-        Cannot elevate privileges while running under impersonated account.
+        Can elevate privileges while running under impersonated account if
+        privilege is already present.
         """
         import win32security
 
@@ -137,3 +139,25 @@ class TestProcessCapabilities(ChevahTestCase):
                     win32security.SE_UNDOCK_NAME)
 
         self.assertStartsWith(u'enabled', update_state)
+
+    @conditionals.onOSFamily('nt')
+    def test_elevatePrivileges_impersonated_not_present(self):
+        """
+        Trying to elevate privilege under impersonated account will raise
+        an error if privilege is not present.
+        """
+        import win32security
+
+        username = TEST_ACCOUNT_USERNAME
+        token = manufacture.makeToken(
+            username=username, password=TEST_ACCOUNT_PASSWORD)
+        initial_state = self.capabilities._getPrivilegeState(
+            win32security.SE_UNDOCK_NAME)
+        self.assertEqual(u'present', initial_state)
+
+        with system_users.executeAsUser(username=username, token=token):
+            with self.assertRaises(AdjustPrivilegeException):
+                with self.capabilities.elevatePrivileges(
+                        win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
+                    self.capabilities._getPrivilegeState(
+                        win32security.SE_UNDOCK_NAME)

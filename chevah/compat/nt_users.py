@@ -270,28 +270,6 @@ class NTUsers(CompatUsers):
             win32security.LOGON32_PROVIDER_DEFAULT,
             )
 
-    def addUserRight(self, username, right):
-        """
-        """
-        result = win32security.LookupAccountName('', username)
-        user_sid, _, _ = result
-
-        policy_handle = win32security.LsaOpenPolicy(
-            '', win32security.POLICY_ALL_ACCESS)
-        try:
-            try:
-                rights = win32security.LsaEnumerateAccountRights(
-                    policy_handle, user_sid)
-            except:
-                rights = ()
-
-            if not right in rights:
-                win32security.LsaAddAccountRights(
-                    policy_handle, user_sid, [right])
-        finally:
-            if policy_handle:
-                win32security.LsaClose(policy_handle)
-
 
 class _ExecuteAsUser(object):
     """

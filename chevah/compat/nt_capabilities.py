@@ -97,6 +97,9 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         Context manager for opening current process token with specified
         access mode.
 
+        It will revert to current thread token if unable to open process
+        token.
+
         Valid access modes:
         http://msdn.microsoft.com/en-us/library/windows/desktop/aa374905.aspx
         """
@@ -266,7 +269,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
 
     def _isPrivilegeStateAvailable(self, state):
         """
-        Retrun True if state is one of the values in which it is available
+        Return True if state is one of the values in which it is available
         to the process.
         """
         if state in [u'present', u'enabled', u'enabled-by-default']:

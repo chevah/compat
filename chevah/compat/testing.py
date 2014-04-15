@@ -19,6 +19,7 @@ from chevah.compat.avatar import (
     FilesystemApplicationAvatar,
     FilesystemOSAvatar,
     )
+from chevah.compat.exceptions import CompatError
 
 
 # Shut up the linter.
@@ -191,6 +192,24 @@ class CompatTestCase(ChevahTestCase):
             return True
         else:
             return False
+
+    def assertCompatError(self, expected_id, actual_error):
+        """
+        Raise an error if `actual_error` is not a `CompatError` instance.
+
+        Raise an error if `expected_id` does not match event_id of
+        `actual_error`.
+        """
+        if not isinstance(actual_error, CompatError):
+            values = (actual_error, type(actual_error))
+            message = u'Error %s not CompatError but %s' % values
+            raise AssertionError(message.encode('utf-8'))
+
+        actual_id = getattr(actual_error, 'event_id', None)
+        if expected_id != actual_id:
+            values = (actual_error, str(expected_id), str(actual_id))
+            message = u'Error id for %s is not %s, but %s.' % values
+            raise AssertionError(message.encode('utf-8'))
 
 
 class CompatManufacture(ChevahCommonsFactory):
