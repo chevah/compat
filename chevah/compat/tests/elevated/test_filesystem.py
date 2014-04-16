@@ -12,7 +12,6 @@ from chevah.compat import (
     SuperAvatar,
     )
 from chevah.compat.testing import (
-    ChevahTestCase,
     conditionals,
     manufacture,
     TEST_ACCOUNT_GID,
@@ -46,23 +45,87 @@ class FilesystemTestCase(CompatTestCase):
 
         super(FilesystemTestCase, cls).setUpClass()
 
-        user = TEST_ACCOUNT_USERNAME
-        password = TEST_ACCOUNT_PASSWORD
-        token = manufacture.makeToken(username=user, password=password)
+        cls.setUpTestUser()
+
+        token = manufacture.makeToken(
+            username=cls.user.name, password=cls.user.password)
         home_folder_path = system_users.getHomeFolder(
-            username=user, token=token)
+            username=cls.user.name, token=token)
         cls.avatar = manufacture.makeFilesystemOSAvatar(
-            name=user,
+            name=cls.user.name,
             home_folder_path=home_folder_path,
             token=token,
             )
         cls.filesystem = LocalFilesystem(avatar=cls.avatar)
+
+    @classmethod
+    def setUpTestUser(cls):
+        """
+        Set-up OS user for symbolic link testing.
+        """
+        cls.user = TestUser(
+            name=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD
+            )
+
+    @classmethod
+    def tearDownTestUser(cls):
+        """
+        Tear down OS user used for testing.
+        """
+        # User deletion is handled globally.
+        pass
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tearDownTestUser()
+        super(FilesystemTestCase, cls).tearDownClass()
 
     def setUp(self):
         super(FilesystemTestCase, self).setUp()
         # Initialized only to clean the home folder.
         test_filesystem = LocalTestFilesystem(avatar=self.avatar)
         test_filesystem.cleanHomeFolder()
+
+
+class SymbolicLinkTestCase(FilesystemTestCase):
+    """
+    Common test case for symbolic link(s) tests.
+    """
+
+    @classmethod
+    def setUpTestUser(cls):
+        """
+        Set-up OS user for symbolic link testing.
+
+        User requires SE_CREATE_SYMBOLIC_LINK privilege on Windows OSes
+        in order to be able to create symbolic links. We are using a custom
+        user for which we make sure the right is present for these tests.
+        """
+        rights = None
+        if cls.os_family == 'nt':
+            import win32security
+            rights = (win32security.SE_CREATE_SYMBOLIC_LINK_NAME,)
+
+        username = manufacture.string()
+        cls.user = TestUser(
+            name=username,
+            password=manufacture.string(),
+            home_group=TEST_ACCOUNT_GROUP,
+            home_path=u'/home/%s' % username,
+            posix_uid=3000 + manufacture.number(),
+            posix_gid=TEST_ACCOUNT_GID,
+            windows_required_rights=rights,
+            )
+
+        os_administration.addUser(cls.user)
+
+    @classmethod
+    def tearDownTestUser(cls):
+        """
+        Tear down OS user used for testing.
+        """
+        os_administration.deleteUser(cls.user)
 
 
 class TestPosixFilesystem(FilesystemTestCase):
@@ -400,77 +463,12 @@ class TestNTFilesystem(FilesystemTestCase):
         self.assertContains('test-message', context.exception.message)
 
 
-class SymbolicLinkTestCase(ChevahTestCase):
-    """
-    Common test case for symbolic link(s) tests.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        # FIXME:924:
-        # Disabled when we can not find the home folder path.
-        if not process_capabilities.get_home_folder:
-            raise cls.skipTest()
-
-        super(SymbolicLinkTestCase, cls).setUpClass()
-
-        cls.username = manufacture.string()
-        cls.password = manufacture.string()
-
-        cls.setUpTestUser()
-
-        token = manufacture.makeToken(
-            username=cls.username, password=cls.password)
-        home_folder_path = system_users.getHomeFolder(
-            username=cls.username, token=token)
-
-        cls.avatar = manufacture.makeFilesystemOSAvatar(
-            name=cls.username,
-            home_folder_path=home_folder_path,
-            token=token,
-            )
-        cls.filesystem = LocalFilesystem(avatar=cls.avatar)
-
-    @classmethod
-    def setUpTestUser(cls):
-        """
-        Set-up OS user for symbolic link testing.
-        """
-        cls.user = TestUser(
-            name=cls.username,
-            password=cls.password,
-            home_group=TEST_ACCOUNT_GROUP,
-            home_path=u'/home/%s' % cls.username,
-            uid=3000 + manufacture.number(),
-            gid=TEST_ACCOUNT_GID,
-            )
-        os_administration.addUser(cls.user)
-
-    @classmethod
-    def tearDownTestUser(cls):
-        """
-        Tear down OS user used for testing.
-        """
-        os_administration.revokeAllUserRights(cls.user)
-        os_administration.deleteUser(cls.user)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.tearDownTestUser()
-        super(SymbolicLinkTestCase, cls).tearDownClass()
-
-    def setUp(self):
-        super(SymbolicLinkTestCase, self).setUp()
-        # Initialized only to clean the home folder.
-        test_filesystem = LocalTestFilesystem(avatar=self.avatar)
-        test_filesystem.cleanHomeFolder()
-
-
-class SymbolicLinkMixin(object):
+class TestSymbolicLink(SymbolicLinkTestCase):
     """
     Unit tests for `makeLink`.
     """
 
+    @conditionals.onCapability('symbolic_link', True)
     def test_makeLink_good(self):
         """
         Can create link under impersonated account.
@@ -520,37 +518,3 @@ class SymbolicLinkMixin(object):
                 target_segments=self.filesystem.temp_segments,
                 link_segments=['no-such', 'link'],
                 )
-
-
-class TestSymbolicLinkWindows(SymbolicLinkTestCase, SymbolicLinkMixin):
-    """
-    Windows specific unit tests for `makeLink`.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        if cls.os_family != 'nt':
-            raise cls.skipTest()
-
-        super(TestSymbolicLinkWindows, cls).setUpClass()
-
-    @classmethod
-    def setUpTestUser(cls):
-        super(TestSymbolicLinkWindows, cls).setUpTestUser()
-
-        import win32security
-        os_administration.grantUserRight(
-            cls.user, win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
-
-
-class TestSymbolicLinkPosix(SymbolicLinkTestCase, SymbolicLinkMixin):
-    """
-    Unit tests for `makeLink`.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        if cls.os_family != 'posix':
-            raise cls.skipTest()
-
-        super(TestSymbolicLinkPosix, cls).setUpClass()

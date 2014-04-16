@@ -147,12 +147,17 @@ class TestSystemUsers(SystemUsersTestCase):
         password = u'no-home'
         home_path = None
         user = TestUser(
-            name=username, uid=None, password=password, home_path=home_path)
+            name=username,
+            posix_uid=None,
+            password=password,
+            home_path=home_path,
+            create_profile=False,
+            )
 
         try:
             # We don't want to create the profile here since this is
             # what we are testing.
-            os_administration._addUser_windows(user, create_profile=False)
+            os_administration.addUser(user)
             token = manufacture.makeToken(
                 username=username, password=password)
 

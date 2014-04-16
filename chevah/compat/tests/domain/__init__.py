@@ -26,6 +26,7 @@ TEST_USERS = [
         password=TEST_ACCOUNT_PASSWORD_DOMAIN,
         domain=TEST_DOMAIN,
         pdc=TEST_PDC,
+        create_profile=True,
         )
     ]
 

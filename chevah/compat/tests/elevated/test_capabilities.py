@@ -109,11 +109,9 @@ class TestProcessCapabilities(ChevahTestCase):
         with system_users.executeAsUser(username=username, token=token):
             text = self.capabilities.getCurrentPrivilegesDescription()
 
-        # This assertion is fragile. Feel free to improve it.
-        self.assertContains(
-            u'SeChangeNotifyPrivilege:3, SeIncreaseWorkingSetPrivilege:3',
-            text,
-            )
+        # These assertion are fragile. Feel free to improve it.
+        self.assertContains(u'SeChangeNotifyPrivilege:3', text)
+        self.assertContains(u'SeIncreaseWorkingSetPrivilege:3', text)
 
     @conditionals.onOSFamily('nt')
     def test_elevatePrivileges_impersonated(self):

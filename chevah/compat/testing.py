@@ -55,7 +55,25 @@ TEST_PDC = u'\\\\CHEVAH-DC'
 TEST_DOMAIN = u'chevah'
 TEST_ACCOUNT_USERNAME_DOMAIN = u'domain test-user'
 TEST_ACCOUNT_PASSWORD_DOMAIN = u'qwe123QWE'
-TEST_ACCOUNT_GROUP_DOMAIN = 'domain test_group'
+TEST_ACCOUNT_GROUP_DOMAIN = u'domain test_group'
+
+
+def _sanitize_name_aix(candidate):
+    """
+    Return valid user/group name for AIX from `candidate`.
+
+    By default aix is limited to 8 characters without spaces.
+    """
+    return unicode(unidecode(candidate)).replace(' ', '_')[:8]
+
+
+def _sanitize_name_windows(candidate):
+    """
+    Return valid user/group name for Windows OSs from `candidate.
+    """
+    # FIXME:927:
+    # On Windows, we can't delete home folders with unicode names.
+    return unicode(unidecode(candidate))
 
 
 class TestUser(object):
@@ -63,10 +81,23 @@ class TestUser(object):
     An object storing all user information.
     """
 
+    @classmethod
+    def sanitize_name(cls, name):
+        """
+        Return name sanitized for current OS.
+        """
+        if sys.platform.startswith('aix'):
+            return _sanitize_name_aix(name)
+        elif sys.platform.startswith('win'):
+            return _sanitize_name_windows(name)
+
+        return name
+
     def __init__(
-        self, name, uid=None, gid=None, home_path=None,
+        self, name, posix_uid=None, posix_gid=None, home_path=None,
         home_group=None, shell=None, shadow=None, password=None,
-        domain=None, pdc=None, primary_group_name=None
+        domain=None, pdc=None, primary_group_name=None, create_profile=False,
+        windows_required_rights=None,
             ):
         if home_path is None:
             home_path = u'/tmp'
@@ -77,12 +108,12 @@ class TestUser(object):
         if shadow is None:
             shadow = '!'
 
-        if gid is None:
-            gid = uid
+        if posix_gid is None:
+            posix_gid = posix_uid
 
-        self.name = name
-        self.uid = uid
-        self.gid = gid
+        self._os_name = self.sanitize_name(name)
+        self.uid = posix_uid
+        self.gid = posix_gid
         self.home_path = home_path
         self.home_group = home_group
         self.shell = shell
@@ -91,6 +122,15 @@ class TestUser(object):
         self.domain = domain
         self.pdc = pdc
         self.primary_group_name = primary_group_name
+        self.windows_create_profile = create_profile
+        self.windows_required_rights = windows_required_rights
+
+    @property
+    def name(self):
+        """
+        Return OS sanitized name for user.
+        """
+        return self._os_name
 
 
 class TestGroup(object):
@@ -98,8 +138,19 @@ class TestGroup(object):
     An object storing all group information.
     """
 
-    def __init__(self, name, gid=None, members=None, pdc=None):
+    @classmethod
+    def sanitize_name(cls, group):
+        """
+        Return name sanitized for current OS.
+        """
+        if sys.platform.startswith('aix'):
+            return _sanitize_name_aix(group)
+        elif sys.platform.startswith('win'):
+            return _sanitize_name_windows(group)
 
+        return group
+
+    def __init__(self, name, gid=None, members=None, pdc=None):
         if members is None:
             members = []
 
@@ -109,24 +160,20 @@ class TestGroup(object):
         self.pdc = pdc
 
 
-if sys.platform.startswith('aix'):
-    # By default aix is limited to 8 characters without spaces.
-    fix_username = lambda name: unicode(unidecode(name)).replace(' ', '_')[:8]
-    fix_groupname = fix_username
-elif sys.platform.startswith('win'):
-    # FIXME:927:
-    # On Windows, we can't delete home folders with unicode names.
-    fix_username = lambda name: unicode(unidecode(name))
-    fix_groupname = fix_username
-else:
-    fix_username = lambda name: name
-    fix_groupname = fix_username
+TEST_ACCOUNT_USERNAME = TestUser.sanitize_name(TEST_ACCOUNT_USERNAME)
+TEST_ACCOUNT_GROUP = TestGroup.sanitize_name(TEST_ACCOUNT_GROUP)
 
-TEST_ACCOUNT_USERNAME = fix_username(TEST_ACCOUNT_USERNAME)
-TEST_ACCOUNT_GROUP = fix_groupname(TEST_ACCOUNT_GROUP)
-TEST_ACCOUNT_USERNAME_OTHER = fix_username(TEST_ACCOUNT_USERNAME_OTHER)
-TEST_ACCOUNT_GROUP_OTHER = fix_groupname(TEST_ACCOUNT_GROUP_OTHER)
-TEST_ACCOUNT_GROUP_ANOTHER = fix_groupname(TEST_ACCOUNT_GROUP_ANOTHER)
+TEST_ACCOUNT_USERNAME_OTHER = TestUser.sanitize_name(
+    TEST_ACCOUNT_USERNAME_OTHER)
+TEST_ACCOUNT_GROUP_OTHER = TestGroup.sanitize_name(TEST_ACCOUNT_GROUP_OTHER)
+TEST_ACCOUNT_GROUP_ANOTHER = TestGroup.sanitize_name(
+    TEST_ACCOUNT_GROUP_ANOTHER)
+
+TEST_ACCOUNT_USERNAME_DOMAIN = TestUser.sanitize_name(
+    TEST_ACCOUNT_USERNAME_DOMAIN)
+TEST_ACCOUNT_GROUP_DOMAIN = TestGroup.sanitize_name(
+    TEST_ACCOUNT_GROUP_DOMAIN)
+
 
 if sys.platform.startswith('sunos'):
     TEST_ACCOUNT_HOME_PATH = u'/export/home/' + TEST_ACCOUNT_USERNAME
@@ -139,8 +186,8 @@ else:
 TEST_USERS = [
     TestUser(
         name=TEST_ACCOUNT_USERNAME,
-        uid=TEST_ACCOUNT_UID,
-        gid=TEST_ACCOUNT_GID,
+        posix_uid=TEST_ACCOUNT_UID,
+        posix_gid=TEST_ACCOUNT_GID,
         primary_group_name=TEST_ACCOUNT_GROUP,
         home_path=TEST_ACCOUNT_HOME_PATH,
         home_group=TEST_ACCOUNT_GROUP,
@@ -148,8 +195,8 @@ TEST_USERS = [
         ),
     TestUser(
         name=TEST_ACCOUNT_USERNAME_OTHER,
-        uid=TEST_ACCOUNT_UID_OTHER,
-        gid=TEST_ACCOUNT_GID_OTHER,
+        posix_uid=TEST_ACCOUNT_UID_OTHER,
+        posix_gid=TEST_ACCOUNT_GID_OTHER,
         primary_group_name=TEST_ACCOUNT_GROUP_OTHER,
         home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
         password=TEST_ACCOUNT_PASSWORD_OTHER,

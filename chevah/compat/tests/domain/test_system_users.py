@@ -139,17 +139,17 @@ class TestSystemUsers(CompatTestCase):
 
         user = TestUser(
             name=username,
-            uid=None,
             password=password,
             home_path=home_path,
             domain=domain,
             pdc=pdc,
+            create_profile=True,
             )
 
         try:
             # We don't want to create the profile here since this is
             # what we are testing.
-            os_administration._addUser_windows(user, create_profile=False)
+            os_administration.addUser(user)
             token = mk.makeToken(username=username, password=password)
 
             upn = u'%s@%s' % (username, domain)

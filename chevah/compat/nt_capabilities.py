@@ -97,7 +97,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         Context manager for opening current process token with specified
         access mode.
 
-        It will revert to current thread token if unable to open process
+        It will revert to process token if unable to open current thread
         token.
 
         Valid access modes:
@@ -105,6 +105,13 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         """
         process_token = None
         try:
+            # Although there is always a current thread, Windows will not
+            # allow opening it's token before impersonation and/or the
+            # creation of other thread(s).
+            #
+            # Thus, we are reverting to the process token. Alas opening the
+            # process token after impersonation will fail as impersonation
+            # acts at current thread level.
             try:
                 # FIXME:2095:
                 # Implement distinct API for opening currently impersonated
