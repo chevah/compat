@@ -144,13 +144,12 @@ class TestSystemUsers(SystemUsersTestCase):
             raise self.skipTest()
 
         username = u'no-home'
-        password = u'no-home'
-        home_path = None
+        password = manufacture.string()
         user = TestUser(
             name=username,
             posix_uid=None,
             password=password,
-            home_path=home_path,
+            home_path=None,
             create_profile=False,
             )
 
@@ -170,13 +169,6 @@ class TestSystemUsers(SystemUsersTestCase):
                     home_path, username))
         finally:
             os_administration.deleteUser(user)
-            # Delete user does not removed the user home folder,
-            # so we explicitly remove it here.
-            if home_path:
-                # If filesystem.deleteFolder is used then 'Access denied'
-                # is return because Windows sees some opened files inside the
-                # directory.
-                os.system('rmdir /S /Q ' + home_path.encode('utf-8'))
 
     def test_getHomeFolder_osx(self):
         """
@@ -461,7 +453,7 @@ class TestSystemUsers(SystemUsersTestCase):
 
 class ImpersonatedAvatarImplementation(HasImpersonatedAvatar):
     """
-    Implementatation of HasImpersonatedAvatar to help with testing.
+    Implementation of HasImpersonatedAvatar to help with testing.
 
     'name' and 'token' attributes should be provided, and
     'use_impersonation' implemented.

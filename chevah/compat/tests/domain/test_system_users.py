@@ -3,8 +3,6 @@
 """
 Test for portable system users access for Domain Controller.
 """
-import os
-
 from chevah.compat import (
     system_users,
     )
@@ -133,14 +131,13 @@ class TestSystemUsers(CompatTestCase):
         """
         username = u'domain no-home'
         password = u'qwe123QWE'
-        home_path = None
         domain = TEST_DOMAIN
         pdc = TEST_PDC
 
         user = TestUser(
             name=username,
             password=password,
-            home_path=home_path,
+            home_path=None,
             domain=domain,
             pdc=pdc,
             create_profile=True,
@@ -162,10 +159,3 @@ class TestSystemUsers(CompatTestCase):
                     home_path, username))
         finally:
             os_administration.deleteUser(user)
-            # Delete user does not removed the user home folder,
-            # so we explicitly remove it here.
-            if home_path:
-                # If filesystem.deleteFolder is used then 'Access denied'
-                # is return because Windows sees some opened files inside the
-                # directory.
-                os.system('rmdir /S /Q ' + home_path.encode('utf-8'))

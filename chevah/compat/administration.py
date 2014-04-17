@@ -735,11 +735,10 @@ class OSAdministrationWindows(OSAdministrationUnix):
         # FIXME:927:
         # We need to look for a way to delete home folders with unicode
         # names.
-        if not u'tmp' in user.home_path:
-            home_base = os.path.dirname(os.getenv('USERPROFILE'))
-            home_path = os.path.join(home_base, user.name)
-            command = 'cmd.exe /C rmdir /S /Q "%s"'
-            subprocess.call(command % (home_path.encode('utf-8')), shell=True)
+        home_base = os.path.dirname(os.getenv('USERPROFILE'))
+        home_path = os.path.join(home_base, user.name)
+        command = 'cmd.exe /C rmdir /S /Q "%s"'
+        subprocess.call(command % (home_path.encode('utf-8')), shell=True)
 
     def deleteGroup(self, group):
         """

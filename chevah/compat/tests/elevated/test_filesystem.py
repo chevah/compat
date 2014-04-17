@@ -7,8 +7,6 @@ import os
 
 from chevah.compat import (
     LocalFilesystem,
-    process_capabilities,
-    system_users,
     SuperAvatar,
     )
 from chevah.compat.testing import (
@@ -18,77 +16,22 @@ from chevah.compat.testing import (
     TEST_ACCOUNT_GROUP,
     TEST_ACCOUNT_GROUP_OTHER,
     TEST_ACCOUNT_USERNAME,
-    TEST_ACCOUNT_PASSWORD,
     TEST_ACCOUNT_USERNAME_OTHER,
     TestUser,
     )
-from chevah.empirical.filesystem import LocalTestFilesystem
 from chevah.compat.administration import os_administration
 from chevah.compat.exceptions import (
     CompatError,
     CompatException,
     )
-from chevah.compat.testing import CompatTestCase
+from chevah.compat.testing import FileSystemTestCase
+from chevah.compat.tests.mixin.filesystem import (
+    SymbolicLinksMixin,
+    SymbolicLinkTestCaseMixin,
+)
 
 
-class FilesystemTestCase(CompatTestCase):
-    """
-    Common test case for all filesystem tests.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        # FIXME:924:
-        # Disabled when we can not find the home folder path.
-        if not process_capabilities.get_home_folder:
-            raise cls.skipTest()
-
-        super(FilesystemTestCase, cls).setUpClass()
-
-        cls.setUpTestUser()
-
-        token = manufacture.makeToken(
-            username=cls.user.name, password=cls.user.password)
-        home_folder_path = system_users.getHomeFolder(
-            username=cls.user.name, token=token)
-        cls.avatar = manufacture.makeFilesystemOSAvatar(
-            name=cls.user.name,
-            home_folder_path=home_folder_path,
-            token=token,
-            )
-        cls.filesystem = LocalFilesystem(avatar=cls.avatar)
-
-    @classmethod
-    def setUpTestUser(cls):
-        """
-        Set-up OS user for symbolic link testing.
-        """
-        cls.user = TestUser(
-            name=TEST_ACCOUNT_USERNAME,
-            password=TEST_ACCOUNT_PASSWORD
-            )
-
-    @classmethod
-    def tearDownTestUser(cls):
-        """
-        Tear down OS user used for testing.
-        """
-        # User deletion is handled globally.
-        pass
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.tearDownTestUser()
-        super(FilesystemTestCase, cls).tearDownClass()
-
-    def setUp(self):
-        super(FilesystemTestCase, self).setUp()
-        # Initialized only to clean the home folder.
-        test_filesystem = LocalTestFilesystem(avatar=self.avatar)
-        test_filesystem.cleanHomeFolder()
-
-
-class SymbolicLinkTestCase(FilesystemTestCase):
+class SymbolicLinkTestCase(FileSystemTestCase, SymbolicLinkTestCaseMixin):
     """
     Common test case for symbolic link(s) tests.
     """
@@ -102,13 +45,14 @@ class SymbolicLinkTestCase(FilesystemTestCase):
         in order to be able to create symbolic links. We are using a custom
         user for which we make sure the right is present for these tests.
         """
-        rights = None
-        if cls.os_family == 'nt':
-            import win32security
-            rights = (win32security.SE_CREATE_SYMBOLIC_LINK_NAME,)
+        if cls.os_family != 'nt':
+            return super(SymbolicLinkTestCase, cls).setUpTestUser()
+
+        import win32security
+        rights = (win32security.SE_CREATE_SYMBOLIC_LINK_NAME,)
 
         username = manufacture.string()
-        cls.user = TestUser(
+        user = TestUser(
             name=username,
             password=manufacture.string(),
             home_group=TEST_ACCOUNT_GROUP,
@@ -118,17 +62,12 @@ class SymbolicLinkTestCase(FilesystemTestCase):
             windows_required_rights=rights,
             )
 
-        os_administration.addUser(cls.user)
+        os_administration.addUser(user)
 
-    @classmethod
-    def tearDownTestUser(cls):
-        """
-        Tear down OS user used for testing.
-        """
-        os_administration.deleteUser(cls.user)
+        return user
 
 
-class TestPosixFilesystem(FilesystemTestCase):
+class TestPosixFilesystem(FileSystemTestCase):
     """
     Path independent, OS independent tests.
     """
@@ -329,7 +268,7 @@ class TestPosixFilesystem(FilesystemTestCase):
         self.assertEqual(TEST_ACCOUNT_USERNAME_OTHER, new_owner)
 
 
-class TestUnixFilesystem(FilesystemTestCase):
+class TestUnixFilesystem(FileSystemTestCase):
     """
     Path independent Unix tests.
     """
@@ -392,7 +331,7 @@ class TestUnixFilesystem(FilesystemTestCase):
             u'no-such-group')
 
 
-class TestNTFilesystem(FilesystemTestCase):
+class TestNTFilesystem(FileSystemTestCase):
     """
     Path independent NT tests.
     """
@@ -462,16 +401,10 @@ class TestNTFilesystem(FilesystemTestCase):
         self.assertEqual(1016, context.exception.event_id)
         self.assertContains('test-message', context.exception.message)
 
-
-class TestSymbolicLink(SymbolicLinkTestCase):
-    """
-    Unit tests for `makeLink`.
-    """
-
-    @conditionals.onCapability('symbolic_link', True)
-    def test_makeLink_good(self):
+    def test_makeLink_missing_privilege(self):
         """
-        Can create link under impersonated account.
+        It will raise an error if user does not have sufficient privileges
+        for creating symbolic links.
         """
         target_segments = self.filesystem.home_segments
         target_segments.append(manufacture.string())
@@ -481,40 +414,17 @@ class TestSymbolicLink(SymbolicLinkTestCase):
         link_segments = self.filesystem.home_segments
         link_segments.append(manufacture.string())
 
-        self.filesystem.makeLink(
-            target_segments=target_segments,
-            link_segments=link_segments,
-            )
-
-        self.addCleanup(self.filesystem.deleteFile, link_segments)
-        self.assertTrue(self.filesystem.isLink(link_segments))
-        self.assertTrue(self.filesystem.exists(link_segments))
-
-    @conditionals.onCapability('symbolic_link', True)
-    def test_makeLink_bad_target(self):
-        """
-        Can create broken links under impersonated account.
-        """
-        segments = self.filesystem.home_segments
-        segments.append(manufacture.string())
-
-        self.filesystem.makeLink(
-            target_segments=['z', 'no-such', 'target'],
-            link_segments=segments,
-            )
-
-        self.addCleanup(self.filesystem.deleteFile, segments)
-        self.assertTrue(self.filesystem.isLink(segments))
-        self.assertFalse(self.filesystem.exists(segments))
-
-    @conditionals.onCapability('symbolic_link', True)
-    def test_makeLink_invalid_link(self):
-        """
-        Raise an error when link can not be created under impersonated
-        account.
-        """
-        with self.assertRaises(OSError):
-            manufacture.fs.makeLink(
-                target_segments=self.filesystem.temp_segments,
-                link_segments=['no-such', 'link'],
+        with self.assertRaises(OSError) as context:
+            self.filesystem.makeLink(
+                target_segments=target_segments,
+                link_segments=link_segments,
                 )
+
+        self.assertContains(
+            u'Process does not have', context.exception.strerror)
+
+
+class TestSymbolicLinks(SymbolicLinkTestCase, SymbolicLinksMixin):
+    """
+    Unit tests for `makeLink`.
+    """

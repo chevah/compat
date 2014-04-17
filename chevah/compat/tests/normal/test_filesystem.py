@@ -750,7 +750,7 @@ class TestLocalFilesystemUnlocked(FilesystemTestCase):
     Commons tests for both chrooted and non chrooted filesystem.
 
     # FIXME:1013:
-    # This testcase need a lot of cleaning.
+    # This test case need a lot of cleaning.
     """
 
     @classmethod

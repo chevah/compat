@@ -94,7 +94,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
     @contextmanager
     def _openProcess(self, mode):
         """
-        Context manager for opening current process token with specified
+        Context manager for opening current thread token with specified
         access mode.
 
         It will revert to process token if unable to open current thread
@@ -103,29 +103,31 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         Valid access modes:
         http://msdn.microsoft.com/en-us/library/windows/desktop/aa374905.aspx
         """
-        process_token = None
+        token = None
         try:
             # Although there is always a current thread, Windows will not
             # allow opening it's token before impersonation and/or the
-            # creation of other thread(s).
+            # creation of other thread(s). Thus, we are reverting to the
+            # process token in case of failure.
             #
-            # Thus, we are reverting to the process token. Alas opening the
-            # process token after impersonation will fail as impersonation
-            # acts at current thread level.
+            # Alas always opening the process token will not work when we
+            # use impersonation. Firstly, the opening will fail; secondly, the
+            # impersonation will affect only the current thread and not the
+            # entire process.
             try:
                 # FIXME:2095:
                 # Implement distinct API for opening currently impersonated
                 # user token.
-                process_token = win32security.OpenThreadToken(
+                token = win32security.OpenThreadToken(
                     win32api.GetCurrentThread(), mode, 0)
             except:
-                process_token = win32security.OpenProcessToken(
+                token = win32security.OpenProcessToken(
                     win32process.GetCurrentProcess(), mode)
 
-            yield process_token
+            yield token
         finally:
-            if process_token:
-                win32api.CloseHandle(process_token)
+            if token:
+                win32api.CloseHandle(token)
 
     @contextmanager
     def elevatePrivileges(self, *privileges):
@@ -142,8 +144,10 @@ class NTProcessCapabilities(BaseProcessCapabilities):
             for privilege_name in privileges:
                 state = self._getPrivilegeState(privilege_name)
                 if not self._isPrivilegeStateAvailable(state):
-                    raise AdjustPrivilegeException(
-                        'Process does not have %s privilege.' % privilege_name)
+                    message = (
+                        u'Process does not have %s privilege.' %
+                        privilege_name)
+                    raise AdjustPrivilegeException(message.encode('utf-8'))
 
                 if not self._isPrivilegeStateEnabled(state):
                     missing_privileges.append(privilege_name)

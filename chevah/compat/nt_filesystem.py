@@ -16,7 +16,11 @@ import win32security
 
 from zope.interface import implements
 
-from chevah.compat.exceptions import CompatError, CompatException
+from chevah.compat.exceptions import (
+    AdjustPrivilegeException,
+    CompatError,
+    CompatException,
+)
 from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.nt_capabilities import NTProcessCapabilities
 from chevah.compat.nt_users import NTDefaultAvatar, NTUsers
@@ -283,15 +287,18 @@ class NTFilesystem(PosixFilesystemBase):
             flags = 0
 
         with self._impersonateUser():
-            with self.process_capabilities.elevatePrivileges(
-                    win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
-                try:
-                    win32file.CreateSymbolicLink(
-                        link_path, target_path, flags)
-                except WindowsError, error:
-                    raise OSError(error.errno, error.strerror)
-                except pywintypes.error, error:
-                    raise OSError(error.winerror, error.strerror)
+            try:
+                with self.process_capabilities.elevatePrivileges(
+                        win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
+                    try:
+                        win32file.CreateSymbolicLink(
+                            link_path, target_path, flags)
+                    except WindowsError, error:
+                        raise OSError(error.errno, error.strerror)
+                    except pywintypes.error, error:
+                        raise OSError(error.winerror, error.strerror)
+            except AdjustPrivilegeException, error:
+                raise OSError(errno.EINVAL, error.message)
 
     def getStatus(self, segments):
         '''See `ILocalFilesystem`.'''

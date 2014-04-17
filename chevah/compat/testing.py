@@ -10,10 +10,15 @@ import sys
 from unidecode import unidecode
 
 from chevah.empirical import conditionals
+from chevah.empirical.filesystem import LocalTestFilesystem
 from chevah.empirical.testcase import ChevahTestCase
 from chevah.empirical.mockup import ChevahCommonsFactory
 
-from chevah.compat import system_users
+from chevah.compat import (
+    LocalFilesystem,
+    process_capabilities,
+    system_users,
+    )
 from chevah.compat.administration import os_administration
 from chevah.compat.avatar import (
     FilesystemApplicationAvatar,
@@ -58,6 +63,9 @@ TEST_ACCOUNT_PASSWORD_DOMAIN = u'qwe123QWE'
 TEST_ACCOUNT_GROUP_DOMAIN = u'domain test_group'
 
 
+# FIXME:2106:
+# Get rid of global functions and replace with OS specialized TestUSer
+# instances: TestUserAIX, TestUserWindows, TestUserUnix, etc.
 def _sanitize_name_aix(candidate):
     """
     Return valid user/group name for AIX from `candidate`.
@@ -226,7 +234,7 @@ class CompatTestCase(ChevahTestCase):
     """
     Test case used in chevah.compat package.
 
-    For not, there is nothing special here.
+    For now, there is nothing special here.
     """
 
     def runningAsAdministrator(self):
@@ -257,6 +265,53 @@ class CompatTestCase(ChevahTestCase):
             values = (actual_error, str(expected_id), str(actual_id))
             message = u'Error id for %s is not %s, but %s.' % values
             raise AssertionError(message.encode('utf-8'))
+
+
+class FileSystemTestCase(CompatTestCase):
+    """
+    Common test case for all file-system tests.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        # FIXME:924:
+        # Disabled when we can not find the home folder path.
+        if not process_capabilities.get_home_folder:
+            raise cls.skipTest()
+
+        super(FileSystemTestCase, cls).setUpClass()
+
+        cls.os_user = cls.setUpTestUser()
+
+        token = manufacture.makeToken(
+            username=cls.os_user.name, password=cls.os_user.password)
+        home_folder_path = system_users.getHomeFolder(
+            username=cls.os_user.name, token=token)
+
+        cls.avatar = manufacture.makeFilesystemOSAvatar(
+            name=cls.os_user.name,
+            home_folder_path=home_folder_path,
+            token=token,
+            )
+        cls.filesystem = LocalFilesystem(avatar=cls.avatar)
+
+    @classmethod
+    def setUpTestUser(cls):
+        """
+        Set-up OS user for symbolic link testing.
+        """
+        # FIXME:2106:
+        # Re-use global instance.
+        return TestUser(
+            name=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD
+            )
+
+    def setUp(self):
+        super(FileSystemTestCase, self).setUp()
+        # Initialized only to clean the home folder.
+        test_filesystem = LocalTestFilesystem(avatar=self.avatar)
+        test_filesystem.cleanHomeFolder()
 
 
 class CompatManufacture(ChevahCommonsFactory):
