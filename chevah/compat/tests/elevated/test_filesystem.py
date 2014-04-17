@@ -68,7 +68,11 @@ class SymbolicLinkTestCase(FileSystemTestCase):
         """
         Remove OS user used for testing.
         """
-        os_administration.deleteUser(cls.os_user)
+        # FIXME:2106:
+        # Replace once we use instance sharing. Need to have a flag that
+        # will specify which are temporary users.
+        if cls.os_family == 'nt':
+            os_administration.deleteUser(cls.os_user)
 
         super(SymbolicLinkTestCase, cls).tearDownClass()
 
