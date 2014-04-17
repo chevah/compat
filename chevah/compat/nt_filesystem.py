@@ -20,7 +20,7 @@ from chevah.compat.exceptions import (
     AdjustPrivilegeException,
     CompatError,
     CompatException,
-)
+    )
 from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.nt_capabilities import NTProcessCapabilities
 from chevah.compat.nt_users import NTDefaultAvatar, NTUsers

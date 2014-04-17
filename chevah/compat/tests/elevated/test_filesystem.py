@@ -28,7 +28,7 @@ from chevah.compat.testing import FileSystemTestCase
 from chevah.compat.tests.mixin.filesystem import (
     SymbolicLinksMixin,
     SymbolicLinkTestCaseMixin,
-)
+    )
 
 
 class SymbolicLinkTestCase(FileSystemTestCase, SymbolicLinkTestCaseMixin):
