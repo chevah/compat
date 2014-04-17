@@ -14,13 +14,10 @@ from chevah.compat.testing import (
 
 from chevah.compat.administration import os_administration
 from chevah.compat.testing import FileSystemTestCase
-from chevah.compat.tests.mixin.filesystem import (
-    SymbolicLinksMixin,
-    SymbolicLinkTestCaseMixin,
-    )
+from chevah.compat.tests.mixin.filesystem import SymbolicLinksMixin
 
 
-class SymbolicLinkTestCase(FileSystemTestCase, SymbolicLinkTestCaseMixin):
+class SymbolicLinkTestCase(FileSystemTestCase):
     """
     Common test case for symbolic link(s) tests.
     """
@@ -59,6 +56,15 @@ class SymbolicLinkTestCase(FileSystemTestCase, SymbolicLinkTestCaseMixin):
         os_administration.addUser(user)
 
         return user
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Remove OS user used for testing.
+        """
+        os_administration.deleteUser(cls.os_user)
+
+        super(SymbolicLinkTestCase, cls).tearDownClass()
 
 
 class TestSymbolicLink(SymbolicLinkTestCase, SymbolicLinksMixin):

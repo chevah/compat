@@ -3,23 +3,7 @@
 """
 Tests for portable filesystem access.
 """
-from chevah.compat.administration import os_administration
 from chevah.compat.testing import conditionals, mk
-
-
-class SymbolicLinkTestCaseMixin(object):
-    """
-    Mixin for symbolic link test cases.
-    """
-
-    @classmethod
-    def tearDownClass(cls):
-        """
-        Remove OS user used for testing.
-        """
-        os_administration.deleteUser(cls.os_user)
-
-        super(SymbolicLinkTestCaseMixin, cls).tearDownClass()
 
 
 class SymbolicLinksMixin(object):

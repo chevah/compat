@@ -8,6 +8,7 @@ Release notes for chevah.compat
 * Fix domain test account's home folder removal.
 * Fix creating symbolic links on Windows when impersonating.
 * Separate Windows OS administration helpers.
+* Add support for granting/revoking user rights/privileges on Windows.
 
 
 0.18.1 - 24/03/2014
