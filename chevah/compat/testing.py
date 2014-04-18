@@ -105,7 +105,7 @@ class TestUser(object):
         self, name, posix_uid=None, posix_gid=None, home_path=None,
         home_group=None, shell=None, shadow=None, password=None,
         domain=None, pdc=None, primary_group_name=None, create_profile=False,
-        windows_required_rights=None,
+        windows_required_rights=None, shared=False,
             ):
         if home_path is None:
             home_path = u'/tmp'
@@ -132,6 +132,7 @@ class TestUser(object):
         self.primary_group_name = primary_group_name
         self.windows_create_profile = create_profile
         self.windows_required_rights = windows_required_rights
+        self.shared = shared
 
     @property
     def name(self):
@@ -200,6 +201,7 @@ TEST_USERS = [
         home_path=TEST_ACCOUNT_HOME_PATH,
         home_group=TEST_ACCOUNT_GROUP,
         password=TEST_ACCOUNT_PASSWORD,
+        shared=True,
         ),
     TestUser(
         name=TEST_ACCOUNT_USERNAME_OTHER,
@@ -208,6 +210,7 @@ TEST_USERS = [
         primary_group_name=TEST_ACCOUNT_GROUP_OTHER,
         home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
         password=TEST_ACCOUNT_PASSWORD_OTHER,
+        shared=True,
         ),
     ]
 
@@ -312,6 +315,31 @@ class FileSystemTestCase(CompatTestCase):
         # Initialized only to clean the home folder.
         test_filesystem = LocalTestFilesystem(avatar=self.avatar)
         test_filesystem.cleanHomeFolder()
+
+
+class OSAccountFileSystemTestCase(FileSystemTestCase):
+    """
+    Test case for tests that need a local OS account present.
+    """
+
+    TEST_USER = None
+
+    @classmethod
+    def setUpTestUser(cls):
+        """
+        Add `TEST_USER` to local OS.
+        """
+        os_administration.addUser(cls.TEST_USER)
+        return cls.TEST_USER
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Remove OS user used for testing.
+        """
+        os_administration.deleteUser(cls.os_user)
+
+        super(OSAccountFileSystemTestCase, cls).tearDownClass()
 
 
 class CompatManufacture(ChevahCommonsFactory):

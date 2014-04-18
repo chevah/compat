@@ -8,7 +8,8 @@ from chevah.compat.testing import conditionals, mk
 
 class SymbolicLinksMixin(object):
     """
-    Unit tests for `makeLink`.
+    Unit tests for `makeLink` executed by an OS account which has permission
+    to create symbolic links.
     """
 
     @conditionals.onCapability('symbolic_link', True)

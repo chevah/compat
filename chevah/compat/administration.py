@@ -418,6 +418,9 @@ class OSAdministrationUnix(object):
         """
         Delete user from the local operating system.
         """
+        if user.shared:
+            return
+
         delete_user_method = getattr(self, '_deleteUser_' + self.name)
         delete_user_method(user)
 
@@ -715,6 +718,9 @@ class OSAdministrationWindows(OSAdministrationUnix):
         Removes an account from Windows together.
         Home folder is not removed.
         """
+        if user.shared:
+            return
+
         if user.windows_required_rights:
             self._revokeUserRights(user.name, user.windows_required_rights)
 

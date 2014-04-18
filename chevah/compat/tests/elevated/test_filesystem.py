@@ -19,62 +19,41 @@ from chevah.compat.testing import (
     TEST_ACCOUNT_USERNAME_OTHER,
     TestUser,
     )
-from chevah.compat.administration import os_administration
 from chevah.compat.exceptions import (
     CompatError,
     CompatException,
     )
-from chevah.compat.testing import FileSystemTestCase
+from chevah.compat.testing import (
+    FileSystemTestCase,
+    OSAccountFileSystemTestCase,
+    )
 from chevah.compat.tests.mixin.filesystem import SymbolicLinksMixin
 
 
-class SymbolicLinkTestCase(FileSystemTestCase):
+class SymbolicLinkTestCase(OSAccountFileSystemTestCase):
     """
-    Common test case for symbolic link(s) tests.
+    Symbolic link(s) test case.
+
+    User requires SE_CREATE_SYMBOLIC_LINK privilege on Windows OSes
+    in order to be able to create symbolic links. We are using a custom
+    user for which we make sure the right is present for these tests.
     """
-
-    @classmethod
-    def setUpTestUser(cls):
-        """
-        Set-up OS user for symbolic link testing.
-
-        User requires SE_CREATE_SYMBOLIC_LINK privilege on Windows OSes
-        in order to be able to create symbolic links. We are using a custom
-        user for which we make sure the right is present for these tests.
-        """
-        if cls.os_family != 'nt':
-            return super(SymbolicLinkTestCase, cls).setUpTestUser()
-
+    try:
         import win32security
         rights = (win32security.SE_CREATE_SYMBOLIC_LINK_NAME,)
+    except:
+        rights = ()
 
-        username = manufacture.string()
-        user = TestUser(
-            name=username,
-            password=manufacture.string(),
-            home_group=TEST_ACCOUNT_GROUP,
-            home_path=u'/home/%s' % username,
-            posix_uid=3000 + manufacture.number(),
-            posix_gid=TEST_ACCOUNT_GID,
-            windows_required_rights=rights,
-            )
-
-        os_administration.addUser(user)
-
-        return user
-
-    @classmethod
-    def tearDownClass(cls):
-        """
-        Remove OS user used for testing.
-        """
-        # FIXME:2106:
-        # Replace once we use instance sharing. Need to have a flag that
-        # will specify which are temporary users.
-        if cls.os_family == 'nt':
-            os_administration.deleteUser(cls.os_user)
-
-        super(SymbolicLinkTestCase, cls).tearDownClass()
+    _username = manufacture.string()
+    TEST_USER = TestUser(
+        name=_username,
+        password=manufacture.string(),
+        home_group=TEST_ACCOUNT_GROUP,
+        home_path=u'/home/%s' % _username,
+        posix_uid=3000 + manufacture.number(),
+        posix_gid=TEST_ACCOUNT_GID,
+        windows_required_rights=rights,
+        )
 
 
 class TestPosixFilesystem(FileSystemTestCase):
@@ -436,5 +415,6 @@ class TestNTFilesystem(FileSystemTestCase):
 
 class TestSymbolicLinks(SymbolicLinkTestCase, SymbolicLinksMixin):
     """
-    Unit tests for `makeLink`.
+    Unit tests for `makeLink` when impersonating a user which has permission
+    to create symbolic links.
     """

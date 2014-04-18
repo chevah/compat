@@ -103,7 +103,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         Valid access modes:
         http://msdn.microsoft.com/en-us/library/windows/desktop/aa374905.aspx
         """
-        token = None
+        process_token = None
         try:
             # Although there is always a current thread, Windows will not
             # allow opening it's token before impersonation and/or the
@@ -118,16 +118,16 @@ class NTProcessCapabilities(BaseProcessCapabilities):
                 # FIXME:2095:
                 # Implement distinct API for opening currently impersonated
                 # user token.
-                token = win32security.OpenThreadToken(
+                process_token = win32security.OpenThreadToken(
                     win32api.GetCurrentThread(), mode, 0)
             except:
-                token = win32security.OpenProcessToken(
+                process_token = win32security.OpenProcessToken(
                     win32process.GetCurrentProcess(), mode)
 
-            yield token
+            yield process_token
         finally:
-            if token:
-                win32api.CloseHandle(token)
+            if process_token:
+                win32api.CloseHandle(process_token)
 
     @contextmanager
     def elevatePrivileges(self, *privileges):
