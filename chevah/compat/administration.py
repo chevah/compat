@@ -732,17 +732,15 @@ class OSAdministrationWindows(OSAdministrationUnix):
             if number != 2221:
                 raise
 
-        # /tmp is assigned for Users without a home folder and we don't
-        # want to delete this folder.
         # We can not reliably get home folder on all Windows version, so
         # we assume that home folders for other accounts are siblings to
         # the home folder of the current account.
+        home_base = os.path.dirname(os.getenv('USERPROFILE'))
+        home_path = os.path.join(home_base, user.name)
 
         # FIXME:927:
         # We need to look for a way to delete home folders with unicode
         # names.
-        home_base = os.path.dirname(os.getenv('USERPROFILE'))
-        home_path = os.path.join(home_base, user.name)
         command = 'cmd.exe /C rmdir /S /Q "%s"'
         subprocess.call(command % (home_path.encode('utf-8')), shell=True)
 
