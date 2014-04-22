@@ -8,15 +8,13 @@ import os
 from chevah.compat import process_capabilities, system_users
 from chevah.compat.exceptions import AdjustPrivilegeException
 from chevah.compat.testing import (
+    FileSystemTestCase,
     conditionals,
     manufacture,
-    TEST_ACCOUNT_PASSWORD,
-    TEST_ACCOUNT_USERNAME,
     )
-from chevah.empirical import ChevahTestCase
 
 
-class TestProcessCapabilities(ChevahTestCase):
+class TestProcessCapabilities(FileSystemTestCase):
 
     def setUp(self):
         super(TestProcessCapabilities, self).setUp()
@@ -85,11 +83,13 @@ class TestProcessCapabilities(ChevahTestCase):
 
         The process under impersonated account still has root capabilities.
         """
-        username = TEST_ACCOUNT_USERNAME
+        # FIXME:2106:
+        # Cache token value in TestUser instance.
         token = manufacture.makeToken(
-            username=username, password=TEST_ACCOUNT_PASSWORD)
+            username=self.os_user.os_name, password=self.os_user.password)
 
-        with system_users.executeAsUser(username=username, token=token):
+        with system_users.executeAsUser(
+                username=self.os_user.os_name, token=token):
             text = self.capabilities.getCurrentPrivilegesDescription()
 
         self.assertEqual(u'root capabilities enabled.', text)
@@ -100,17 +100,21 @@ class TestProcessCapabilities(ChevahTestCase):
         getCurrentPrivilegesDescription can be used for impersonated accounts
         and will return the impersonated user's capabilities instead.
         """
-        username = TEST_ACCOUNT_USERNAME
+        # FIXME:2106:
+        # Cache token value in TestUser instance.
         token = manufacture.makeToken(
-            username=username, password=TEST_ACCOUNT_PASSWORD)
+            username=self.os_user.os_name, password=self.os_user.password)
 
         # FIXME:2095:
         # Unify tests once proper capabilities support is implemented.
-        with system_users.executeAsUser(username=username, token=token):
+        initial_text = self.capabilities.getCurrentPrivilegesDescription()
+        self.assertContains(u'SeIncreaseWorkingSetPrivilege:0', initial_text)
+
+        with system_users.executeAsUser(
+                username=self.os_user.os_name, token=token):
             text = self.capabilities.getCurrentPrivilegesDescription()
 
         # These assertion are fragile. Feel free to improve it.
-        self.assertContains(u'SeChangeNotifyPrivilege:3', text)
         self.assertContains(u'SeIncreaseWorkingSetPrivilege:3', text)
 
     @conditionals.onOSFamily('nt')
@@ -121,14 +125,16 @@ class TestProcessCapabilities(ChevahTestCase):
         """
         import win32security
 
-        username = TEST_ACCOUNT_USERNAME
+        # FIXME:2106:
+        # Cache token value in TestUser instance.
         token = manufacture.makeToken(
-            username=username, password=TEST_ACCOUNT_PASSWORD)
+            username=self.os_user.os_name, password=self.os_user.password)
         initial_state = self.capabilities._getPrivilegeState(
             win32security.SE_INC_WORKING_SET_NAME)
         self.assertEqual(u'present', initial_state)
 
-        with system_users.executeAsUser(username=username, token=token):
+        with system_users.executeAsUser(
+                username=self.os_user.os_name, token=token):
             with self.capabilities.elevatePrivileges(
                     win32security.SE_INC_WORKING_SET_NAME):
                 update_state = self.capabilities._getPrivilegeState(
@@ -144,16 +150,18 @@ class TestProcessCapabilities(ChevahTestCase):
         """
         import win32security
 
-        username = TEST_ACCOUNT_USERNAME
+        # FIXME:2106:
+        # Cache token value in TestUser instance.
         token = manufacture.makeToken(
-            username=username, password=TEST_ACCOUNT_PASSWORD)
-        initial_state = self.capabilities._getPrivilegeState(
-            win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
-        self.assertEqual(u'present', initial_state)
+            username=self.os_user.os_name, password=self.os_user.password)
 
-        with system_users.executeAsUser(username=username, token=token):
+        with system_users.executeAsUser(
+                username=self.os_user.os_name, token=token):
+            initial_state = self.capabilities._getPrivilegeState(
+                win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
+            self.assertEqual(u'absent', initial_state)
+
             with self.assertRaises(AdjustPrivilegeException):
                 with self.capabilities.elevatePrivileges(
                         win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
-                    self.capabilities._getPrivilegeState(
-                        win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
+                    pass

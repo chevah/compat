@@ -30,32 +30,6 @@ from chevah.compat.testing import (
 from chevah.compat.tests.mixin.filesystem import SymbolicLinksMixin
 
 
-class SymbolicLinkTestCase(OSAccountFileSystemTestCase):
-    """
-    Symbolic link(s) test case.
-
-    User requires SE_CREATE_SYMBOLIC_LINK privilege on Windows OSes
-    in order to be able to create symbolic links. We are using a custom
-    user for which we make sure the right is present for these tests.
-    """
-    try:
-        import win32security
-        rights = (win32security.SE_CREATE_SYMBOLIC_LINK_NAME,)
-    except:
-        rights = ()
-
-    _username = manufacture.string()
-    TEST_USER = TestUser(
-        name=_username,
-        password=manufacture.string(),
-        home_group=TEST_ACCOUNT_GROUP,
-        home_path=u'/home/%s' % _username,
-        posix_uid=3000 + manufacture.number(),
-        posix_gid=TEST_ACCOUNT_GID,
-        windows_required_rights=rights,
-        )
-
-
 class TestPosixFilesystem(FileSystemTestCase):
     """
     Path independent, OS independent tests.
@@ -395,17 +369,12 @@ class TestNTFilesystem(FileSystemTestCase):
         It will raise an error if user does not have sufficient privileges
         for creating symbolic links.
         """
-        target_segments = self.filesystem.home_segments
-        target_segments.append(manufacture.string())
-        file_object = self.filesystem.openFileForWriting(target_segments)
-        file_object.close()
-        self.addCleanup(self.filesystem.deleteFile, target_segments)
         link_segments = self.filesystem.home_segments
         link_segments.append(manufacture.string())
 
         with self.assertRaises(OSError) as context:
             self.filesystem.makeLink(
-                target_segments=target_segments,
+                target_segments=['z', 'no-such', 'target'],
                 link_segments=link_segments,
                 )
 
@@ -413,8 +382,27 @@ class TestNTFilesystem(FileSystemTestCase):
             u'Process does not have', context.exception.strerror)
 
 
-class TestSymbolicLinks(SymbolicLinkTestCase, SymbolicLinksMixin):
+class TestSymbolicLinks(OSAccountFileSystemTestCase, SymbolicLinksMixin):
     """
     Unit tests for `makeLink` when impersonating a user which has permission
     to create symbolic links.
+
+    User requires SE_CREATE_SYMBOLIC_LINK privilege on Windows OSes
+    in order to be able to create symbolic links. We are using a custom
+    user for which we make sure the right is present for these tests.
     """
+
+    try:
+        import win32security
+        rights = (win32security.SE_CREATE_SYMBOLIC_LINK_NAME,)
+    except:
+        rights = ()
+
+    CREATE_TEST_USER = TestUser(
+        name=manufacture.string(),
+        password=manufacture.string(),
+        home_group=TEST_ACCOUNT_GROUP,
+        posix_uid=3000 + manufacture.number(),
+        posix_gid=TEST_ACCOUNT_GID,
+        windows_required_rights=rights,
+        )

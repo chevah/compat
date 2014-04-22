@@ -148,10 +148,11 @@ class UnixUsers(CompatUsers):
         return False
 
     def authenticateWithUsernameAndPassword(self, username, password):
-        '''Check the username and password agains local accounts.
+        """
+        Check the username and password against local accounts.
 
         Returns True if credentials are accepted, False otherwise.
-        '''
+        """
         checked = self._checkPasswdFile(username, password)
         if checked is not None:
             if checked is True:
@@ -172,7 +173,7 @@ class UnixUsers(CompatUsers):
                 return (True, None)
             else:
                 # For PAM account we don't know if this is a failure due to
-                # a bad credentials or inexistent credentials.
+                # a bad credentials or non existent credentials.
                 return (None, None)
 
         return (None, None)

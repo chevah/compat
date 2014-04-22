@@ -27,7 +27,6 @@ TEST_USERS = [
         domain=TEST_DOMAIN,
         pdc=TEST_PDC,
         create_profile=True,
-        shared=True,
         )
     ]
 
@@ -69,7 +68,4 @@ def setup_package():
 
 
 def teardown_package():
-    for user in TEST_USERS:
-        user.shared = False
-
     teardown_access_control(users=TEST_USERS, groups=TEST_GROUPS)

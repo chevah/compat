@@ -90,7 +90,7 @@ class TestUser(object):
     """
 
     @classmethod
-    def sanitize_name(cls, name):
+    def sanitizeName(cls, name):
         """
         Return name sanitized for current OS.
         """
@@ -105,7 +105,7 @@ class TestUser(object):
         self, name, posix_uid=None, posix_gid=None, home_path=None,
         home_group=None, shell=None, shadow=None, password=None,
         domain=None, pdc=None, primary_group_name=None, create_profile=False,
-        windows_required_rights=None, shared=False,
+        windows_required_rights=None
             ):
         if home_path is None:
             home_path = u'/tmp'
@@ -119,7 +119,7 @@ class TestUser(object):
         if posix_gid is None:
             posix_gid = posix_uid
 
-        self._os_name = self.sanitize_name(name)
+        self._os_name = self.sanitizeName(name)
         self.uid = posix_uid
         self.gid = posix_gid
         self.home_path = home_path
@@ -130,12 +130,12 @@ class TestUser(object):
         self.domain = domain
         self.pdc = pdc
         self.primary_group_name = primary_group_name
+        self.windows_sid = None
         self.windows_create_profile = create_profile
         self.windows_required_rights = windows_required_rights
-        self.shared = shared
 
     @property
-    def name(self):
+    def os_name(self):
         """
         Return OS sanitized name for user.
         """
@@ -148,7 +148,7 @@ class TestGroup(object):
     """
 
     @classmethod
-    def sanitize_name(cls, group):
+    def sanitizeName(cls, group):
         """
         Return name sanitized for current OS.
         """
@@ -163,24 +163,31 @@ class TestGroup(object):
         if members is None:
             members = []
 
-        self.name = name
+        self._os_name = self.sanitizeName(name)
         self.gid = gid
         self.members = members
         self.pdc = pdc
 
+    @property
+    def os_name(self):
+        """
+        Return OS sanitized name for group.
+        """
+        return self._os_name
 
-TEST_ACCOUNT_USERNAME = TestUser.sanitize_name(TEST_ACCOUNT_USERNAME)
-TEST_ACCOUNT_GROUP = TestGroup.sanitize_name(TEST_ACCOUNT_GROUP)
 
-TEST_ACCOUNT_USERNAME_OTHER = TestUser.sanitize_name(
+TEST_ACCOUNT_USERNAME = TestUser.sanitizeName(TEST_ACCOUNT_USERNAME)
+TEST_ACCOUNT_GROUP = TestGroup.sanitizeName(TEST_ACCOUNT_GROUP)
+
+TEST_ACCOUNT_USERNAME_OTHER = TestUser.sanitizeName(
     TEST_ACCOUNT_USERNAME_OTHER)
-TEST_ACCOUNT_GROUP_OTHER = TestGroup.sanitize_name(TEST_ACCOUNT_GROUP_OTHER)
-TEST_ACCOUNT_GROUP_ANOTHER = TestGroup.sanitize_name(
+TEST_ACCOUNT_GROUP_OTHER = TestGroup.sanitizeName(TEST_ACCOUNT_GROUP_OTHER)
+TEST_ACCOUNT_GROUP_ANOTHER = TestGroup.sanitizeName(
     TEST_ACCOUNT_GROUP_ANOTHER)
 
-TEST_ACCOUNT_USERNAME_DOMAIN = TestUser.sanitize_name(
+TEST_ACCOUNT_USERNAME_DOMAIN = TestUser.sanitizeName(
     TEST_ACCOUNT_USERNAME_DOMAIN)
-TEST_ACCOUNT_GROUP_DOMAIN = TestGroup.sanitize_name(
+TEST_ACCOUNT_GROUP_DOMAIN = TestGroup.sanitizeName(
     TEST_ACCOUNT_GROUP_DOMAIN)
 
 
@@ -201,7 +208,6 @@ TEST_USERS = [
         home_path=TEST_ACCOUNT_HOME_PATH,
         home_group=TEST_ACCOUNT_GROUP,
         password=TEST_ACCOUNT_PASSWORD,
-        shared=True,
         ),
     TestUser(
         name=TEST_ACCOUNT_USERNAME_OTHER,
@@ -210,7 +216,6 @@ TEST_USERS = [
         primary_group_name=TEST_ACCOUNT_GROUP_OTHER,
         home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
         password=TEST_ACCOUNT_PASSWORD_OTHER,
-        shared=True,
         ),
     ]
 
@@ -287,12 +292,12 @@ class FileSystemTestCase(CompatTestCase):
         cls.os_user = cls.setUpTestUser()
 
         token = manufacture.makeToken(
-            username=cls.os_user.name, password=cls.os_user.password)
+            username=cls.os_user.os_name, password=cls.os_user.password)
         home_folder_path = system_users.getHomeFolder(
-            username=cls.os_user.name, token=token)
+            username=cls.os_user.os_name, token=token)
 
         cls.avatar = manufacture.makeFilesystemOSAvatar(
-            name=cls.os_user.name,
+            name=cls.os_user.os_name,
             home_folder_path=home_folder_path,
             token=token,
             )
@@ -322,22 +327,24 @@ class OSAccountFileSystemTestCase(FileSystemTestCase):
     Test case for tests that need a local OS account present.
     """
 
-    TEST_USER = None
+    # User will be created before running the test case and removed on
+    # teardown.
+    CREATE_TEST_USER = None
 
     @classmethod
     def setUpTestUser(cls):
         """
-        Add `TEST_USER` to local OS.
+        Add `CREATE_TEST_USER` to local OS.
         """
-        os_administration.addUser(cls.TEST_USER)
-        return cls.TEST_USER
+        os_administration.addUser(cls.CREATE_TEST_USER)
+        return cls.CREATE_TEST_USER
 
     @classmethod
     def tearDownClass(cls):
         """
         Remove OS user used for testing.
         """
-        os_administration.deleteUser(cls.os_user)
+        os_administration.deleteUser(cls.CREATE_TEST_USER)
 
         super(OSAccountFileSystemTestCase, cls).tearDownClass()
 

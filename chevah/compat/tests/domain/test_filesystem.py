@@ -19,9 +19,9 @@ from chevah.compat.testing import OSAccountFileSystemTestCase
 from chevah.compat.tests.mixin.filesystem import SymbolicLinksMixin
 
 
-class SymbolicLinkTestCase(OSAccountFileSystemTestCase):
+class TestSymbolicLink(OSAccountFileSystemTestCase, SymbolicLinksMixin):
     """
-    Symbolic link(s) test case.
+    Unit tests for `makeLink` for domain level accounts.
 
     User requires SE_CREATE_SYMBOLIC_LINK privilege on Windows OSes
     in order to be able to create symbolic links.
@@ -29,22 +29,15 @@ class SymbolicLinkTestCase(OSAccountFileSystemTestCase):
     We are using a custom user for which we make sure the right is present
     for these tests.
     """
-    _username = manufacture.string()
-    TEST_USER = TestUser(
-        name=_username,
+
+    CREATE_TEST_USER = TestUser(
+        name=manufacture.string(),
         password=manufacture.string(),
         domain=TEST_DOMAIN,
         pdc=TEST_PDC,
         home_group=TEST_ACCOUNT_GROUP,
-        home_path=u'/home/%s' % _username,
         posix_uid=3000 + manufacture.number(),
         posix_gid=TEST_ACCOUNT_GID,
         create_profile=True,
         windows_required_rights=(win32security.SE_CREATE_SYMBOLIC_LINK_NAME,),
         )
-
-
-class TestSymbolicLink(SymbolicLinkTestCase, SymbolicLinksMixin):
-    """
-    Unit tests for `makeLink` for domain level accounts.
-    """
