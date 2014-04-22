@@ -118,13 +118,13 @@ mk = manufacture = CompatManufacture()
 TEST_ACCOUNT_USERNAME = u'mâț mițișor'
 TEST_ACCOUNT_PASSWORD = u'Baroșanu42!'
 TEST_ACCOUNT_GROUP = u'g mâțmițișor'
-TEST_ACCOUNT_UID = mk.PosixUID()
-TEST_ACCOUNT_GID = mk.PosixUID()
+TEST_ACCOUNT_UID = 2000
+TEST_ACCOUNT_GID = 2010
 TEST_ACCOUNT_GROUP_WIN = u'Users'
 TEST_ACCOUNT_USERNAME_OTHER = u'miț motan'
 TEST_ACCOUNT_PASSWORD_OTHER = u'altapara'
-TEST_ACCOUNT_UID_OTHER = mk.PosixUID()
-TEST_ACCOUNT_GID_OTHER = mk.PosixUID()
+TEST_ACCOUNT_UID_OTHER = 2001
+TEST_ACCOUNT_GID_OTHER = 2011
 TEST_ACCOUNT_GROUP_OTHER = u'g mițmotan'
 TEST_ACCOUNT_LDAP_USERNAME = u'ldap mâț test-account'
 TEST_ACCOUNT_LDAP_PASSWORD = u'ldap mâț test-password'
@@ -136,7 +136,7 @@ TEST_ACCOUNT_CENTRIFY_UID = 1363149908
 
 # Another test group to test an user belonging to multiple groups.
 TEST_ACCOUNT_GROUP_ANOTHER = u'g-another-test'
-TEST_ACCOUNT_GID_ANOTHER = mk.PosixUID()
+TEST_ACCOUNT_GID_ANOTHER = 2012
 
 # Domain controller helpers.
 TEST_PDC = u'\\\\CHEVAH-DC'

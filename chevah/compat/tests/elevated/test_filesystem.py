@@ -12,7 +12,6 @@ from chevah.compat import (
 from chevah.compat.testing import (
     conditionals,
     manufacture,
-    TEST_ACCOUNT_GID,
     TEST_ACCOUNT_GROUP,
     TEST_ACCOUNT_GROUP_OTHER,
     TEST_ACCOUNT_USERNAME,
@@ -403,6 +402,6 @@ class TestSymbolicLinks(OSAccountFileSystemTestCase, SymbolicLinksMixin):
         password=manufacture.string(),
         home_group=TEST_ACCOUNT_GROUP,
         posix_uid=manufacture.PosixUID(),
-        posix_gid=TEST_ACCOUNT_GID,
+        posix_gid=manufacture.PosixUID(),
         windows_required_rights=rights,
         )
