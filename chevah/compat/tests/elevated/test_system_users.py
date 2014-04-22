@@ -147,9 +147,7 @@ class TestSystemUsers(SystemUsersTestCase):
         password = manufacture.string()
         user = TestUser(
             name=username,
-            posix_uid=None,
             password=password,
-            home_path=None,
             create_profile=False,
             )
 
@@ -357,7 +355,7 @@ class TestSystemUsers(SystemUsersTestCase):
 
     def test_executeAsUser_unix_user_does_not_exists(self):
         """
-        If the user does not exist, exetueAsUser will raise
+        If the user does not exist, executeAsUser will raise
         ChangeUserException.
         """
         with self.assertRaises(ChangeUserException):

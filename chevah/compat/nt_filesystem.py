@@ -288,7 +288,7 @@ class NTFilesystem(PosixFilesystemBase):
 
         with self._impersonateUser():
             try:
-                with self.process_capabilities.elevatePrivileges(
+                with self.process_capabilities._elevatePrivileges(
                         win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
                     try:
                         win32file.CreateSymbolicLink(
@@ -477,7 +477,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         Helper for catching exceptions raised by elevatePrivileges.
         """
-        with self.process_capabilities.elevatePrivileges(
+        with self.process_capabilities._elevatePrivileges(
                 win32security.SE_TAKE_OWNERSHIP_NAME,
                 win32security.SE_RESTORE_NAME,
                 ):

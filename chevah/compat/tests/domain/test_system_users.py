@@ -137,7 +137,6 @@ class TestSystemUsers(CompatTestCase):
         user = TestUser(
             name=username,
             password=password,
-            home_path=None,
             domain=domain,
             pdc=pdc,
             create_profile=True,

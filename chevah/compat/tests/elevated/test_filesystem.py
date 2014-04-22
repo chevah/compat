@@ -402,7 +402,7 @@ class TestSymbolicLinks(OSAccountFileSystemTestCase, SymbolicLinksMixin):
         name=manufacture.string(),
         password=manufacture.string(),
         home_group=TEST_ACCOUNT_GROUP,
-        posix_uid=3000 + manufacture.number(),
+        posix_uid=manufacture.PosixUID(),
         posix_gid=TEST_ACCOUNT_GID,
         windows_required_rights=rights,
         )

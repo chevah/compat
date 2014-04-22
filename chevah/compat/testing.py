@@ -5,6 +5,7 @@
 Helpers for testing.
 """
 import os
+import random
 import sys
 
 from unidecode import unidecode
@@ -31,17 +32,99 @@ from chevah.compat.exceptions import CompatError
 ChevahTestCase
 conditionals
 
+
+class CompatManufacture(ChevahCommonsFactory):
+    """
+    Generator of testing helpers for chevah.compat package.
+    """
+
+    # Class member used for generating unique user/group id(s).
+    _posix_id = random.randint(2000, 3000)
+
+    def makeFilesystemOSAvatar(
+        self, name=None, home_folder_path=None, root_folder_path=None,
+        lock_in_home_folder=False, token=None,
+            ):
+        """
+        Creates a valid FilesystemOSAvatar.
+        """
+        if name is None:
+            name = self.username
+
+        if home_folder_path is None:
+            home_folder_path = self.fs.temp_path
+
+        return FilesystemOSAvatar(
+            name=name,
+            home_folder_path=home_folder_path,
+            root_folder_path=root_folder_path,
+            lock_in_home_folder=lock_in_home_folder,
+            token=token,
+            )
+
+    def makeFilesystemApplicationAvatar(
+            self, name=None, home_folder_path=None, root_folder_path=None):
+        """
+        Creates a valid FilesystemApplicationAvatar.
+        """
+        if name is None:
+            name = self.getUniqueString()
+
+        if home_folder_path is None:
+            home_folder_path = self.fs.temp_path
+
+        # Application avatars are locked inside home folders.
+        if root_folder_path is None:
+            root_folder_path = home_folder_path
+
+        return FilesystemApplicationAvatar(
+            name=name,
+            home_folder_path=home_folder_path,
+            root_folder_path=root_folder_path,
+            )
+
+    def makeToken(self, username, password):
+        """
+        Generate the Windows token for username and password.
+
+        Only useful on Windows.
+        On Unix it should return None.
+        """
+        if os.name != 'nt':
+            return None
+
+        result, token = system_users.authenticateWithUsernameAndPassword(
+            username=username,
+            password=password,
+            )
+        if not result:
+            raise AssertionError(
+                u'Failed to get a valid token for "%s" with "%s".' % (
+                    username, password))
+        return token
+
+    def PosixUID(self):
+        """
+        Return a valid Posix Unique ID.
+        """
+        self.__class__._posix_id += 1
+        return self.__class__._posix_id
+
+
+mk = manufacture = CompatManufacture()
+
+
 # Test accounts and passwords.
 TEST_ACCOUNT_USERNAME = u'mâț mițișor'
 TEST_ACCOUNT_PASSWORD = u'Baroșanu42!'
 TEST_ACCOUNT_GROUP = u'g mâțmițișor'
-TEST_ACCOUNT_UID = 2000
-TEST_ACCOUNT_GID = 2010
+TEST_ACCOUNT_UID = mk.PosixUID()
+TEST_ACCOUNT_GID = mk.PosixUID()
 TEST_ACCOUNT_GROUP_WIN = u'Users'
 TEST_ACCOUNT_USERNAME_OTHER = u'miț motan'
 TEST_ACCOUNT_PASSWORD_OTHER = u'altapara'
-TEST_ACCOUNT_UID_OTHER = 2001
-TEST_ACCOUNT_GID_OTHER = 2011
+TEST_ACCOUNT_UID_OTHER = mk.PosixUID()
+TEST_ACCOUNT_GID_OTHER = mk.PosixUID()
 TEST_ACCOUNT_GROUP_OTHER = u'g mițmotan'
 TEST_ACCOUNT_LDAP_USERNAME = u'ldap mâț test-account'
 TEST_ACCOUNT_LDAP_PASSWORD = u'ldap mâț test-password'
@@ -53,7 +136,7 @@ TEST_ACCOUNT_CENTRIFY_UID = 1363149908
 
 # Another test group to test an user belonging to multiple groups.
 TEST_ACCOUNT_GROUP_ANOTHER = u'g-another-test'
-TEST_ACCOUNT_GID_ANOTHER = 2012
+TEST_ACCOUNT_GID_ANOTHER = mk.PosixUID()
 
 # Domain controller helpers.
 TEST_PDC = u'\\\\CHEVAH-DC'
@@ -107,6 +190,9 @@ class TestUser(object):
         domain=None, pdc=None, primary_group_name=None, create_profile=False,
         windows_required_rights=None
             ):
+        """
+        Convert user name to an OS valid value.
+        """
         if home_path is None:
             home_path = u'/tmp'
 
@@ -119,7 +205,7 @@ class TestUser(object):
         if posix_gid is None:
             posix_gid = posix_uid
 
-        self._os_name = self.sanitizeName(name)
+        self._name = self.sanitizeName(name)
         self.uid = posix_uid
         self.gid = posix_gid
         self.home_path = home_path
@@ -135,11 +221,11 @@ class TestUser(object):
         self.windows_required_rights = windows_required_rights
 
     @property
-    def os_name(self):
+    def name(self):
         """
-        Return OS sanitized name for user.
+        Actual user name.
         """
-        return self._os_name
+        return self._name
 
 
 class TestGroup(object):
@@ -160,20 +246,23 @@ class TestGroup(object):
         return group
 
     def __init__(self, name, gid=None, members=None, pdc=None):
+        """
+        Convert name to an OS valid value.
+        """
         if members is None:
             members = []
 
-        self._os_name = self.sanitizeName(name)
+        self._name = self.sanitizeName(name)
         self.gid = gid
         self.members = members
         self.pdc = pdc
 
     @property
-    def os_name(self):
+    def name(self):
         """
-        Return OS sanitized name for group.
+        Actual group name.
         """
-        return self._os_name
+        return self._name
 
 
 TEST_ACCOUNT_USERNAME = TestUser.sanitizeName(TEST_ACCOUNT_USERNAME)
@@ -292,12 +381,12 @@ class FileSystemTestCase(CompatTestCase):
         cls.os_user = cls.setUpTestUser()
 
         token = manufacture.makeToken(
-            username=cls.os_user.os_name, password=cls.os_user.password)
+            username=cls.os_user.name, password=cls.os_user.password)
         home_folder_path = system_users.getHomeFolder(
-            username=cls.os_user.os_name, token=token)
+            username=cls.os_user.name, token=token)
 
         cls.avatar = manufacture.makeFilesystemOSAvatar(
-            name=cls.os_user.os_name,
+            name=cls.os_user.name,
             home_folder_path=home_folder_path,
             token=token,
             )
@@ -347,76 +436,6 @@ class OSAccountFileSystemTestCase(FileSystemTestCase):
         os_administration.deleteUser(cls.CREATE_TEST_USER)
 
         super(OSAccountFileSystemTestCase, cls).tearDownClass()
-
-
-class CompatManufacture(ChevahCommonsFactory):
-    """
-    Generator of testing helpers for chevah.compat package.
-    """
-
-    def makeFilesystemOSAvatar(
-        self, name=None, home_folder_path=None, root_folder_path=None,
-        lock_in_home_folder=False, token=None,
-            ):
-        """
-        Creates a valid FilesystemOSAvatar.
-        """
-        if name is None:
-            name = self.username
-
-        if home_folder_path is None:
-            home_folder_path = self.fs.temp_path
-
-        return FilesystemOSAvatar(
-            name=name,
-            home_folder_path=home_folder_path,
-            root_folder_path=root_folder_path,
-            lock_in_home_folder=lock_in_home_folder,
-            token=token,
-            )
-
-    def makeFilesystemApplicationAvatar(
-            self, name=None, home_folder_path=None, root_folder_path=None):
-        """
-        Creates a valid FilesystemApplicationAvatar.
-        """
-        if name is None:
-            name = self.getUniqueString()
-
-        if home_folder_path is None:
-            home_folder_path = self.fs.temp_path
-
-        # Application avatars are locked inside home folders.
-        if root_folder_path is None:
-            root_folder_path = home_folder_path
-
-        return FilesystemApplicationAvatar(
-            name=name,
-            home_folder_path=home_folder_path,
-            root_folder_path=root_folder_path,
-            )
-
-    def makeToken(self, username, password):
-        """
-        Generate the Windows token for username and password.
-
-        Only useful on Windows.
-        On Unix it should return None.
-        """
-        if os.name != 'nt':
-            return None
-
-        result, token = system_users.authenticateWithUsernameAndPassword(
-            username=username,
-            password=password,
-            )
-        if not result:
-            raise AssertionError(
-                u'Failed to get a valid token for "%s" with "%s".' % (
-                    username, password))
-        return token
-
-mk = manufacture = CompatManufacture()
 
 
 def setup_access_control(users, groups):

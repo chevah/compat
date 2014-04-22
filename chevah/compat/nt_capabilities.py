@@ -130,7 +130,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
                 win32api.CloseHandle(process_token)
 
     @contextmanager
-    def elevatePrivileges(self, *privileges):
+    def _elevatePrivileges(self, *privileges):
         """
         Elevate current process privileges to include the specified ones.
 
