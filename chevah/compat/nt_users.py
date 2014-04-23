@@ -120,7 +120,7 @@ class NTUsers(CompatUsers):
                 _createProfile()
                 home_folder_path = _getHomeFolderPath()
         except ChangeUserException, error:
-            # We fail to impersoante the user, so we exit early.
+            # We fail to impersonate the user, so we exit early.
             self.raiseFailedToGetHomeFolder(username, error.message)
 
         if home_folder_path:

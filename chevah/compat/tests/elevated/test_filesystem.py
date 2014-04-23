@@ -7,58 +7,29 @@ import os
 
 from chevah.compat import (
     LocalFilesystem,
-    process_capabilities,
-    system_users,
     SuperAvatar,
     )
 from chevah.compat.testing import (
-    ChevahTestCase,
     conditionals,
     manufacture,
     TEST_ACCOUNT_GROUP,
     TEST_ACCOUNT_GROUP_OTHER,
     TEST_ACCOUNT_USERNAME,
-    TEST_ACCOUNT_PASSWORD,
     TEST_ACCOUNT_USERNAME_OTHER,
+    TestUser,
     )
-from chevah.empirical.filesystem import LocalTestFilesystem
-from chevah.compat.exceptions import CompatError, CompatException
+from chevah.compat.exceptions import (
+    CompatError,
+    CompatException,
+    )
+from chevah.compat.testing import (
+    FileSystemTestCase,
+    OSAccountFileSystemTestCase,
+    )
+from chevah.compat.tests.mixin.filesystem import SymbolicLinksMixin
 
 
-class FilesystemTestCase(ChevahTestCase):
-    """
-    Common test case for all filesystem tests.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        # FIXME:924:
-        # Disabled when we can not find the home folder path.
-        if not process_capabilities.get_home_folder:
-            raise cls.skipTest()
-
-        super(FilesystemTestCase, cls).setUpClass()
-
-        user = TEST_ACCOUNT_USERNAME
-        password = TEST_ACCOUNT_PASSWORD
-        token = manufacture.makeToken(username=user, password=password)
-        home_folder_path = system_users.getHomeFolder(
-            username=user, token=token)
-        cls.avatar = manufacture.makeFilesystemOSAvatar(
-            name=user,
-            home_folder_path=home_folder_path,
-            token=token,
-            )
-        cls.filesystem = LocalFilesystem(avatar=cls.avatar)
-
-    def setUp(self):
-        super(FilesystemTestCase, self).setUp()
-        # Initialized only to clean the home folder.
-        test_filesystem = LocalTestFilesystem(avatar=self.avatar)
-        test_filesystem.cleanHomeFolder()
-
-
-class TestPosixFilesystem(FilesystemTestCase):
+class TestPosixFilesystem(FileSystemTestCase):
     """
     Path independent, OS independent tests.
     """
@@ -87,7 +58,7 @@ class TestPosixFilesystem(FilesystemTestCase):
 
             self.filesystem.setOwner(segments, self.avatar.name)
 
-        self.assertExceptionID(1016, context.exception)
+        self.assertCompatError(1016, context.exception)
 
         if self.os_family == 'posix':
             self.assertContains(
@@ -259,7 +230,7 @@ class TestPosixFilesystem(FilesystemTestCase):
         self.assertEqual(TEST_ACCOUNT_USERNAME_OTHER, new_owner)
 
 
-class TestUnixFilesystem(FilesystemTestCase):
+class TestUnixFilesystem(FileSystemTestCase):
     """
     Path independent Unix tests.
     """
@@ -322,7 +293,7 @@ class TestUnixFilesystem(FilesystemTestCase):
             u'no-such-group')
 
 
-class TestNTFilesystem(FilesystemTestCase):
+class TestNTFilesystem(FileSystemTestCase):
     """
     Path independent NT tests.
     """
@@ -391,3 +362,46 @@ class TestNTFilesystem(FilesystemTestCase):
 
         self.assertEqual(1016, context.exception.event_id)
         self.assertContains('test-message', context.exception.message)
+
+    def test_makeLink_missing_privilege(self):
+        """
+        It will raise an error if user does not have sufficient privileges
+        for creating symbolic links.
+        """
+        link_segments = self.filesystem.home_segments
+        link_segments.append(manufacture.string())
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.makeLink(
+                target_segments=['z', 'no-such', 'target'],
+                link_segments=link_segments,
+                )
+
+        self.assertContains(
+            u'Process does not have', context.exception.strerror)
+
+
+class TestSymbolicLinks(OSAccountFileSystemTestCase, SymbolicLinksMixin):
+    """
+    Unit tests for `makeLink` when impersonating a user which has permission
+    to create symbolic links.
+
+    User requires SE_CREATE_SYMBOLIC_LINK privilege on Windows OSes
+    in order to be able to create symbolic links. We are using a custom
+    user for which we make sure the right is present for these tests.
+    """
+
+    try:
+        import win32security
+        rights = (win32security.SE_CREATE_SYMBOLIC_LINK_NAME,)
+    except:
+        rights = ()
+
+    CREATE_TEST_USER = TestUser(
+        name=manufacture.string(),
+        password=manufacture.string(),
+        home_group=TEST_ACCOUNT_GROUP,
+        posix_uid=manufacture.posixID(),
+        posix_gid=manufacture.posixID(),
+        windows_required_rights=rights,
+        )

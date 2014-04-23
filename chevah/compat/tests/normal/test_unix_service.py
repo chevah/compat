@@ -100,7 +100,7 @@ class TestDaemon(CompatTestCase):
 
     def test_launch_DETACH_PROCESS(self):
         """
-        At launch, DETACH_PROCESS is copied to the internal DeamonContext
+        At launch, DETACH_PROCESS is copied to the internal DaemonContext
         instance.
         """
         pid_path = self.getPIDPath()
@@ -117,7 +117,7 @@ class TestDaemon(CompatTestCase):
 
     def test_launch_unknown_pid(self):
         """
-        An error is raised when the pid option specified an unreachable path.
+        An error is raised when the pid option specifies an unreachable path.
         """
         options = self.Bunch(pid='bad/path/pid-file')
         daemon = DaemonImplementation(options=options)
@@ -125,7 +125,7 @@ class TestDaemon(CompatTestCase):
         with self.assertRaises(CompatError) as context:
             daemon.launch()
 
-        self.assertExceptionID(1008, context.exception)
+        self.assertCompatError(1008, context.exception)
 
     def test_launch_success(self):
         """

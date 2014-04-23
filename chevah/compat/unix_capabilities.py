@@ -1,15 +1,15 @@
 # Copyright (c) 2010-2012 Adi Roiban.
 # See LICENSE for details.
-'''Provides informatin about capabilites for a process on Unix.'''
+"""
+Provides information about capabilities for a process on Unix.
+"""
 from __future__ import with_statement
 
 from zope.interface import implements
 
 from chevah.compat.capabilities import BaseProcessCapabilities
 from chevah.compat.exceptions import ChangeUserException
-from chevah.compat.helpers import (
-    _,
-    )
+from chevah.compat.helpers import _
 from chevah.compat.interfaces import IProcessCapabilities
 from chevah.compat.unix_users import _ExecuteAsUser
 
@@ -53,10 +53,11 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
         return True
 
     def getCurrentPrivilegesDescription(self):
-        '''Return a text describing current priviledges.
+        """
+        Return a text describing current privileges.
 
         On Unix it informs if the process has root capabilities.
-        '''
+        """
         if self.impersonate_local_account:
             return _(u'root capabilities enabled.')
         else:

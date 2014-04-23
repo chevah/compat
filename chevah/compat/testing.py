@@ -5,198 +5,41 @@
 Helpers for testing.
 """
 import os
+import random
 import sys
 
 from unidecode import unidecode
 
 from chevah.empirical import conditionals
+from chevah.empirical.filesystem import LocalTestFilesystem
 from chevah.empirical.testcase import ChevahTestCase
 from chevah.empirical.mockup import ChevahCommonsFactory
 
-from chevah.compat import system_users
+from chevah.compat import (
+    LocalFilesystem,
+    process_capabilities,
+    system_users,
+    )
 from chevah.compat.administration import os_administration
 from chevah.compat.avatar import (
     FilesystemApplicationAvatar,
     FilesystemOSAvatar,
     )
+from chevah.compat.exceptions import CompatError
 
 
 # Shut up the linter.
 ChevahTestCase
 conditionals
 
-# Test accounts and passwords.
-TEST_ACCOUNT_USERNAME = u'mâț mițișor'
-TEST_ACCOUNT_PASSWORD = u'Baroșanu42!'
-TEST_ACCOUNT_GROUP = u'g mâțmițișor'
-TEST_ACCOUNT_UID = 2000
-TEST_ACCOUNT_GID = 2010
-TEST_ACCOUNT_GROUP_WIN = u'Users'
-TEST_ACCOUNT_USERNAME_OTHER = u'miț motan'
-TEST_ACCOUNT_PASSWORD_OTHER = u'altapara'
-TEST_ACCOUNT_UID_OTHER = 2001
-TEST_ACCOUNT_GID_OTHER = 2011
-TEST_ACCOUNT_GROUP_OTHER = u'g mițmotan'
-TEST_ACCOUNT_LDAP_USERNAME = u'ldap mâț test-account'
-TEST_ACCOUNT_LDAP_PASSWORD = u'ldap mâț test-password'
-
-# Centrify testing account.
-TEST_ACCOUNT_CENTRIFY_USERNAME = u'centrify-user'
-TEST_ACCOUNT_CENTRIFY_PASSWORD = u'Parola01!'
-TEST_ACCOUNT_CENTRIFY_UID = 1363149908
-
-# Another test group to test an user belonging to multiple groups.
-TEST_ACCOUNT_GROUP_ANOTHER = u'g-another-test'
-TEST_ACCOUNT_GID_ANOTHER = 2012
-
-# Domain controller helpers.
-TEST_PDC = u'\\\\CHEVAH-DC'
-TEST_DOMAIN = u'chevah'
-TEST_ACCOUNT_USERNAME_DOMAIN = u'domain test-user'
-TEST_ACCOUNT_PASSWORD_DOMAIN = u'qwe123QWE'
-TEST_ACCOUNT_GROUP_DOMAIN = 'domain test_group'
-
-
-class TestUser(object):
-    """
-    An object storing all user information.
-    """
-
-    def __init__(
-        self, name, uid=None, gid=None, home_path=None,
-        home_group=None, shell=None, shadow=None, password=None,
-        domain=None, pdc=None, primary_group_name=None
-            ):
-        if home_path is None:
-            home_path = u'/tmp'
-
-        if shell is None:
-            shell = u'/bin/sh'
-
-        if shadow is None:
-            shadow = '!'
-
-        if gid is None:
-            gid = uid
-
-        self.name = name
-        self.uid = uid
-        self.gid = gid
-        self.home_path = home_path
-        self.home_group = home_group
-        self.shell = shell
-        self.shadow = shadow
-        self.password = password
-        self.domain = domain
-        self.pdc = pdc
-        self.primary_group_name = primary_group_name
-
-
-class TestGroup(object):
-    """
-    An object storing all group information.
-    """
-
-    def __init__(self, name, gid=None, members=None, pdc=None):
-
-        if members is None:
-            members = []
-
-        self.name = name
-        self.gid = gid
-        self.members = members
-        self.pdc = pdc
-
-
-if sys.platform.startswith('aix'):
-    # By default aix is limited to 8 characters without spaces.
-    fix_username = lambda name: unicode(unidecode(name)).replace(' ', '_')[:8]
-    fix_groupname = fix_username
-elif sys.platform.startswith('win'):
-    # FIXME:927:
-    # On Windows, we can't delete home folders with unicode names.
-    fix_username = lambda name: unicode(unidecode(name))
-    fix_groupname = fix_username
-else:
-    fix_username = lambda name: name
-    fix_groupname = fix_username
-
-TEST_ACCOUNT_USERNAME = fix_username(TEST_ACCOUNT_USERNAME)
-TEST_ACCOUNT_GROUP = fix_groupname(TEST_ACCOUNT_GROUP)
-TEST_ACCOUNT_USERNAME_OTHER = fix_username(TEST_ACCOUNT_USERNAME_OTHER)
-TEST_ACCOUNT_GROUP_OTHER = fix_groupname(TEST_ACCOUNT_GROUP_OTHER)
-TEST_ACCOUNT_GROUP_ANOTHER = fix_groupname(TEST_ACCOUNT_GROUP_ANOTHER)
-
-if sys.platform.startswith('sunos'):
-    TEST_ACCOUNT_HOME_PATH = u'/export/home/' + TEST_ACCOUNT_USERNAME
-    TEST_ACCOUNT_HOME_PATH_OTHER = (
-        u'/export/home/' + TEST_ACCOUNT_USERNAME_OTHER)
-else:
-    TEST_ACCOUNT_HOME_PATH = u'/home/' + TEST_ACCOUNT_USERNAME
-    TEST_ACCOUNT_HOME_PATH_OTHER = u'/home/' + TEST_ACCOUNT_USERNAME_OTHER
-
-TEST_USERS = [
-    TestUser(
-        name=TEST_ACCOUNT_USERNAME,
-        uid=TEST_ACCOUNT_UID,
-        gid=TEST_ACCOUNT_GID,
-        primary_group_name=TEST_ACCOUNT_GROUP,
-        home_path=TEST_ACCOUNT_HOME_PATH,
-        home_group=TEST_ACCOUNT_GROUP,
-        password=TEST_ACCOUNT_PASSWORD,
-        ),
-    TestUser(
-        name=TEST_ACCOUNT_USERNAME_OTHER,
-        uid=TEST_ACCOUNT_UID_OTHER,
-        gid=TEST_ACCOUNT_GID_OTHER,
-        primary_group_name=TEST_ACCOUNT_GROUP_OTHER,
-        home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
-        password=TEST_ACCOUNT_PASSWORD_OTHER,
-        ),
-    ]
-
-TEST_GROUPS = [
-    TestGroup(
-        name=TEST_ACCOUNT_GROUP,
-        gid=TEST_ACCOUNT_GID,
-        members=[TEST_ACCOUNT_USERNAME, TEST_ACCOUNT_USERNAME_OTHER],
-        ),
-    TestGroup(
-        name=TEST_ACCOUNT_GROUP_OTHER,
-        gid=TEST_ACCOUNT_GID_OTHER,
-        members=[TEST_ACCOUNT_USERNAME_OTHER],
-        ),
-    TestGroup(
-        name=TEST_ACCOUNT_GROUP_ANOTHER,
-        gid=TEST_ACCOUNT_GID_ANOTHER,
-        members=[TEST_ACCOUNT_USERNAME],
-        ),
-    ]
-
-
-class CompatTestCase(ChevahTestCase):
-    """
-    Test case used in chevah.compat package.
-
-    For not, there is nothing special here.
-    """
-
-    def runningAsAdministrator(self):
-        """
-        Return True if slave runs as administrator.
-        """
-        # Windows 2008 and DC client tests are done in administration mode,
-        # 2003 and XP under normal mode.
-        if 'win-2008' in self.hostname or 'win-dc' in self.hostname:
-            return True
-        else:
-            return False
-
 
 class CompatManufacture(ChevahCommonsFactory):
     """
     Generator of testing helpers for chevah.compat package.
     """
+
+    # Class member used for generating unique user/group id(s).
+    _posix_id = random.randint(2000, 3000)
 
     def makeFilesystemOSAvatar(
         self, name=None, home_folder_path=None, root_folder_path=None,
@@ -260,7 +103,346 @@ class CompatManufacture(ChevahCommonsFactory):
                     username, password))
         return token
 
+    @classmethod
+    def posixID(cls):
+        """
+        Return a valid Posix ID.
+        """
+        cls._posix_id += 1
+        return cls._posix_id
+
+
 mk = manufacture = CompatManufacture()
+
+
+# Test accounts and passwords.
+TEST_ACCOUNT_USERNAME = u'mâț mițișor'
+TEST_ACCOUNT_PASSWORD = u'Baroșanu42!'
+TEST_ACCOUNT_GROUP = u'g mâțmițișor'
+# FIXME:2106:
+# Replace hard-coded constant with posixID()
+TEST_ACCOUNT_UID = 2000
+TEST_ACCOUNT_GID = 2010
+TEST_ACCOUNT_GROUP_WIN = u'Users'
+TEST_ACCOUNT_USERNAME_OTHER = u'miț motan'
+TEST_ACCOUNT_PASSWORD_OTHER = u'altapara'
+# FIXME:2106:
+# Replace hard-coded constant with posixID()
+TEST_ACCOUNT_UID_OTHER = 2001
+TEST_ACCOUNT_GID_OTHER = 2011
+TEST_ACCOUNT_GROUP_OTHER = u'g mițmotan'
+TEST_ACCOUNT_LDAP_USERNAME = u'ldap mâț test-account'
+TEST_ACCOUNT_LDAP_PASSWORD = u'ldap mâț test-password'
+
+# Centrify testing account.
+TEST_ACCOUNT_CENTRIFY_USERNAME = u'centrify-user'
+TEST_ACCOUNT_CENTRIFY_PASSWORD = u'Parola01!'
+TEST_ACCOUNT_CENTRIFY_UID = 1363149908
+
+# Another test group to test an user belonging to multiple groups.
+TEST_ACCOUNT_GROUP_ANOTHER = u'g-another-test'
+# FIXME:2106:
+# Replace hard-coded constant with posixID()
+TEST_ACCOUNT_GID_ANOTHER = 2012
+
+# Domain controller helpers.
+TEST_PDC = u'\\\\CHEVAH-DC'
+TEST_DOMAIN = u'chevah'
+TEST_ACCOUNT_USERNAME_DOMAIN = u'domain test-user'
+TEST_ACCOUNT_PASSWORD_DOMAIN = u'qwe123QWE'
+TEST_ACCOUNT_GROUP_DOMAIN = u'domain test_group'
+
+
+# FIXME:2106:
+# Get rid of global functions and replace with OS specialized TestUSer
+# instances: TestUserAIX, TestUserWindows, TestUserUnix, etc.
+def _sanitize_name_aix(candidate):
+    """
+    Return valid user/group name for AIX from `candidate`.
+
+    By default aix is limited to 8 characters without spaces.
+    """
+    return unicode(unidecode(candidate)).replace(' ', '_')[:8]
+
+
+def _sanitize_name_windows(candidate):
+    """
+    Return valid user/group name for Windows OSs from `candidate.
+    """
+    # FIXME:927:
+    # On Windows, we can't delete home folders with unicode names.
+    return unicode(unidecode(candidate))
+
+
+class TestUser(object):
+    """
+    An object storing all user information.
+    """
+
+    @classmethod
+    def sanitizeName(cls, name):
+        """
+        Return name sanitized for current OS.
+        """
+        if sys.platform.startswith('aix'):
+            return _sanitize_name_aix(name)
+        elif sys.platform.startswith('win'):
+            return _sanitize_name_windows(name)
+
+        return name
+
+    def __init__(
+        self, name, posix_uid=None, posix_gid=None, home_path=None,
+        home_group=None, shell=None, shadow=None, password=None,
+        domain=None, pdc=None, primary_group_name=None, create_profile=False,
+        windows_required_rights=None
+            ):
+        """
+        Convert user name to an OS valid value.
+        """
+        if home_path is None:
+            home_path = u'/tmp'
+
+        if shell is None:
+            shell = u'/bin/sh'
+
+        if shadow is None:
+            shadow = '!'
+
+        if posix_gid is None:
+            posix_gid = posix_uid
+
+        self._name = self.sanitizeName(name)
+        self.uid = posix_uid
+        self.gid = posix_gid
+        self.home_path = home_path
+        self.home_group = home_group
+        self.shell = shell
+        self.shadow = shadow
+        self.password = password
+        self.domain = domain
+        self.pdc = pdc
+        self.primary_group_name = primary_group_name
+        self.windows_sid = None
+        self.windows_create_profile = create_profile
+        self.windows_required_rights = windows_required_rights
+
+    @property
+    def name(self):
+        """
+        Actual user name.
+        """
+        return self._name
+
+
+class TestGroup(object):
+    """
+    An object storing all group information.
+    """
+
+    @classmethod
+    def sanitizeName(cls, group):
+        """
+        Return name sanitized for current OS.
+        """
+        if sys.platform.startswith('aix'):
+            return _sanitize_name_aix(group)
+        elif sys.platform.startswith('win'):
+            return _sanitize_name_windows(group)
+
+        return group
+
+    def __init__(self, name, gid=None, members=None, pdc=None):
+        """
+        Convert name to an OS valid value.
+        """
+        if members is None:
+            members = []
+
+        self._name = self.sanitizeName(name)
+        self.gid = gid
+        self.members = members
+        self.pdc = pdc
+
+    @property
+    def name(self):
+        """
+        Actual group name.
+        """
+        return self._name
+
+
+TEST_ACCOUNT_USERNAME = TestUser.sanitizeName(TEST_ACCOUNT_USERNAME)
+TEST_ACCOUNT_GROUP = TestGroup.sanitizeName(TEST_ACCOUNT_GROUP)
+
+TEST_ACCOUNT_USERNAME_OTHER = TestUser.sanitizeName(
+    TEST_ACCOUNT_USERNAME_OTHER)
+TEST_ACCOUNT_GROUP_OTHER = TestGroup.sanitizeName(TEST_ACCOUNT_GROUP_OTHER)
+TEST_ACCOUNT_GROUP_ANOTHER = TestGroup.sanitizeName(
+    TEST_ACCOUNT_GROUP_ANOTHER)
+
+TEST_ACCOUNT_USERNAME_DOMAIN = TestUser.sanitizeName(
+    TEST_ACCOUNT_USERNAME_DOMAIN)
+TEST_ACCOUNT_GROUP_DOMAIN = TestGroup.sanitizeName(
+    TEST_ACCOUNT_GROUP_DOMAIN)
+
+
+if sys.platform.startswith('sunos'):
+    TEST_ACCOUNT_HOME_PATH = u'/export/home/' + TEST_ACCOUNT_USERNAME
+    TEST_ACCOUNT_HOME_PATH_OTHER = (
+        u'/export/home/' + TEST_ACCOUNT_USERNAME_OTHER)
+else:
+    TEST_ACCOUNT_HOME_PATH = u'/home/' + TEST_ACCOUNT_USERNAME
+    TEST_ACCOUNT_HOME_PATH_OTHER = u'/home/' + TEST_ACCOUNT_USERNAME_OTHER
+
+TEST_USERS = [
+    TestUser(
+        name=TEST_ACCOUNT_USERNAME,
+        posix_uid=TEST_ACCOUNT_UID,
+        posix_gid=TEST_ACCOUNT_GID,
+        primary_group_name=TEST_ACCOUNT_GROUP,
+        home_path=TEST_ACCOUNT_HOME_PATH,
+        home_group=TEST_ACCOUNT_GROUP,
+        password=TEST_ACCOUNT_PASSWORD,
+        ),
+    TestUser(
+        name=TEST_ACCOUNT_USERNAME_OTHER,
+        posix_uid=TEST_ACCOUNT_UID_OTHER,
+        posix_gid=TEST_ACCOUNT_GID_OTHER,
+        primary_group_name=TEST_ACCOUNT_GROUP_OTHER,
+        home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
+        password=TEST_ACCOUNT_PASSWORD_OTHER,
+        ),
+    ]
+
+TEST_GROUPS = [
+    TestGroup(
+        name=TEST_ACCOUNT_GROUP,
+        gid=TEST_ACCOUNT_GID,
+        members=[TEST_ACCOUNT_USERNAME, TEST_ACCOUNT_USERNAME_OTHER],
+        ),
+    TestGroup(
+        name=TEST_ACCOUNT_GROUP_OTHER,
+        gid=TEST_ACCOUNT_GID_OTHER,
+        members=[TEST_ACCOUNT_USERNAME_OTHER],
+        ),
+    TestGroup(
+        name=TEST_ACCOUNT_GROUP_ANOTHER,
+        gid=TEST_ACCOUNT_GID_ANOTHER,
+        members=[TEST_ACCOUNT_USERNAME],
+        ),
+    ]
+
+
+class CompatTestCase(ChevahTestCase):
+    """
+    Test case used in chevah.compat package.
+
+    For now, there is nothing special here.
+    """
+
+    def runningAsAdministrator(self):
+        """
+        Return True if slave runs as administrator.
+        """
+        # Windows 2008 and DC client tests are done in administration mode,
+        # 2003 and XP under normal mode.
+        if 'win-2008' in self.hostname or 'win-dc' in self.hostname:
+            return True
+        else:
+            return False
+
+    def assertCompatError(self, expected_id, actual_error):
+        """
+        Raise an error if `actual_error` is not a `CompatError` instance.
+
+        Raise an error if `expected_id` does not match event_id of
+        `actual_error`.
+        """
+        if not isinstance(actual_error, CompatError):
+            values = (actual_error, type(actual_error))
+            message = u'Error %s not CompatError but %s' % values
+            raise AssertionError(message.encode('utf-8'))
+
+        actual_id = getattr(actual_error, 'event_id', None)
+        if expected_id != actual_id:
+            values = (actual_error, str(expected_id), str(actual_id))
+            message = u'Error id for %s is not %s, but %s.' % values
+            raise AssertionError(message.encode('utf-8'))
+
+
+class FileSystemTestCase(CompatTestCase):
+    """
+    Common test case for all file-system tests.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        # FIXME:924:
+        # Disabled when we can not find the home folder path.
+        if not process_capabilities.get_home_folder:
+            raise cls.skipTest()
+
+        super(FileSystemTestCase, cls).setUpClass()
+
+        cls.os_user = cls.setUpTestUser()
+
+        token = manufacture.makeToken(
+            username=cls.os_user.name, password=cls.os_user.password)
+        home_folder_path = system_users.getHomeFolder(
+            username=cls.os_user.name, token=token)
+
+        cls.avatar = manufacture.makeFilesystemOSAvatar(
+            name=cls.os_user.name,
+            home_folder_path=home_folder_path,
+            token=token,
+            )
+        cls.filesystem = LocalFilesystem(avatar=cls.avatar)
+
+    @classmethod
+    def setUpTestUser(cls):
+        """
+        Set-up OS user for symbolic link testing.
+        """
+        # FIXME:2106:
+        # Re-use global instance.
+        return TestUser(
+            name=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD
+            )
+
+    def setUp(self):
+        super(FileSystemTestCase, self).setUp()
+        # Initialized only to clean the home folder.
+        test_filesystem = LocalTestFilesystem(avatar=self.avatar)
+        test_filesystem.cleanHomeFolder()
+
+
+class OSAccountFileSystemTestCase(FileSystemTestCase):
+    """
+    Test case for tests that need a local OS account present.
+    """
+
+    # User will be created before running the test case and removed on
+    # teardown.
+    CREATE_TEST_USER = None
+
+    @classmethod
+    def setUpTestUser(cls):
+        """
+        Add `CREATE_TEST_USER` to local OS.
+        """
+        os_administration.addUser(cls.CREATE_TEST_USER)
+        return cls.CREATE_TEST_USER
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Remove OS user used for testing.
+        """
+        os_administration.deleteUser(cls.CREATE_TEST_USER)
+
+        super(OSAccountFileSystemTestCase, cls).tearDownClass()
 
 
 def setup_access_control(users, groups):

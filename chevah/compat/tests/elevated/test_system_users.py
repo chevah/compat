@@ -144,15 +144,17 @@ class TestSystemUsers(SystemUsersTestCase):
             raise self.skipTest()
 
         username = u'no-home'
-        password = u'no-home'
-        home_path = None
+        password = manufacture.string()
         user = TestUser(
-            name=username, uid=None, password=password, home_path=home_path)
+            name=username,
+            password=password,
+            create_profile=False,
+            )
 
         try:
             # We don't want to create the profile here since this is
             # what we are testing.
-            os_administration._addUser_windows(user, create_profile=False)
+            os_administration.addUser(user)
             token = manufacture.makeToken(
                 username=username, password=password)
 
@@ -165,13 +167,6 @@ class TestSystemUsers(SystemUsersTestCase):
                     home_path, username))
         finally:
             os_administration.deleteUser(user)
-            # Delete user does not removed the user home folder,
-            # so we explicitly remove it here.
-            if home_path:
-                # If filesystem.deleteFolder is used then 'Access denied'
-                # is return because Windows sees some opened files inside the
-                # directory.
-                os.system('rmdir /S /Q ' + home_path.encode('utf-8'))
 
     def test_getHomeFolder_osx(self):
         """
@@ -360,7 +355,7 @@ class TestSystemUsers(SystemUsersTestCase):
 
     def test_executeAsUser_unix_user_does_not_exists(self):
         """
-        If the user does not exist, exetueAsUser will raise
+        If the user does not exist, executeAsUser will raise
         ChangeUserException.
         """
         with self.assertRaises(ChangeUserException):
@@ -456,7 +451,7 @@ class TestSystemUsers(SystemUsersTestCase):
 
 class ImpersonatedAvatarImplementation(HasImpersonatedAvatar):
     """
-    Implementatation of HasImpersonatedAvatar to help with testing.
+    Implementation of HasImpersonatedAvatar to help with testing.
 
     'name' and 'token' attributes should be provided, and
     'use_impersonation' implemented.

@@ -241,7 +241,7 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         It raise an exception when an invalid privilege name is requested.
         """
         with self.assertRaises(AdjustPrivilegeException):
-            with (self.capabilities.elevatePrivileges(
+            with (self.capabilities._elevatePrivileges(
                 win32security.SE_IMPERSONATE_NAME,
                 'no-such-privilege-name',
                     )):
@@ -258,11 +258,11 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         privilege = win32security.SE_TAKE_OWNERSHIP_NAME
         self.assertFalse(self.capabilities._isPrivilegeEnabled(privilege))
 
-        with (self.capabilities.elevatePrivileges(privilege)):
+        with (self.capabilities._elevatePrivileges(privilege)):
             self.assertTrue(self.capabilities._isPrivilegeEnabled(privilege))
 
         # We should be able to take ownership again.
-        with (self.capabilities.elevatePrivileges(privilege)):
+        with (self.capabilities._elevatePrivileges(privilege)):
             self.assertTrue(self.capabilities._isPrivilegeEnabled(privilege))
 
         self.assertFalse(self.capabilities._isPrivilegeEnabled(privilege))
@@ -278,7 +278,7 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
 
         capabilities = self.capabilities
         with self.Patch.object(capabilities, '_adjustPrivilege') as method:
-            with (capabilities.elevatePrivileges(privilege)):
+            with (capabilities._elevatePrivileges(privilege)):
                 self.assertFalse(method.called)
                 self.assertTrue(capabilities._isPrivilegeEnabled(privilege))
 
@@ -299,7 +299,7 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
             self.capabilities._isPrivilegeEnabled(take_ownership))
 
         capabilities = self.capabilities
-        with (capabilities.elevatePrivileges(take_ownership, impersonate)):
+        with (capabilities._elevatePrivileges(take_ownership, impersonate)):
             self.assertTrue(
                 self.capabilities._isPrivilegeEnabled(impersonate))
             self.assertTrue(

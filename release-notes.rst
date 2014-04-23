@@ -2,6 +2,16 @@ Release notes for chevah.compat
 ===============================
 
 
+0.19.0 - 17/04/2014
+-------------------
+
+* Fix domain test account's home folder removal.
+* Fix creating symbolic links on Windows when impersonating.
+* Separate Windows OS administration helpers.
+* Add support for granting/revoking user rights/privileges on Windows for the
+  testing infrastructure.
+
+
 0.18.1 - 24/03/2014
 -------------------
 
@@ -26,7 +36,7 @@ Release notes for chevah.compat
 0.17.0 - 04/03/2014
 -------------------
 
-* Add support for readling symbolic links on Windows.
+* Add support for reading symbolic links on Windows.
 
 
 0.16.0 - 04/03/2014

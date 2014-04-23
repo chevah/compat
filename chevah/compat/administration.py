@@ -10,13 +10,14 @@ AIX
 ---
 
 AIX security sub-system is a bit more complex than Linux and it keeps a lot of
-iles in /etc/security. This is why we use only system command for managing
+files in /etc/security. This is why we use only system command for managing
 users and groups on AIX.
 
 Default groups and users have a maximum length of 9. Check `lsattr -El sys0`
 for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 
 """
+from contextlib import contextmanager
 import os
 import random
 import subprocess
@@ -30,6 +31,7 @@ from chevah.compat import (
     system_users,
     SuperAvatar,
     )
+from chevah.compat.constants import ERROR_USERNAME_NOT_FOUND
 
 
 def execute(
@@ -59,13 +61,14 @@ def execute(
     return (exit_code, stdoutdata)
 
 
-class OSAdministration(object):
+class OSAdministrationUnix(object):
 
     def __init__(self):
         self.name = self.getName()
         self.fs = LocalFilesystem(SuperAvatar())
 
-    def getName(self):
+    @classmethod
+    def getName(cls):
         """
         Return the name of the platform.
         """
@@ -165,22 +168,6 @@ class OSAdministration(object):
     def _addGroup_solaris(self, group):
         self._addGroup_unix(group)
 
-    def _addGroup_windows(self, group):
-        """
-        Add a group to Windows local system.
-        """
-        import win32net
-        data = {
-            'name': group.name,
-            }
-
-        try:
-            win32net.NetLocalGroupAdd(group.pdc, 0, data)
-        except Exception, error:
-            raise AssertionError(
-                'Failed to add group %s in domain %s. %s' % (
-                    group.name, group.pdc, error))
-
     def addUsersToGroup(self, group, users=None):
         """
         Add the users to the specified group.
@@ -225,19 +212,6 @@ class OSAdministration(object):
 
     def _addUsersToGroup_solaris(self, group, users):
         self._addUsersToGroup_unix(group, users)
-
-    def _addUsersToGroup_windows(self, group, users):
-        """
-        Add `users` to group.
-        """
-        import win32net
-        members_info = []
-        for member in users:
-            members_info.append({
-                'domainandname': member
-                })
-        win32net.NetLocalGroupAddMembers(
-            group.pdc, group.name, 3, members_info)
 
     def addUser(self, user):
         """
@@ -372,42 +346,6 @@ class OSAdministration(object):
     def _addUser_solaris(self, user):
         self._addUser_unix(user)
 
-    def _addUser_windows(self, user, create_profile=True):
-        """
-        Create an local Windows account.
-
-        When `create_profile` is True, this method will also try to create
-        the home folder. Otherwise the user is created, but the home
-        folder does not exists until the first login or when profile
-        is explicitly created in other part.
-        """
-        import win32net
-        import win32netcon
-        user_info = {
-            'name': user.name,
-            'password': user.password,
-            'priv': win32netcon.USER_PRIV_USER,
-            'home_dir': None,
-            'comment': None,
-            'flags': win32netcon.UF_SCRIPT,
-            'script_path': None,
-            }
-
-        win32net.NetUserAdd(user.pdc, 1, user_info)
-        if user.password and create_profile:
-            if user.domain:
-                username = u'%s@%s' % (user.name, user.domain)
-            else:
-                username = user.name
-            result, token = system_users.authenticateWithUsernameAndPassword(
-                username=username, password=user.password)
-            if token is None:
-                raise AssertionError(
-                    u'Failed to get a valid token while creating account '
-                    u'for %s' % (username))
-            system_users._createLocalProfile(
-                username=username, token=token)
-
     def setUserPassword(self, user):
         """
         Set a password for the user. The password is an attribute of the
@@ -477,31 +415,6 @@ class OSAdministration(object):
         """
         self._setUserPassword_unix(user)
 
-    def _setUserPassword_windows(self, user):
-        """
-        On Windows we can not change the password without having the
-        old password.
-
-        For not this works, but this code is not 100% valid.
-        """
-
-        # NetUserChangePassword works a little different that other
-        # Net* functions. In order to work on local computer it requires
-        # that the first argument be the computer name and not 'None'
-        # like the rest of Net* functions.
-        pdc = user.pdc
-        if not pdc:
-            pdc = ChevahTestCase.getHostname()
-
-        try:
-            import win32net
-            win32net.NetUserChangePassword(
-                pdc, user.name, user.password, user.password)
-        except:
-            print 'Failed to set password "%s" for user "%s" on pdc "%s".' % (
-                user.password, user.name, pdc)
-            raise
-
     def deleteUser(self, user):
         """
         Delete user from the local operating system.
@@ -543,34 +456,6 @@ class OSAdministration(object):
     def _deleteUser_solaris(self, user):
         self._deleteUser_unix(user)
 
-    def _deleteUser_windows(self, user):
-        """
-        Removes an account from Windows together.
-        Home folder is not removed.
-        """
-        import win32net
-        try:
-            win32net.NetUserDel(user.pdc, user.name)
-        except win32net.error, (number, context, message):
-            # Ignore user not found error.
-            if number != 2221:
-                raise
-
-        # /tmp is assigned for Users without a home folder and we don't
-        # want to delete this folder.
-        # We can not reliably get home folder on all Windows version, so
-        # we assume that home folders for other accounts are siblings to
-        # the home folder of the current account.
-        # FIXME:927:
-        # We need to look for a way to delete homefolders with unicode
-        # names.
-        if not u'tmp' in user.home_path:
-            home_base = os.path.dirname(os.getenv('USERPROFILE'))
-            home_path = os.path.join(home_base, user.name)
-            subprocess.call(
-                'cmd.exe /C rmdir /S /Q "' + home_path.encode('utf-8') + '"',
-                shell=True)
-
     def deleteGroup(self, group):
         """
         Delete group from the local operating system.
@@ -596,13 +481,6 @@ class OSAdministration(object):
 
     def _deleteGroup_solaris(self, group):
         self._deleteGroup_unix(group)
-
-    def _deleteGroup_windows(self, group):
-        """
-        Remove a group from Windows local system.
-        """
-        import win32net
-        win32net.NetLocalGroupDel(group.pdc, group.name)
 
     def _appendUnixEntry(self, segments, new_line):
         """
@@ -663,7 +541,7 @@ class OSAdministration(object):
         value_to_replace=None,
             ):
         """
-        Update entry 'name' with a new value or an appened value.
+        Update entry 'name' with a new value or an appended value.
         Field is the number of entry filed to update, counting with 1.
         """
         exists = False
@@ -736,5 +614,193 @@ class OSAdministration(object):
         return content
 
 
+class OSAdministrationWindows(OSAdministrationUnix):
+    """
+    Windows specific implementation for OS administration.
+    """
+
+    def addGroup(self, group):
+        """
+        Add a group to Windows local system.
+        """
+        import win32net
+        data = {'name': group.name}
+        try:
+            win32net.NetLocalGroupAdd(group.pdc, 0, data)
+        except Exception, error:
+            raise AssertionError(
+                'Failed to add group %s in domain %s. %s' % (
+                    group.name, group.pdc, error))
+
+    def addUsersToGroup(self, group, users=None):
+        """
+        Add `users` to group.
+        """
+        if users is None:
+            users = []
+
+        import win32net
+        members_info = []
+        for member in users:
+            members_info.append({
+                'domainandname': member
+                })
+        win32net.NetLocalGroupAddMembers(
+            group.pdc, group.name, 3, members_info)
+
+    def addUser(self, user):
+        """
+        Create an local Windows account.
+
+        When `user.create_profile` is True, this method will also try to
+        create the home folder. Otherwise the user is created, but the home
+        folder does not exists until the first login or when profile
+        is explicitly created in other part.
+        """
+        import win32net
+        import win32netcon
+        user_info = {
+            'name': user.name,
+            'password': user.password,
+            'priv': win32netcon.USER_PRIV_USER,
+            'home_dir': None,
+            'comment': None,
+            'flags': win32netcon.UF_SCRIPT,
+            'script_path': None,
+            }
+
+        win32net.NetUserAdd(user.pdc, 1, user_info)
+        if user.password and user.windows_create_profile:
+            if user.domain:
+                username = u'%s@%s' % (user.name, user.domain)
+            else:
+                username = user.name
+            result, token = system_users.authenticateWithUsernameAndPassword(
+                username=username, password=user.password)
+            if token is None:
+                raise AssertionError(
+                    u'Failed to get a valid token while creating account '
+                    u'for %s' % (username))
+            system_users._createLocalProfile(
+                username=username, token=token)
+
+        user.windows_sid = self._getUserSID(user)
+
+        if user.windows_required_rights:
+            self._grantUserRights(user, user.windows_required_rights)
+
+    def setUserPassword(self, user):
+        """
+        On Windows we can not change the password without having the
+        old password.
+
+        For not this works, but this code is not 100% valid.
+        """
+        # NetUserChangePassword works a little different that other
+        # Net* functions. In order to work on local computer it requires
+        # that the first argument be the computer name and not 'None'
+        # like the rest of Net* functions.
+        pdc = user.pdc
+        if not pdc:
+            pdc = ChevahTestCase.getHostname()
+
+        try:
+            import win32net
+            win32net.NetUserChangePassword(
+                pdc, user.name, user.password, user.password)
+        except:
+            print 'Failed to set password "%s" for user "%s" on pdc "%s".' % (
+                user.password, user.name, pdc)
+            raise
+
+    def deleteUser(self, user):
+        """
+        Removes an account from Windows together.
+        Home folder is not removed.
+        """
+        if user.windows_required_rights:
+            self._revokeUserRights(user, user.windows_required_rights)
+
+        import win32net
+        try:
+            win32net.NetUserDel(user.pdc, user.name)
+        except win32net.error, (number, context, message):
+            # Ignore user not found error.
+            if number != ERROR_USERNAME_NOT_FOUND:
+                raise
+
+        # We can not reliably get home folder on all Windows version, so
+        # we assume that home folders for other accounts are siblings to
+        # the home folder of the current account.
+        home_base = os.path.dirname(os.getenv('USERPROFILE'))
+        home_path = os.path.join(home_base, user.name)
+
+        # FIXME:927:
+        # We need to look for a way to delete home folders with unicode
+        # names.
+        command = 'cmd.exe /C rmdir /S /Q "%s"'
+        subprocess.call(command % (home_path.encode('utf-8')), shell=True)
+
+    def deleteGroup(self, group):
+        """
+        Remove a group from Windows local system.
+        """
+        import win32net
+        win32net.NetLocalGroupDel(group.pdc, group.name)
+
+    @contextmanager
+    def _openLSAPolicy(self):
+        """
+        Context manager for opening LSA policy token in ALL ACCESS mode.
+        """
+        import win32security
+        policy_handle = None
+        try:
+            policy_handle = win32security.LsaOpenPolicy(
+                '', win32security.POLICY_ALL_ACCESS)
+
+            yield policy_handle
+        finally:
+            if policy_handle:
+                win32security.LsaClose(policy_handle)
+
+    def _getUserSID(self, user):
+        """
+        Return the security id for user with `username`.
+
+        Raises an error if user cannot not be found.
+        """
+        import win32security
+        try:
+            result = win32security.LookupAccountName('', user.name)
+            user_sid = result[0]
+        except win32security.error:
+            message = u'User %s could not be found.' % (user.name)
+            raise AssertionError(message.encode('utf-8'))
+
+        return user_sid
+
+    def _grantUserRights(self, user, rights):
+        """
+        Grants `rights` to `user`.
+        """
+        import win32security
+        with self._openLSAPolicy() as policy_handle:
+            win32security.LsaAddAccountRights(
+                policy_handle, user.windows_sid, rights)
+
+    def _revokeUserRights(self, user, rights):
+        """
+        Revokes `rights` from `user`.
+        """
+        import win32security
+        with self._openLSAPolicy() as policy_handle:
+            win32security.LsaRemoveAccountRights(
+                policy_handle, user.windows_sid, 0, rights)
+
+
 # Create the singleton.
-os_administration = OSAdministration()
+if OSAdministrationUnix.getName() == 'windows':
+    os_administration = OSAdministrationWindows()
+else:
+    os_administration = OSAdministrationUnix()

@@ -38,7 +38,7 @@ class TestSystemUsers(CompatTestCase):
         home_folder = system_users.getHomeFolder(
             username=manufacture.username)
 
-        # For buidlslave, home folder is in srv.
+        # For buildslave, home folder is in srv.
         if manufacture.username == 'buildslave':
             self.assertEqual(u'/srv/' + manufacture.username, home_folder)
         else:

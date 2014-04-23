@@ -26,6 +26,7 @@ TEST_USERS = [
         password=TEST_ACCOUNT_PASSWORD_DOMAIN,
         domain=TEST_DOMAIN,
         pdc=TEST_PDC,
+        create_profile=True,
         )
     ]
 
@@ -40,12 +41,13 @@ TEST_GROUPS = [
 
 def runDomainTest():
     """
-    Return true if we can access privileged OS operations.
+    Return True if buildslave is a domain member.
     """
     # For now, elevated tests are executed only on the domain controller
     # buildslave.
     if '-dc-' in ChevahTestCase.getHostname():
         return True
+
     return False
 
 
@@ -53,8 +55,8 @@ def setup_package():
     # Don't run these tests if we can not access privileged OS part.
     if not runDomainTest():
         raise ChevahTestCase.skipTest()
-    # Initialize the testing OS.
 
+    # Initialize the testing OS.
     try:
         setup_access_control(users=TEST_USERS, groups=TEST_GROUPS)
     except:

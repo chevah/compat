@@ -1,9 +1,9 @@
 # Copyright (c) 2010 Adi Roiban.
 # See LICENSE for details.
 # The names from this module as a bit against the rules.
-'''
+"""
 Code for portable functions.
-'''
+"""
 from __future__ import with_statement
 
 __metaclass__ = type
