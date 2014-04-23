@@ -103,12 +103,13 @@ class CompatManufacture(ChevahCommonsFactory):
                     username, password))
         return token
 
-    def PosixUID(self):
+    @classmethod
+    def posixID(cls):
         """
-        Return a valid Posix Unique ID.
+        Return a valid Posix ID.
         """
-        self.__class__._posix_id += 1
-        return self.__class__._posix_id
+        cls._posix_id += 1
+        return cls._posix_id
 
 
 mk = manufacture = CompatManufacture()
@@ -118,11 +119,15 @@ mk = manufacture = CompatManufacture()
 TEST_ACCOUNT_USERNAME = u'mâț mițișor'
 TEST_ACCOUNT_PASSWORD = u'Baroșanu42!'
 TEST_ACCOUNT_GROUP = u'g mâțmițișor'
+# FIXME:2106:
+# Replace hard-coded constant with posixID()
 TEST_ACCOUNT_UID = 2000
 TEST_ACCOUNT_GID = 2010
 TEST_ACCOUNT_GROUP_WIN = u'Users'
 TEST_ACCOUNT_USERNAME_OTHER = u'miț motan'
 TEST_ACCOUNT_PASSWORD_OTHER = u'altapara'
+# FIXME:2106:
+# Replace hard-coded constant with posixID()
 TEST_ACCOUNT_UID_OTHER = 2001
 TEST_ACCOUNT_GID_OTHER = 2011
 TEST_ACCOUNT_GROUP_OTHER = u'g mițmotan'
@@ -136,6 +141,8 @@ TEST_ACCOUNT_CENTRIFY_UID = 1363149908
 
 # Another test group to test an user belonging to multiple groups.
 TEST_ACCOUNT_GROUP_ANOTHER = u'g-another-test'
+# FIXME:2106:
+# Replace hard-coded constant with posixID()
 TEST_ACCOUNT_GID_ANOTHER = 2012
 
 # Domain controller helpers.
