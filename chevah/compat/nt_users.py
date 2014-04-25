@@ -13,15 +13,14 @@ import win32profile
 import win32security
 
 from chevah.compat.compat_users import CompatUsers
-from chevah.compat.constants import WINDOWS_PRIMARY_GROUP
+from chevah.compat.constants import (
+    ERROR_USERNAME_DOES_NOT_EXIST,
+    WINDOWS_PRIMARY_GROUP,
+    )
 from chevah.compat.exceptions import (
     ChangeUserException,
-    CompatError,
     )
-from chevah.compat.helpers import (
-    _,
-    NoOpContext,
-    )
+from chevah.compat.helpers import NoOpContext
 from chevah.compat.interfaces import (
     IFileSystemAvatar,
     IHasImpersonatedAvatar,
@@ -44,6 +43,12 @@ GetUserNameW.restype = c_uint
 process_capabilities = NTProcessCapabilities()
 
 
+class UnknownUserException(Exception):
+    """
+    Non existing user exception.
+    """
+
+
 class NTUsers(CompatUsers):
     """
     Container for NT users specific methods.
@@ -62,8 +67,51 @@ class NTUsers(CompatUsers):
         """
         Get home folder for local user.
         """
+        if not process_capabilities.get_home_folder:
+            message = (
+                u'Operating system does not support getting home folder '
+                u'for account "%s".' % username)
+            self.raiseFailedToGetHomeFolder(username, message)
+
+        result = None
+        try:
+            result = self._getHomeFolderPath(username, token)
+        except ChangeUserException, error:
+            # Unable to impersonate user, fail early.
+            self.raiseFailedToGetHomeFolder(username, error.message)
+        except UnknownUserException:
+            # User does not have a local profile.
+            if not token:
+                self.raiseFailedToGetHomeFolder(
+                    username, u'Failed to get home folder path.')
+
+            # We try to create the profile and then try one last time to get
+            # the home folder.
+            self._createProfile(username, token)
+            try:
+                result = self._getHomeFolderPath(username, token)
+            except:
+                # Ignore all errors.
+                result = None
+
+        if not result:
+            # Maybe this should be an AssertionError since we should not
+            # arrive here.
+            self.raiseFailedToGetHomeFolder(
+                username, u'Failed to get home folder path.')
+
+        return result
+
+    def _getHomeFolderPath(self, username, token=None):
+        """
+        It `token` is `None` it will get current user's home folder path.
+
+        Otherwise it will try to get the home folder path for the user
+        with `username`.
+        """
         # In windows, you can choose to care about local versus
         # roaming profiles.
+        #
         # You can fetch the current user's through PyWin32.
         #
         # For example, to ask for the roaming 'Application Data' directory:
@@ -71,67 +119,59 @@ class NTUsers(CompatUsers):
         #   CSIDL_LOCAL_APPDATA for the local one)
         #  (See microsoft references for further CSIDL constants)
         #  http://msdn.microsoft.com/en-us/library/bb762181(VS.85).aspx
-
+        #
         # Force creation of local profile so that we can query the home
         # folder.
+        UNKNOWN_USER = -2147024894L
+        CSIDL_FLAG_CREATE = 0x8000
 
-        if not process_capabilities.get_home_folder:
-            message = (
-                u'Operating system does not support getting home folder '
-                u'for account "%s"' % (username))
-            self.raiseFailedToGetHomeFolder(username, message)
-
-        home_folder_path = None
-
-        def _getHomeFolderPath():
-            with self.executeAsUser(
-                    username=username, token=token):
-                try:
-                    CSIDL_FLAG_CREATE = 0x8000
-                    path = shell.SHGetFolderPath(
-                        0,
-                        shellcon.CSIDL_PROFILE | CSIDL_FLAG_CREATE,
-                        token,
-                        0,
-                        )
-                    return path
-                except pythoncom.com_error, (number, message, e1, e2):
-                    error_text = _(u'%d:%s' % (number, message))
-                    self.raiseFailedToGetHomeFolder(username, error_text)
-
-        def _createProfile():
+        with self.executeAsUser(username=username, token=token):
             try:
-                self._createLocalProfile(username, token)
-            except win32security.error, (error_id, error_call, error_message):
-                error_text = _(
-                    u'Failed to create user profile. '
-                    u'Make sure you have SeBackupPrivilege and '
-                    u'SeRestorePrivilege. (%d:%s - %s)' % (
-                        error_id, error_call, error_message))
+                path = shell.SHGetFolderPath(
+                    0,
+                    shellcon.CSIDL_PROFILE | CSIDL_FLAG_CREATE,
+                    token,
+                    0,
+                    )
+                return path
+            except pythoncom.com_error, (number, message, e1, e2):
+                if number == UNKNOWN_USER:
+                    raise UnknownUserException()
+
+                error_text = u'%d: %s' % (number, message)
                 self.raiseFailedToGetHomeFolder(username, error_text)
 
+    def _createProfile(self, username, token):
+        """
+        Create the local profile if it does not exists.
+        """
         try:
-            try:
-                # Get home folder if profile already exists.
-                home_folder_path = _getHomeFolderPath()
-            except CompatError:
-                # On errors we try to create the profile
-                # and try one last time.
-                _createProfile()
-                home_folder_path = _getHomeFolderPath()
-        except ChangeUserException, error:
-            # We fail to impersonate the user, so we exit early.
-            self.raiseFailedToGetHomeFolder(username, error.message)
+            primary_domain_controller, name = self._parseUPN(username)
 
-        if home_folder_path:
-            return home_folder_path
-        else:
-            # Maybe this should be an AssertionError since we should not
-            # arrive here.
-            self.raiseFailedToGetHomeFolder(
-                username,
-                _(u'Failed to get home folder path.'),
-                )
+            user_info_4 = win32net.NetUserGetInfo(
+                primary_domain_controller, name, 4)
+
+            profile_path = user_info_4['profile']
+            # LoadUserProfile doesn't like an empty string.
+            if not profile_path:
+                profile_path = None
+
+            profile_info = {
+                'UserName': name,
+                'ServerName': primary_domain_controller,
+                'Flags': 0,
+                'ProfilePath': profile_path,
+                }
+
+            profile = win32profile.LoadUserProfile(token, profile_info)
+            win32profile.UnloadUserProfile(token, profile)
+        except win32security.error, (error_id, error_call, error_message):
+            error_text = (
+                u'Failed to create user profile. '
+                u'Make sure you have SeBackupPrivilege and '
+                u'SeRestorePrivilege. (%d: %s - %s)' % (
+                    error_id, error_call, error_message))
+            self.raiseFailedToGetHomeFolder(username, error_text)
 
     def userExists(self, username):
         """
@@ -144,8 +184,8 @@ class NTUsers(CompatUsers):
         try:
             win32security.LookupAccountName('', username)
             return True
-        except win32security.error, (number, name, messsage):
-            if number == 1332:
+        except win32security.error, (number, name, message):
+            if number == ERROR_USERNAME_DOES_NOT_EXIST:
                 return False
             else:
                 raise
@@ -215,37 +255,12 @@ class NTUsers(CompatUsers):
             self.raiseFailedToGetPrimaryGroup(username)
         return WINDOWS_PRIMARY_GROUP
 
-    def _createLocalProfile(self, username, token):
-        """
-        Create the local profile if it does not exists.
-        """
-        primary_domain_controller, name = self._parseUPN(username)
-
-        user_info_4 = win32net.NetUserGetInfo(
-            primary_domain_controller, name, 4)
-        profile_path = user_info_4['profile']
-        # LoadUserProfile apparently doesn't like an empty string.
-        if not profile_path:
-            profile_path = None
-
-        profile = win32profile.LoadUserProfile(
-            token,
-            {
-                'UserName': name,
-                'ServerName': primary_domain_controller,
-                'Flags': 0,
-                'ProfilePath': profile_path,
-                },
-            )
-        win32profile.UnloadUserProfile(token, profile)
-        return True
-
     def _parseUPN(self, upn):
         """
-        Return a tuple of (primary_domain_controller, username) for the
+        Returns a tuple of (primary_domain_controller, username) for the
         account name specified in upn format.
 
-        Return (None, username) is UPN does not contain a domain.
+        Returns (None, username) is UPN does not contain a domain.
         """
         parts = upn.split('@', 1)
         if len(parts) == 2:

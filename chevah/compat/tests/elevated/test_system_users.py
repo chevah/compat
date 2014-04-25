@@ -19,6 +19,7 @@ from chevah.compat.administration import os_administration
 from chevah.compat.helpers import NoOpContext
 from chevah.compat.testing import (
     ChevahTestCase,
+    conditionals,
     manufacture,
     TestUser,
     TEST_ACCOUNT_CENTRIFY_USERNAME,
@@ -60,13 +61,17 @@ class SystemUsersTestCase(ChevahTestCase):
 
 
 class TestSystemUsers(SystemUsersTestCase):
-    '''Test system users operations.'''
+    """
+    Test system users operations.
+    """
 
     def test_userExists(self):
-        """Test userExists."""
+        """
+        Test userExists.
+        """
         self.assertTrue(system_users.userExists(TEST_ACCOUNT_USERNAME))
         self.assertFalse(system_users.userExists('non-existent-patricia'))
-        self.assertFalse(system_users.userExists('non-existent@no-domain'))
+        self.assertFalse(system_users.userExists(u'non-existent@no-domain'))
         self.assertFalse(system_users.userExists(''))
 
     def test_getHomeFolder_linux(self):
@@ -79,26 +84,8 @@ class TestSystemUsers(SystemUsersTestCase):
         home_folder = system_users.getHomeFolder(
             username=TEST_ACCOUNT_USERNAME)
 
-        self.assertEqual(u'/home/' + TEST_ACCOUNT_USERNAME, home_folder)
-
-    def test_getHomeFolder_good_nt(self):
-        """
-        If a valid token is provided the home folder path can be retrieved
-        for any other account, as long as the process has the required
-        capabilities.
-        """
-        if os.name != 'nt' or not process_capabilities.get_home_folder:
-            raise self.skipTest()
-
-        token = manufacture.makeToken(
-            username=TEST_ACCOUNT_USERNAME,
-            password=TEST_ACCOUNT_PASSWORD)
-
-        home_folder = system_users.getHomeFolder(
-            username=TEST_ACCOUNT_USERNAME, token=token)
-
-        self.assertContains(
-            TEST_ACCOUNT_USERNAME.lower(), home_folder.lower())
+        self.assertEqual(u'/home/%s' % TEST_ACCOUNT_USERNAME, home_folder)
+        self.assertIsInstance(unicode, home_folder)
 
     def test_getHomeFolder_no_capabilities(self):
         """
@@ -113,61 +100,6 @@ class TestSystemUsers(SystemUsersTestCase):
 
         self.assertEqual(1014, context.exception.event_id)
 
-    def test_getHomeFolder_bad_nt(self):
-        """
-        If no token is provided, we can get to folder path for current
-        account.
-        """
-        if os.name != 'nt' or not process_capabilities.get_home_folder:
-            raise self.skipTest()
-
-        home_folder = system_users.getHomeFolder(manufacture.username)
-        self.assertContains(manufacture.username, home_folder)
-
-    def test_getHomeFolder_nt_no_previous_profile(self):
-        """
-        On Windows, if user has no profile it will be created.
-
-        This tests creates a temporary account and in the end it deletes
-        the account and home folder.
-        """
-        # Only available on Windows
-        if os.name != 'nt':
-            raise self.skipTest()
-
-        # Only available if we can get user's home folder path.
-        if not process_capabilities.get_home_folder:
-            raise self.skipTest()
-
-        # Only available if we can create user's home folder.
-        if not process_capabilities.create_home_folder:
-            raise self.skipTest()
-
-        username = u'no-home'
-        password = manufacture.string()
-        user = TestUser(
-            name=username,
-            password=password,
-            create_profile=False,
-            )
-
-        try:
-            # We don't want to create the profile here since this is
-            # what we are testing.
-            os_administration.addUser(user)
-            token = manufacture.makeToken(
-                username=username, password=password)
-
-            home_path = system_users.getHomeFolder(
-                username=username, token=token)
-
-            self.assertTrue(
-                username.lower() in home_path.lower(),
-                'Home folder "%s" is not good for user "%s"' % (
-                    home_path, username))
-        finally:
-            os_administration.deleteUser(user)
-
     def test_getHomeFolder_osx(self):
         """
         Check getHomeFolder for OSX.
@@ -178,24 +110,8 @@ class TestSystemUsers(SystemUsersTestCase):
         home_folder = system_users.getHomeFolder(
             username=TEST_ACCOUNT_USERNAME)
 
-        self.assertEqual(u'/Users/' + TEST_ACCOUNT_USERNAME, home_folder)
-
-    def test_getHomeFolder_return_type(self):
-        """
-        getHomeFolder will always return an Unicode path.
-        """
-        # This test is skipped if we can not get the home folder.
-        if not process_capabilities.get_home_folder:
-            raise self.skipTest()
-
-        token = manufacture.makeToken(
-            username=TEST_ACCOUNT_USERNAME,
-            password=TEST_ACCOUNT_PASSWORD)
-
-        home_folder = system_users.getHomeFolder(
-            username=TEST_ACCOUNT_USERNAME, token=token)
-
-        self.assertTrue(isinstance(home_folder, unicode))
+        self.assertEqual(u'/Users/%s' % TEST_ACCOUNT_USERNAME, home_folder)
+        self.assertIsInstance(unicode, home_folder)
 
     def test_getHomeFolder_non_existent_user(self):
         """
@@ -205,6 +121,72 @@ class TestSystemUsers(SystemUsersTestCase):
             system_users.getHomeFolder(username=u'non-existent-patricia')
 
         self.assertEqual(1014, context.exception.event_id)
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('get_home_folder', True)
+    def test_getHomeFolder_nt_good(self):
+        """
+        If a valid token is provided the home folder path can be retrieved
+        for it's corresponding account, as long as the process has the
+        required capabilities.
+        """
+        token = manufacture.makeToken(
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD)
+
+        home_folder = system_users.getHomeFolder(
+            username=TEST_ACCOUNT_USERNAME, token=token)
+
+        self.assertContains(
+            TEST_ACCOUNT_USERNAME.lower(), home_folder.lower())
+        self.assertIsInstance(unicode, home_folder)
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('get_home_folder', True)
+    def test_getHomeFolder_nt_no_token(self):
+        """
+        If no token is provided, it will get the folder path for current
+        account.
+        """
+        username = manufacture.username
+
+        home_folder = system_users.getHomeFolder(username)
+
+        self.assertContains(username.lower(), home_folder.lower())
+        self.assertIsInstance(unicode, home_folder)
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('get_home_folder', True)
+    @conditionals.onCapability('create_home_folder', True)
+    def test_getHomeFolder_nt_no_existing_profile(self):
+        """
+        On Windows, if user has no profile it will be created.
+
+        This test creates a temporary account and in the end it deletes
+        the account and it's home folder.
+        """
+        username = u'no-home'
+        password = manufacture.string()
+        user = TestUser(
+            name=username,
+            password=password,
+            create_profile=False,
+            )
+
+        # We don't want to create the profile here since this is
+        # what we are testing.
+        os_administration.addUser(user)
+        try:
+            token = manufacture.makeToken(
+                username=username, password=password)
+
+            home_path = system_users.getHomeFolder(
+                username=username, token=token)
+
+            self.assertContains(username.lower(), home_path.lower())
+            self.assertIsInstance(unicode, home_path)
+        finally:
+            os_administration.deleteUser(user)
 
     def test_authenticateWithUsernameAndPassword_good(self):
         """
@@ -224,12 +206,13 @@ class TestSystemUsers(SystemUsersTestCase):
     def test_authenticateWithUsernameAndPassword_bad_password(self):
         """
         authenticateWithUsernameAndPassword will return False if
-        credendials are not valid.
+        credentials are not valid.
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
             username=TEST_ACCOUNT_USERNAME,
             password=manufacture.string(),
             )
+
         self.assertFalse(result)
         self.assertIsNone(token)
 
@@ -243,6 +226,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
             username=manufacture.string(), password=manufacture.string())
+
         self.assertFalse(result)
         self.assertIsNone(token)
 
@@ -330,12 +314,12 @@ class TestSystemUsers(SystemUsersTestCase):
         '''Test executing as a different user.'''
         if os.name != 'posix':
             raise self.skipTest()
+
         initial_uid, initial_gid = os.geteuid(), os.getegid()
         initial_groups = os.getgroups()
         username = TEST_ACCOUNT_USERNAME
 
         with system_users.executeAsUser(username=username):
-
             import pwd
             import grp
             uid, gid = os.geteuid(), os.getegid()

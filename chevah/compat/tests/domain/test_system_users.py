@@ -121,6 +121,7 @@ class TestSystemUsers(CompatTestCase):
 
         self.assertContains(
             TEST_ACCOUNT_USERNAME_DOMAIN.lower(), home_folder.lower())
+        self.assertIsInstance(unicode, home_folder)
 
     def test_getHomeFolder_nt_no_previous_profile(self):
         """
@@ -139,22 +140,20 @@ class TestSystemUsers(CompatTestCase):
             password=password,
             domain=domain,
             pdc=pdc,
-            create_profile=True,
+            create_profile=False,
             )
 
+        # We don't want to create the profile here since this is
+        # what we are testing.
+        os_administration.addUser(user)
         try:
-            # We don't want to create the profile here since this is
-            # what we are testing.
-            os_administration.addUser(user)
             token = mk.makeToken(username=username, password=password)
 
             upn = u'%s@%s' % (username, domain)
             home_path = system_users.getHomeFolder(
                 username=upn, token=token)
 
-            self.assertTrue(
-                username.lower() in home_path.lower(),
-                'Home folder "%s" is not good for user "%s"' % (
-                    home_path, username))
+            self.assertContains(username.lower(), home_path.lower())
+            self.assertIsInstance(unicode, home_path)
         finally:
             os_administration.deleteUser(user)

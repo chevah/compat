@@ -652,13 +652,16 @@ class OSAdministrationWindows(OSAdministrationUnix):
         """
         Create an local Windows account.
 
-        When `user.create_profile` is True, this method will also try to
-        create the home folder. Otherwise the user is created, but the home
-        folder does not exists until the first login or when profile
-        is explicitly created in other part.
+        When `user.windows_create_profile` is True, this method will also try
+        to create the home folder.
+
+        Otherwise the user is created, but the home folder does not exists
+        until the first login or when profile is explicitly created in other
+        part.
         """
         import win32net
         import win32netcon
+
         user_info = {
             'name': user.name,
             'password': user.password,
@@ -675,14 +678,16 @@ class OSAdministrationWindows(OSAdministrationUnix):
                 username = u'%s@%s' % (user.name, user.domain)
             else:
                 username = user.name
+
             result, token = system_users.authenticateWithUsernameAndPassword(
                 username=username, password=user.password)
+
             if token is None:
                 raise AssertionError(
                     u'Failed to get a valid token while creating account '
-                    u'for %s' % (username))
-            system_users._createLocalProfile(
-                username=username, token=token)
+                    u'for %s' % username)
+
+            system_users._createProfile(username=username, token=token)
 
         user.windows_sid = self._getUserSID(user)
 
@@ -738,8 +743,11 @@ class OSAdministrationWindows(OSAdministrationUnix):
         # FIXME:927:
         # We need to look for a way to delete home folders with unicode
         # names.
-        command = 'cmd.exe /C rmdir /S /Q "%s"'
-        subprocess.call(command % (home_path.encode('utf-8')), shell=True)
+        command = 'cmd.exe /C rmdir /S /Q "%s"' % home_path.encode('utf-8')
+        result = subprocess.call(command, shell=True)
+        if result != 0:
+            message = u'Unable to remove folder: %s.' % home_path
+            raise AssertionError(message.encode('utf-8'))
 
     def deleteGroup(self, group):
         """

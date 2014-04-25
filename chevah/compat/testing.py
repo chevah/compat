@@ -312,6 +312,7 @@ TEST_USERS = [
         primary_group_name=TEST_ACCOUNT_GROUP_OTHER,
         home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
         password=TEST_ACCOUNT_PASSWORD_OTHER,
+        create_profile=True,
         ),
     ]
 
