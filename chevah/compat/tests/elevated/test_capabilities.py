@@ -85,8 +85,7 @@ class TestProcessCapabilities(FileSystemTestCase):
         """
         # FIXME:2106:
         # Cache token value in TestUser instance.
-        token = manufacture.makeToken(
-            username=self.os_user.name, password=self.os_user.password)
+        token = manufacture.getToken(self.os_user)
 
         with system_users.executeAsUser(
                 username=self.os_user.name, token=token):
@@ -102,8 +101,7 @@ class TestProcessCapabilities(FileSystemTestCase):
         """
         # FIXME:2106:
         # Cache token value in TestUser instance.
-        token = manufacture.makeToken(
-            username=self.os_user.name, password=self.os_user.password)
+        token = manufacture.getToken(self.os_user)
 
         # FIXME:2095:
         # Unify tests once proper capabilities support is implemented.
@@ -127,8 +125,7 @@ class TestProcessCapabilities(FileSystemTestCase):
 
         # FIXME:2106:
         # Cache token value in TestUser instance.
-        token = manufacture.makeToken(
-            username=self.os_user.name, password=self.os_user.password)
+        token = manufacture.getToken(self.os_user)
         initial_state = self.capabilities._getPrivilegeState(
             win32security.SE_INC_WORKING_SET_NAME)
         self.assertEqual(u'present', initial_state)
@@ -152,8 +149,7 @@ class TestProcessCapabilities(FileSystemTestCase):
 
         # FIXME:2106:
         # Cache token value in TestUser instance.
-        token = manufacture.makeToken(
-            username=self.os_user.name, password=self.os_user.password)
+        token = manufacture.getToken(self.os_user)
 
         with system_users.executeAsUser(
                 username=self.os_user.name, token=token):

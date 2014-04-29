@@ -10,33 +10,9 @@ from chevah.empirical.testcase import (
 from chevah.compat.testing import (
     setup_access_control,
     teardown_access_control,
-    TEST_ACCOUNT_USERNAME_DOMAIN,
-    TEST_ACCOUNT_PASSWORD_DOMAIN,
-    TEST_ACCOUNT_GROUP_DOMAIN,
-    TEST_DOMAIN,
-    TEST_PDC,
-    TestGroup,
-    TestUser,
+    TEST_GROUPS_DOMAIN,
+    TEST_USERS_DOMAIN,
     )
-
-
-TEST_USERS = [
-    TestUser(
-        name=TEST_ACCOUNT_USERNAME_DOMAIN,
-        password=TEST_ACCOUNT_PASSWORD_DOMAIN,
-        domain=TEST_DOMAIN,
-        pdc=TEST_PDC,
-        create_profile=True,
-        )
-    ]
-
-TEST_GROUPS = [
-    TestGroup(
-        name=TEST_ACCOUNT_GROUP_DOMAIN,
-        members=[TEST_ACCOUNT_USERNAME_DOMAIN],
-        pdc=TEST_PDC,
-        )
-    ]
 
 
 def runDomainTest():
@@ -58,14 +34,17 @@ def setup_package():
 
     # Initialize the testing OS.
     try:
-        setup_access_control(users=TEST_USERS, groups=TEST_GROUPS)
+        setup_access_control(
+            users=TEST_USERS_DOMAIN, groups=TEST_GROUPS_DOMAIN)
     except:
         import traceback
         print traceback.format_exc()
         print "Failed to initialized the system accounts!"
-        teardown_access_control(users=TEST_USERS, groups=TEST_GROUPS)
+        teardown_access_control(
+            users=TEST_USERS_DOMAIN, groups=TEST_GROUPS_DOMAIN)
         raise
 
 
 def teardown_package():
-    teardown_access_control(users=TEST_USERS, groups=TEST_GROUPS)
+    teardown_access_control(
+        users=TEST_USERS_DOMAIN, groups=TEST_GROUPS_DOMAIN)

@@ -31,7 +31,7 @@ from chevah.compat import (
     system_users,
     SuperAvatar,
     )
-from chevah.compat.constants import ERROR_USERNAME_NOT_FOUND
+from chevah.compat.winerrors import ERROR_NONE_MAPPED
 
 
 def execute(
@@ -687,7 +687,8 @@ class OSAdministrationWindows(OSAdministrationUnix):
                     u'Failed to get a valid token while creating account '
                     u'for %s' % username)
 
-            system_users._createProfile(username=username, token=token)
+            system_users._createLocalProfile(username=username, token=token)
+            user.windows_profile_created = True
 
         user.windows_sid = self._getUserSID(user)
 
@@ -731,7 +732,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
             win32net.NetUserDel(user.pdc, user.name)
         except win32net.error, (number, context, message):
             # Ignore user not found error.
-            if number != ERROR_USERNAME_NOT_FOUND:
+            if number != ERROR_NONE_MAPPED:
                 raise
 
         # We can not reliably get home folder on all Windows version, so
@@ -740,14 +741,15 @@ class OSAdministrationWindows(OSAdministrationUnix):
         home_base = os.path.dirname(os.getenv('USERPROFILE'))
         home_path = os.path.join(home_base, user.name)
 
-        # FIXME:927:
-        # We need to look for a way to delete home folders with unicode
-        # names.
-        command = 'cmd.exe /C rmdir /S /Q "%s"' % home_path.encode('utf-8')
-        result = subprocess.call(command, shell=True)
-        if result != 0:
-            message = u'Unable to remove folder: %s.' % home_path
-            raise AssertionError(message.encode('utf-8'))
+        if user.windows_profile_exists:
+            # FIXME:927:
+            # We need to look for a way to delete home folders with unicode
+            # names.
+            command = 'cmd.exe /C rmdir /S /Q "%s"' % home_path.encode('utf-8')
+            result = subprocess.call(command, shell=True)
+            if result != 0:
+                message = u'Unable to remove folder: %s.' % home_path
+                raise AssertionError(message.encode('utf-8'))
 
     def deleteGroup(self, group):
         """

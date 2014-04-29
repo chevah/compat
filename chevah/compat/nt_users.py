@@ -14,7 +14,7 @@ import win32security
 
 from chevah.compat.compat_users import CompatUsers
 from chevah.compat.constants import (
-    ERROR_USERNAME_DOES_NOT_EXIST,
+    CSIDL_FLAG_CREATE,
     WINDOWS_PRIMARY_GROUP,
     )
 from chevah.compat.exceptions import (
@@ -25,6 +25,10 @@ from chevah.compat.interfaces import (
     IFileSystemAvatar,
     IHasImpersonatedAvatar,
     IOSUsers,
+    )
+from chevah.compat.winerrors import (
+    ERROR_NONE_MAPPED,
+    ERROR_PROFILE_NOT_FOUND,
     )
 # We can not import chevah.compat.process_capabilities as it would
 # create a circular import.
@@ -43,9 +47,9 @@ GetUserNameW.restype = c_uint
 process_capabilities = NTProcessCapabilities()
 
 
-class UnknownUserException(Exception):
+class MissingProfileFolderException(Exception):
     """
-    Non existing user exception.
+    Non existing user profile folder exception.
     """
 
 
@@ -73,32 +77,22 @@ class NTUsers(CompatUsers):
                 u'for account "%s".' % username)
             self.raiseFailedToGetHomeFolder(username, message)
 
-        result = None
         try:
             result = self._getHomeFolderPath(username, token)
-        except ChangeUserException, error:
-            # Unable to impersonate user, fail early.
-            self.raiseFailedToGetHomeFolder(username, error.message)
-        except UnknownUserException:
-            # User does not have a local profile.
+        except MissingProfileFolderException:
             if not token:
                 self.raiseFailedToGetHomeFolder(
-                    username, u'Failed to get home folder path.')
+                    username, u'User profile folder missing.')
 
             # We try to create the profile and then try one last time to get
             # the home folder.
-            self._createProfile(username, token)
+            self._createLocalProfile(username, token)
             try:
                 result = self._getHomeFolderPath(username, token)
-            except:
-                # Ignore all errors.
+            except MissingProfileFolderException:
                 result = None
-
-        if not result:
-            # Maybe this should be an AssertionError since we should not
-            # arrive here.
-            self.raiseFailedToGetHomeFolder(
-                username, u'Failed to get home folder path.')
+                self.raiseFailedToGetHomeFolder(
+                    username, u'Failed to get home folder path.')
 
         return result
 
@@ -112,38 +106,37 @@ class NTUsers(CompatUsers):
         # In windows, you can choose to care about local versus
         # roaming profiles.
         #
-        # You can fetch the current user's through PyWin32.
-        #
         # For example, to ask for the roaming 'Application Data' directory:
         #  (CSIDL_APPDATA asks for the roaming,
         #   CSIDL_LOCAL_APPDATA for the local one)
+        #
         #  (See microsoft references for further CSIDL constants)
         #  http://msdn.microsoft.com/en-us/library/bb762181(VS.85).aspx
-        #
-        # Force creation of local profile so that we can query the home
-        # folder.
-        UNKNOWN_USER = -2147024894L
-        CSIDL_FLAG_CREATE = 0x8000
+        try:
+            with self.executeAsUser(username=username, token=token):
+                try:
+                    # Force creation of user profile folder if not already
+                    # existing.
+                    path = shell.SHGetFolderPath(
+                        0,
+                        shellcon.CSIDL_PROFILE | CSIDL_FLAG_CREATE,
+                        token,
+                        0,
+                        )
+                    return path
+                except pythoncom.com_error, (number, message, e1, e2):
+                    if number == ERROR_PROFILE_NOT_FOUND:
+                        raise MissingProfileFolderException()
 
-        with self.executeAsUser(username=username, token=token):
-            try:
-                path = shell.SHGetFolderPath(
-                    0,
-                    shellcon.CSIDL_PROFILE | CSIDL_FLAG_CREATE,
-                    token,
-                    0,
-                    )
-                return path
-            except pythoncom.com_error, (number, message, e1, e2):
-                if number == UNKNOWN_USER:
-                    raise UnknownUserException()
+                    error_text = u'%d: %s' % (number, message)
+                    self.raiseFailedToGetHomeFolder(username, error_text)
+        except ChangeUserException, error:
+            # Unable to impersonate user, fail early.
+            self.raiseFailedToGetHomeFolder(username, error.message)
 
-                error_text = u'%d: %s' % (number, message)
-                self.raiseFailedToGetHomeFolder(username, error_text)
-
-    def _createProfile(self, username, token):
+    def _createLocalProfile(self, username, token):
         """
-        Create the local profile if it does not exists.
+        Create the local profile for specified `username`.
         """
         try:
             primary_domain_controller, name = self._parseUPN(username)
@@ -185,7 +178,7 @@ class NTUsers(CompatUsers):
             win32security.LookupAccountName('', username)
             return True
         except win32security.error, (number, name, message):
-            if number == ERROR_USERNAME_DOES_NOT_EXIST:
+            if number == ERROR_NONE_MAPPED:
                 return False
             else:
                 raise

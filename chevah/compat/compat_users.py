@@ -16,7 +16,7 @@ class CompatUsers(object):
         Helper for raising the exception from a single place.
         """
         message = u'Failed to get primary group for user "%s"' % username
-        raise CompatError(1015, message.encode('utf-8'))
+        raise CompatError(1015, message)
 
     def raiseFailedToGetHomeFolder(self, username, text):
         """
@@ -24,4 +24,4 @@ class CompatUsers(object):
         """
         values = (username, text)
         message = u'Could not get home folder for user "%s". %s' % values
-        raise CompatError(1014, message.encode('utf-8'))
+        raise CompatError(1014, message)
