@@ -71,6 +71,9 @@ class NTUsers(CompatUsers):
         """
         Get home folder for local user.
         """
+        # FIXME:2119:
+        # Replace with decorator that will raise an exception when
+        # insufficient capabilities.
         if not process_capabilities.get_home_folder:
             message = (
                 u'Operating system does not support getting home folder '
