@@ -45,12 +45,10 @@ class TestSystemUsers(CompatTestCase):
         groups = [u'Domain Users']
         groups_non_existent = [u'non-existent-group']
 
-        token = mk.getToken(test_user)
-
-        upn = u'%s@%s' % (test_user.name, test_user.domain)
-        self.assertTrue(system_users.isUserInGroups(upn, groups, token))
+        self.assertTrue(system_users.isUserInGroups(
+            test_user.upn, groups, test_user.token))
         self.assertFalse(system_users.isUserInGroups(
-            upn, groups_non_existent, token))
+            test_user.upn, groups_non_existent, test_user.token))
 
     def test_authenticateWithUsernameAndPassword_good(self):
         """
@@ -98,11 +96,11 @@ class TestSystemUsers(CompatTestCase):
         process is executed..
         """
         test_user = TEST_USERS_DOMAIN[u'domain']
-        token = mk.getToken(test_user)
 
         self.assertNotEqual(test_user.name, system_users.getCurrentUserName())
 
-        with system_users.executeAsUser(username=test_user.name, token=token):
+        with system_users.executeAsUser(
+                username=test_user.name, token=test_user.token):
             self.assertEqual(
                 test_user.name, system_users.getCurrentUserName())
 
@@ -113,10 +111,9 @@ class TestSystemUsers(CompatTestCase):
         capabilities.
         """
         test_user = TEST_USERS_DOMAIN[u'domain']
-        token = mk.getToken(test_user)
 
         home_folder = system_users.getHomeFolder(
-            username=test_user.name, token=token)
+            username=test_user.name, token=test_user.token)
 
         self.assertContains(test_user.name.lower(), home_folder.lower())
         self.assertIsInstance(unicode, home_folder)
@@ -145,11 +142,10 @@ class TestSystemUsers(CompatTestCase):
 
         try:
             os_administration.addUser(test_user)
-            token = mk.getToken(test_user)
 
             upn = u'%s@%s' % (username, domain)
             home_path = system_users.getHomeFolder(
-                username=upn, token=token)
+                username=upn, token=test_user.token)
 
             self.assertContains(username.lower(), home_path.lower())
             self.assertIsInstance(unicode, home_path)

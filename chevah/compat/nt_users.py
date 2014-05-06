@@ -28,7 +28,6 @@ from chevah.compat.interfaces import (
     )
 from chevah.compat.winerrors import (
     ERROR_NONE_MAPPED,
-    ERROR_PROFILE_NOT_FOUND,
     )
 # We can not import chevah.compat.process_capabilities as it would
 # create a circular import.
@@ -81,30 +80,40 @@ class NTUsers(CompatUsers):
             self.raiseFailedToGetHomeFolder(username, message)
 
         try:
-            result = self._getHomeFolderPath(username, token)
+            if token is None:
+                if username != self.getCurrentUserName():
+                    self.raiseFailedToGetHomeFolder(
+                        username, u'Invalid username/token combination.')
+                return self._getHomeFolderPath()
+            else:
+                return self._getHomeFolder(username, token)
         except MissingProfileFolderException:
-            if not token:
-                self.raiseFailedToGetHomeFolder(
-                    username, u'User profile folder missing.')
-
-            # We try to create the profile and then try one last time to get
-            # the home folder.
-            self._createLocalProfile(username, token)
-            try:
-                result = self._getHomeFolderPath(username, token)
-            except MissingProfileFolderException:
-                result = None
                 self.raiseFailedToGetHomeFolder(
                     username, u'Failed to get home folder path.')
 
-        return result
-
-    def _getHomeFolderPath(self, username, token=None):
+    def _getHomeFolder(self, username, token):
         """
-        It `token` is `None` it will get current user's home folder path.
+        Return home folder for specified `username` and `token`.
+        """
+        def _safe_get_home_path():
+            try:
+                with self.executeAsUser(username, token):
+                    return self._getHomeFolderPath(token)
+            except ChangeUserException, error:
+                self.raiseFailedToGetHomeFolder(username, error.message)
 
-        Otherwise it will try to get the home folder path for the user
-        with `username`.
+        try:
+            return _safe_get_home_path()
+        except MissingProfileFolderException:
+            # We try to create the profile and then try one last
+            # time to get the home folder.
+            self._createLocalProfile(username, token)
+            return _safe_get_home_path()
+
+    def _getHomeFolderPath(self, token=None):
+        """
+        It `token` is `None` it will get current user's home folder path,
+        otherwise it will return the home folder of the token's user.
         """
         # In windows, you can choose to care about local versus
         # roaming profiles.
@@ -116,26 +125,17 @@ class NTUsers(CompatUsers):
         #  (See microsoft references for further CSIDL constants)
         #  http://msdn.microsoft.com/en-us/library/bb762181(VS.85).aspx
         try:
-            with self.executeAsUser(username=username, token=token):
-                try:
-                    # Force creation of user profile folder if not already
-                    # existing.
-                    path = shell.SHGetFolderPath(
-                        0,
-                        shellcon.CSIDL_PROFILE | CSIDL_FLAG_CREATE,
-                        token,
-                        0,
-                        )
-                    return path
-                except pythoncom.com_error, (number, message, e1, e2):
-                    if number == ERROR_PROFILE_NOT_FOUND:
-                        raise MissingProfileFolderException()
-
-                    error_text = u'%d: %s' % (number, message)
-                    self.raiseFailedToGetHomeFolder(username, error_text)
-        except ChangeUserException, error:
-            # Unable to impersonate user, fail early.
-            self.raiseFailedToGetHomeFolder(username, error.message)
+            # Force creation of user profile folder if not already
+            # existing.
+            path = shell.SHGetFolderPath(
+                0,
+                shellcon.CSIDL_PROFILE | CSIDL_FLAG_CREATE,
+                token,
+                0,
+                )
+            return path
+        except pythoncom.com_error:
+            raise MissingProfileFolderException()
 
     def _createLocalProfile(self, username, token):
         """

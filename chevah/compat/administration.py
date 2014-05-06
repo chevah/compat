@@ -674,21 +674,8 @@ class OSAdministrationWindows(OSAdministrationUnix):
 
         win32net.NetUserAdd(user.pdc, 1, user_info)
         if user.password and user.windows_create_profile:
-            if user.domain:
-                username = u'%s@%s' % (user.name, user.domain)
-            else:
-                username = user.name
-
-            result, token = system_users.authenticateWithUsernameAndPassword(
-                username=username, password=user.password)
-
-            if token is None:
-                raise AssertionError(
-                    u'Failed to get a valid token while creating account '
-                    u'for %s' % username)
-
-            system_users._createLocalProfile(username=username, token=token)
-            user.windows_profile_created = True
+            system_users._createLocalProfile(
+                username=user.upn, token=user.token)
 
         user.windows_sid = self._getUserSID(user)
 
@@ -741,7 +728,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         home_base = os.path.dirname(os.getenv('USERPROFILE'))
         home_path = os.path.join(home_base, user.name)
 
-        if user.windows_profile_exists:
+        if user._windows_token:
             # FIXME:927:
             # We need to look for a way to delete home folders with unicode
             # names.
@@ -798,6 +785,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         with self._openLSAPolicy() as policy_handle:
             win32security.LsaAddAccountRights(
                 policy_handle, user.windows_sid, rights)
+            user._invalidateToken()
 
     def _revokeUserRights(self, user, rights):
         """
@@ -807,6 +795,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         with self._openLSAPolicy() as policy_handle:
             win32security.LsaRemoveAccountRights(
                 policy_handle, user.windows_sid, 0, rights)
+            user._invalidateToken()
 
 
 # Create the singleton.

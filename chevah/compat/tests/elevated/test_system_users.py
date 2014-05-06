@@ -33,7 +33,6 @@ from chevah.compat.testing import (
     TEST_ACCOUNT_USERNAME,
     TEST_ACCOUNT_LDAP_PASSWORD,
     TEST_ACCOUNT_LDAP_USERNAME,
-    TEST_USERS,
     )
 from chevah.compat.exceptions import (
     ChangeUserException,
@@ -141,14 +140,14 @@ class TestSystemUsers(SystemUsersTestCase):
         An error is raised if no token is provided and the username differs
         from the current/service username.
         """
-        username = TEST_USERS[u'other'].name
+        test_user = manufacture.getTestUser(u'other')
 
         with self.assertRaises(CompatError) as context:
-            system_users.getHomeFolder(username)
+            system_users.getHomeFolder(test_user.name)
 
         self.assertCompatError(1014, context.exception)
         self.assertContains(
-            'A valid token is required', context.exception.message)
+            'Invalid username/token combination.', context.exception.message)
 
     @conditionals.onOSFamily('nt')
     @conditionals.onCapability('get_home_folder', True)
@@ -158,13 +157,12 @@ class TestSystemUsers(SystemUsersTestCase):
         for it's corresponding account, as long as the process has the
         required capabilities.
         """
-        token = manufacture.getToken(TEST_USERS[u'normal'])
-
+        test_user = manufacture.getTestUser(u'normal')
         home_folder = system_users.getHomeFolder(
-            username=TEST_ACCOUNT_USERNAME, token=token)
+            username=test_user.name, token=test_user.token)
 
         self.assertContains(
-            TEST_ACCOUNT_USERNAME.lower(), home_folder.lower())
+            test_user.name.lower(), home_folder.lower())
         self.assertIsInstance(unicode, home_folder)
 
     @conditionals.onOSFamily('nt')
@@ -203,10 +201,9 @@ class TestSystemUsers(SystemUsersTestCase):
 
         try:
             os_administration.addUser(user)
-            token = manufacture.getToken(user)
 
             home_path = system_users.getHomeFolder(
-                username=username, token=token)
+                username=username, token=user.token)
 
             self.assertContains(username.lower(), home_path.lower())
             self.assertIsInstance(unicode, home_path)
@@ -298,23 +295,20 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         Test executing as a different user reusing the credentials.
         """
-        test_user = TEST_USERS[u'normal']
-        token = manufacture.getToken(test_user)
+        test_user = manufacture.getTestUser(u'normal')
         with system_users.executeAsUser(
-                username=test_user.name, token=token):
+                username=test_user.name, token=test_user.token):
             pass
 
         with system_users.executeAsUser(
-                username=test_user.name, token=token):
+                username=test_user.name, token=test_user.token):
             pass
 
+    @conditionals.onOSFamily('nt')
     def test_getCurrentUserName_NT(self):
         """
         Check for helper method.
         """
-        if os.name != 'nt':
-            raise self.skipTest()
-
         self.assertEqual(
             manufacture.username, system_users.getCurrentUserName())
 
@@ -323,16 +317,17 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         Test executing as a different user.
         """
-        test_user = TEST_USERS[u'normal']
-        token = manufacture.getToken(test_user)
+        test_user = manufacture.getTestUser(u'normal')
 
-        with system_users.executeAsUser(username=test_user.name, token=token):
+        with system_users.executeAsUser(
+                username=test_user.name, token=test_user.token):
             self.assertEqual(
                 test_user.name, system_users.getCurrentUserName())
 
         self.assertEqual(
             manufacture.username, system_users.getCurrentUserName())
 
+    @conditionals.onOSFamily('posix')
     def test_executeAsUser_Unix(self):
         '''Test executing as a different user.'''
         if os.name != 'posix':
@@ -340,16 +335,16 @@ class TestSystemUsers(SystemUsersTestCase):
 
         initial_uid, initial_gid = os.geteuid(), os.getegid()
         initial_groups = os.getgroups()
-        username = TEST_ACCOUNT_USERNAME
+        test_user = manufacture.getTestUser(u'normal')
 
-        with system_users.executeAsUser(username=username):
+        with system_users.executeAsUser(username=test_user.name):
             import pwd
             import grp
             uid, gid = os.geteuid(), os.getegid()
             impersonated_username = pwd.getpwuid(uid)[0].decode('utf-8')
             impersonated_groupname = grp.getgrgid(gid)[0].decode('utf-8')
             impersonated_groups = os.getgroups()
-            self.assertEqual(username, impersonated_username)
+            self.assertEqual(test_user.name, impersonated_username)
             self.assertEqual(TEST_ACCOUNT_GROUP, impersonated_groupname)
             self.assertNotEqual(initial_uid, uid)
             self.assertNotEqual(initial_gid, gid)
@@ -384,38 +379,35 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         False is returned if isUserInGroups is asked for a non-existent group.
         """
-        test_user = TEST_USERS[u'normal']
-        token = manufacture.getToken(test_user)
+        test_user = manufacture.getTestUser(u'normal')
 
         groups = [u'non-existent-group']
         self.assertFalse(system_users.isUserInGroups(
-            username=test_user.name, groups=groups, token=token))
+            username=test_user.name, groups=groups, token=test_user.token))
 
     def test_isUserInGroups_not_in_groups(self):
         """
         False is returned if user is not in the groups.
         """
-        test_user = TEST_USERS[u'normal']
-        token = manufacture.getToken(test_user)
+        test_user = manufacture.getTestUser(u'normal')
 
         groups = [u'root', u'Administrators']
 
         self.assertFalse(system_users.isUserInGroups(
-            username=test_user.name, groups=groups, token=token))
+            username=test_user.name, groups=groups, token=test_user.token))
 
     def test_isUserInGroups_success(self):
         """
         True is returned if user is in groups.
         """
-        test_user = TEST_USERS[u'normal']
-        token = manufacture.getToken(test_user)
+        test_user = manufacture.getTestUser(u'normal')
 
         groups = [
             TEST_ACCOUNT_GROUP,
             TEST_ACCOUNT_GROUP_WIN,
             ]
         self.assertTrue(system_users.isUserInGroups(
-            username=test_user.name, groups=groups, token=token))
+            username=test_user.name, groups=groups, token=test_user.token))
 
         groups = [
             u'non-existent-group',
@@ -423,15 +415,15 @@ class TestSystemUsers(SystemUsersTestCase):
             TEST_ACCOUNT_GROUP_WIN,
             ]
         self.assertTrue(system_users.isUserInGroups(
-            username=test_user.name, groups=groups, token=token))
+            username=test_user.name, groups=groups, token=test_user.token))
 
     def test_getPrimaryGroup_good(self):
         """
         Check getting primary group.
         """
-        token = manufacture.getToken(TEST_USERS[u'normal'])
+        test_user = manufacture.getTestUser(u'normal')
         avatar = manufacture.makeFilesystemOSAvatar(
-            name=TEST_ACCOUNT_USERNAME, token=token)
+            name=TEST_ACCOUNT_USERNAME, token=test_user.token)
 
         group_name = system_users.getPrimaryGroup(username=avatar.name)
         if os.name == 'nt':
@@ -531,11 +523,10 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
         Inside the context we have the new user and outside we have the normal
         user.
         """
-        test_user = TEST_USERS[u'normal']
-        token = manufacture.getToken(test_user)
+        test_user = manufacture.getTestUser(u'normal')
         avatar = ImpersonatedAvatarImplementation(
             name=test_user.name,
-            token=token,
+            token=test_user.token,
             use_impersonation=True,
             )
 

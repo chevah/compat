@@ -83,39 +83,6 @@ class CompatManufacture(ChevahCommonsFactory):
             root_folder_path=root_folder_path,
             )
 
-    def getToken(self, user):
-        """
-        Generate the Windows token for `user`. Returns `None` on all other
-        OSes.
-        """
-        if user.domain:
-            upn = u'%s@%s' % (user.name, user.domain)
-        else:
-            upn = user.name
-
-        token = self._makeToken(username=upn, password=user.password)
-        user.windows_profile_exists = True
-        return token
-
-    def _makeToken(self, username, password):
-        """
-        Generate the Windows token for username and password.
-
-        On Unix/AIX/Linux/etc. it returns `None`.
-        """
-        if os.name != 'nt':
-            return None
-
-        result, token = system_users.authenticateWithUsernameAndPassword(
-            username=username, password=password)
-
-        if not result:
-            message = u'Failed to get a valid token for "%s" with "%s".' % (
-                username, password)
-            raise AssertionError(message.encode('utf-8'))
-
-        return token
-
     @classmethod
     def posixID(cls):
         """
@@ -123,6 +90,12 @@ class CompatManufacture(ChevahCommonsFactory):
         """
         cls._posix_id += 1
         return cls._posix_id
+
+    def getTestUser(self, name):
+        """
+        Return an existing test user instance for user with `name`.
+        """
+        return TEST_USERS[name]
 
 
 mk = manufacture = CompatManufacture()
@@ -236,10 +209,11 @@ class TestUser(object):
         self.domain = domain
         self.pdc = pdc
         self.primary_group_name = primary_group_name
+
         self.windows_sid = None
-        self.windows_profile_exists = False
         self.windows_create_profile = create_profile
         self.windows_required_rights = windows_required_rights
+        self._windows_token = None
 
     @property
     def name(self):
@@ -247,6 +221,50 @@ class TestUser(object):
         Actual user name.
         """
         return self._name
+
+    @property
+    def token(self):
+        """
+        Windows token for user.
+        """
+        if os.name != 'nt':
+            return None
+
+        if not self._windows_token:
+            self._windows_token = self._getToken()
+
+        return self._windows_token
+
+    @property
+    def upn(self):
+        """
+        Returns User Principal Name: plain user name if no domain name defined
+        or Active Directory compatible full domain user name.
+        """
+        if not self.domain:
+            return self.name
+
+        return u'%s@%s' % (self.name, self.domain)
+
+    def _getToken(self):
+        """
+        Generate the Windows token for `user`.
+        """
+        result, token = system_users.authenticateWithUsernameAndPassword(
+            username=self.upn, password=self.password)
+
+        if not result:
+            message = u'Failed to get a valid token for "%s" with "%s".' % (
+                self.upn, self.password)
+            raise AssertionError(message.encode('utf-8'))
+
+        return token
+
+    def _invalidateToken(self):
+        """
+        Invalidates cache for Windows token value.
+        """
+        self._windows_token = None
 
 
 class TestGroup(object):
@@ -419,14 +437,13 @@ class FileSystemTestCase(CompatTestCase):
 
         cls.os_user = cls.setUpTestUser()
 
-        token = manufacture.getToken(cls.os_user)
         home_folder_path = system_users.getHomeFolder(
-            username=cls.os_user.name, token=token)
+            username=cls.os_user.name, token=cls.os_user.token)
 
         cls.avatar = manufacture.makeFilesystemOSAvatar(
             name=cls.os_user.name,
             home_folder_path=home_folder_path,
-            token=token,
+            token=cls.os_user.token,
             )
         cls.filesystem = LocalFilesystem(avatar=cls.avatar)
 
@@ -435,12 +452,7 @@ class FileSystemTestCase(CompatTestCase):
         """
         Set-up OS user for symbolic link testing.
         """
-        # FIXME:2106:
-        # Re-use global instance.
-        return TestUser(
-            name=TEST_ACCOUNT_USERNAME,
-            password=TEST_ACCOUNT_PASSWORD
-            )
+        return manufacture.getTestUser(u'normal')
 
     def setUp(self):
         super(FileSystemTestCase, self).setUp()
