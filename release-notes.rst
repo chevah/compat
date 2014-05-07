@@ -2,6 +2,15 @@ Release notes for chevah.compat
 ===============================
 
 
+0.19.1 - 06/05/2014
+-------------------
+
+* Report errors when removing test user's home folder and raise an exception.
+* Cache Windows user token value.
+* Security fix: getHomeFolder called with an invalid username/token
+  combination.
+
+
 0.19.0 - 17/04/2014
 -------------------
 
