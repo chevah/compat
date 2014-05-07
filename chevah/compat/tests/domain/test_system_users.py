@@ -14,6 +14,7 @@ from chevah.compat.testing import (
     TEST_ACCOUNT_USERNAME_DOMAIN,
     TEST_DOMAIN,
     TEST_PDC,
+    TEST_USERS_DOMAIN,
     TestUser,
     )
 
@@ -37,19 +38,17 @@ class TestSystemUsers(CompatTestCase):
         Return `True` when the user is member of the group and
         `False` otherwise.
         """
-        upn = u'%s@%s' % (TEST_ACCOUNT_USERNAME_DOMAIN, TEST_DOMAIN)
+        test_user = TEST_USERS_DOMAIN[u'domain']
         # FIXME:1471:
         # Don't know why is not working with TEST_ACCOUNT_GROUP_DOMAIN so
         # for now we use the default group.
         groups = [u'Domain Users']
         groups_non_existent = [u'non-existent-group']
 
-        token = mk.makeToken(
-            username=upn, password=TEST_ACCOUNT_PASSWORD_DOMAIN)
-
-        self.assertTrue(system_users.isUserInGroups(upn, groups, token))
+        self.assertTrue(system_users.isUserInGroups(
+            test_user.upn, groups, test_user.token))
         self.assertFalse(system_users.isUserInGroups(
-            upn, groups_non_existent, token))
+            test_user.upn, groups_non_existent, test_user.token))
 
     def test_authenticateWithUsernameAndPassword_good(self):
         """
@@ -96,14 +95,14 @@ class TestSystemUsers(CompatTestCase):
         It uses the token to impersonate the account under which this
         process is executed..
         """
-        username = TEST_ACCOUNT_USERNAME_DOMAIN
-        token = mk.makeToken(
-            username=username, password=TEST_ACCOUNT_PASSWORD_DOMAIN)
+        test_user = TEST_USERS_DOMAIN[u'domain']
 
-        self.assertNotEqual(username, system_users.getCurrentUserName())
+        self.assertNotEqual(test_user.name, system_users.getCurrentUserName())
 
-        with system_users.executeAsUser(username=username, token=token):
-            self.assertEqual(username, system_users.getCurrentUserName())
+        with system_users.executeAsUser(
+                username=test_user.name, token=test_user.token):
+            self.assertEqual(
+                test_user.name, system_users.getCurrentUserName())
 
     def test_getHomeFolder_good(self):
         """
@@ -111,16 +110,13 @@ class TestSystemUsers(CompatTestCase):
         for any other account, as long as the process has the required
         capabilities.
         """
-        token = mk.makeToken(
-            username=TEST_ACCOUNT_USERNAME_DOMAIN,
-            password=TEST_ACCOUNT_PASSWORD_DOMAIN,
-            )
+        test_user = TEST_USERS_DOMAIN[u'domain']
 
         home_folder = system_users.getHomeFolder(
-            username=TEST_ACCOUNT_USERNAME_DOMAIN, token=token)
+            username=test_user.name, token=test_user.token)
 
-        self.assertContains(
-            TEST_ACCOUNT_USERNAME_DOMAIN.lower(), home_folder.lower())
+        self.assertContains(test_user.name.lower(), home_folder.lower())
+        self.assertIsInstance(unicode, home_folder)
 
     def test_getHomeFolder_nt_no_previous_profile(self):
         """
@@ -134,27 +130,24 @@ class TestSystemUsers(CompatTestCase):
         domain = TEST_DOMAIN
         pdc = TEST_PDC
 
-        user = TestUser(
+        test_user = TestUser(
             name=username,
             password=password,
             domain=domain,
             pdc=pdc,
-            create_profile=True,
+            # We don't want to create the profile here since this is
+            # what we are testing.
+            create_profile=False,
             )
 
         try:
-            # We don't want to create the profile here since this is
-            # what we are testing.
-            os_administration.addUser(user)
-            token = mk.makeToken(username=username, password=password)
+            os_administration.addUser(test_user)
 
             upn = u'%s@%s' % (username, domain)
             home_path = system_users.getHomeFolder(
-                username=upn, token=token)
+                username=upn, token=test_user.token)
 
-            self.assertTrue(
-                username.lower() in home_path.lower(),
-                'Home folder "%s" is not good for user "%s"' % (
-                    home_path, username))
+            self.assertContains(username.lower(), home_path.lower())
+            self.assertIsInstance(unicode, home_path)
         finally:
-            os_administration.deleteUser(user)
+            os_administration.deleteUser(test_user)

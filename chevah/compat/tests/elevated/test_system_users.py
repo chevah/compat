@@ -18,7 +18,8 @@ from chevah.compat.constants import (
 from chevah.compat.administration import os_administration
 from chevah.compat.helpers import NoOpContext
 from chevah.compat.testing import (
-    ChevahTestCase,
+    CompatTestCase,
+    conditionals,
     manufacture,
     TestUser,
     TEST_ACCOUNT_CENTRIFY_USERNAME,
@@ -40,7 +41,7 @@ from chevah.compat.exceptions import (
 from chevah.compat.interfaces import IHasImpersonatedAvatar
 
 
-class SystemUsersTestCase(ChevahTestCase):
+class SystemUsersTestCase(CompatTestCase):
     """
     Common code for system users elevated tests.
     """
@@ -60,13 +61,17 @@ class SystemUsersTestCase(ChevahTestCase):
 
 
 class TestSystemUsers(SystemUsersTestCase):
-    '''Test system users operations.'''
+    """
+    Test system users operations.
+    """
 
     def test_userExists(self):
-        """Test userExists."""
+        """
+        Test userExists.
+        """
         self.assertTrue(system_users.userExists(TEST_ACCOUNT_USERNAME))
         self.assertFalse(system_users.userExists('non-existent-patricia'))
-        self.assertFalse(system_users.userExists('non-existent@no-domain'))
+        self.assertFalse(system_users.userExists(u'non-existent@no-domain'))
         self.assertFalse(system_users.userExists(''))
 
     def test_getHomeFolder_linux(self):
@@ -79,26 +84,8 @@ class TestSystemUsers(SystemUsersTestCase):
         home_folder = system_users.getHomeFolder(
             username=TEST_ACCOUNT_USERNAME)
 
-        self.assertEqual(u'/home/' + TEST_ACCOUNT_USERNAME, home_folder)
-
-    def test_getHomeFolder_good_nt(self):
-        """
-        If a valid token is provided the home folder path can be retrieved
-        for any other account, as long as the process has the required
-        capabilities.
-        """
-        if os.name != 'nt' or not process_capabilities.get_home_folder:
-            raise self.skipTest()
-
-        token = manufacture.makeToken(
-            username=TEST_ACCOUNT_USERNAME,
-            password=TEST_ACCOUNT_PASSWORD)
-
-        home_folder = system_users.getHomeFolder(
-            username=TEST_ACCOUNT_USERNAME, token=token)
-
-        self.assertContains(
-            TEST_ACCOUNT_USERNAME.lower(), home_folder.lower())
+        self.assertEqual(u'/home/%s' % TEST_ACCOUNT_USERNAME, home_folder)
+        self.assertIsInstance(unicode, home_folder)
 
     def test_getHomeFolder_no_capabilities(self):
         """
@@ -113,98 +100,115 @@ class TestSystemUsers(SystemUsersTestCase):
 
         self.assertEqual(1014, context.exception.event_id)
 
-    def test_getHomeFolder_bad_nt(self):
-        """
-        If no token is provided, we can get to folder path for current
-        account.
-        """
-        if os.name != 'nt' or not process_capabilities.get_home_folder:
-            raise self.skipTest()
-
-        home_folder = system_users.getHomeFolder(manufacture.username)
-        self.assertContains(manufacture.username, home_folder)
-
-    def test_getHomeFolder_nt_no_previous_profile(self):
-        """
-        On Windows, if user has no profile it will be created.
-
-        This tests creates a temporary account and in the end it deletes
-        the account and home folder.
-        """
-        # Only available on Windows
-        if os.name != 'nt':
-            raise self.skipTest()
-
-        # Only available if we can get user's home folder path.
-        if not process_capabilities.get_home_folder:
-            raise self.skipTest()
-
-        # Only available if we can create user's home folder.
-        if not process_capabilities.create_home_folder:
-            raise self.skipTest()
-
-        username = u'no-home'
-        password = manufacture.string()
-        user = TestUser(
-            name=username,
-            password=password,
-            create_profile=False,
-            )
-
-        try:
-            # We don't want to create the profile here since this is
-            # what we are testing.
-            os_administration.addUser(user)
-            token = manufacture.makeToken(
-                username=username, password=password)
-
-            home_path = system_users.getHomeFolder(
-                username=username, token=token)
-
-            self.assertTrue(
-                username.lower() in home_path.lower(),
-                'Home folder "%s" is not good for user "%s"' % (
-                    home_path, username))
-        finally:
-            os_administration.deleteUser(user)
-
+    @conditionals.onOSFamily('osx')
     def test_getHomeFolder_osx(self):
         """
         Check getHomeFolder for OSX.
         """
-        if not sys.platform.startswith('darwin'):
-            raise self.skipTest()
-
         home_folder = system_users.getHomeFolder(
             username=TEST_ACCOUNT_USERNAME)
 
-        self.assertEqual(u'/Users/' + TEST_ACCOUNT_USERNAME, home_folder)
+        self.assertEqual(u'/Users/%s' % TEST_ACCOUNT_USERNAME, home_folder)
+        self.assertIsInstance(unicode, home_folder)
 
-    def test_getHomeFolder_return_type(self):
-        """
-        getHomeFolder will always return an Unicode path.
-        """
-        # This test is skipped if we can not get the home folder.
-        if not process_capabilities.get_home_folder:
-            raise self.skipTest()
-
-        token = manufacture.makeToken(
-            username=TEST_ACCOUNT_USERNAME,
-            password=TEST_ACCOUNT_PASSWORD)
-
-        home_folder = system_users.getHomeFolder(
-            username=TEST_ACCOUNT_USERNAME, token=token)
-
-        self.assertTrue(isinstance(home_folder, unicode))
-
-    def test_getHomeFolder_non_existent_user(self):
+    def test_getHomeFolder_non_existing_user(self):
         """
         An error is raised by getHomeFolder if account does not exists.
         """
         with self.assertRaises(CompatError) as context:
             system_users.getHomeFolder(username=u'non-existent-patricia')
 
-        self.assertEqual(1014, context.exception.event_id)
+        self.assertCompatError(1014, context.exception)
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('get_home_folder', True)
+    def test_getHomeFolder_nt_existing_user_no_token(self):
+        """
+        An error is raised if user exists but no token is provided.
+        """
+        username = TEST_ACCOUNT_USERNAME
+
+        with self.assertRaises(CompatError) as context:
+            system_users.getHomeFolder(username)
+
+        self.assertCompatError(1014, context.exception)
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('get_home_folder', True)
+    def test_getHomeFolder_nt_custom_user_no_token(self):
+        """
+        An error is raised if no token is provided and the username differs
+        from the current/service username.
+        """
+        test_user = manufacture.getTestUser(u'other')
+
+        with self.assertRaises(CompatError) as context:
+            system_users.getHomeFolder(test_user.name)
+
+        self.assertCompatError(1014, context.exception)
+        self.assertContains(
+            'Invalid username/token combination.', context.exception.message)
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('get_home_folder', True)
+    def test_getHomeFolder_nt_good(self):
+        """
+        If a valid token is provided the home folder path can be retrieved
+        for it's corresponding account, as long as the process has the
+        required capabilities.
+        """
+        test_user = manufacture.getTestUser(u'normal')
+        home_folder = system_users.getHomeFolder(
+            username=test_user.name, token=test_user.token)
+
+        self.assertContains(
+            test_user.name.lower(), home_folder.lower())
+        self.assertIsInstance(unicode, home_folder)
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('get_home_folder', True)
+    def test_getHomeFolder_nt_no_token(self):
+        """
+        If no token is provided, it can still be successfully used for getting
+        home folder for current account.
+        """
+        username = manufacture.username
+
+        home_folder = system_users.getHomeFolder(username)
+
+        self.assertContains(username.lower(), home_folder.lower())
+        self.assertIsInstance(unicode, home_folder)
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('get_home_folder', True)
+    @conditionals.onCapability('create_home_folder', True)
+    def test_getHomeFolder_nt_no_existing_profile(self):
+        """
+        On Windows, if user has no profile it will be created.
+
+        This test creates a temporary account and in the end it deletes
+        the account and it's home folder.
+        """
+        username = u'no-home'
+        password = manufacture.string()
+        user = TestUser(
+            name=username,
+            password=password,
+            # We don't want to create the profile here since this is
+            # what we are testing.
+            create_profile=False,
+            )
+
+        try:
+            os_administration.addUser(user)
+
+            home_path = system_users.getHomeFolder(
+                username=username, token=user.token)
+
+            self.assertContains(username.lower(), home_path.lower())
+            self.assertIsInstance(unicode, home_path)
+        finally:
+            os_administration.deleteUser(user)
 
     def test_authenticateWithUsernameAndPassword_good(self):
         """
@@ -224,12 +228,13 @@ class TestSystemUsers(SystemUsersTestCase):
     def test_authenticateWithUsernameAndPassword_bad_password(self):
         """
         authenticateWithUsernameAndPassword will return False if
-        credendials are not valid.
+        credentials are not valid.
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
             username=TEST_ACCOUNT_USERNAME,
             password=manufacture.string(),
             )
+
         self.assertFalse(result)
         self.assertIsNone(token)
 
@@ -243,6 +248,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
             username=manufacture.string(), password=manufacture.string())
+
         self.assertFalse(result)
         self.assertIsNone(token)
 
@@ -286,63 +292,59 @@ class TestSystemUsers(SystemUsersTestCase):
         self.assertIsNone(token)
 
     def test_executeAsUser_multiple_call_on_same_credentials(self):
-        '''Test executing as a different user reusing the credentials.'''
-        username = TEST_ACCOUNT_USERNAME
-        token = manufacture.makeToken(
-            username=username, password=TEST_ACCOUNT_PASSWORD)
+        """
+        Test executing as a different user reusing the credentials.
+        """
+        test_user = manufacture.getTestUser(u'normal')
         with system_users.executeAsUser(
-                username=username, token=token):
+                username=test_user.name, token=test_user.token):
             pass
 
         with system_users.executeAsUser(
-                username=username, token=token):
+                username=test_user.name, token=test_user.token):
             pass
 
+    @conditionals.onOSFamily('nt')
     def test_getCurrentUserName_NT(self):
         """
         Check for helper method.
         """
-        if os.name != 'nt':
-            raise self.skipTest()
-
         self.assertEqual(
             manufacture.username, system_users.getCurrentUserName())
 
+    @conditionals.onOSFamily('nt')
     def test_executeAsUser_NT(self):
-        '''Test executing as a different user.'''
-        if os.name != 'nt':
-            raise self.skipTest()
-
-        username = TEST_ACCOUNT_USERNAME
-        token = manufacture.makeToken(
-            username=username, password=TEST_ACCOUNT_PASSWORD)
+        """
+        Test executing as a different user.
+        """
+        test_user = manufacture.getTestUser(u'normal')
 
         with system_users.executeAsUser(
-            username=username, token=token
-                ):
+                username=test_user.name, token=test_user.token):
             self.assertEqual(
-                username, system_users.getCurrentUserName())
+                test_user.name, system_users.getCurrentUserName())
 
         self.assertEqual(
             manufacture.username, system_users.getCurrentUserName())
 
+    @conditionals.onOSFamily('posix')
     def test_executeAsUser_Unix(self):
         '''Test executing as a different user.'''
         if os.name != 'posix':
             raise self.skipTest()
+
         initial_uid, initial_gid = os.geteuid(), os.getegid()
         initial_groups = os.getgroups()
-        username = TEST_ACCOUNT_USERNAME
+        test_user = manufacture.getTestUser(u'normal')
 
-        with system_users.executeAsUser(username=username):
-
+        with system_users.executeAsUser(username=test_user.name):
             import pwd
             import grp
             uid, gid = os.geteuid(), os.getegid()
             impersonated_username = pwd.getpwuid(uid)[0].decode('utf-8')
             impersonated_groupname = grp.getgrgid(gid)[0].decode('utf-8')
             impersonated_groups = os.getgroups()
-            self.assertEqual(username, impersonated_username)
+            self.assertEqual(test_user.name, impersonated_username)
             self.assertEqual(TEST_ACCOUNT_GROUP, impersonated_groupname)
             self.assertNotEqual(initial_uid, uid)
             self.assertNotEqual(initial_gid, gid)
@@ -377,41 +379,35 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         False is returned if isUserInGroups is asked for a non-existent group.
         """
-        username = TEST_ACCOUNT_USERNAME
-        token = manufacture.makeToken(
-            username=username, password=TEST_ACCOUNT_PASSWORD)
+        test_user = manufacture.getTestUser(u'normal')
 
         groups = [u'non-existent-group']
         self.assertFalse(system_users.isUserInGroups(
-            username=username, groups=groups, token=token))
+            username=test_user.name, groups=groups, token=test_user.token))
 
     def test_isUserInGroups_not_in_groups(self):
         """
         False is returned if user is not in the groups.
         """
-        username = TEST_ACCOUNT_USERNAME
-        token = manufacture.makeToken(
-            username=username, password=TEST_ACCOUNT_PASSWORD)
+        test_user = manufacture.getTestUser(u'normal')
 
         groups = [u'root', u'Administrators']
 
         self.assertFalse(system_users.isUserInGroups(
-            username=username, groups=groups, token=token))
+            username=test_user.name, groups=groups, token=test_user.token))
 
     def test_isUserInGroups_success(self):
         """
         True is returned if user is in groups.
         """
-        username = TEST_ACCOUNT_USERNAME
-        token = manufacture.makeToken(
-            username=TEST_ACCOUNT_USERNAME, password=TEST_ACCOUNT_PASSWORD)
+        test_user = manufacture.getTestUser(u'normal')
 
         groups = [
             TEST_ACCOUNT_GROUP,
             TEST_ACCOUNT_GROUP_WIN,
             ]
         self.assertTrue(system_users.isUserInGroups(
-            username=username, groups=groups, token=token))
+            username=test_user.name, groups=groups, token=test_user.token))
 
         groups = [
             u'non-existent-group',
@@ -419,18 +415,15 @@ class TestSystemUsers(SystemUsersTestCase):
             TEST_ACCOUNT_GROUP_WIN,
             ]
         self.assertTrue(system_users.isUserInGroups(
-            username=username, groups=groups, token=token))
+            username=test_user.name, groups=groups, token=test_user.token))
 
     def test_getPrimaryGroup_good(self):
         """
         Check getting primary group.
         """
-        user = TEST_ACCOUNT_USERNAME
-        password = TEST_ACCOUNT_PASSWORD
-        token = manufacture.makeToken(
-            username=user, password=password)
+        test_user = manufacture.getTestUser(u'normal')
         avatar = manufacture.makeFilesystemOSAvatar(
-            name=TEST_ACCOUNT_USERNAME, token=token)
+            name=TEST_ACCOUNT_USERNAME, token=test_user.token)
 
         group_name = system_users.getPrimaryGroup(username=avatar.name)
         if os.name == 'nt':
@@ -522,6 +515,7 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
         self.assertItemsEqual(
             self.getGroupsIDForTestAccount(), kwargs['groups'])
 
+    @conditionals.onOSFamily('nt')
     def test_getImpersonationContext_use_impersonation_nt(self):
         """
         If use_impersonation is `True` an impersonation context is active.
@@ -529,22 +523,16 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
         Inside the context we have the new user and outside we have the normal
         user.
         """
-        if os.name != 'nt':
-            raise self.skipTest()
-
-        token = manufacture.makeToken(
-            username=TEST_ACCOUNT_USERNAME,
-            password=TEST_ACCOUNT_PASSWORD,
-            )
+        test_user = manufacture.getTestUser(u'normal')
         avatar = ImpersonatedAvatarImplementation(
-            name=TEST_ACCOUNT_USERNAME,
-            token=token,
+            name=test_user.name,
+            token=test_user.token,
             use_impersonation=True,
             )
 
         with avatar.getImpersonationContext():
             self.assertEqual(
-                TEST_ACCOUNT_USERNAME, system_users.getCurrentUserName())
+                test_user.name, system_users.getCurrentUserName())
 
         self.assertEqual(
             manufacture.username, system_users.getCurrentUserName())

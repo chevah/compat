@@ -83,26 +83,6 @@ class CompatManufacture(ChevahCommonsFactory):
             root_folder_path=root_folder_path,
             )
 
-    def makeToken(self, username, password):
-        """
-        Generate the Windows token for username and password.
-
-        Only useful on Windows.
-        On Unix it should return None.
-        """
-        if os.name != 'nt':
-            return None
-
-        result, token = system_users.authenticateWithUsernameAndPassword(
-            username=username,
-            password=password,
-            )
-        if not result:
-            raise AssertionError(
-                u'Failed to get a valid token for "%s" with "%s".' % (
-                    username, password))
-        return token
-
     @classmethod
     def posixID(cls):
         """
@@ -110,6 +90,12 @@ class CompatManufacture(ChevahCommonsFactory):
         """
         cls._posix_id += 1
         return cls._posix_id
+
+    def getTestUser(self, name):
+        """
+        Return an existing test user instance for user with `name`.
+        """
+        return TEST_USERS[name]
 
 
 mk = manufacture = CompatManufacture()
@@ -223,9 +209,11 @@ class TestUser(object):
         self.domain = domain
         self.pdc = pdc
         self.primary_group_name = primary_group_name
+
         self.windows_sid = None
         self.windows_create_profile = create_profile
         self.windows_required_rights = windows_required_rights
+        self._windows_token = None
 
     @property
     def name(self):
@@ -233,6 +221,50 @@ class TestUser(object):
         Actual user name.
         """
         return self._name
+
+    @property
+    def token(self):
+        """
+        Windows token for user.
+        """
+        if os.name != 'nt':
+            return None
+
+        if not self._windows_token:
+            self._windows_token = self._getToken()
+
+        return self._windows_token
+
+    @property
+    def upn(self):
+        """
+        Returns User Principal Name: plain user name if no domain name defined
+        or Active Directory compatible full domain user name.
+        """
+        if not self.domain:
+            return self.name
+
+        return u'%s@%s' % (self.name, self.domain)
+
+    def _getToken(self):
+        """
+        Generate the Windows token for `user`.
+        """
+        result, token = system_users.authenticateWithUsernameAndPassword(
+            username=self.upn, password=self.password)
+
+        if not result:
+            message = u'Failed to get a valid token for "%s" with "%s".' % (
+                self.upn, self.password)
+            raise AssertionError(message.encode('utf-8'))
+
+        return token
+
+    def _invalidateToken(self):
+        """
+        Invalidates cache for Windows token value.
+        """
+        self._windows_token = None
 
 
 class TestGroup(object):
@@ -295,8 +327,8 @@ else:
     TEST_ACCOUNT_HOME_PATH = u'/home/' + TEST_ACCOUNT_USERNAME
     TEST_ACCOUNT_HOME_PATH_OTHER = u'/home/' + TEST_ACCOUNT_USERNAME_OTHER
 
-TEST_USERS = [
-    TestUser(
+TEST_USERS = {
+    u'normal': TestUser(
         name=TEST_ACCOUNT_USERNAME,
         posix_uid=TEST_ACCOUNT_UID,
         posix_gid=TEST_ACCOUNT_GID,
@@ -305,7 +337,7 @@ TEST_USERS = [
         home_group=TEST_ACCOUNT_GROUP,
         password=TEST_ACCOUNT_PASSWORD,
         ),
-    TestUser(
+    u'other': TestUser(
         name=TEST_ACCOUNT_USERNAME_OTHER,
         posix_uid=TEST_ACCOUNT_UID_OTHER,
         posix_gid=TEST_ACCOUNT_GID_OTHER,
@@ -313,25 +345,43 @@ TEST_USERS = [
         home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
         password=TEST_ACCOUNT_PASSWORD_OTHER,
         ),
-    ]
+    }
 
-TEST_GROUPS = [
-    TestGroup(
+TEST_GROUPS = {
+    u'normal': TestGroup(
         name=TEST_ACCOUNT_GROUP,
         gid=TEST_ACCOUNT_GID,
         members=[TEST_ACCOUNT_USERNAME, TEST_ACCOUNT_USERNAME_OTHER],
         ),
-    TestGroup(
+    u'other': TestGroup(
         name=TEST_ACCOUNT_GROUP_OTHER,
         gid=TEST_ACCOUNT_GID_OTHER,
         members=[TEST_ACCOUNT_USERNAME_OTHER],
         ),
-    TestGroup(
+    u'another': TestGroup(
         name=TEST_ACCOUNT_GROUP_ANOTHER,
         gid=TEST_ACCOUNT_GID_ANOTHER,
         members=[TEST_ACCOUNT_USERNAME],
         ),
-    ]
+    }
+
+TEST_USERS_DOMAIN = {
+    u'domain': TestUser(
+        name=TEST_ACCOUNT_USERNAME_DOMAIN,
+        password=TEST_ACCOUNT_PASSWORD_DOMAIN,
+        domain=TEST_DOMAIN,
+        pdc=TEST_PDC,
+        create_profile=True,
+        ),
+    }
+
+TEST_GROUPS_DOMAIN = {
+    u'domain': TestGroup(
+        name=TEST_ACCOUNT_GROUP_DOMAIN,
+        members=[TEST_ACCOUNT_USERNAME_DOMAIN],
+        pdc=TEST_PDC,
+        ),
+    }
 
 
 class CompatTestCase(ChevahTestCase):
@@ -387,15 +437,13 @@ class FileSystemTestCase(CompatTestCase):
 
         cls.os_user = cls.setUpTestUser()
 
-        token = manufacture.makeToken(
-            username=cls.os_user.name, password=cls.os_user.password)
         home_folder_path = system_users.getHomeFolder(
-            username=cls.os_user.name, token=token)
+            username=cls.os_user.name, token=cls.os_user.token)
 
         cls.avatar = manufacture.makeFilesystemOSAvatar(
             name=cls.os_user.name,
             home_folder_path=home_folder_path,
-            token=token,
+            token=cls.os_user.token,
             )
         cls.filesystem = LocalFilesystem(avatar=cls.avatar)
 
@@ -404,12 +452,7 @@ class FileSystemTestCase(CompatTestCase):
         """
         Set-up OS user for symbolic link testing.
         """
-        # FIXME:2106:
-        # Re-use global instance.
-        return TestUser(
-            name=TEST_ACCOUNT_USERNAME,
-            password=TEST_ACCOUNT_PASSWORD
-            )
+        return manufacture.getTestUser(u'normal')
 
     def setUp(self):
         super(FileSystemTestCase, self).setUp()
@@ -452,13 +495,13 @@ def setup_access_control(users, groups):
     Add users, groups, create temporary folders and other things required
     by the testing system.
     """
-    for group in groups:
+    for group in groups.values():
         os_administration.addGroup(group)
 
-    for user in users:
+    for user in users.values():
         os_administration.addUser(user)
 
-    for group in groups:
+    for group in groups.values():
         os_administration.addUsersToGroup(group, group.members)
 
 
@@ -471,13 +514,13 @@ def teardown_access_control(users, groups):
     # First remove the accounts as groups can not be removed first
     # since they are blocked by accounts.
     errors = []
-    for user in users:
+    for user in users.values():
         try:
             os_administration.deleteUser(user)
         except Exception, error:
             errors.append(error)
 
-    for group in groups:
+    for group in groups.values():
         try:
             os_administration.deleteGroup(group)
         except Exception, error:

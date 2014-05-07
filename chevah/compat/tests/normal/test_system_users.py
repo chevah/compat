@@ -1,12 +1,13 @@
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
-"""Test system users portable code code."""
+"""
+Test system users portable code.
+"""
 import os
 import sys
 
 from chevah.compat import (
     DefaultAvatar,
-    process_capabilities,
     system_users,
     SuperAvatar,
     )
@@ -35,6 +36,7 @@ class TestSystemUsers(CompatTestCase):
         """
         if not sys.platform.startswith('linux'):
             raise self.skipTest()
+
         home_folder = system_users.getHomeFolder(
             username=manufacture.username)
 
@@ -44,28 +46,27 @@ class TestSystemUsers(CompatTestCase):
         else:
             self.assertEqual(u'/home/' + manufacture.username, home_folder)
 
+        self.assertIsInstance(unicode, home_folder)
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('get_home_folder', True)
     def test_getHomeFolder_nt(self):
         """
         Check getHomeFolder for Windows.
         """
-        if os.name != 'nt' or not process_capabilities.get_home_folder:
-            raise self.skipTest()
-
         home_folder = system_users.getHomeFolder(
             username=manufacture.username)
 
-        self.assertNotEqual(
-            -1,
-            home_folder.lower().find(manufacture.username.lower()),
-            '%s not in %s' % (manufacture.username, home_folder))
+        self.assertContains(
+            manufacture.username.lower(), home_folder.lower())
+        self.assertIsInstance(unicode, home_folder)
 
+    @conditionals.onOSFamily('nt')
     def test_parseUPN_no_domain(self):
         """
         Return the exact username and domain `None` when username UPN
         is not a domain.
         """
-        if os.name != 'nt':
-            raise self.skipTest()
         name = manufacture.string()
 
         (domain, username) = system_users._parseUPN(name)
@@ -102,18 +103,7 @@ class TestSystemUsers(CompatTestCase):
             username=manufacture.username)
 
         self.assertEqual(u'/Users/' + manufacture.username, home_folder)
-
-    def test_getHomeFolder_return_type(self):
-        """
-        getHomeFolder will always return an unicode path.
-        """
-        if not process_capabilities.get_home_folder:
-            raise self.skipTest()
-
-        home_folder = system_users.getHomeFolder(
-            username=manufacture.username)
-
-        self.assertTrue(isinstance(home_folder, unicode))
+        self.assertIsInstance(unicode, home_folder)
 
     @conditionals.onOSFamily('posix')
     def test_pam_support_unix(self):
