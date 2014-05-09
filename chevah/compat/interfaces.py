@@ -335,7 +335,7 @@ class IFilesystemNode(Interface):
 
 class ILocalFilesystem(Interface):
     """
-    Portable acces to local filesystem.
+    Portable access to local filesystem.
 
     This is designed to provide a single interface for accessing local files.
 
@@ -372,7 +372,7 @@ class ILocalFilesystem(Interface):
 
     def getSegmentsFromRealPath(real_path):
         """
-        Return the segments coresponding to an real absolute path.
+        Return the segments corresponding to an real absolute path.
         """
 
     def getAbsoluteRealPath(real_path):

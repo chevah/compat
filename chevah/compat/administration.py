@@ -422,6 +422,12 @@ class OSAdministrationUnix(object):
         delete_user_method = getattr(self, '_deleteUser_' + self.name)
         delete_user_method(user)
 
+    def deleteHomeFolder(self, user):
+        """
+        Should be overridden.
+        """
+        pass
+
     def _deleteUser_unix(self, user):
         self._deleteUnixEntry(
             kind='user',
@@ -652,8 +658,8 @@ class OSAdministrationWindows(OSAdministrationUnix):
         """
         Create an local Windows account.
 
-        When `user.windows_create_profile` is True, this method will also try
-        to create the home folder.
+        When `user.windows_create_local_profile` is True, this method will
+        also try to create the home folder.
 
         Otherwise the user is created, but the home folder does not exists
         until the first login or when profile is explicitly created in other
@@ -673,7 +679,10 @@ class OSAdministrationWindows(OSAdministrationUnix):
             }
 
         win32net.NetUserAdd(user.pdc, 1, user_info)
-        if user.password and user.windows_create_profile:
+        if user.windows_create_local_profile:
+            if not user.password:
+                raise AssertionError('You must provide a password.')
+
             system_users._createLocalProfile(
                 username=user.upn, token=user.token)
 
@@ -722,21 +731,28 @@ class OSAdministrationWindows(OSAdministrationUnix):
             if number != ERROR_NONE_MAPPED:
                 raise
 
+        if user.windows_create_local_profile:
+            self.deleteHomeFolder(user)
+
+    def deleteHomeFolder(self, user):
+        """
+        Remove home folder for specified user, raise an error if operation
+        not successful.
+        """
         # We can not reliably get home folder on all Windows version, so
         # we assume that home folders for other accounts are siblings to
         # the home folder of the current account.
         home_base = os.path.dirname(os.getenv('USERPROFILE'))
         home_path = os.path.join(home_base, user.name)
 
-        if user._windows_token:
-            # FIXME:927:
-            # We need to look for a way to delete home folders with unicode
-            # names.
-            command = 'cmd.exe /C rmdir /S /Q "%s"' % home_path.encode('utf-8')
-            result = subprocess.call(command, shell=True)
-            if result != 0:
-                message = u'Unable to remove folder: %s.' % home_path
-                raise AssertionError(message.encode('utf-8'))
+        # FIXME:927:
+        # We need to look for a way to delete home folders with unicode
+        # names.
+        command = 'cmd.exe /C rmdir /S /Q "%s"' % home_path.encode('utf-8')
+        result = subprocess.call(command, shell=True)
+        if result != 0:
+            message = u'Unable to remove folder: %s.' % home_path
+            raise AssertionError(message.encode('utf-8'))
 
     def deleteGroup(self, group):
         """

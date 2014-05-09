@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.19.2 - 09/05/2014
+-------------------
+
+* Remove test user's home folder only when created.
+* Domain users available via manufacture.getTestUser().
+
+
 0.19.1 - 06/05/2014
 -------------------
 

@@ -1,7 +1,7 @@
 from setuptools import Command, find_packages, setup
 import os
 
-VERSION = '0.19.1'
+VERSION = '0.19.2'
 
 
 class PublishCommand(Command):
@@ -37,7 +37,7 @@ distribution = setup(
     maintainer_email='adi.roiban@chevah.com',
     license='BSD 3-Clause',
     platforms='any',
-    description="Chevah OS Compatiblity Layer.",
+    description="Chevah OS Compatibility Layer.",
     long_description=open('README.rst').read(),
     url='http://www.chevah.com',
     namespace_packages=['chevah'],

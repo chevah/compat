@@ -22,7 +22,9 @@ from chevah.compat.testing import (
 
 
 class TestSystemUsers(CompatTestCase):
-    '''Test system users operations.'''
+    """
+    Test system users operations.
+    """
 
     def test_init(self):
         """

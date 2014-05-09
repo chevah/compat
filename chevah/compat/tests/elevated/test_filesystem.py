@@ -12,6 +12,7 @@ from chevah.compat import (
 from chevah.compat.testing import (
     conditionals,
     manufacture,
+    os_administration,
     TEST_ACCOUNT_GROUP,
     TEST_ACCOUNT_GROUP_OTHER,
     TEST_ACCOUNT_USERNAME,
@@ -405,3 +406,8 @@ class TestSymbolicLinks(OSAccountFileSystemTestCase, SymbolicLinksMixin):
         posix_gid=manufacture.posixID(),
         windows_required_rights=rights,
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        os_administration.deleteHomeFolder(cls.CREATE_TEST_USER)
+        super(TestSymbolicLinks, cls).tearDownClass()

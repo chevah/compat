@@ -64,7 +64,6 @@ class TestSystemUsers(SystemUsersTestCase):
     """
     Test system users operations.
     """
-
     def test_userExists(self):
         """
         Test userExists.
@@ -164,6 +163,7 @@ class TestSystemUsers(SystemUsersTestCase):
         self.assertContains(
             test_user.name.lower(), home_folder.lower())
         self.assertIsInstance(unicode, home_folder)
+        self.addCleanup(os_administration.deleteHomeFolder, test_user)
 
     @conditionals.onOSFamily('nt')
     @conditionals.onCapability('get_home_folder', True)
@@ -184,31 +184,42 @@ class TestSystemUsers(SystemUsersTestCase):
     @conditionals.onCapability('create_home_folder', True)
     def test_getHomeFolder_nt_no_existing_profile(self):
         """
-        On Windows, if user has no profile it will be created.
+        On Windows, if user has no local home folder it will be created
+        automatically when getting the home folder path.
 
         This test creates a temporary account and in the end it deletes
         the account and it's home folder.
         """
-        username = u'no-home'
-        password = manufacture.string()
-        user = TestUser(
-            name=username,
-            password=password,
+        test_user = TestUser(
+            name=u'no-home',
+            password=manufacture.string(),
             # We don't want to create the profile here since this is
             # what we are testing.
-            create_profile=False,
+            create_local_profile=False,
             )
+        # Unfortunately there is no API to get default base home path for
+        # users, we need to rely on an existing pattern.
+        home_base = os.path.dirname(os.getenv('USERPROFILE'))
+        expected_home_path = os.path.join(home_base, test_user.name)
+        expected_home_segments = manufacture.fs.getSegmentsFromRealPath(
+            expected_home_path)
 
         try:
-            os_administration.addUser(user)
+            os_administration.addUser(test_user)
+            # Home folder path is not created on successful login.
+            token = test_user.token
+            self.assertFalse(manufacture.fs.isFolder(expected_home_segments))
 
-            home_path = system_users.getHomeFolder(
-                username=username, token=user.token)
+            self.home_folder = system_users.getHomeFolder(
+                username=test_user.name, token=token)
 
-            self.assertContains(username.lower(), home_path.lower())
-            self.assertIsInstance(unicode, home_path)
+            self.assertContains(
+                test_user.name.lower(), self.home_folder.lower())
+            self.assertIsInstance(unicode, self.home_folder)
+            self.assertTrue(manufacture.fs.isFolder(expected_home_segments))
         finally:
-            os_administration.deleteUser(user)
+            os_administration.deleteUser(test_user)
+            os_administration.deleteHomeFolder(test_user)
 
     def test_authenticateWithUsernameAndPassword_good(self):
         """

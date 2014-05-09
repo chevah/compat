@@ -7,7 +7,9 @@ from chevah.compat.testing import ChevahTestCase, manufacture
 
 
 class TestFactory(ChevahTestCase):
-    '''Test for factory methods.'''
+    """
+    Test for factory methods.
+    """
 
     def test_avatar_unicode(self):
         """

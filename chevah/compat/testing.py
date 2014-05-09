@@ -180,8 +180,8 @@ class TestUser(object):
     def __init__(
         self, name, posix_uid=None, posix_gid=None, home_path=None,
         home_group=None, shell=None, shadow=None, password=None,
-        domain=None, pdc=None, primary_group_name=None, create_profile=False,
-        windows_required_rights=None
+        domain=None, pdc=None, primary_group_name=None,
+        create_local_profile=False, windows_required_rights=None,
             ):
         """
         Convert user name to an OS valid value.
@@ -211,7 +211,7 @@ class TestUser(object):
         self.primary_group_name = primary_group_name
 
         self.windows_sid = None
-        self.windows_create_profile = create_profile
+        self.windows_create_local_profile = create_local_profile
         self.windows_required_rights = windows_required_rights
         self._windows_token = None
 
@@ -365,24 +365,6 @@ TEST_GROUPS = {
         ),
     }
 
-TEST_USERS_DOMAIN = {
-    u'domain': TestUser(
-        name=TEST_ACCOUNT_USERNAME_DOMAIN,
-        password=TEST_ACCOUNT_PASSWORD_DOMAIN,
-        domain=TEST_DOMAIN,
-        pdc=TEST_PDC,
-        create_profile=True,
-        ),
-    }
-
-TEST_GROUPS_DOMAIN = {
-    u'domain': TestGroup(
-        name=TEST_ACCOUNT_GROUP_DOMAIN,
-        members=[TEST_ACCOUNT_USERNAME_DOMAIN],
-        pdc=TEST_PDC,
-        ),
-    }
-
 
 class CompatTestCase(ChevahTestCase):
     """
@@ -436,7 +418,6 @@ class FileSystemTestCase(CompatTestCase):
         super(FileSystemTestCase, cls).setUpClass()
 
         cls.os_user = cls.setUpTestUser()
-
         home_folder_path = system_users.getHomeFolder(
             username=cls.os_user.name, token=cls.os_user.token)
 
