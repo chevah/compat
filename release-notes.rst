@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.20.1 - 14/05/2014
+-------------------
+
+* Fix conversion of IOError to OSError.
+
+
 0.20.0 - 14/05/2014
 -------------------
 

@@ -272,7 +272,7 @@ class PosixFilesystemBase(object):
         try:
             yield
         except IOError, error:
-            raise OSError(error.errno, error.message, path)
+            raise OSError(error.errno, error.strerror, path)
 
     def _requireFile(self, segments):
         """

@@ -121,6 +121,21 @@ class TestLocalFilesystemGeneric(FilesystemTestCase):
         folder_name = segments[-1]
         self.assertTrue(folder_name.startswith('build-'))
 
+    def test_IOToOSError(self):
+        """
+        Convert IOError to OSError using a context.
+        """
+        path = manufacture.ascii()
+
+        with self.assertRaises(OSError) as context:
+            with self.filesystem._IOToOSError(path):
+                raise IOError(3, 'error message')
+
+        self.assertEqual(3, context.exception.errno)
+        self.assertEqual(path, context.exception.filename)
+        self.assertEqual(
+            'error message', context.exception.strerror)
+
     def test_deleteFile_folder(self):
         """
         Raise OSError when trying to delete a folder as a file.
