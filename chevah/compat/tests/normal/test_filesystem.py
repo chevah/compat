@@ -125,14 +125,14 @@ class TestLocalFilesystemGeneric(FilesystemTestCase):
         """
         Convert IOError to OSError using a context.
         """
-        path = manufacture.ascii()
+        path = manufacture.string()
 
         with self.assertRaises(OSError) as context:
             with self.filesystem._IOToOSError(path):
                 raise IOError(3, 'error message')
 
         self.assertEqual(3, context.exception.errno)
-        self.assertEqual(path, context.exception.filename)
+        self.assertEqual(path.encode('utf-8'), context.exception.filename)
         self.assertEqual(
             'error message', context.exception.strerror)
 
@@ -141,12 +141,14 @@ class TestLocalFilesystemGeneric(FilesystemTestCase):
         Raise OSError when trying to delete a folder as a file.
         """
         self.test_segments = manufacture.fs.createFolderInTemp()
+        path = manufacture.fs.getRealPathFromSegments(self.test_segments)
         self.assertTrue(self.filesystem.exists(self.test_segments))
 
         with self.assertRaises(OSError) as context:
             self.filesystem.deleteFile(self.test_segments)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
+        self.assertEqual(path.encode('utf-8'), context.exception.filename)
         self.assertTrue(self.filesystem.exists(self.test_segments))
 
     def test_deleteFile_regular(self):
@@ -261,6 +263,18 @@ class TestLocalFilesystemGeneric(FilesystemTestCase):
         self.filesystem.deleteFolder(segments, recursive=True)
 
         self.assertFalse(self.filesystem.exists(segments))
+
+    def test_deleteFolder_non_found(self):
+        """
+        Raise OSError when folder is not found.
+        """
+        segments = ['c', 'no-such', manufacture.string()]
+        self.assertFalse(self.filesystem.exists(segments))
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.deleteFolder(segments, recursive=False)
+
+        self.assertEqual(errno.ENOENT, context.exception.errno)
 
     @conditionals.onCapability('symbolic_link', True)
     def test_deleteFolder_link(self):
@@ -756,60 +770,71 @@ class TestLocalFilesystemGeneric(FilesystemTestCase):
         Raise OSError when trying to open a folder as file.
         """
         self.test_segments = manufacture.fs.createFolderInTemp()
+        path = manufacture.fs.getRealPathFromSegments(self.test_segments)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFile(self.test_segments, os.O_RDONLY, 0777)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
+        self.assertEqual(path.encode('utf-8'), context.exception.filename)
 
     def test_openFileForReading_folder(self):
         """
         Raise OSError when trying to open a folder as file.
         """
         self.test_segments = manufacture.fs.createFolderInTemp()
+        path = manufacture.fs.getRealPathFromSegments(self.test_segments)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForReading(self.test_segments, utf8=False)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
+        self.assertEqual(path.encode('utf-8'), context.exception.filename)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForReading(self.test_segments, utf8=True)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
+        self.assertEqual(path.encode('utf-8'), context.exception.filename)
 
     def test_openFileForWriting_ascii_folder(self):
         """
         Raise OSError when trying to open a folder as file.
         """
         self.test_segments = manufacture.fs.createFolderInTemp()
+        path = manufacture.fs.getRealPathFromSegments(self.test_segments)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForWriting(self.test_segments, utf8=False)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
+        self.assertEqual(path.encode('utf-8'), context.exception.filename)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForWriting(self.test_segments, utf8=True)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
+        self.assertEqual(path.encode('utf-8'), context.exception.filename)
 
     def test_openFileForAppending_ascii_folder(self):
         """
         Raise OSError when trying to open a folder as file.
         """
         self.test_segments = manufacture.fs.createFolderInTemp()
+        path = manufacture.fs.getRealPathFromSegments(self.test_segments)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForAppending(
                 self.test_segments, utf8=False)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
+        self.assertEqual(path.encode('utf-8'), context.exception.filename)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForAppending(self.test_segments, utf8=True)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
+        self.assertEqual(path.encode('utf-8'), context.exception.filename)
 
 
 class TestPosixFilesystem(CompatTestCase):

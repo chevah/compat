@@ -178,7 +178,8 @@ class NTFilesystem(PosixFilesystemBase):
         letter, _ = os.path.splitdrive(path_encoded)
         if letter.strip(':').lower() not in self._allowed_drive_letters:
             message = u'Bad drive letter "%s" for %s' % (letter, path)
-            raise OSError(errno.EINVAL, message.encode('utf-8'), path_encoded)
+            raise OSError(
+                errno.EINVAL, message.encode('utf-8'), path.encode('utf-8'))
 
     def getSegmentsFromRealPath(self, path):
         """
@@ -230,8 +231,7 @@ class NTFilesystem(PosixFilesystemBase):
             raise OSError(error.errno, error.strerror, error.filename)
         except pywintypes.error as error:
             path = self.getRealPathFromSegments(segments)
-            path_encoded = self.getEncodedPath(path)
-            raise OSError(error.winerror, error.strerror, path_encoded)
+            raise OSError(error.winerror, error.strerror, path.encode('utf-8'))
 
     def readLink(self, segments):
         """
@@ -377,11 +377,18 @@ class NTFilesystem(PosixFilesystemBase):
                 search = win32file.FindFilesW(path)
                 if len(search) != 1:
                     message = 'Could not find %s' % path
-                    raise OSError(errno.ENOENT, message.encode('utf-8'))
+                    raise OSError(
+                        errno.ENOENT,
+                        message.encode('utf-8'),
+                        path.encode('utf-8'),
+                        )
                 data = search[0]
         except pywintypes.error, error:
             message = u'%s %s %s' % (error.winerror, error.strerror, path)
-            raise OSError(errno.EINVAL, message.encode('utf-8'))
+            raise OSError(
+                errno.EINVAL,
+                message.encode('utf-8'),
+                )
 
         # Raw data:
         # [0] int : attributes
@@ -437,19 +444,20 @@ class NTFilesystem(PosixFilesystemBase):
                     segments, ignore_errors=ignore_errors)
         except OSError, error:
             # Windows return a bad error code for folders.
+            path_encoded = error.filename.encode('utf-8')
             if self.isFolder(segments):
                 raise OSError(
                     errno.EISDIR,
-                    'Is a directory: %s' % error.filename,
-                    error.filename,
+                    'Is a directory: %s' % path_encoded,
+                    path_encoded,
                     )
             # When file is not found it uses EINVAL code but we want the
             # same code as in Unix.
             if error.errno == errno.EINVAL:
                 raise OSError(
                     errno.ENOENT,
-                    'Not found: %s' % error.filename,
-                    error.filename,
+                    'Not found: %s' % path_encoded,
+                    path_encoded,
                     )
             raise error
 
@@ -475,17 +483,20 @@ class NTFilesystem(PosixFilesystemBase):
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
 
-        # Windows return a generic EINVAL when path is not a folder.
-        self._requireFolder(segments)
+        try:
+            with self._windowsToOSError(segments), self._impersonateUser():
+                if self.isLink(segments):
+                    recursive = False
 
-        with self._windowsToOSError(segments), self._impersonateUser():
-            if self.isLink(segments):
-                recursive = False
-
-            if recursive:
-                return shutil.rmtree(path_encoded)
-            else:
-                return os.rmdir(path_encoded)
+                if recursive:
+                    return shutil.rmtree(path_encoded)
+                else:
+                    return os.rmdir(path_encoded)
+        except OSError, error:
+            # Windows return a generic EINVAL when path is not a folder.
+            if error.errno == errno.EINVAL:
+                self._requireFolder(segments)
+            raise error
 
     def rename(self, from_segments, to_segments):
         '''See `ILocalFilesystem`.'''

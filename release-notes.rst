@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.20.2 - 14/05/2014
+-------------------
+
+* Force converted IOError to OSError to have text encoded as UTF-8.
+
+
 0.20.1 - 14/05/2014
 -------------------
 

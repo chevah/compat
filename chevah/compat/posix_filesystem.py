@@ -268,18 +268,17 @@ class PosixFilesystemBase(object):
         """
         Convert IOError to OSError.
         """
-        path = self.getEncodedPath(path)
         try:
             yield
         except IOError, error:
-            raise OSError(error.errno, error.strerror, path)
+            raise OSError(error.errno, error.strerror, path.encode('utf-8'))
 
     def _requireFile(self, segments):
         """
         Raise an OSError when segments is not a file.
         """
         path = self.getRealPathFromSegments(segments)
-        path_encoded = self.getEncodedPath(path)
+        path_encoded = path.encode('utf-8')
         if self.isFolder(segments):
             raise OSError(
                 errno.EISDIR,
