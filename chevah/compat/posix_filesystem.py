@@ -4,7 +4,9 @@
 Filesystem code used by all operating systems, including Windows as
 Windows has its layer of POSIX compatibility.
 """
+from contextlib import contextmanager
 import codecs
+import errno
 import os
 import re
 import stat
@@ -255,18 +257,32 @@ class PosixFilesystemBase(object):
         with self._impersonateUser():
             return os.rename(from_path_encoded, to_path_encoded)
 
+    @contextmanager
+    def _IOToOSError(self, path):
+        """
+        Convert IOError to OSError.
+        """
+        try:
+            yield
+        except IOError, error:
+            raise OSError(error.errno, error.message, path)
+
     def openFile(self, segments, flags, mode):
         '''See `ILocalFilesystem`.'''
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
-        with self._impersonateUser():
+
+        if self.isFolder(segments):
+            raise OSError(errno.EISDIR, 'Is a directory: %s' % path_encoded)
+
+        with self._IOToOSError(path_encoded), self._impersonateUser():
             return os.open(path_encoded, flags, mode)
 
     def openFileForReading(self, segments, utf8=False):
         '''See `ILocalFilesystem`.'''
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
-        with self._impersonateUser():
+        with self._IOToOSError(path_encoded), self._impersonateUser():
             if utf8:
                 return codecs.open(path_encoded, 'r', 'utf-8')
             else:
@@ -280,7 +296,7 @@ class PosixFilesystemBase(object):
         '''See `ILocalFilesystem`.'''
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
-        with self._impersonateUser():
+        with self._IOToOSError(path_encoded), self._impersonateUser():
             if utf8:
                 return codecs.open(path_encoded, 'w', 'utf-8')
             else:
@@ -298,7 +314,7 @@ class PosixFilesystemBase(object):
                 'File opened for appending. Read is not allowed.')
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
-        with self._impersonateUser():
+        with self._IOToOSError(path_encoded), self._impersonateUser():
             if utf8:
                 return codecs.open(path_encoded, 'a+b', 'utf-8')
             else:

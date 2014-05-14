@@ -35,14 +35,14 @@ class FilesystemTestCase(CompatTestCase):
         return link_segments
 
 
-class TestDefaultFilesystem(FilesystemTestCase):
+class TestLocalFilesystemGeneric(FilesystemTestCase):
     """
     Test for default local filesystem which does not depend on attached
     avatar.
     """
 
     def setUp(self):
-        super(TestDefaultFilesystem, self).setUp()
+        super(TestLocalFilesystemGeneric, self).setUp()
         self.filesystem = LocalFilesystem(avatar=DefaultAvatar())
 
     def createFolderWithChild(self):
@@ -121,6 +121,19 @@ class TestDefaultFilesystem(FilesystemTestCase):
         folder_name = segments[-1]
         self.assertTrue(folder_name.startswith('build-'))
 
+    def test_deleteFile_folder(self):
+        """
+        Raise OSError when trying to delete a folder as a file.
+        """
+        self.test_segments = manufacture.fs.createFolderInTemp()
+        self.assertTrue(self.filesystem.exists(self.test_segments))
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.deleteFile(self.test_segments)
+
+        self.assertEqual(errno.EISDIR, context.exception.errno)
+        self.assertTrue(self.filesystem.exists(self.test_segments))
+
     def test_deleteFile_regular(self):
         """
         It can delete a regular file.
@@ -158,27 +171,32 @@ class TestDefaultFilesystem(FilesystemTestCase):
         self.assertTrue(self.filesystem.exists(self.test_segments))
         self.assertFalse(self.filesystem.exists(link_segments))
 
-    @conditionals.onOSFamily('posix')
-    def test_deleteFile_folder_link(self):
+    def test_deleteFolder_file_non_recursive(self):
         """
-        It can delete a symlink to a folder and original folder is not
-        removed.
-
-        Only only on Unix.
+        Raise an OS error when trying to delete a file using folder API.
         """
-        self.test_segments, child_name = self.createFolderWithChild()
-        link_segments = self.makeLink(self.test_segments, cleanup=False)
+        self.test_segments = manufacture.fs.createFileInTemp()
         self.assertTrue(self.filesystem.exists(self.test_segments))
-        self.assertTrue(self.filesystem.exists(link_segments))
 
-        self.filesystem.deleteFile(link_segments)
+        with self.assertRaises(OSError) as context:
+            self.filesystem.deleteFolder(self.test_segments, recursive=False)
 
+        self.assertEqual(errno.ENOTDIR, context.exception.errno)
         self.assertTrue(self.filesystem.exists(self.test_segments))
-        self.assertFalse(self.filesystem.exists(link_segments))
-        # Check that target content was not removed
-        self.assertEqual(
-            [child_name],
-            self.filesystem.getFolderContent(self.test_segments))
+
+    def test_deleteFolder_file_recursive(self):
+        """
+        Raise an OS error when trying to delete a file using folder API,
+        event when doing recursive delete.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+        self.assertTrue(self.filesystem.exists(self.test_segments))
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.deleteFolder(self.test_segments, recursive=True)
+
+        self.assertEqual(errno.ENOTDIR, context.exception.errno)
+        self.assertTrue(self.filesystem.exists(self.test_segments))
 
     def test_deleteFolder_non_recursive_empty(self):
         """
@@ -677,6 +695,107 @@ class TestDefaultFilesystem(FilesystemTestCase):
             self.filesystem._checkChildPath(
                 u'c:\\root\\path', 'c:\\root\\path\\..')
 
+    def test_getFolderContent_file(self):
+        """
+        Raise OSError when trying to get folder content for a file.
+        """
+        self.test_segments = manufacture.fs.createFileInTemp()
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.getFolderContent(self.test_segments)
+
+        self.assertEqual(errno.ENOTDIR, context.exception.errno)
+
+    def test_getFolderContent_empty(self):
+        """
+        Return empty list for empty folders.
+        """
+        self.test_segments = manufacture.fs.createFolderInTemp()
+
+        content = self.filesystem.getFolderContent(self.test_segments)
+
+        self.assertIsEmpty(content)
+
+    def test_getFolderContent_non_empty(self):
+        """
+        Return folder content as list of Unicode names.
+        """
+        self.test_segments = manufacture.fs.createFolderInTemp()
+        file_name = manufacture.makeFilename()
+        folder_name = manufacture.makeFilename()
+        file_segments = self.test_segments[:]
+        file_segments.append(file_name)
+        folder_segments = self.test_segments[:]
+        folder_segments.append(folder_name)
+        manufacture.fs.createFile(file_segments)
+        manufacture.fs.createFolder(folder_segments)
+
+        content = self.filesystem.getFolderContent(self.test_segments)
+
+        self.assertIsNotEmpty(content)
+        self.assertTrue(isinstance(content[0], unicode))
+        self.assertItemsEqual([folder_name, file_name], content)
+
+    def test_openFile_folder(self):
+        """
+        Raise OSError when trying to open a folder as file.
+        """
+        self.test_segments = manufacture.fs.createFolderInTemp()
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFile(self.test_segments, os.O_RDONLY, 0777)
+
+        self.assertEqual(errno.EISDIR, context.exception.errno)
+
+    def test_openFileForReading_folder(self):
+        """
+        Raise OSError when trying to open a folder as file.
+        """
+        self.test_segments = manufacture.fs.createFolderInTemp()
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForReading(self.test_segments, utf8=False)
+
+        self.assertEqual(errno.EISDIR, context.exception.errno)
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForReading(self.test_segments, utf8=True)
+
+        self.assertEqual(errno.EISDIR, context.exception.errno)
+
+    def test_openFileForWriting_ascii_folder(self):
+        """
+        Raise OSError when trying to open a folder as file.
+        """
+        self.test_segments = manufacture.fs.createFolderInTemp()
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForWriting(self.test_segments, utf8=False)
+
+        self.assertEqual(errno.EISDIR, context.exception.errno)
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForWriting(self.test_segments, utf8=True)
+
+        self.assertEqual(errno.EISDIR, context.exception.errno)
+
+    def test_openFileForAppending_ascii_folder(self):
+        """
+        Raise OSError when trying to open a folder as file.
+        """
+        self.test_segments = manufacture.fs.createFolderInTemp()
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForAppending(
+                self.test_segments, utf8=False)
+
+        self.assertEqual(errno.EISDIR, context.exception.errno)
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForAppending(self.test_segments, utf8=True)
+
+        self.assertEqual(errno.EISDIR, context.exception.errno)
+
 
 class TestPosixFilesystem(CompatTestCase):
     '''Tests for path independent, OS independent tests.'''
@@ -1011,23 +1130,6 @@ class TestLocalFilesystemUnlocked(FilesystemTestCase):
         self.assertTrue(len(content) > 0)
         self.assertTrue(u'Program Files' in content)
         self.assertTrue(isinstance(content[0], unicode))
-
-    def test_getFolderContent(self):
-        """
-        Check getting folder content.
-        """
-        temp_segments = self.unlocked_filesystem.temp_segments
-        folder_name = manufacture.makeFilename()
-        test_folder = temp_segments[:]
-        test_folder.append(folder_name)
-        self.unlocked_filesystem.createFolder(test_folder)
-        try:
-            content = self.unlocked_filesystem.getFolderContent(temp_segments)
-            self.assertTrue(len(content) > 0)
-            self.assertTrue(isinstance(content[0], unicode))
-            self.assertTrue(folder_name in content)
-        finally:
-            self.unlocked_filesystem.deleteFolder(test_folder)
 
     def test_getSegmentsFromRealPath_none(self):
         """
@@ -1690,16 +1792,3 @@ class TestLocalFilesystemLocked(CompatTestCase):
             self.assertTrue(self.locked_filesystem.exists(final_segments))
         finally:
             self.locked_filesystem.deleteFolder(final_segments)
-
-    def test_getFolderContent(self):
-        """
-        System test for test_getFolderContent.
-        """
-        initial_segments = [manufacture.makeFilename(length=10)]
-        try:
-            self.locked_filesystem.createFolder(initial_segments)
-            content = self.locked_filesystem.getFolderContent([])
-            self.assertTrue(len(content) > 0)
-            self.assertTrue(isinstance(content[0], unicode))
-        finally:
-            self.locked_filesystem.deleteFolder(initial_segments)
