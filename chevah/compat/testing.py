@@ -493,13 +493,6 @@ class OSAccountFileSystemTestCase(FileSystemTestCase):
         os_administration.addUser(cls.CREATE_TEST_USER)
         return cls.CREATE_TEST_USER
 
-    @classmethod
-    def tearDownClass(cls):
-        """
-        Remove OS user used for testing.
-        """
-        super(OSAccountFileSystemTestCase, cls).tearDownClass()
-
 
 def setup_access_control(users, groups):
     """
