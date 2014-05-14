@@ -433,7 +433,6 @@ class NTFilesystem(PosixFilesystemBase):
         """
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
-
         try:
             with self._windowsToOSError(path):
                 return super(NTFilesystem, self).deleteFile(
@@ -446,6 +445,7 @@ class NTFilesystem(PosixFilesystemBase):
                     'Is a directory: %s' % path_encoded,
                     path_encoded,
                     )
+            # When file is not found it uses EINVAL code.
             if error.errno == errno.EINVAL:
                 raise OSError(
                     errno.ENOENT,
