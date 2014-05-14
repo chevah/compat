@@ -83,6 +83,7 @@ from brink.pavement_commons import (
     SETUP,
     test_python,
     test_remote,
+    test_review,
     test_normal,
     test_super,
     )
@@ -101,6 +102,7 @@ merge_commit
 pqm
 test_python
 test_remote
+test_review
 test_normal
 test_super
 

@@ -149,7 +149,7 @@ class TestLocalFilesystemGeneric(FilesystemTestCase):
         """
         Return OSError with errno.ENOENT.
         """
-        segments = [manufacture.string()]
+        segments = ['c', manufacture.string()]
 
         with self.assertRaises(OSError) as context:
             self.filesystem.deleteFile(segments)

@@ -174,10 +174,11 @@ class NTFilesystem(PosixFilesystemBase):
         """
         Raise an error if path does not have valid driver.
         """
-        letter, _ = os.path.splitdrive(path)
+        path_encoded = self.getEncodedPath(path)
+        letter, _ = os.path.splitdrive(path_encoded)
         if letter.strip(':').lower() not in self._allowed_drive_letters:
             message = u'Bad drive letter "%s" for %s' % (letter, path)
-            raise OSError(errno.EINVAL, message.encode('utf-8'))
+            raise OSError(errno.EINVAL, message.encode('utf-8'), path_encoded)
 
     def getSegmentsFromRealPath(self, path):
         """
@@ -219,17 +220,18 @@ class NTFilesystem(PosixFilesystemBase):
         return segments
 
     @contextmanager
-    def _windowsToOSError(self, path=''):
+    def _windowsToOSError(self, segments):
         """
         Convert WindowsError and pywintypes.error to OSError.
         """
-        path = path.encode('utf-8')
         try:
             yield
         except WindowsError, error:
             raise OSError(error.errno, error.strerror, error.filename)
         except pywintypes.error as error:
-            raise OSError(error.winerror, error.strerror, path)
+            path = self.getRealPathFromSegments(segments)
+            path_encoded = self.getEncodedPath(path)
+            raise OSError(error.winerror, error.strerror, path_encoded)
 
     def readLink(self, segments):
         """
@@ -302,9 +304,10 @@ class NTFilesystem(PosixFilesystemBase):
 
         with self._impersonateUser():
             try:
-                with (self._windowsToOSError(link_path),
-                        self.process_capabilities._elevatePrivileges(
-                            win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
+                with (
+                    self._windowsToOSError(link_segments),
+                    self.process_capabilities._elevatePrivileges(
+                        win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
                         ):
                     win32file.CreateSymbolicLink(
                         link_path, target_path, flags)
@@ -313,18 +316,18 @@ class NTFilesystem(PosixFilesystemBase):
 
     def getStatus(self, segments):
         '''See `ILocalFilesystem`.'''
-        with self._windowsToOSError():
+        with self._windowsToOSError(segments):
             return super(NTFilesystem, self).getStatus(segments)
 
     def getAttributes(self, segments, attributes):
         '''See `ILocalFilesystem`.'''
-        with self._windowsToOSError():
+        with self._windowsToOSError(segments):
             return super(NTFilesystem, self).getAttributes(
                 segments, attributes)
 
     def setAttributes(self, segments, attributes):
         '''See `ILocalFilesystem`.'''
-        with self._windowsToOSError():
+        with self._windowsToOSError(segments):
             return super(NTFilesystem, self).setAttributes(
                 segments, attributes)
 
@@ -332,7 +335,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
-        with self._windowsToOSError():
+        with self._windowsToOSError(segments):
             '''If we are locked in home folder just go with the normal way,
             otherwise if empty folder, parent or current folder is requested,
             just show the ROOT.'''
@@ -356,7 +359,7 @@ class NTFilesystem(PosixFilesystemBase):
 
     def createFolder(self, segments, recursive=False):
         '''See `ILocalFilesystem`.'''
-        with self._windowsToOSError():
+        with self._windowsToOSError(segments):
             return super(NTFilesystem, self).createFolder(
                 segments, recursive)
 
@@ -431,26 +434,25 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
-        path = self.getRealPathFromSegments(segments)
-        path_encoded = self.getEncodedPath(path)
         try:
-            with self._windowsToOSError(path):
+            with self._windowsToOSError(segments):
                 return super(NTFilesystem, self).deleteFile(
                     segments, ignore_errors=ignore_errors)
         except OSError, error:
             # Windows return a bad error code for folders.
             if self.isFolder(segments):
-               raise OSError(
+                raise OSError(
                     errno.EISDIR,
-                    'Is a directory: %s' % path_encoded,
-                    path_encoded,
+                    'Is a directory: %s' % error.filename,
+                    error.filename,
                     )
-            # When file is not found it uses EINVAL code.
+            # When file is not found it uses EINVAL code but we want the
+            # same code as in Unix.
             if error.errno == errno.EINVAL:
                 raise OSError(
                     errno.ENOENT,
-                    'Not found: %s' % path_encoded,
-                    path_encoded,
+                    'Not found: %s' % error.filename,
+                    error.filename,
                     )
             raise error
 
@@ -479,7 +481,7 @@ class NTFilesystem(PosixFilesystemBase):
         # Windows return a generic EINVAL when path is not a folder.
         self._requireFolder(segments)
 
-        with self._windowsToOSError(path), self._impersonateUser():
+        with self._windowsToOSError(segments), self._impersonateUser():
             if self.isLink(segments):
                 recursive = False
 
@@ -490,7 +492,7 @@ class NTFilesystem(PosixFilesystemBase):
 
     def rename(self, from_segments, to_segments):
         '''See `ILocalFilesystem`.'''
-        with self._windowsToOSError():
+        with self._windowsToOSError(from_segments):
             return super(NTFilesystem, self).rename(
                 from_segments, to_segments)
 
