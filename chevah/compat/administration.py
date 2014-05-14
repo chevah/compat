@@ -227,13 +227,13 @@ class OSAdministrationUnix(object):
     def _addUser_unix(self, user):
         # Prevent circular import.
         from chevah.compat.testing import TestGroup
-        group = TestGroup(name=user.name, gid=user.uid)
+        group = TestGroup(name=user.name, posix_gid=user.uid)
         self._addGroup_unix(group)
 
         passwd_segments = ['etc', 'passwd']
-        passwd_line = (
-            u'%s:x:%d:%d::%s:%s' % (
-                user.name, user.uid, user.gid, user.home_path, user.shell))
+        values = (
+            user.name, user.uid, user.gid, user.posix_home_path, user.shell)
+        passwd_line = u'%s:x:%d:%d::%s:%s' % values
 
         shadow_segments = ['etc', 'shadow']
         shadow_line = u'%s:!:15218:0:99999:7:::' % (user.name)
@@ -246,25 +246,28 @@ class OSAdministrationUnix(object):
         # Wait for user to be available before creating home folder.
         self._getUnixUser(user.name)
 
-        if user.home_path != u'/tmp':
-            execute(['sudo', 'mkdir', user.home_path.encode('utf-8')])
+        if user.posix_home_path == u'/tmp':
+            return
+
+        encoded_home_path = user.posix_home_path.encode('utf-8')
+        execute(['sudo', 'mkdir', encoded_home_path])
+        execute([
+            'sudo', 'chown', str(user.uid),
+            encoded_home_path,
+            ])
+        if user.home_group:
+            # On some Unix system we can change group as unicode,
+            # so we get the ID and change using the group ID.
+            group = self._getUnixGroup(user.home_group)
             execute([
-                'sudo', 'chown', str(user.uid),
-                user.home_path.encode('utf-8'),
+                'sudo', 'chgrp', str(group[2]),
+                encoded_home_path,
                 ])
-            if user.home_group:
-                # On some Unix system we can change group as unicode,
-                # so we get the ID and change using the group ID.
-                group = self._getUnixGroup(user.home_group)
-                execute([
-                    'sudo', 'chgrp', str(group[2]),
-                    user.home_path.encode('utf-8'),
-                    ])
-            else:
-                execute([
-                    'sudo', 'chgrp', str(user.uid),
-                    user.home_path.encode('utf-8'),
-                    ])
+        else:
+            execute([
+                'sudo', 'chgrp', str(user.uid),
+                encoded_home_path,
+                ])
 
     def _getUnixUser(self, name):
         """
@@ -294,7 +297,7 @@ class OSAdministrationUnix(object):
         command = [
             'sudo', 'mkuser',
             'id=' + str(user.uid),
-            'home=' + user.home_path.encode('utf-8'),
+            'home=' + user.posix_home_path.encode('utf-8'),
             'shell=' + user_shell,
             ]
 
@@ -307,7 +310,7 @@ class OSAdministrationUnix(object):
         if user.home_group:
             execute([
                 'sudo', 'chgrp', user.home_group.encode('utf-8'),
-                user.home_path.encode('utf-8')
+                user.posix_home_path.encode('utf-8')
                 ])
 
     def _addUser_linux(self, user):
@@ -339,7 +342,7 @@ class OSAdministrationUnix(object):
         execute(['sudo', 'chgrp', user.gid, home_folder])
 
         if user.home_group:
-            execute(['sudo', 'chgrp', user.home_group, user.home_path])
+            execute(['sudo', 'chgrp', user.home_group, user.posix_home_path])
         else:
             execute(['sudo', 'chgrp', user.name, home_folder])
 
@@ -424,9 +427,27 @@ class OSAdministrationUnix(object):
 
     def deleteHomeFolder(self, user):
         """
-        Should be overridden.
+        Removes user's home folder if outside temporary folder.
         """
-        pass
+        if user.posix_home_path and user.posix_home_path.startswith(u'/tmp'):
+            return
+
+        delete_folder_method = getattr(self, '_deleteHomeFolder_' + self.name)
+        delete_folder_method(user)
+
+    def _deleteHomeFolder_linux(self, user):
+        self._deleteHomeFolder_unix(user)
+
+    def _deleteHomeFolder_aix(self, user):
+        self._deleteHomeFolder_unix(user)
+
+    def _deleteHomeFolder_unix(self, user):
+        encoded_home_path = user.posix_home_path.encode('utf-8')
+        execute(['sudo', 'rm', '-rf', encoded_home_path])
+
+    def _deleteHomeFolder_osx(self, user):
+        home_folder = u'/Users/%s' % user.name
+        execute(['sudo', 'rm', '-rf', home_folder])
 
     def _deleteUser_unix(self, user):
         self._deleteUnixEntry(
@@ -436,17 +457,13 @@ class OSAdministrationUnix(object):
 
         # Prevent circular import.
         from chevah.compat.testing import TestGroup
-        group = TestGroup(name=user.name, gid=user.uid)
+        group = TestGroup(name=user.name, posix_gid=user.uid)
         self._deleteGroup_unix(group)
-
-        if not u'tmp' in user.home_path:
-            execute(['sudo', 'rm', '-rf', user.home_path.encode('utf-8')])
+        self.deleteHomeFolder(user)
 
     def _deleteUser_aix(self, user):
         execute(['sudo', 'rmuser', '-p', user.name.encode('utf-8')])
-
-        if not u'tmp' in user.home_path:
-            execute(['sudo', 'rm', '-rf', user.home_path.encode('utf-8')])
+        self.deleteHomeFolder(user)
 
     def _deleteUser_linux(self, user):
         self._deleteUser_unix(user)
@@ -454,10 +471,7 @@ class OSAdministrationUnix(object):
     def _deleteUser_osx(self, user):
         userdb_name = u'/Users/' + user.name
         execute(['sudo', 'dscl', '.', '-delete', userdb_name])
-
-        if not u'tmp' in user.home_path:
-            home_folder = u'/Users/' + user.name
-            execute(['sudo', 'rm', '-rf', home_folder])
+        self.deleteHomeFolder(user)
 
     def _deleteUser_solaris(self, user):
         self._deleteUser_unix(user)
@@ -743,15 +757,16 @@ class OSAdministrationWindows(OSAdministrationUnix):
         # we assume that home folders for other accounts are siblings to
         # the home folder of the current account.
         home_base = os.path.dirname(os.getenv('USERPROFILE'))
-        home_path = os.path.join(home_base, user.name)
+        profile_folder_path = os.path.join(home_base, user.name)
 
         # FIXME:927:
         # We need to look for a way to delete home folders with unicode
         # names.
-        command = 'cmd.exe /C rmdir /S /Q "%s"' % home_path.encode('utf-8')
+        encoded_folder_path = profile_folder_path.encode('utf-8')
+        command = 'cmd.exe /C rmdir /S /Q "%s"' % encoded_folder_path
         result = subprocess.call(command, shell=True)
         if result != 0:
-            message = u'Unable to remove folder: %s.' % home_path
+            message = u'Unable to remove folder: %s.' % profile_folder_path
             raise AssertionError(message.encode('utf-8'))
 
     def deleteGroup(self, group):

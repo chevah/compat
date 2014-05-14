@@ -156,13 +156,19 @@ class TestSystemUsers(SystemUsersTestCase):
         for it's corresponding account, as long as the process has the
         required capabilities.
         """
-        test_user = manufacture.getTestUser(u'normal')
+        test_user = TestUser(
+            name=manufacture.string(),
+            password=manufacture.string(),
+            )
+        os_administration.addUser(test_user)
+
         home_folder = system_users.getHomeFolder(
             username=test_user.name, token=test_user.token)
 
         self.assertContains(
             test_user.name.lower(), home_folder.lower())
         self.assertIsInstance(unicode, home_folder)
+        self.addCleanup(os_administration.deleteUser, test_user)
         self.addCleanup(os_administration.deleteHomeFolder, test_user)
 
     @conditionals.onOSFamily('nt')
@@ -193,9 +199,6 @@ class TestSystemUsers(SystemUsersTestCase):
         test_user = TestUser(
             name=u'no-home',
             password=manufacture.string(),
-            # We don't want to create the profile here since this is
-            # what we are testing.
-            create_local_profile=False,
             )
         # Unfortunately there is no API to get default base home path for
         # users, we need to rely on an existing pattern.

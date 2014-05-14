@@ -132,9 +132,6 @@ class TestSystemUsers(CompatTestCase):
             password=mk.string(),
             domain=TEST_DOMAIN,
             pdc=TEST_PDC,
-            # We don't want to create the profile here since this is
-            # what we are testing.
-            create_local_profile=False,
             )
         # Unfortunately there is no API to get default base home path for
         # users, we need to rely on an existing pattern.

@@ -97,6 +97,26 @@ class CompatManufacture(ChevahCommonsFactory):
         """
         return TEST_USERS[name]
 
+    def makeTestUser(self, name=None, password=None, posix_home_path=None,
+                     home_group=None
+                     ):
+        """
+        Return an instance of TestUser with specified name and password.
+        """
+        if name is None:
+            name = self.string()
+
+        if password is None:
+            password = self.string()
+
+        return TestUser(
+            name=name,
+            password=password,
+            posix_uid=self.posixID(),
+            posix_home_path=posix_home_path,
+            home_group=home_group,
+            )
+
 
 mk = manufacture = CompatManufacture()
 
@@ -178,7 +198,7 @@ class TestUser(object):
         return name
 
     def __init__(
-        self, name, posix_uid=None, posix_gid=None, home_path=None,
+        self, name, posix_uid=None, posix_gid=None, posix_home_path=None,
         home_group=None, shell=None, shadow=None, password=None,
         domain=None, pdc=None, primary_group_name=None,
         create_local_profile=False, windows_required_rights=None,
@@ -186,8 +206,8 @@ class TestUser(object):
         """
         Convert user name to an OS valid value.
         """
-        if home_path is None:
-            home_path = u'/tmp'
+        if posix_home_path is None:
+            posix_home_path = u'/tmp'
 
         if shell is None:
             shell = u'/bin/sh'
@@ -201,7 +221,7 @@ class TestUser(object):
         self._name = self.sanitizeName(name)
         self.uid = posix_uid
         self.gid = posix_gid
-        self.home_path = home_path
+        self.posix_home_path = posix_home_path
         self.home_group = home_group
         self.shell = shell
         self.shadow = shadow
@@ -284,7 +304,7 @@ class TestGroup(object):
 
         return group
 
-    def __init__(self, name, gid=None, members=None, pdc=None):
+    def __init__(self, name, posix_gid=None, members=None, pdc=None):
         """
         Convert name to an OS valid value.
         """
@@ -292,7 +312,7 @@ class TestGroup(object):
             members = []
 
         self._name = self.sanitizeName(name)
-        self.gid = gid
+        self.gid = posix_gid
         self.members = members
         self.pdc = pdc
 
@@ -333,7 +353,7 @@ TEST_USERS = {
         posix_uid=TEST_ACCOUNT_UID,
         posix_gid=TEST_ACCOUNT_GID,
         primary_group_name=TEST_ACCOUNT_GROUP,
-        home_path=TEST_ACCOUNT_HOME_PATH,
+        posix_home_path=TEST_ACCOUNT_HOME_PATH,
         home_group=TEST_ACCOUNT_GROUP,
         password=TEST_ACCOUNT_PASSWORD,
         ),
@@ -342,7 +362,7 @@ TEST_USERS = {
         posix_uid=TEST_ACCOUNT_UID_OTHER,
         posix_gid=TEST_ACCOUNT_GID_OTHER,
         primary_group_name=TEST_ACCOUNT_GROUP_OTHER,
-        home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
+        posix_home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
         password=TEST_ACCOUNT_PASSWORD_OTHER,
         ),
     }
@@ -350,17 +370,17 @@ TEST_USERS = {
 TEST_GROUPS = {
     u'normal': TestGroup(
         name=TEST_ACCOUNT_GROUP,
-        gid=TEST_ACCOUNT_GID,
+        posix_gid=TEST_ACCOUNT_GID,
         members=[TEST_ACCOUNT_USERNAME, TEST_ACCOUNT_USERNAME_OTHER],
         ),
     u'other': TestGroup(
         name=TEST_ACCOUNT_GROUP_OTHER,
-        gid=TEST_ACCOUNT_GID_OTHER,
+        posix_gid=TEST_ACCOUNT_GID_OTHER,
         members=[TEST_ACCOUNT_USERNAME_OTHER],
         ),
     u'another': TestGroup(
         name=TEST_ACCOUNT_GROUP_ANOTHER,
-        gid=TEST_ACCOUNT_GID_ANOTHER,
+        posix_gid=TEST_ACCOUNT_GID_ANOTHER,
         members=[TEST_ACCOUNT_USERNAME],
         ),
     }
@@ -418,6 +438,7 @@ class FileSystemTestCase(CompatTestCase):
         super(FileSystemTestCase, cls).setUpClass()
 
         cls.os_user = cls.setUpTestUser()
+
         home_folder_path = system_users.getHomeFolder(
             username=cls.os_user.name, token=cls.os_user.token)
 
@@ -429,11 +450,24 @@ class FileSystemTestCase(CompatTestCase):
         cls.filesystem = LocalFilesystem(avatar=cls.avatar)
 
     @classmethod
+    def tearDownClass(cls):
+        if not cls.os_user.windows_create_local_profile:
+            os_administration.deleteHomeFolder(cls.os_user)
+        os_administration.deleteUser(cls.os_user)
+
+        super(FileSystemTestCase, cls).tearDownClass()
+
+    @classmethod
     def setUpTestUser(cls):
         """
-        Set-up OS user for symbolic link testing.
+        Set-up OS user for file system testing.
         """
-        return manufacture.getTestUser(u'normal')
+        user = manufacture.makeTestUser(
+            posix_home_path=TEST_ACCOUNT_HOME_PATH,
+            home_group=TEST_ACCOUNT_GROUP,
+            )
+        os_administration.addUser(user)
+        return user
 
     def setUp(self):
         super(FileSystemTestCase, self).setUp()
@@ -447,8 +481,8 @@ class OSAccountFileSystemTestCase(FileSystemTestCase):
     Test case for tests that need a local OS account present.
     """
 
-    # User will be created before running the test case and removed on
-    # teardown.
+    #: User will be created before running the test case and removed on
+    #: teardown.
     CREATE_TEST_USER = None
 
     @classmethod
@@ -464,8 +498,6 @@ class OSAccountFileSystemTestCase(FileSystemTestCase):
         """
         Remove OS user used for testing.
         """
-        os_administration.deleteUser(cls.CREATE_TEST_USER)
-
         super(OSAccountFileSystemTestCase, cls).tearDownClass()
 
 
