@@ -213,21 +213,25 @@ class TestPosixFilesystem(FileSystemTestCase):
         file_segments.append(file_name)
         file_object = self.filesystem.openFileForWriting(file_segments)
         file_object.close()
-        folder_name = manufacture.makeFilename()
-        folder_segments = self.filesystem.home_segments
-        folder_segments.append(folder_name)
-        self.filesystem.createFolder(folder_segments)
 
         root_avatar = SuperAvatar()
         root_avatar._home_folder_path = self.avatar.home_folder_path
         root_filesystem = LocalFilesystem(root_avatar)
 
-        root_filesystem.setOwner(
-            file_segments,
-            TEST_ACCOUNT_USERNAME_OTHER)
-        new_owner = self.filesystem.getOwner(file_segments)
+        root_filesystem.setOwner(file_segments, TEST_ACCOUNT_USERNAME_OTHER)
+        current_owner = self.filesystem.getOwner(file_segments)
 
-        self.assertEqual(TEST_ACCOUNT_USERNAME_OTHER, new_owner)
+        self.assertEqual(TEST_ACCOUNT_USERNAME_OTHER, current_owner)
+
+        folder_name = manufacture.makeFilename()
+        folder_segments = self.filesystem.home_segments
+        folder_segments.append(folder_name)
+        self.filesystem.createFolder(folder_segments)
+
+        root_filesystem.setOwner(folder_segments, TEST_ACCOUNT_USERNAME_OTHER)
+        current_owner = self.filesystem.getOwner(folder_segments)
+
+        self.assertEqual(TEST_ACCOUNT_USERNAME_OTHER, current_owner)
 
 
 class TestUnixFilesystem(FileSystemTestCase):

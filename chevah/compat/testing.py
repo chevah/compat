@@ -109,6 +109,9 @@ class CompatManufacture(ChevahCommonsFactory):
         if password is None:
             password = self.string()
 
+        if posix_home_path is None:
+            posix_home_path = u'/home/%s' % name
+
         return TestUser(
             name=name,
             password=password,
@@ -462,10 +465,7 @@ class FileSystemTestCase(CompatTestCase):
         """
         Set-up OS user for file system testing.
         """
-        user = manufacture.makeTestUser(
-            posix_home_path=TEST_ACCOUNT_HOME_PATH,
-            home_group=TEST_ACCOUNT_GROUP,
-            )
+        user = manufacture.makeTestUser(home_group=TEST_ACCOUNT_GROUP)
         os_administration.addUser(user)
         return user
 
