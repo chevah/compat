@@ -3,6 +3,7 @@
 """
 Windows specific implementation of filesystem access.
 """
+from contextlib import contextmanager
 from winioctlcon import FSCTL_GET_REPARSE_POINT
 import errno
 import ntsecuritycon
@@ -217,6 +218,19 @@ class NTFilesystem(PosixFilesystemBase):
 
         return segments
 
+    @contextmanager
+    def _windowsToOSError(self, path=''):
+        """
+        Convert WindowsError and pywintypes.error to OSError.
+        """
+        path = path.encode('utf-8')
+        try:
+            yield
+        except WindowsError, error:
+            raise OSError(error.errno, error.strerror, error.filename)
+        except pywintypes.error as error:
+            raise OSError(error.winerror, error.strerror, path)
+
     def readLink(self, segments):
         """
         See `ILocalFilesystem`.
@@ -288,70 +302,63 @@ class NTFilesystem(PosixFilesystemBase):
 
         with self._impersonateUser():
             try:
-                with self.process_capabilities._elevatePrivileges(
-                        win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
-                    try:
-                        win32file.CreateSymbolicLink(
-                            link_path, target_path, flags)
-                    except WindowsError, error:
-                        raise OSError(error.errno, error.strerror)
-                    except pywintypes.error, error:
-                        raise OSError(error.winerror, error.strerror)
+                with (self._windowsToOSError(link_path),
+                        self.process_capabilities._elevatePrivileges(
+                            win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
+                        ):
+                    win32file.CreateSymbolicLink(
+                        link_path, target_path, flags)
             except AdjustPrivilegeException, error:
                 raise OSError(errno.EINVAL, error.message)
 
     def getStatus(self, segments):
         '''See `ILocalFilesystem`.'''
-        try:
+        with self._windowsToOSError():
             return super(NTFilesystem, self).getStatus(segments)
-        except WindowsError, error:
-            raise OSError(error.errno, error.strerror)
 
     def getAttributes(self, segments, attributes):
         '''See `ILocalFilesystem`.'''
-        try:
+        with self._windowsToOSError():
             return super(NTFilesystem, self).getAttributes(
                 segments, attributes)
-        except WindowsError, error:
-            raise OSError(error.errno, error.strerror)
 
     def setAttributes(self, segments, attributes):
         '''See `ILocalFilesystem`.'''
-        try:
+        with self._windowsToOSError():
             return super(NTFilesystem, self).setAttributes(
                 segments, attributes)
-        except WindowsError, error:
-            raise OSError(error.errno, error.strerror)
 
     def getFolderContent(self, segments):
-        '''See `ILocalFilesystem`.'''
-        try:
+        """
+        See `ILocalFilesystem`.
+        """
+        with self._windowsToOSError():
             '''If we are locked in home folder just go with the normal way,
             otherwise if empty folder, parent or current folder is requested,
             just show the ROOT.'''
             if self._lock_in_home or segments not in [[], ['.'], ['..']]:
+                # Windows return a generic EINVAL when path is not a folder,
+                # so we try to fail early.
+                self._requireFolder(segments)
                 return super(NTFilesystem, self).getFolderContent(segments)
-            else:
-                raw_drives = win32api.GetLogicalDriveStrings()
-                drives = [
-                    drive for drive in raw_drives.split("\000") if drive]
-                result = []
-                for drive in drives:
-                    if win32file.GetDriveType(drive) == LOCAL_DRIVE:
-                        drive = drive.strip(':\\')
-                        drive = drive.decode(self.INTERNAL_ENCODING)
-                        result.append(drive)
-                return result
-        except WindowsError, error:
-            raise OSError(error.errno, error.strerror)
+
+            # Get Windows drivers.
+            raw_drives = win32api.GetLogicalDriveStrings()
+            drives = [
+                drive for drive in raw_drives.split("\000") if drive]
+            result = []
+            for drive in drives:
+                if win32file.GetDriveType(drive) == LOCAL_DRIVE:
+                    drive = drive.strip(':\\')
+                    drive = drive.decode(self.INTERNAL_ENCODING)
+                    result.append(drive)
+            return result
 
     def createFolder(self, segments, recursive=False):
         '''See `ILocalFilesystem`.'''
-        try:
+        with self._windowsToOSError():
             return super(NTFilesystem, self).createFolder(
                 segments, recursive)
-        except WindowsError, error:
-            raise OSError(error.errno, error.strerror)
 
     def _getFileData(self, segments):
         """
@@ -424,15 +431,41 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        path = self.getRealPathFromSegments(segments)
+        path_encoded = self.getEncodedPath(path)
+
         try:
-            return super(NTFilesystem, self).deleteFile(
-                segments, ignore_errors=ignore_errors)
+            with self._windowsToOSError(path):
+                return super(NTFilesystem, self).deleteFile(
+                    segments, ignore_errors=ignore_errors)
         except OSError, error:
-            # This should also catch WindowsError and re-raise as OSError.
-            error_number = error.errno
-            if error_number == errno.EINVAL:
-                error_number = errno.ENOENT
-            raise OSError(error_number, error.strerror)
+            # Windows return a bad error code for folders.
+            if self.isFolder(segments):
+               raise OSError(
+                    errno.EISDIR,
+                    'Is a directory: %s' % path_encoded,
+                    path_encoded,
+                    )
+            if error.errno == errno.EINVAL:
+                raise OSError(
+                    errno.ENOENT,
+                    'Not found: %s' % path_encoded,
+                    path_encoded,
+                    )
+            raise error
+
+    def _requireFolder(self, segments):
+        """
+        Raise an OSError when segments is not a folder.
+        """
+        path = self.getRealPathFromSegments(segments)
+        path_encoded = self.getEncodedPath(path)
+        if not self.isFolder(segments):
+            raise OSError(
+                errno.ENOTDIR,
+                'Not a directory: %s' % path_encoded,
+                path_encoded,
+                )
 
     def deleteFolder(self, segments, recursive=True):
         """
@@ -443,25 +476,23 @@ class NTFilesystem(PosixFilesystemBase):
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
 
-        try:
-            with self._impersonateUser():
-                if self.isLink(segments):
-                    recursive = False
+        # Windows return a generic EINVAL when path is not a folder.
+        self._requireFolder(segments)
 
-                if recursive:
-                    return shutil.rmtree(path_encoded)
-                else:
-                    return os.rmdir(path_encoded)
-        except WindowsError, error:
-            raise OSError(error.errno, error.strerror)
+        with self._windowsToOSError(path), self._impersonateUser():
+            if self.isLink(segments):
+                recursive = False
+
+            if recursive:
+                return shutil.rmtree(path_encoded)
+            else:
+                return os.rmdir(path_encoded)
 
     def rename(self, from_segments, to_segments):
         '''See `ILocalFilesystem`.'''
-        try:
+        with self._windowsToOSError():
             return super(NTFilesystem, self).rename(
                 from_segments, to_segments)
-        except WindowsError, error:
-            raise OSError(error.errno, error.strerror)
 
     def setOwner(self, segments, owner):
         """

@@ -262,27 +262,41 @@ class PosixFilesystemBase(object):
         """
         Convert IOError to OSError.
         """
+        path = self.getEncodedPath(path)
         try:
             yield
         except IOError, error:
             raise OSError(error.errno, error.message, path)
+
+    def _requireFile(self, segments):
+        """
+        Raise an OSError when segments is not a file.
+        """
+        path = self.getRealPathFromSegments(segments)
+        path_encoded = self.getEncodedPath(path)
+        if self.isFolder(segments):
+            raise OSError(
+                errno.EISDIR,
+                'Is a directory: %s' % path_encoded,
+                path_encoded,
+                )
 
     def openFile(self, segments, flags, mode):
         '''See `ILocalFilesystem`.'''
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
 
-        if self.isFolder(segments):
-            raise OSError(errno.EISDIR, 'Is a directory: %s' % path_encoded)
-
-        with self._IOToOSError(path_encoded), self._impersonateUser():
+        self._requireFile(segments)
+        with self._IOToOSError(path), self._impersonateUser():
             return os.open(path_encoded, flags, mode)
 
     def openFileForReading(self, segments, utf8=False):
         '''See `ILocalFilesystem`.'''
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
-        with self._IOToOSError(path_encoded), self._impersonateUser():
+
+        self._requireFile(segments)
+        with self._IOToOSError(path), self._impersonateUser():
             if utf8:
                 return codecs.open(path_encoded, 'r', 'utf-8')
             else:
@@ -296,7 +310,9 @@ class PosixFilesystemBase(object):
         '''See `ILocalFilesystem`.'''
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
-        with self._IOToOSError(path_encoded), self._impersonateUser():
+
+        self._requireFile(segments)
+        with self._IOToOSError(path), self._impersonateUser():
             if utf8:
                 return codecs.open(path_encoded, 'w', 'utf-8')
             else:
@@ -314,7 +330,9 @@ class PosixFilesystemBase(object):
                 'File opened for appending. Read is not allowed.')
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
-        with self._IOToOSError(path_encoded), self._impersonateUser():
+
+        self._requireFile(segments)
+        with self._IOToOSError(path), self._impersonateUser():
             if utf8:
                 return codecs.open(path_encoded, 'a+b', 'utf-8')
             else:
@@ -334,7 +352,9 @@ class PosixFilesystemBase(object):
             return os.path.getsize(path_encoded)
 
     def getFolderContent(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
         result = []
