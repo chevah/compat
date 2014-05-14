@@ -302,13 +302,10 @@ class NTFilesystem(PosixFilesystemBase):
         else:
             flags = 0
 
-        with self._impersonateUser():
+        with self._windowsToOSError(link_segments), self._impersonateUser():
             try:
-                with (
-                    self._windowsToOSError(link_segments),
-                    self.process_capabilities._elevatePrivileges(
-                        win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
-                        ):
+                with self.process_capabilities._elevatePrivileges(
+                        win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
                     win32file.CreateSymbolicLink(
                         link_path, target_path, flags)
             except AdjustPrivilegeException, error:

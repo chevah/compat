@@ -241,12 +241,18 @@ class PosixFilesystemBase(object):
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
             try:
-                return os.unlink(path_encoded)
+                try:
+                    return os.unlink(path_encoded)
+                except OSError, error:
+                    if sys.platform.startswith('aix'):
+                        # On AIX when segments is a folder, we get EPERM,
+                        # so we force a EISDIR.
+                        self._requireFile(segments)
+                    raise error
             except:
                 if ignore_errors:
                     return
-                else:
-                    raise
+                raise
 
     def rename(self, from_segments, to_segments):
         '''See `ILocalFilesystem`.'''

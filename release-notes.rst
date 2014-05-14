@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.20.0 - 14/05/2014
+-------------------
+
+* Unify errors for file operations on folder and for folder operations on
+  files.
+
+
 0.19.1 - 06/05/2014
 -------------------
 
