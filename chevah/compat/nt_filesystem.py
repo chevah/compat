@@ -451,20 +451,19 @@ class NTFilesystem(PosixFilesystemBase):
                     segments, ignore_errors=ignore_errors)
         except OSError, error:
             # Windows return a bad error code for folders.
-            path_encoded = error.filename.encode('utf-8')
             if self.isFolder(segments):
                 raise OSError(
                     errno.EISDIR,
-                    'Is a directory: %s' % path_encoded,
-                    path_encoded,
+                    'Is a directory: %s' % error.filename,
+                    error.filename,
                     )
             # When file is not found it uses EINVAL code but we want the
             # same code as in Unix.
             if error.errno == errno.EINVAL:
                 raise OSError(
                     errno.ENOENT,
-                    'Not found: %s' % path_encoded,
-                    path_encoded,
+                    'Not found: %s' % error.filename,
+                    error.filename,
                     )
             raise error
 
