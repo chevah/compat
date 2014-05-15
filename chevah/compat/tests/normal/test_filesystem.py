@@ -126,15 +126,15 @@ class TestLocalFilesystemGeneric(FilesystemTestCase):
         Convert IOError to OSError using a context.
         """
         path = manufacture.string()
+        message = manufacture.string()
 
         with self.assertRaises(OSError) as context:
             with self.filesystem._IOToOSError(path):
-                raise IOError(3, 'error message')
+                raise IOError(3, message)
 
         self.assertEqual(3, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
-        self.assertEqual(
-            'error message', context.exception.strerror)
+        self.assertEqual(message.encode('utf-8'), context.exception.strerror)
 
     def test_deleteFile_folder(self):
         """
@@ -780,7 +780,7 @@ class TestLocalFilesystemGeneric(FilesystemTestCase):
 
     def test_openFileForReading_folder(self):
         """
-        Raise OSError when trying to open a folder as file.
+        Raise OSError when trying to open a folder as file for reading.
         """
         self.test_segments = manufacture.fs.createFolderInTemp()
         path = manufacture.fs.getRealPathFromSegments(self.test_segments)
@@ -799,7 +799,7 @@ class TestLocalFilesystemGeneric(FilesystemTestCase):
 
     def test_openFileForWriting_ascii_folder(self):
         """
-        Raise OSError when trying to open a folder as file.
+        Raise OSError when trying to open a folder as file for writing.
         """
         self.test_segments = manufacture.fs.createFolderInTemp()
         path = manufacture.fs.getRealPathFromSegments(self.test_segments)
@@ -818,7 +818,7 @@ class TestLocalFilesystemGeneric(FilesystemTestCase):
 
     def test_openFileForAppending_ascii_folder(self):
         """
-        Raise OSError when trying to open a folder as file.
+        Raise OSError when trying to open a folder as file for appending.
         """
         self.test_segments = manufacture.fs.createFolderInTemp()
         path = manufacture.fs.getRealPathFromSegments(self.test_segments)

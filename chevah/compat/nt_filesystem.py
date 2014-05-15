@@ -228,10 +228,17 @@ class NTFilesystem(PosixFilesystemBase):
         try:
             yield
         except WindowsError, error:
-            raise OSError(error.errno, error.strerror, error.filename)
+            raise OSError(
+                error.errno,
+                error.strerror.encode('utf-8'),
+                error.filename.encode('utf-8'),
+                )
         except pywintypes.error as error:
             path = self.getRealPathFromSegments(segments)
-            raise OSError(error.winerror, error.strerror, path.encode('utf-8'))
+            raise OSError(
+                error.winerror,
+                error.strerror.encode('utf-8'),
+                path.encode('utf-8'))
 
     def readLink(self, segments):
         """
@@ -342,7 +349,7 @@ class NTFilesystem(PosixFilesystemBase):
                 self._requireFolder(segments)
                 return super(NTFilesystem, self).getFolderContent(segments)
 
-            # Get Windows drivers.
+            # Get Windows drives.
             raw_drives = win32api.GetLogicalDriveStrings()
             drives = [
                 drive for drive in raw_drives.split("\000") if drive]
