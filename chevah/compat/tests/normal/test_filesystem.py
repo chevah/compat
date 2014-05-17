@@ -1115,86 +1115,25 @@ class TestLocalFilesystem(FilesystemTestCase):
 
 class TestPosixFilesystemImpersonated(CompatTestCase):
     """
-    Tests for path independent, OS independent tests using an impersonated
+    Unit tests for path independent, OS independent tests using an impersonated
     avatar with full access to filesystem.
+
+    Since these are unit tests, actual OS impersonation is mocked.
+
+    The avatar is locked inside the temporary folder.
     """
 
     @classmethod
     def setUpClass(cls):
-        cls.avatar = manufacture.makeFilesystemOSAvatar()
-        cls.avatar._root_folder_path = None
-        cls.avatar.home_folder_path
-        cls.filesystem = LocalFilesystem(avatar=cls.avatar)
+        os_user = manufacture.getTestUser(u'normal')
+        avatar = manufacture.makeFilesystemOSAvatar(
+            name=os_user.name,
+            home_folder_path=manufacture.fs.temp_path,
+            token='invalid',
+            )
+        cls.filesystem = LocalFilesystem(avatar=avatar)
 
-    def test_getFileSize_impersonate(self):
-        """
-        Check getting file size for an avatar that requires impersonation.
-        """
-        segments = manufacture.fs.createFileInTemp()
-        try:
-            impersonate_user = self.filesystem._impersonateUser
-            with patch.object(
-                    self.filesystem, '_impersonateUser',
-                    return_value=impersonate_user()) as mock_method:
-                self.filesystem.getFileSize(segments)
-            self.assertTrue(mock_method.called)
-        finally:
-            manufacture.fs.deleteFile(segments)
 
-    def test_openFileForReading_impersonate(self):
-        """
-        Check opening a file for reading for an avatar which requires
-        impersonation.
-        """
-        segments = manufacture.fs.createFileInTemp()
-        try:
-            impersonate_user = self.filesystem._impersonateUser
-            with patch.object(
-                    self.filesystem, '_impersonateUser',
-                    return_value=impersonate_user()) as mock_method:
-
-                a_file = self.filesystem.openFileForReading(segments)
-
-                a_file.close()
-            self.assertTrue(mock_method.called)
-        finally:
-            manufacture.fs.deleteFile(segments)
-
-    def test_openFileForWriting_impersonate(self):
-        """
-        Check openFileForWriting while using impersonation.
-        """
-        segments = manufacture.fs.createFileInTemp()
-        try:
-            impersonate_user = self.filesystem._impersonateUser
-            with patch.object(
-                    self.filesystem, '_impersonateUser',
-                    return_value=impersonate_user()) as mock_method:
-
-                a_file = self.filesystem.openFileForWriting(segments)
-
-                a_file.close()
-            self.assertTrue(mock_method.called)
-        finally:
-            manufacture.fs.deleteFile(segments)
-
-    def test_openFileForAppending_impersonate(self):
-        """
-        System test for openFileForAppending while using impersonation.
-        """
-        segments = manufacture.fs.createFileInTemp()
-        try:
-            impersonate_user = self.filesystem._impersonateUser
-            with patch.object(
-                    self.filesystem, '_impersonateUser',
-                    return_value=impersonate_user()) as mock_method:
-
-                a_file = self.filesystem.openFileForAppending(segments)
-                a_file.close()
-
-            self.assertTrue(mock_method.called)
-        finally:
-            manufacture.fs.deleteFile(segments)
 
 
 class TestLocalFilesystemUnlocked(FilesystemTestCase):

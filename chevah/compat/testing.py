@@ -423,7 +423,7 @@ class CompatTestCase(ChevahTestCase):
 
 class FileSystemTestCase(CompatTestCase):
     """
-    Common test case for all file-system tests.
+    Common test case for all file-system tests using a real OS account.
     """
 
     @classmethod
