@@ -7,15 +7,13 @@ import errno
 import os
 import stat
 
-from mock import patch
-
 from chevah.compat import DefaultAvatar, LocalFilesystem
 from chevah.compat.exceptions import CompatError
 from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.testing import CompatTestCase, conditionals, manufacture
 
 
-class FilesystemTestCase(CompatTestCase):
+class FilesystemTestMixin(object):
     """
     Common code for filesystem tests.
     """
@@ -35,15 +33,16 @@ class FilesystemTestCase(CompatTestCase):
         return link_segments
 
 
-class TestLocalFilesystem(FilesystemTestCase):
+class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
     """
     Test for default local filesystem which does not depend on attached
     avatar or operating system.
     """
 
-    def setUp(self):
-        super(TestLocalFilesystem, self).setUp()
-        self.filesystem = LocalFilesystem(avatar=DefaultAvatar())
+    @classmethod
+    def setUpClass(cls):
+        super(TestLocalFilesystem, cls).setUpClass()
+        cls.filesystem = LocalFilesystem(avatar=DefaultAvatar())
 
     def createFolderWithChild(self):
         """
@@ -1113,32 +1112,13 @@ class TestLocalFilesystem(FilesystemTestCase):
                 a_file.close()
 
 
-class TestPosixFilesystemImpersonated(CompatTestCase):
+class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
     """
-    Unit tests for path independent, OS independent tests using an impersonated
-    avatar with full access to filesystem.
+    Commons tests for non chrooted filesystem.
 
-    Since these are unit tests, actual OS impersonation is mocked.
-
-    The avatar is locked inside the temporary folder.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        os_user = manufacture.getTestUser(u'normal')
-        avatar = manufacture.makeFilesystemOSAvatar(
-            name=os_user.name,
-            home_folder_path=manufacture.fs.temp_path,
-            token='invalid',
-            )
-        cls.filesystem = LocalFilesystem(avatar=avatar)
-
-
-
-
-class TestLocalFilesystemUnlocked(FilesystemTestCase):
-    """
-    Commons tests for both chrooted and non chrooted filesystem.
+    The setup is identical with TestLocalFilesystem, but these are path
+    specific test and we isolate them to help detect low level path handling
+    regressions.
 
     # FIXME:1013:
     # This test case need a lot of cleaning.
@@ -1146,12 +1126,8 @@ class TestLocalFilesystemUnlocked(FilesystemTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.unlocked_avatar = DefaultAvatar()
-        cls.unlocked_filesystem = LocalFilesystem(avatar=cls.unlocked_avatar)
-
-    def setUp(self):
-        super(TestLocalFilesystemUnlocked, self).setUp()
-        self.test_segments = None
+        super(TestLocalFilesystemUnlocked, cls).setUpClass()
+        cls.unlocked_filesystem = LocalFilesystem(avatar=DefaultAvatar())
 
     def test_getSegments(self):
         """
@@ -1410,45 +1386,6 @@ class TestLocalFilesystemUnlocked(FilesystemTestCase):
             u'c:\\Temp', filesystem.getRealPathFromSegments([u'c', u'Temp']))
         self.assertEqual(
             [u'c', u'Temp', u'some', u'path'], filesystem.home_segments)
-
-    def test_exists_false(self):
-        """
-        exists will return `False` if file or folder does not exists.
-        """
-        segments = self.unlocked_filesystem.temp_segments[:]
-        segments.append(manufacture.makeFilename())
-
-        self.assertFalse(self.unlocked_filesystem.exists(segments))
-
-    def test_exists_file_true(self):
-        """
-        exists will return `True` if file exists.
-        """
-        segments = self.unlocked_filesystem.temp_segments[:]
-        segments.append(manufacture.makeFilename())
-
-        try:
-            with (self.unlocked_filesystem.openFileForWriting(
-                    segments)) as new_file:
-                new_file.write(manufacture.getUniqueString().encode('utf8'))
-
-            self.assertTrue(self.unlocked_filesystem.exists(segments))
-        finally:
-            self.unlocked_filesystem.deleteFile(segments, ignore_errors=True)
-
-    def test_exists_folder_true(self):
-        """
-        exists will return `True` if folder exists.
-        """
-        segments = self.unlocked_filesystem.temp_segments[:]
-        segments.append(manufacture.makeFilename())
-
-        try:
-            self.unlocked_filesystem.createFolder(segments)
-
-            self.assertTrue(self.unlocked_filesystem.exists(segments))
-        finally:
-            self.unlocked_filesystem.deleteFolder(segments)
 
     @conditionals.onCapability('symbolic_link', True)
     def test_exists_broken_link(self):
