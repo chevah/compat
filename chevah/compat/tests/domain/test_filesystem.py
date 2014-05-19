@@ -37,6 +37,6 @@ class TestSymbolicLink(OSAccountFileSystemTestCase, SymbolicLinksMixin):
         home_group=TEST_ACCOUNT_GROUP,
         posix_uid=manufacture.posixID(),
         posix_gid=manufacture.posixID(),
-        create_profile=True,
+        create_local_profile=True,
         windows_required_rights=(win32security.SE_CREATE_SYMBOLIC_LINK_NAME,),
         )

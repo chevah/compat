@@ -10,7 +10,7 @@ from chevah.compat.testing import ChevahTestCase, manufacture
 
 class TestAvatarBase(ChevahTestCase):
 
-    def test_init_no_argumets(self):
+    def test_init_no_arguments(self):
         """
         An error is raised if initialized without arguments.
         """
@@ -32,9 +32,9 @@ class TestAvatarBase(ChevahTestCase):
         self.assertEqual(name, avatar.name)
         self.assertIsNone(avatar.root_folder_path)
 
-    def test_init_all_arguemts(self):
+    def test_init_all_arguments(self):
         """
-        Avatar can also be intialized with a root path.
+        Avatar can also be initialized with a root path.
         """
         avatar = FilesystemAvatar(
             name=manufacture.getUniqueString(),

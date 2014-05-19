@@ -3,6 +3,8 @@
 """
 Test for portable system users access for Domain Controller.
 """
+import os
+
 from chevah.compat import (
     system_users,
     )
@@ -14,7 +16,6 @@ from chevah.compat.testing import (
     TEST_ACCOUNT_USERNAME_DOMAIN,
     TEST_DOMAIN,
     TEST_PDC,
-    TEST_USERS_DOMAIN,
     TestUser,
     )
 
@@ -38,7 +39,7 @@ class TestSystemUsers(CompatTestCase):
         Return `True` when the user is member of the group and
         `False` otherwise.
         """
-        test_user = TEST_USERS_DOMAIN[u'domain']
+        test_user = mk.getTestUser(u'domain')
         # FIXME:1471:
         # Don't know why is not working with TEST_ACCOUNT_GROUP_DOMAIN so
         # for now we use the default group.
@@ -95,7 +96,7 @@ class TestSystemUsers(CompatTestCase):
         It uses the token to impersonate the account under which this
         process is executed..
         """
-        test_user = TEST_USERS_DOMAIN[u'domain']
+        test_user = mk.getTestUser(u'domain')
 
         self.assertNotEqual(test_user.name, system_users.getCurrentUserName())
 
@@ -110,7 +111,7 @@ class TestSystemUsers(CompatTestCase):
         for any other account, as long as the process has the required
         capabilities.
         """
-        test_user = TEST_USERS_DOMAIN[u'domain']
+        test_user = mk.getTestUser(u'domain')
 
         home_folder = system_users.getHomeFolder(
             username=test_user.name, token=test_user.token)
@@ -120,34 +121,37 @@ class TestSystemUsers(CompatTestCase):
 
     def test_getHomeFolder_nt_no_previous_profile(self):
         """
-        On Windows, if user has no profile it will be created.
+        On Windows, if user has no local home folder it will be created
+        automatically when getting the home folder path.
 
         This tests creates a temporary account and in the end it deletes
         the account and home folder.
         """
-        username = u'domain no-home'
-        password = u'qwe123QWE'
-        domain = TEST_DOMAIN
-        pdc = TEST_PDC
-
         test_user = TestUser(
-            name=username,
-            password=password,
-            domain=domain,
-            pdc=pdc,
-            # We don't want to create the profile here since this is
-            # what we are testing.
-            create_profile=False,
+            name=u'domain no-home',
+            password=mk.string(),
+            domain=TEST_DOMAIN,
+            pdc=TEST_PDC,
             )
+        # Unfortunately there is no API to get default base home path for
+        # users, we need to rely on an existing pattern.
+        home_base = os.path.dirname(os.getenv('USERPROFILE'))
+        expected_home_path = os.path.join(home_base, test_user.name)
+        expected_home_segments = mk.fs.getSegmentsFromRealPath(
+            expected_home_path)
 
         try:
             os_administration.addUser(test_user)
+            # Home folder path is not created on successful login.
+            token = test_user.token
+            self.assertFalse(mk.fs.isFolder(expected_home_segments))
 
-            upn = u'%s@%s' % (username, domain)
             home_path = system_users.getHomeFolder(
-                username=upn, token=test_user.token)
+                username=test_user.upn, token=token)
 
-            self.assertContains(username.lower(), home_path.lower())
+            self.assertContains(test_user.name.lower(), home_path.lower())
             self.assertIsInstance(unicode, home_path)
+            self.assertTrue(mk.fs.isFolder(expected_home_segments))
         finally:
             os_administration.deleteUser(test_user)
+            os_administration.deleteHomeFolder(test_user)

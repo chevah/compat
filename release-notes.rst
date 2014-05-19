@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.21.0 - 19/05/2014
+-------------------
+
+* Remove test user home folders only when necessary.
+
+
 0.20.2 - 14/05/2014
 -------------------
 
