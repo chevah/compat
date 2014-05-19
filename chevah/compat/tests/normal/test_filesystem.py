@@ -993,7 +993,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
     def test_openFileForWriting_ascii(self):
         """
-        Check opening a file for reading in plain/ascii/str mode.
+        Check opening a file for writing in plain/ascii/str mode.
         """
         content = 'some ascii text'
         self.test_segments = manufacture.fs.createFileInTemp(length=0)
@@ -1013,7 +1013,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
     def test_openFileForWriting_unicode(self):
         """
-        Check opening a file for reading in Unicode mode.
+        Check opening a file for writing in Unicode mode.
         """
         content = manufacture.getUniqueString()
         self.test_segments = manufacture.fs.createFileInTemp(length=0)
