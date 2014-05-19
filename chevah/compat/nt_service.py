@@ -8,6 +8,7 @@ import os
 import pywintypes
 import servicemanager
 import sys
+import traceback
 import win32service
 import win32serviceutil
 
@@ -39,7 +40,6 @@ class ChevahNTService(win32serviceutil.ServiceFramework, object):
         try:
             self.initialize()
         except:
-            import traceback
             self.error(
                 u'Failed to initialize the service. '
                 u'Consult the other information events for more details, '
@@ -83,7 +83,7 @@ class ChevahNTService(win32serviceutil.ServiceFramework, object):
             # For right now just log the error.
             self.error(
                 'Failed to start the service. For more information, start '
-                'the service in debug mode. %s' % (sys.exc_info()[0]))
+                'the service in debug mode. %s' % (traceback.format_exc()))
 
     def initialize(self):
         """
