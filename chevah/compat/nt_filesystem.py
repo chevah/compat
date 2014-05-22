@@ -228,10 +228,14 @@ class NTFilesystem(PosixFilesystemBase):
         try:
             yield
         except WindowsError, error:
+            encoded_filename = None
+            if error.filename:
+                encoded_filename = error.filename.encode('utf-8')
+
             raise OSError(
                 error.errno,
                 error.strerror.encode('utf-8'),
-                error.filename.encode('utf-8'),
+                encoded_filename,
                 )
         except pywintypes.error as error:
             path = self.getRealPathFromSegments(segments)

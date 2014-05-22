@@ -94,8 +94,14 @@ class CompatManufacture(ChevahCommonsFactory):
     def getTestUser(self, name):
         """
         Return an existing test user instance for user with `name`.
+        Return `None` if user is undefined.
         """
-        return TEST_USERS[name]
+        try:
+            result = TEST_USERS[name]
+        except KeyError:
+            result = None
+
+        return result
 
     def makeTestUser(self, name=None, password=None, posix_home_path=None,
                      home_group=None

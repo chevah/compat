@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.21.1 - 22/05/2014
+-------------------
+
+* getTestUser returns None if the user is not found (undefined),
+* Treat error.filename as an optional attribute of WindowsError.
+
+
 0.21.0 - 19/05/2014
 -------------------
 
