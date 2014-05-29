@@ -723,6 +723,17 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
             self.filesystem._checkChildPath(
                 u'c:\\root\\path', 'c:\\root\\path\\..')
 
+    def test_getFolderContent_not_found(self):
+        """
+        Raise OSError when trying to get folder for a non existent path.
+        """
+        segments = ['c', manufacture.string()]
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.getFolderContent(segments)
+
+        self.assertEqual(errno.ENOENT, context.exception.errno)
+
     def test_getFolderContent_file(self):
         """
         Raise OSError when trying to get folder content for a file.
