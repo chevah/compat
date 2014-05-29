@@ -15,7 +15,7 @@ from zope.interface.verify import verifyObject
 from chevah.compat import process_capabilities
 from chevah.compat.exceptions import AdjustPrivilegeException
 from chevah.compat.interfaces import IProcessCapabilities
-from chevah.compat.testing import CompatTestCase, manufacture
+from chevah.compat.testing import CompatTestCase, mk
 
 
 class TestProcessCapabilities(CompatTestCase):
@@ -149,7 +149,7 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         """
         Return `absent` for unknown names.
         """
-        privilege = manufacture.getUniqueString()
+        privilege = mk.getUniqueString()
 
         result = self.capabilities._getPrivilegeState(privilege)
 

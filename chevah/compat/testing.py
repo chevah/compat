@@ -451,7 +451,7 @@ class FileSystemTestCase(CompatTestCase):
         home_folder_path = system_users.getHomeFolder(
             username=cls.os_user.name, token=cls.os_user.token)
 
-        cls.avatar = manufacture.makeFilesystemOSAvatar(
+        cls.avatar = mk.makeFilesystemOSAvatar(
             name=cls.os_user.name,
             home_folder_path=home_folder_path,
             token=cls.os_user.token,
@@ -471,7 +471,7 @@ class FileSystemTestCase(CompatTestCase):
         """
         Set-up OS user for file system testing.
         """
-        user = manufacture.makeTestUser(home_group=TEST_ACCOUNT_GROUP)
+        user = mk.makeTestUser(home_group=TEST_ACCOUNT_GROUP)
         os_administration.addUser(user)
         return user
 
