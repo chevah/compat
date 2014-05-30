@@ -5,7 +5,7 @@ from __future__ import with_statement
 
 from chevah.compat.avatar import FilesystemAvatar
 from chevah.compat.interfaces import IFileSystemAvatar
-from chevah.compat.testing import ChevahTestCase, manufacture
+from chevah.compat.testing import ChevahTestCase, mk
 
 
 class TestAvatarBase(ChevahTestCase):
@@ -21,14 +21,14 @@ class TestAvatarBase(ChevahTestCase):
         """
         Avatar can be initialized with credentials and home_folder_path.
         """
-        name = manufacture.getUniqueString()
+        name = mk.getUniqueString()
         avatar = FilesystemAvatar(
-            name=name, home_folder_path=manufacture.fs.temp_path)
+            name=name, home_folder_path=mk.fs.temp_path)
 
         with self.assertRaises(NotImplementedError):
             avatar.use_impersonation
 
-        self.assertEqual(manufacture.fs.temp_path, avatar.home_folder_path)
+        self.assertEqual(mk.fs.temp_path, avatar.home_folder_path)
         self.assertEqual(name, avatar.name)
         self.assertIsNone(avatar.root_folder_path)
 
@@ -37,7 +37,7 @@ class TestAvatarBase(ChevahTestCase):
         Avatar can also be initialized with a root path.
         """
         avatar = FilesystemAvatar(
-            name=manufacture.getUniqueString(),
+            name=mk.getUniqueString(),
             home_folder_path=u'some-path',
             root_folder_path=u'other-path',
             token=u'the-token',
@@ -56,7 +56,7 @@ class TestApplicationAvatar(ChevahTestCase):
         """
         ApplicationAvatar can not be impersonated.
         """
-        avatar = manufacture.makeFilesystemApplicationAvatar()
+        avatar = mk.makeFilesystemApplicationAvatar()
 
         self.assertFalse(avatar.use_impersonation)
         self.assertProvides(IFileSystemAvatar, avatar)
@@ -71,7 +71,7 @@ class TestOSAvatar(ChevahTestCase):
         """
         OSAvatar is impersonated.
         """
-        avatar = manufacture.makeFilesystemOSAvatar()
+        avatar = mk.makeFilesystemOSAvatar()
 
         self.assertTrue(avatar.use_impersonation)
         self.assertProvides(IFileSystemAvatar, avatar)

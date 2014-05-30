@@ -20,7 +20,7 @@ from chevah.compat.helpers import NoOpContext
 from chevah.compat.testing import (
     CompatTestCase,
     conditionals,
-    manufacture,
+    mk,
     TestUser,
     TEST_ACCOUNT_CENTRIFY_USERNAME,
     TEST_ACCOUNT_CENTRIFY_PASSWORD,
@@ -139,7 +139,7 @@ class TestSystemUsers(SystemUsersTestCase):
         An error is raised if no token is provided and the username differs
         from the current/service username.
         """
-        test_user = manufacture.getTestUser(u'other')
+        test_user = mk.getTestUser(u'other')
 
         with self.assertRaises(CompatError) as context:
             system_users.getHomeFolder(test_user.name)
@@ -157,8 +157,8 @@ class TestSystemUsers(SystemUsersTestCase):
         required capabilities.
         """
         test_user = TestUser(
-            name=manufacture.string(),
-            password=manufacture.string(),
+            name=mk.string(),
+            password=mk.string(),
             create_local_profile=True,
             )
         os_administration.addUser(test_user)
@@ -178,7 +178,7 @@ class TestSystemUsers(SystemUsersTestCase):
         If no token is provided, it can still be successfully used for getting
         home folder for current account.
         """
-        username = manufacture.username
+        username = mk.username
 
         home_folder = system_users.getHomeFolder(username)
 
@@ -198,21 +198,21 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         test_user = TestUser(
             name=u'no-home',
-            password=manufacture.string(),
+            password=mk.string(),
             create_local_profile=False,
             )
         # Unfortunately there is no API to get default base home path for
         # users, we need to rely on an existing pattern.
         home_base = os.path.dirname(os.getenv('USERPROFILE'))
         expected_home_path = os.path.join(home_base, test_user.name)
-        expected_home_segments = manufacture.fs.getSegmentsFromRealPath(
+        expected_home_segments = mk.fs.getSegmentsFromRealPath(
             expected_home_path)
 
         try:
             os_administration.addUser(test_user)
             # Home folder path is not created on successful login.
             token = test_user.token
-            self.assertFalse(manufacture.fs.isFolder(expected_home_segments))
+            self.assertFalse(mk.fs.isFolder(expected_home_segments))
 
             self.home_folder = system_users.getHomeFolder(
                 username=test_user.name, token=token)
@@ -220,7 +220,7 @@ class TestSystemUsers(SystemUsersTestCase):
             self.assertContains(
                 test_user.name.lower(), self.home_folder.lower())
             self.assertIsInstance(unicode, self.home_folder)
-            self.assertTrue(manufacture.fs.isFolder(expected_home_segments))
+            self.assertTrue(mk.fs.isFolder(expected_home_segments))
         finally:
             os_administration.deleteUser(test_user)
             os_administration.deleteHomeFolder(test_user)
@@ -247,7 +247,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
             username=TEST_ACCOUNT_USERNAME,
-            password=manufacture.string(),
+            password=mk.string(),
             )
 
         self.assertFalse(result)
@@ -262,7 +262,7 @@ class TestSystemUsers(SystemUsersTestCase):
         PAM modules.
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
-            username=manufacture.string(), password=manufacture.string())
+            username=mk.string(), password=mk.string())
 
         self.assertFalse(result)
         self.assertIsNone(token)
@@ -310,7 +310,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         Test executing as a different user reusing the credentials.
         """
-        test_user = manufacture.getTestUser(u'normal')
+        test_user = mk.getTestUser(u'normal')
         with system_users.executeAsUser(
                 username=test_user.name, token=test_user.token):
             pass
@@ -325,14 +325,14 @@ class TestSystemUsers(SystemUsersTestCase):
         Check for helper method.
         """
         self.assertEqual(
-            manufacture.username, system_users.getCurrentUserName())
+            mk.username, system_users.getCurrentUserName())
 
     @conditionals.onOSFamily('nt')
     def test_executeAsUser_NT(self):
         """
         Test executing as a different user.
         """
-        test_user = manufacture.getTestUser(u'normal')
+        test_user = mk.getTestUser(u'normal')
 
         with system_users.executeAsUser(
                 username=test_user.name, token=test_user.token):
@@ -340,7 +340,7 @@ class TestSystemUsers(SystemUsersTestCase):
                 test_user.name, system_users.getCurrentUserName())
 
         self.assertEqual(
-            manufacture.username, system_users.getCurrentUserName())
+            mk.username, system_users.getCurrentUserName())
 
     @conditionals.onOSFamily('posix')
     def test_executeAsUser_Unix(self):
@@ -350,7 +350,7 @@ class TestSystemUsers(SystemUsersTestCase):
 
         initial_uid, initial_gid = os.geteuid(), os.getegid()
         initial_groups = os.getgroups()
-        test_user = manufacture.getTestUser(u'normal')
+        test_user = mk.getTestUser(u'normal')
 
         with system_users.executeAsUser(username=test_user.name):
             import pwd
@@ -394,7 +394,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         False is returned if isUserInGroups is asked for a non-existent group.
         """
-        test_user = manufacture.getTestUser(u'normal')
+        test_user = mk.getTestUser(u'normal')
 
         groups = [u'non-existent-group']
         self.assertFalse(system_users.isUserInGroups(
@@ -404,7 +404,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         False is returned if user is not in the groups.
         """
-        test_user = manufacture.getTestUser(u'normal')
+        test_user = mk.getTestUser(u'normal')
 
         groups = [u'root', u'Administrators']
 
@@ -415,7 +415,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         True is returned if user is in groups.
         """
-        test_user = manufacture.getTestUser(u'normal')
+        test_user = mk.getTestUser(u'normal')
 
         groups = [
             TEST_ACCOUNT_GROUP,
@@ -436,8 +436,8 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         Check getting primary group.
         """
-        test_user = manufacture.getTestUser(u'normal')
-        avatar = manufacture.makeFilesystemOSAvatar(
+        test_user = mk.getTestUser(u'normal')
+        avatar = mk.makeFilesystemOSAvatar(
             name=TEST_ACCOUNT_USERNAME, token=test_user.token)
 
         group_name = system_users.getPrimaryGroup(username=avatar.name)
@@ -538,7 +538,7 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
         Inside the context we have the new user and outside we have the normal
         user.
         """
-        test_user = manufacture.getTestUser(u'normal')
+        test_user = mk.getTestUser(u'normal')
         avatar = ImpersonatedAvatarImplementation(
             name=test_user.name,
             token=test_user.token,
@@ -550,4 +550,4 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
                 test_user.name, system_users.getCurrentUserName())
 
         self.assertEqual(
-            manufacture.username, system_users.getCurrentUserName())
+            mk.username, system_users.getCurrentUserName())

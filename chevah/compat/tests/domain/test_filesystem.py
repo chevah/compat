@@ -7,7 +7,7 @@ import win32security
 
 
 from chevah.compat.testing import (
-    manufacture,
+    mk,
     TEST_ACCOUNT_GROUP,
     TEST_DOMAIN,
     TEST_PDC,
@@ -30,13 +30,13 @@ class TestSymbolicLink(OSAccountFileSystemTestCase, SymbolicLinksMixin):
     """
 
     CREATE_TEST_USER = TestUser(
-        name=manufacture.string(),
-        password=manufacture.string(),
+        name=mk.string(),
+        password=mk.string(),
         domain=TEST_DOMAIN,
         pdc=TEST_PDC,
         home_group=TEST_ACCOUNT_GROUP,
-        posix_uid=manufacture.posixID(),
-        posix_gid=manufacture.posixID(),
+        posix_uid=mk.posixID(),
+        posix_gid=mk.posixID(),
         create_local_profile=True,
         windows_required_rights=(win32security.SE_CREATE_SYMBOLIC_LINK_NAME,),
         )

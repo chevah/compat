@@ -11,7 +11,7 @@ from chevah.compat import (
     )
 from chevah.compat.testing import (
     conditionals,
-    manufacture,
+    mk,
     TEST_ACCOUNT_GROUP,
     TEST_ACCOUNT_GROUP_OTHER,
     TEST_ACCOUNT_USERNAME,
@@ -73,7 +73,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         """
         An error is raised when setting an unknown owner for a file.
         """
-        file_name = manufacture.makeFilename()
+        file_name = mk.makeFilename()
         file_segments = self.filesystem.home_segments
         file_segments.append(file_name)
         file_object = self.filesystem.openFileForWriting(file_segments)
@@ -89,7 +89,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         """
         An error is raised when setting an unknown owner for a folder.
         """
-        folder_name = manufacture.makeFilename()
+        folder_name = mk.makeFilename()
         folder_segments = self.filesystem.home_segments
         folder_segments.append(folder_name)
         self.filesystem.createFolder(folder_segments)
@@ -134,7 +134,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         """
         Check successful adding a group for a file.
         """
-        file_name = manufacture.makeFilename()
+        file_name = mk.makeFilename()
         file_segments = self.filesystem.home_segments
         file_segments.append(file_name)
         file_object = self.filesystem.openFileForWriting(file_segments)
@@ -161,7 +161,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         """
         Check successful adding a group for a folder.
         """
-        folder_name = manufacture.makeFilename()
+        folder_name = mk.makeFilename()
         folder_segments = self.filesystem.home_segments
         folder_segments.append(folder_name)
         self.filesystem.createFolder(folder_segments)
@@ -208,7 +208,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         """
         Take ownership of file/folder with valid owner ID.
         """
-        file_name = manufacture.makeFilename()
+        file_name = mk.makeFilename()
         file_segments = self.filesystem.home_segments
         file_segments.append(file_name)
         file_object = self.filesystem.openFileForWriting(file_segments)
@@ -223,7 +223,7 @@ class TestPosixFilesystem(FileSystemTestCase):
 
         self.assertEqual(TEST_ACCOUNT_USERNAME_OTHER, current_owner)
 
-        folder_name = manufacture.makeFilename()
+        folder_name = mk.makeFilename()
         folder_segments = self.filesystem.home_segments
         folder_segments.append(folder_name)
         self.filesystem.createFolder(folder_segments)
@@ -258,7 +258,7 @@ class TestUnixFilesystem(FileSystemTestCase):
 
         Stupid Unix!
         """
-        file_name = manufacture.makeFilename()
+        file_name = mk.makeFilename()
         file_segments = self.filesystem.home_segments
         file_segments.append(file_name)
         file_object = self.filesystem.openFileForWriting(file_segments)
@@ -274,7 +274,7 @@ class TestUnixFilesystem(FileSystemTestCase):
 
         Stupid Unix!
         """
-        folder_name = manufacture.makeFilename()
+        folder_name = mk.makeFilename()
         folder_segments = self.filesystem.home_segments
         folder_segments.append(folder_name)
         self.filesystem.createFolder(folder_segments)
@@ -319,7 +319,7 @@ class TestNTFilesystem(FileSystemTestCase):
         Check group removal for a file/folder.
         """
         self.test_segments = self.filesystem.home_segments
-        self.test_segments.append(manufacture.makeFilename())
+        self.test_segments.append(mk.makeFilename())
         self.filesystem.createFolder(self.test_segments)
 
         self.assertFalse(
@@ -373,7 +373,7 @@ class TestNTFilesystem(FileSystemTestCase):
         for creating symbolic links.
         """
         link_segments = self.filesystem.home_segments
-        link_segments.append(manufacture.string())
+        link_segments.append(mk.string())
 
         with self.assertRaises(OSError) as context:
             self.filesystem.makeLink(
@@ -402,10 +402,10 @@ class TestSymbolicLinks(OSAccountFileSystemTestCase, SymbolicLinksMixin):
         rights = ()
 
     CREATE_TEST_USER = TestUser(
-        name=manufacture.string(),
-        password=manufacture.string(),
+        name=mk.string(),
+        password=mk.string(),
         home_group=TEST_ACCOUNT_GROUP,
-        posix_uid=manufacture.posixID(),
-        posix_gid=manufacture.posixID(),
+        posix_uid=mk.posixID(),
+        posix_gid=mk.posixID(),
         windows_required_rights=rights,
         )

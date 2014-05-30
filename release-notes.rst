@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.21.2 - 29/05/2014
+-------------------
+
+* Fix getFolderContent to raise ENOENT when folder does not exists on windows.
+* Rename manufacture to mk.
+
+
 0.21.1 - 22/05/2014
 -------------------
 

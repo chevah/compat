@@ -10,7 +10,7 @@ import stat
 from chevah.compat import DefaultAvatar, LocalFilesystem
 from chevah.compat.exceptions import CompatError
 from chevah.compat.interfaces import ILocalFilesystem
-from chevah.compat.testing import CompatTestCase, conditionals, manufacture
+from chevah.compat.testing import CompatTestCase, conditionals, mk
 
 
 class FilesystemTestMixin(object):
@@ -24,12 +24,12 @@ class FilesystemTestMixin(object):
         """
         link_segments = segments[:]
         link_segments[-1] = '%s-link' % segments[-1]
-        manufacture.fs.makeLink(
+        mk.fs.makeLink(
             target_segments=segments,
             link_segments=link_segments,
             )
         if cleanup:
-            self.addCleanup(manufacture.fs.deleteFile, link_segments)
+            self.addCleanup(mk.fs.deleteFile, link_segments)
         return link_segments
 
 
@@ -49,11 +49,11 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         Create a folder with a child returning a tuple with segment for new
         folder and name of child.
         """
-        child_name = manufacture.makeFilename()
-        segments = manufacture.fs.createFolderInTemp()
+        child_name = mk.makeFilename()
+        segments = mk.fs.createFolderInTemp()
         child_segments = segments[:]
         child_segments.append(child_name)
-        manufacture.fs.createFolder(child_segments)
+        mk.fs.createFolder(child_segments)
         return (segments, child_name)
 
     def test_interface_implementation(self):
@@ -102,21 +102,21 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         permissions.
         """
         segments = self.filesystem.temp_segments
-        filename = manufacture.makeFilename()
+        filename = mk.makeFilename()
         segments.append(filename)
 
-        test_content = manufacture.getUniqueString()
-        manufacture.fs.createFile(segments, content=test_content)
+        test_content = mk.getUniqueString()
+        mk.fs.createFile(segments, content=test_content)
 
         self.assertIsTrue(self.filesystem.isFile(segments))
-        manufacture.fs.deleteFile(segments)
+        mk.fs.deleteFile(segments)
 
     def test_installation_segments(self):
         """
         Installation segments is the base installation path.
         """
         segments = self.filesystem.installation_segments
-        self.assertTrue(manufacture.fs.isFolder(segments))
+        self.assertTrue(mk.fs.isFolder(segments))
         folder_name = segments[-1]
         self.assertTrue(folder_name.startswith('build-'))
 
@@ -124,8 +124,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Convert IOError to OSError using a context.
         """
-        path = manufacture.string()
-        message = manufacture.string()
+        path = mk.string()
+        message = mk.string()
 
         with self.assertRaises(OSError) as context:
             with self.filesystem._IOToOSError(path):
@@ -139,8 +139,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Raise OSError when trying to delete a folder as a file.
         """
-        self.test_segments = manufacture.fs.createFolderInTemp()
-        path = manufacture.fs.getRealPathFromSegments(self.test_segments)
+        self.test_segments = mk.fs.createFolderInTemp()
+        path = mk.fs.getRealPathFromSegments(self.test_segments)
         self.assertTrue(self.filesystem.exists(self.test_segments))
 
         with self.assertRaises(OSError) as context:
@@ -154,7 +154,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         It can delete a regular file.
         """
-        segments = manufacture.fs.createFileInTemp()
+        segments = mk.fs.createFileInTemp()
         self.assertTrue(self.filesystem.exists(segments))
 
         self.filesystem.deleteFile(segments)
@@ -165,7 +165,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Return OSError with errno.ENOENT.
         """
-        segments = ['c', manufacture.string()]
+        segments = ['c', mk.string()]
 
         with self.assertRaises(OSError) as context:
             self.filesystem.deleteFile(segments)
@@ -177,7 +177,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         It can delete a symlink to a file and original file is not removed.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
         link_segments = self.makeLink(self.test_segments, cleanup=False)
         self.assertTrue(self.filesystem.exists(self.test_segments))
         self.assertTrue(self.filesystem.exists(link_segments))
@@ -191,7 +191,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Raise an OS error when trying to delete a file using folder API.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
         self.assertTrue(self.filesystem.exists(self.test_segments))
 
         with self.assertRaises(OSError) as context:
@@ -205,7 +205,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         Raise an OS error when trying to delete a file using folder API,
         event when doing recursive delete.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
         self.assertTrue(self.filesystem.exists(self.test_segments))
 
         with self.assertRaises(OSError) as context:
@@ -218,7 +218,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         It can delete a folder non-recursive if folder is empty.
         """
-        segments = manufacture.fs.createFolderInTemp()
+        segments = mk.fs.createFolderInTemp()
         self.assertTrue(self.filesystem.exists(segments))
 
         self.filesystem.deleteFolder(segments, recursive=False)
@@ -245,7 +245,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         It can delete a folder recursive if folder is empty.
         """
-        segments = manufacture.fs.createFolderInTemp()
+        segments = mk.fs.createFolderInTemp()
         self.assertTrue(self.filesystem.exists(segments))
 
         self.filesystem.deleteFolder(segments, recursive=True)
@@ -267,7 +267,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Raise OSError when folder is not found.
         """
-        segments = ['c', 'no-such', manufacture.string()]
+        segments = ['c', 'no-such', mk.string()]
         self.assertFalse(self.filesystem.exists(segments))
 
         with self.assertRaises(OSError) as context:
@@ -303,25 +303,25 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Can be used for linking a file.
         """
-        content = manufacture.string()
-        self.test_segments = manufacture.fs.createFileInTemp(content=content)
+        content = mk.string()
+        self.test_segments = mk.fs.createFileInTemp(content=content)
         link_segments = self.test_segments[:]
         link_segments[-1] = '%s-link' % self.test_segments[-1]
 
-        manufacture.fs.makeLink(
+        mk.fs.makeLink(
             target_segments=self.test_segments,
             link_segments=link_segments,
             )
 
-        self.assertTrue(manufacture.fs.exists(link_segments))
-        self.assertTrue(manufacture.fs.isLink(link_segments))
+        self.assertTrue(mk.fs.exists(link_segments))
+        self.assertTrue(mk.fs.isLink(link_segments))
         # Will point to the same content.
-        link_content = manufacture.fs.getFileContent(self.test_segments)
+        link_content = mk.fs.getFileContent(self.test_segments)
         self.assertEqual(content, link_content)
         # Can be removed as a simple file and target file is not removed.
-        manufacture.fs.deleteFile(link_segments)
-        self.assertFalse(manufacture.fs.exists(link_segments))
-        self.assertTrue(manufacture.fs.exists(self.test_segments))
+        mk.fs.deleteFile(link_segments)
+        self.assertFalse(mk.fs.exists(link_segments))
+        self.assertTrue(mk.fs.exists(self.test_segments))
 
     @conditionals.onCapability('symbolic_link', True)
     def test_makeLink_folder(self):
@@ -332,21 +332,21 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         link_segments = self.test_segments[:]
         link_segments[-1] = '%s-link' % self.test_segments[-1]
 
-        manufacture.fs.makeLink(
+        mk.fs.makeLink(
             target_segments=self.test_segments,
             link_segments=link_segments,
             )
 
-        self.assertTrue(manufacture.fs.exists(link_segments))
+        self.assertTrue(mk.fs.exists(link_segments))
         # Will have the same content.
-        content = manufacture.fs.getFolderContent(link_segments)
+        content = mk.fs.getFolderContent(link_segments)
         self.assertEqual([child_name], content)
         # Can be removed as a normal folder and target folder is not removed.
-        manufacture.fs.deleteFolder(link_segments)
-        self.assertFalse(manufacture.fs.exists(link_segments))
-        self.assertTrue(manufacture.fs.exists(self.test_segments))
+        mk.fs.deleteFolder(link_segments)
+        self.assertFalse(mk.fs.exists(link_segments))
+        self.assertTrue(mk.fs.exists(self.test_segments))
         # Will have the same content.
-        content = manufacture.fs.getFolderContent(self.test_segments)
+        content = mk.fs.getFolderContent(self.test_segments)
         self.assertEqual([child_name], content)
 
     @conditionals.onCapability('symbolic_link', True)
@@ -354,10 +354,10 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Raise an error if link can not be created.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
 
         with self.assertRaises(OSError):
-            manufacture.fs.makeLink(
+            mk.fs.makeLink(
                 target_segments=self.test_segments,
                 link_segments=['no-such', 'link'],
                 )
@@ -367,7 +367,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Will create a valid link to an invalid target.
         """
-        _, self.test_segments = manufacture.fs.makePathInTemp()
+        _, self.test_segments = mk.fs.makePathInTemp()
 
         self.filesystem.makeLink(
             target_segments=['c', 'no-such-target'],
@@ -391,7 +391,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         with self.assertRaises(OSError):
             target_segments = ['bad', 'no-such', 'target']
-            _, test_segments = manufacture.fs.makePathInTemp()
+            _, test_segments = mk.fs.makePathInTemp()
             self.filesystem.makeLink(
                 target_segments=target_segments,
                 link_segments=test_segments,
@@ -448,7 +448,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Can be used for reading target for a link.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
         link_segments = self.makeLink(self.test_segments)
 
         result = self.filesystem.readLink(link_segments)
@@ -460,7 +460,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Will only resolve link at first level.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
         link_segments = self.makeLink(self.test_segments)
         link_link_segments = self.makeLink(link_segments)
 
@@ -483,7 +483,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Raise an error when path is not a link.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
 
         with self.assertRaises(OSError) as context:
             self.filesystem.readLink(self.test_segments)
@@ -497,7 +497,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         does not exist.
         """
         target_segments = ['z', 'no-such', 'target']
-        _, self.test_segments = manufacture.fs.makePathInTemp()
+        _, self.test_segments = mk.fs.makePathInTemp()
         self.filesystem.makeLink(
             target_segments=target_segments,
             link_segments=self.test_segments,
@@ -511,24 +511,24 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Check isFile.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
-        _, non_existent_segments = manufacture.fs.makePathInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
+        _, non_existent_segments = mk.fs.makePathInTemp()
 
         self.assertTrue(self.filesystem.isFile(self.test_segments))
         # Non existent paths are not files.
         self.assertFalse(self.filesystem.isFile(non_existent_segments))
         # Folders are not files.
-        self.assertFalse(self.filesystem.isFile(manufacture.fs.temp_segments))
+        self.assertFalse(self.filesystem.isFile(mk.fs.temp_segments))
 
     def test_isFolder(self):
         """
         Check isFolder.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
-        _, non_existent_segments = manufacture.fs.makePathInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
+        _, non_existent_segments = mk.fs.makePathInTemp()
 
         self.assertTrue(
-            self.filesystem.isFolder(manufacture.fs.temp_segments))
+            self.filesystem.isFolder(mk.fs.temp_segments))
         # Non existent folders are not files.
         self.assertFalse(
             self.filesystem.isFolder(non_existent_segments))
@@ -541,8 +541,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Return a dict with file data.
         """
-        content = manufacture.string()
-        self.test_segments = manufacture.fs.createFileInTemp(content=content)
+        content = mk.string()
+        self.test_segments = mk.fs.createFileInTemp(content=content)
         name = self.test_segments[-1]
 
         result = self.filesystem._getFileData(self.test_segments)
@@ -556,21 +556,21 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Check isLink.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
-        _, non_existent_segments = manufacture.fs.makePathInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
+        _, non_existent_segments = mk.fs.makePathInTemp()
         file_link_segments = self.makeLink(self.test_segments)
         folder_link_segments = self.test_segments[:]
         folder_link_segments[-1] = '%s-folder-link' % folder_link_segments[-1]
-        manufacture.fs.makeLink(
-            target_segments=manufacture.fs.temp_segments,
+        mk.fs.makeLink(
+            target_segments=mk.fs.temp_segments,
             link_segments=folder_link_segments,
             )
         self.addCleanup(
-            manufacture.fs.deleteFolder, folder_link_segments)
+            mk.fs.deleteFolder, folder_link_segments)
 
         self.assertTrue(self.filesystem.isLink(file_link_segments))
         self.assertTrue(self.filesystem.isLink(folder_link_segments))
-        self.assertFalse(self.filesystem.isLink(manufacture.fs.temp_segments))
+        self.assertFalse(self.filesystem.isLink(mk.fs.temp_segments))
         self.assertFalse(self.filesystem.isLink(self.test_segments))
         self.assertFalse(self.filesystem.isLink(non_existent_segments))
         self.assertFalse(self.filesystem.isLink(['invalid-drive-or-path']))
@@ -587,7 +587,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Check attributes for a file.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
         (
             file_mode,
             is_file,
@@ -602,7 +602,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertFalse(is_link)
 
         if self.os_family == 'posix':
-            current_umask = manufacture.fs._getCurrentUmask()
+            current_umask = mk.fs._getCurrentUmask()
             expected_mode = 0100666 ^ current_umask
             self.assertEqual(expected_mode, file_mode)
 
@@ -610,7 +610,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Check attributes for a folder.
         """
-        self.test_segments = manufacture.fs.createFolderInTemp()
+        self.test_segments = mk.fs.createFolderInTemp()
 
         (
             folder_mode,
@@ -626,7 +626,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertFalse(is_link)
 
         if self.os_family == 'posix':
-            current_umask = manufacture.fs._getCurrentUmask()
+            current_umask = mk.fs._getCurrentUmask()
             expected_mode = 040777 ^ current_umask
             self.assertEqual(expected_mode, folder_mode)
 
@@ -635,7 +635,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         A link to a file is recognized as both a link and a file.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
         link_segments = self.makeLink(self.test_segments)
 
         (
@@ -655,12 +655,12 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         A link to a folder is recognized as both a link and a folder.
         """
-        _, link_segments = manufacture.fs.makePathInTemp()
-        manufacture.fs.makeLink(
-            target_segments=manufacture.fs.temp_segments,
+        _, link_segments = mk.fs.makePathInTemp()
+        mk.fs.makeLink(
+            target_segments=mk.fs.temp_segments,
             link_segments=link_segments,
             )
-        self.addCleanup(manufacture.fs.deleteFolder, link_segments)
+        self.addCleanup(mk.fs.deleteFolder, link_segments)
 
         (
             is_file,
@@ -678,7 +678,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         For non links will return the same status.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
 
         status = self.filesystem.getStatus(self.test_segments)
 
@@ -723,11 +723,22 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
             self.filesystem._checkChildPath(
                 u'c:\\root\\path', 'c:\\root\\path\\..')
 
+    def test_getFolderContent_not_found(self):
+        """
+        Raise OSError when trying to get folder for a non existent path.
+        """
+        segments = ['c', mk.string()]
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.getFolderContent(segments)
+
+        self.assertEqual(errno.ENOENT, context.exception.errno)
+
     def test_getFolderContent_file(self):
         """
         Raise OSError when trying to get folder content for a file.
         """
-        self.test_segments = manufacture.fs.createFileInTemp()
+        self.test_segments = mk.fs.createFileInTemp()
 
         with self.assertRaises(OSError) as context:
             self.filesystem.getFolderContent(self.test_segments)
@@ -738,7 +749,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Return empty list for empty folders.
         """
-        self.test_segments = manufacture.fs.createFolderInTemp()
+        self.test_segments = mk.fs.createFolderInTemp()
 
         content = self.filesystem.getFolderContent(self.test_segments)
 
@@ -748,15 +759,15 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Return folder content as list of Unicode names.
         """
-        self.test_segments = manufacture.fs.createFolderInTemp()
-        file_name = manufacture.makeFilename()
-        folder_name = manufacture.makeFilename()
+        self.test_segments = mk.fs.createFolderInTemp()
+        file_name = mk.makeFilename()
+        folder_name = mk.makeFilename()
         file_segments = self.test_segments[:]
         file_segments.append(file_name)
         folder_segments = self.test_segments[:]
         folder_segments.append(folder_name)
-        manufacture.fs.createFile(file_segments)
-        manufacture.fs.createFolder(folder_segments)
+        mk.fs.createFile(file_segments)
+        mk.fs.createFolder(folder_segments)
 
         content = self.filesystem.getFolderContent(self.test_segments)
 
@@ -768,8 +779,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Raise OSError when trying to open a folder as file.
         """
-        self.test_segments = manufacture.fs.createFolderInTemp()
-        path = manufacture.fs.getRealPathFromSegments(self.test_segments)
+        self.test_segments = mk.fs.createFolderInTemp()
+        path = mk.fs.getRealPathFromSegments(self.test_segments)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFile(self.test_segments, os.O_RDONLY, 0777)
@@ -781,8 +792,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Raise OSError when trying to open a folder as file for reading.
         """
-        self.test_segments = manufacture.fs.createFolderInTemp()
-        path = manufacture.fs.getRealPathFromSegments(self.test_segments)
+        self.test_segments = mk.fs.createFolderInTemp()
+        path = mk.fs.getRealPathFromSegments(self.test_segments)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForReading(self.test_segments, utf8=False)
@@ -800,8 +811,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Raise OSError when trying to open a folder as file for writing.
         """
-        self.test_segments = manufacture.fs.createFolderInTemp()
-        path = manufacture.fs.getRealPathFromSegments(self.test_segments)
+        self.test_segments = mk.fs.createFolderInTemp()
+        path = mk.fs.getRealPathFromSegments(self.test_segments)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForWriting(self.test_segments, utf8=False)
@@ -819,8 +830,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Raise OSError when trying to open a folder as file for appending.
         """
-        self.test_segments = manufacture.fs.createFolderInTemp()
-        path = manufacture.fs.getRealPathFromSegments(self.test_segments)
+        self.test_segments = mk.fs.createFolderInTemp()
+        path = mk.fs.getRealPathFromSegments(self.test_segments)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForAppending(
@@ -839,8 +850,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         System test for private touch.
         """
-        self.test_segments = manufacture.fs.temp_segments
-        self.test_segments.append(manufacture.makeFilename(length=10))
+        self.test_segments = mk.fs.temp_segments
+        self.test_segments.append(mk.makeFilename(length=10))
         self.assertFalse(self.filesystem.exists(self.test_segments))
 
         self.filesystem._touch(self.test_segments)
@@ -851,8 +862,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Check makeFolder.
         """
-        folder_name = manufacture.makeFilename(length=10)
-        self.test_segments = manufacture.fs.temp_segments[:]
+        folder_name = mk.makeFilename(length=10)
+        self.test_segments = mk.fs.temp_segments[:]
         self.test_segments.append(folder_name)
 
         self.filesystem.createFolder(self.test_segments)
@@ -863,8 +874,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         System test for file renaming.
         """
-        _, initial_segments = manufacture.fs.makePathInTemp()
-        _, self.test_segments = manufacture.fs.makePathInTemp()
+        _, initial_segments = mk.fs.makePathInTemp()
+        _, self.test_segments = mk.fs.makePathInTemp()
         self.assertFalse(self.filesystem.exists(initial_segments))
         self.assertFalse(self.filesystem.exists(self.test_segments))
         self.filesystem._touch(initial_segments)
@@ -878,8 +889,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         System test for folder renaming.
         """
-        _, initial_segments = manufacture.fs.makePathInTemp()
-        _, self.test_segments = manufacture.fs.makePathInTemp()
+        _, initial_segments = mk.fs.makePathInTemp()
+        _, self.test_segments = mk.fs.makePathInTemp()
         self.assertFalse(self.filesystem.exists(initial_segments))
         self.assertFalse(self.filesystem.exists(self.test_segments))
         self.filesystem.createFolder(initial_segments)
@@ -894,7 +905,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         exists will return `False` if file or folder does not exists.
         """
         segments = self.filesystem.temp_segments[:]
-        segments.append(manufacture.makeFilename())
+        segments.append(mk.makeFilename())
 
         self.assertFalse(self.filesystem.exists(segments))
 
@@ -903,10 +914,10 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         exists will return `True` if file exists.
         """
         self.test_segments = self.filesystem.temp_segments[:]
-        self.test_segments.append(manufacture.makeFilename())
+        self.test_segments.append(mk.makeFilename())
         with (self.filesystem.openFileForWriting(
                 self.test_segments)) as new_file:
-            new_file.write(manufacture.getUniqueString().encode('utf8'))
+            new_file.write(mk.getUniqueString().encode('utf8'))
 
         self.assertTrue(self.filesystem.exists(self.test_segments))
 
@@ -915,7 +926,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         exists will return `True` if folder exists.
         """
         self.test_segments = self.filesystem.temp_segments[:]
-        self.test_segments.append(manufacture.makeFilename())
+        self.test_segments.append(mk.makeFilename())
         self.filesystem.createFolder(self.test_segments)
 
         self.assertTrue(self.filesystem.exists(self.test_segments))
@@ -925,7 +936,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         Check retrieving the size for a file.
         """
         test_size = 1345
-        self.test_segments = manufacture.fs.createFileInTemp(length=test_size)
+        self.test_segments = mk.fs.createFileInTemp(length=test_size)
 
         size = self.filesystem.getFileSize(self.test_segments)
 
@@ -936,7 +947,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         Check getting file size for an empty file.
         """
         test_size = 0
-        self.test_segments = manufacture.fs.createFileInTemp(length=0)
+        self.test_segments = mk.fs.createFileInTemp(length=0)
 
         size = self.filesystem.getFileSize(self.test_segments)
 
@@ -946,8 +957,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Check reading in Unicode.
         """
-        content = manufacture.getUniqueString()
-        self.test_segments = manufacture.fs.createFileInTemp(content=content)
+        content = mk.getUniqueString()
+        self.test_segments = mk.fs.createFileInTemp(content=content)
         a_file = None
         try:
 
@@ -963,7 +974,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         An empty file can be opened for reading.
         """
-        self.test_segments = manufacture.fs.createFileInTemp(length=0)
+        self.test_segments = mk.fs.createFileInTemp(length=0)
         a_file = None
         try:
 
@@ -979,7 +990,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         A file opened only for reading will not be able to write into.
         """
-        self.test_segments = manufacture.fs.createFileInTemp(length=0)
+        self.test_segments = mk.fs.createFileInTemp(length=0)
         a_file = None
         try:
             a_file = self.filesystem.openFileForReading(
@@ -996,7 +1007,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         Check opening a file for writing in plain/ascii/str mode.
         """
         content = 'some ascii text'
-        self.test_segments = manufacture.fs.createFileInTemp(length=0)
+        self.test_segments = mk.fs.createFileInTemp(length=0)
         a_file = None
         try:
 
@@ -1015,8 +1026,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Check opening a file for writing in Unicode mode.
         """
-        content = manufacture.getUniqueString()
-        self.test_segments = manufacture.fs.createFileInTemp(length=0)
+        content = mk.getUniqueString()
+        self.test_segments = mk.fs.createFileInTemp(length=0)
         a_file = None
         try:
 
@@ -1037,7 +1048,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         When a file is opened for writing, we can not read from it.
         """
-        self.test_segments = manufacture.fs.createFileInTemp(length=0)
+        self.test_segments = mk.fs.createFileInTemp(length=0)
         a_file = None
         try:
             a_file = self.filesystem.openFileForWriting(
@@ -1056,10 +1067,10 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         When a file is opened for writing, the previous file is truncated
         to 0 length and we write as a fresh file.
         """
-        content = manufacture.getUniqueString(100)
-        new_content = manufacture.getUniqueString(50)
+        content = mk.getUniqueString(100)
+        new_content = mk.getUniqueString(50)
         # Create initial content.
-        self.test_segments = manufacture.fs.createFileInTemp(content=content)
+        self.test_segments = mk.fs.createFileInTemp(content=content)
 
         # Write new content into file.
         test_file = self.filesystem.openFileForWriting(
@@ -1067,16 +1078,16 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         test_file.write(new_content.encode('utf-8'))
         test_file.close()
 
-        file_content = manufacture.fs.getFileContent(self.test_segments)
+        file_content = mk.fs.getFileContent(self.test_segments)
         self.assertEqual(new_content, file_content)
 
     def test_openFileForAppending(self):
         """
         System test for openFileForAppending.
         """
-        content = manufacture.getUniqueString()
-        new_content = manufacture.getUniqueString()
-        self.test_segments = manufacture.fs.createFileInTemp(content=content)
+        content = mk.getUniqueString()
+        new_content = mk.getUniqueString()
+        self.test_segments = mk.fs.createFileInTemp(content=content)
         a_file = None
         try:
             a_file = self.filesystem.openFileForAppending(
@@ -1099,7 +1110,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         content = u'ceva nou'
         content_str = 'ceva nou'
-        self.test_segments = manufacture.fs.createFileInTemp(content=content)
+        self.test_segments = mk.fs.createFileInTemp(content=content)
         a_file = None
         try:
 
@@ -1392,7 +1403,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         """
         Will return false when link target does not exists.
         """
-        _, self.test_segments = manufacture.fs.makePathInTemp()
+        _, self.test_segments = mk.fs.makePathInTemp()
         self.unlocked_filesystem.makeLink(
             target_segments=['z', 'no-such', 'target'],
             link_segments=self.test_segments,
@@ -1407,7 +1418,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         """
         Resolve recursive links to links.
         """
-        _, self.test_segments = manufacture.fs.makePathInTemp()
+        _, self.test_segments = mk.fs.makePathInTemp()
         self.unlocked_filesystem.makeLink(
             target_segments=['z', 'no-such', 'target'],
             link_segments=self.test_segments,
@@ -1427,8 +1438,8 @@ class TestLocalFilesystemLocked(CompatTestCase):
     @classmethod
     def setUpClass(cls):
         cls.locked_avatar = DefaultAvatar()
-        cls.locked_avatar.root_folder_path = manufacture.fs.temp_path
-        cls.locked_avatar.home_folder_path = manufacture.fs.temp_path
+        cls.locked_avatar.root_folder_path = mk.fs.temp_path
+        cls.locked_avatar.home_folder_path = mk.fs.temp_path
         cls.locked_avatar.lock_in_home_folder = True
         cls.locked_filesystem = LocalFilesystem(avatar=cls.locked_avatar)
 
@@ -1565,13 +1576,13 @@ class TestLocalFilesystemLocked(CompatTestCase):
             root_path + separator)
         self.assertEqual([], result)
 
-        name = manufacture.string()
+        name = mk.string()
         result = self.locked_filesystem.getSegmentsFromRealPath(
             root_path + separator + name)
         self.assertEqual([name], result)
 
-        name = manufacture.string()
-        child = manufacture.string()
+        name = mk.string()
+        child = mk.string()
         result = self.locked_filesystem.getSegmentsFromRealPath(
             root_path + separator + name + separator + child + separator)
         self.assertEqual([name, child], result)
@@ -1603,9 +1614,9 @@ class TestLocalFilesystemLocked(CompatTestCase):
         """
         Will return false when link target is outside of home folder.
         """
-        _, self.test_segments = manufacture.fs.makePathInTemp()
+        _, self.test_segments = mk.fs.makePathInTemp()
         link_segments = [self.test_segments[-1]]
-        manufacture.fs.makeLink(
+        mk.fs.makeLink(
             target_segments=['z', 'no', 'such'],
             link_segments=self.test_segments,
             )
@@ -1619,9 +1630,9 @@ class TestLocalFilesystemLocked(CompatTestCase):
         """
         Raise an error when target is outside of locked folder.
         """
-        _, self.test_segments = manufacture.fs.makePathInTemp()
+        _, self.test_segments = mk.fs.makePathInTemp()
         link_segments = [self.test_segments[-1]]
-        manufacture.fs.makeLink(
+        mk.fs.makeLink(
             target_segments=['z', 'no', 'such'],
             link_segments=self.test_segments,
             )

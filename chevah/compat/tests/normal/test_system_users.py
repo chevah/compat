@@ -15,7 +15,7 @@ from chevah.compat.interfaces import IFileSystemAvatar, IOSUsers
 from chevah.compat.testing import (
     CompatTestCase,
     conditionals,
-    manufacture,
+    mk,
     TEST_DOMAIN,
     TEST_PDC,
     )
@@ -40,13 +40,13 @@ class TestSystemUsers(CompatTestCase):
             raise self.skipTest()
 
         home_folder = system_users.getHomeFolder(
-            username=manufacture.username)
+            username=mk.username)
 
         # For buildslave, home folder is in srv.
-        if manufacture.username == 'buildslave':
-            self.assertEqual(u'/srv/' + manufacture.username, home_folder)
+        if mk.username == 'buildslave':
+            self.assertEqual(u'/srv/' + mk.username, home_folder)
         else:
-            self.assertEqual(u'/home/' + manufacture.username, home_folder)
+            self.assertEqual(u'/home/' + mk.username, home_folder)
 
         self.assertIsInstance(unicode, home_folder)
 
@@ -57,10 +57,10 @@ class TestSystemUsers(CompatTestCase):
         Check getHomeFolder for Windows.
         """
         home_folder = system_users.getHomeFolder(
-            username=manufacture.username)
+            username=mk.username)
 
         self.assertContains(
-            manufacture.username.lower(), home_folder.lower())
+            mk.username.lower(), home_folder.lower())
         self.assertIsInstance(unicode, home_folder)
 
     @conditionals.onOSFamily('nt')
@@ -69,7 +69,7 @@ class TestSystemUsers(CompatTestCase):
         Return the exact username and domain `None` when username UPN
         is not a domain.
         """
-        name = manufacture.string()
+        name = mk.string()
 
         (domain, username) = system_users._parseUPN(name)
 
@@ -88,7 +88,7 @@ class TestSystemUsers(CompatTestCase):
         test_domain = TEST_DOMAIN
         test_pdc = TEST_PDC
 
-        name = manufacture.string()
+        name = mk.string()
         upn = u'%s@%s' % (name, test_domain)
 
         (pdc, username) = system_users._parseUPN(upn)
@@ -102,9 +102,9 @@ class TestSystemUsers(CompatTestCase):
         Check getHomeFolder for OSX.
         """
         home_folder = system_users.getHomeFolder(
-            username=manufacture.username)
+            username=mk.username)
 
-        self.assertEqual(u'/Users/' + manufacture.username, home_folder)
+        self.assertEqual(u'/Users/' + mk.username, home_folder)
         self.assertIsInstance(unicode, home_folder)
 
     @conditionals.onOSFamily('posix')

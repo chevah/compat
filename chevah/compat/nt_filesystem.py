@@ -348,10 +348,14 @@ class NTFilesystem(PosixFilesystemBase):
             otherwise if empty folder, parent or current folder is requested,
             just show the ROOT.'''
             if self._lock_in_home or segments not in [[], ['.'], ['..']]:
-                # Windows return a generic EINVAL when path is not a folder,
-                # so we try to fail early.
-                self._requireFolder(segments)
-                return super(NTFilesystem, self).getFolderContent(segments)
+                try:
+                    return super(NTFilesystem, self).getFolderContent(segments)
+                except OSError, error:
+                    if error.errno == errno.EINVAL:
+                        # When path is not a folder EINVAL is raised instead of
+                        # the more specific ENOTDIR.
+                        self._requireFolder(segments)
+                    raise error
 
             # Get Windows drives.
             raw_drives = win32api.GetLogicalDriveStrings()

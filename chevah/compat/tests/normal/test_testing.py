@@ -3,7 +3,7 @@
 """
 Tests for the testing infrastructure.
 """
-from chevah.compat.testing import ChevahTestCase, manufacture
+from chevah.compat.testing import ChevahTestCase, mk
 
 
 class TestFactory(ChevahTestCase):
@@ -15,6 +15,6 @@ class TestFactory(ChevahTestCase):
         """
         Check that avatar is created with unicode members.
         """
-        avatar = manufacture.makeFilesystemApplicationAvatar()
+        avatar = mk.makeFilesystemApplicationAvatar()
         self.assertTrue(type(avatar.name) is unicode)
         self.assertTrue(type(avatar.home_folder_path) is unicode)
