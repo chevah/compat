@@ -244,9 +244,10 @@ class PosixFilesystemBase(object):
                 try:
                     return os.unlink(path_encoded)
                 except OSError, error:
-                    if sys.platform.startswith('aix'):
-                        # On AIX when segments is a folder, we get EPERM,
-                        # so we force a EISDIR.
+                    # On Unix (AIX, Solaris) when segments is a folder,
+                    # we get EPERM, so we force a EISDIR.
+                    # For now, Unix is everything else, other than Linux.
+                    if not sys.platform.startswith('linux'):
                         self._requireFile(segments)
                     raise error
             except:

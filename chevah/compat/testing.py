@@ -116,7 +116,12 @@ class CompatManufacture(ChevahCommonsFactory):
             password = self.string()
 
         if posix_home_path is None:
-            posix_home_path = u'/home/%s' % name
+            if process_capabilities.os_name == 'solaris':
+                posix_home_path = u'/export/home/%s' % name
+            elif process_capabilities.os_name == 'osx':
+                posix_home_path = u'/Users/%s' % name
+            else:  # Linux and normal Unix
+                posix_home_path = u'/home/%s' % name
 
         return TestUser(
             name=name,
@@ -348,7 +353,7 @@ TEST_ACCOUNT_GROUP_DOMAIN = TestGroup.sanitizeName(
     TEST_ACCOUNT_GROUP_DOMAIN)
 
 
-if sys.platform.startswith('sunos'):
+if process_capabilities.os_name == 'solaris':
     TEST_ACCOUNT_HOME_PATH = u'/export/home/' + TEST_ACCOUNT_USERNAME
     TEST_ACCOUNT_HOME_PATH_OTHER = (
         u'/export/home/' + TEST_ACCOUNT_USERNAME_OTHER)

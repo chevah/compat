@@ -239,11 +239,6 @@ class TestUnixFilesystem(FileSystemTestCase):
     Path independent Unix tests.
     """
 
-    @classmethod
-    @conditionals.onOSFamily('posix')
-    def setUpClass(cls):
-        super(TestUnixFilesystem, cls).setUpClass()
-
     def test_temp_segments_location(self):
         """
         On Unix the normal temporary folder is used.
