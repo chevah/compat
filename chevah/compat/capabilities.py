@@ -20,8 +20,10 @@ def _get_os_name():
         return 'aix'
     elif family.startswith('darwin'):
         return 'osx'
+    elif family.startswith('sunos'):
+        return 'solaris'
     else:
-        raise AssertionError('OS not supported.')
+        raise AssertionError('OS "%s" not supported.' % family)
 
 
 class BaseProcessCapabilities(object):

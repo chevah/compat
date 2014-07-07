@@ -28,6 +28,7 @@ from chevah.empirical.testcase import (
     )
 from chevah.compat import (
     LocalFilesystem,
+    process_capabilities,
     system_users,
     SuperAvatar,
     )
@@ -64,32 +65,8 @@ def execute(
 class OSAdministrationUnix(object):
 
     def __init__(self):
-        self.name = self.getName()
+        self.name = process_capabilities.os_name
         self.fs = LocalFilesystem(SuperAvatar())
-
-    @classmethod
-    def getName(cls):
-        """
-        Return the name of the platform.
-        """
-        name = sys.platform
-        if name.startswith('linux'):
-            name = 'linux'
-        elif name.startswith('aix'):
-            name = 'aix'
-        elif name == 'darwin':
-            name = 'osx'
-        elif name.startswith('sunos'):
-            name = 'solaris'
-        elif name.startswith('win32'):
-            name = 'windows'
-        else:
-            name = None
-
-        if name is None:
-            raise AssertionError('Unsupported platform: ' + sys.platform)
-
-        return name
 
     def addGroup(self, group):
         """
@@ -436,6 +413,9 @@ class OSAdministrationUnix(object):
         delete_folder_method(user)
 
     def _deleteHomeFolder_linux(self, user):
+        self._deleteHomeFolder_unix(user)
+
+    def _deleteHomeFolder_solaris(self, user):
         self._deleteHomeFolder_unix(user)
 
     def _deleteHomeFolder_aix(self, user):
@@ -830,7 +810,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
 
 
 # Create the singleton.
-if OSAdministrationUnix.getName() == 'windows':
+if process_capabilities.os_name == 'windows':
     os_administration = OSAdministrationWindows()
 else:
     os_administration = OSAdministrationUnix()

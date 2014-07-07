@@ -55,6 +55,13 @@ LOCAL_PYTHON_BINARY_DIST=""
 OS='not-detected-yet'
 ARCH='x86'
 
+# When run on Linux distros other then those supported by us (Red Hat, SUSE,
+# Ubuntu), we match the LSB distros to the oldest Ubuntu LTS supported by us.
+# For non-LSB distros we use the oldest supported Linux distro. No guarantees
+# made... For details, please see the Linux bits in detect_os() below.
+OS_LINUX_LSB='ubuntu1204'
+OS_LINUX_NONLSB='rhel4'
+
 
 clean_build() {
     # Shortcut for clear since otherwise it will depend on python
@@ -309,7 +316,7 @@ check_source_folder() {
 # Update OS and ARCH variables with the current values.
 #
 detect_os() {
-    OS=`uname -s | tr '[:upper:]' '[:lower:]'`
+    OS=`uname -s | tr "[A-Z]" "[a-z]"`
 
     if [ "${OS%mingw*}" = "" ] ; then
 
@@ -319,11 +326,15 @@ detect_os() {
     elif [ "${OS}" = "sunos" ] ; then
 
         OS="solaris"
-        ARCH=`uname -p`
+        ARCH=`isainfo -n`
         VERSION=`uname -r`
 
         if [ "$ARCH" = "i386" ] ; then
             ARCH='x86'
+        elif [ "$ARCH" = "amd64" ]; then
+            ARCH='x64'
+        elif [ "$ARCH" = "sparcv9" ] ; then
+            ARCH='sparc64'
         fi
 
         if [ "$VERSION" = "5.10" ] ; then
@@ -382,33 +393,26 @@ detect_os() {
                 exit 1
             fi
         elif [ -f /etc/lsb-release ] ; then
-            release=`lsb_release -sr`
-            case $release in
-                '10.04' | '10.10' | '11.04' | '11.10')
-                    OS='ubuntu1004'
-                ;;
-                '12.04' | '12.10' | '13.04' | '13.10')
-                    OS='ubuntu1204'
-                ;;
-                # Lie for dumol's Gentoo. Separate so that it's clear
-                '2.2')
-                    OS='ubuntu1204'
-                ;;
-                *)
-                    echo 'Unsuported Ubuntu version.'
-                    exit 1
-                ;;
-            esac
-
-        elif [ -f /etc/slackware-version ] ; then
-
-            # For Slackware, for now we use Ubuntu 10.04.
-            # Special dedication for all die hard hackers like Ion.
-    	    OS="ubuntu1004"
-
-        elif [ -f /etc/debian_version ] ; then
-            OS="debian"
-
+            lsb_release_id=$(lsb_release -is)
+            if [ $lsb_release_id = Ubuntu ]; then
+                ubuntu_release=`lsb_release -sr`
+                case $ubuntu_release in
+                    '10.04' | '10.10' | '11.04' | '11.10')
+                        OS='ubuntu1004'
+                    ;;
+                    '12.04' | '12.10' | '13.04' | '13.10')
+                        OS='ubuntu1204'
+                    ;;
+                    *)
+                        echo 'Unsuported Ubuntu version.'
+                        exit 1
+                    ;;
+                esac
+            else
+                OS=$OS_LINUX_LSB
+            fi
+        else
+            OS=$OS_LINUX_NONLSB
         fi
 
     elif [ "${OS}" = "darwin" ] ; then
