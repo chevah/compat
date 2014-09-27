@@ -34,7 +34,7 @@ export LC_ALL='C'
 export LC_CTYPE='C'
 export LC_COLLATE='C'
 export LC_MESSAGES='C'
-export PATH=$PATH:'/sbin:/usr/sbin'
+export PATH=$PATH:'/sbin:/usr/sbin:/usr/local/bin'
 
 #
 # Global variables.
@@ -372,15 +372,17 @@ detect_os() {
             rhel_version=`\
                 cat /etc/redhat-release | sed s/.*release\ // | sed s/\ .*//`
             # RHEL4 glibc is not compatible with RHEL 5 and 6.
-            rhel_major_version=${rhel_version%.*}
+            rhel_major_version=${rhel_version%%.*}
             if [ "$rhel_major_version" = "4" ] ; then
                 OS='rhel4'
             elif [ "$rhel_major_version" = "5" ] ; then
                 OS='rhel5'
             elif [ "$rhel_major_version" = "6" ] ; then
                 OS='rhel6'
+            elif [ "$rhel_major_version" = "7" ] ; then
+                OS='rhel7'
             else
-                echo 'Unsuported RHEL version.'
+                echo 'Unsupported RHEL version.'
                 exit 1
             fi
         elif [ -f /etc/SuSE-release ] ; then
@@ -403,8 +405,11 @@ detect_os() {
                     '12.04' | '12.10' | '13.04' | '13.10')
                         OS='ubuntu1204'
                     ;;
+                    '14.04' | '14.10' | '15.04' | '15.10')
+                        OS='ubuntu1404'
+                    ;;
                     *)
-                        echo 'Unsuported Ubuntu version.'
+                        echo 'Unsupported Ubuntu version.'
                         exit 1
                     ;;
                 esac
