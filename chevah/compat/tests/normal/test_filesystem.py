@@ -587,24 +587,19 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Check attributes for a file.
         """
-        self.test_segments = mk.fs.createFileInTemp()
-        (
-            file_mode,
-            is_file,
-            is_directory,
-            is_link,
-            ) = self.filesystem.getAttributes(
-            self.test_segments,
-            attributes=('permissions', 'file', 'directory', 'link'))
+        size = mk.number()
+        self.test_segments = mk.fs.createFileInTemp(length=size)
 
-        self.assertFalse(is_directory)
-        self.assertTrue(is_file)
-        self.assertFalse(is_link)
+        attributes = self.filesystem.getAttributes(self.test_segments)
 
+        self.assertEqual(size, attributes.size)
+        self.assertFalse(attributes.is_folder)
+        self.assertTrue(attributes.is_file)
+        self.assertFalse(attributes.is_link)
         if self.os_family == 'posix':
             current_umask = mk.fs._getCurrentUmask()
             expected_mode = 0100666 ^ current_umask
-            self.assertEqual(expected_mode, file_mode)
+            self.assertEqual(expected_mode, attributes.mode)
 
     def test_getAttributes_folder(self):
         """
@@ -612,23 +607,15 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         self.test_segments = mk.fs.createFolderInTemp()
 
-        (
-            folder_mode,
-            is_file,
-            is_directory,
-            is_link,
-            ) = self.filesystem.getAttributes(
-            self.test_segments,
-            attributes=('permissions', 'file', 'directory', 'link'))
+        attributes = self.filesystem.getAttributes(self.test_segments)
 
-        self.assertTrue(is_directory)
-        self.assertFalse(is_file)
-        self.assertFalse(is_link)
-
+        self.assertTrue(attributes.is_folder)
+        self.assertFalse(attributes.is_file)
+        self.assertFalse(attributes.is_link)
         if self.os_family == 'posix':
             current_umask = mk.fs._getCurrentUmask()
             expected_mode = 040777 ^ current_umask
-            self.assertEqual(expected_mode, folder_mode)
+            self.assertEqual(expected_mode, attributes.mode)
 
     @conditionals.onCapability('symbolic_link', True)
     def test_getAttributes_link_file(self):
@@ -638,17 +625,11 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.test_segments = mk.fs.createFileInTemp()
         link_segments = self.makeLink(self.test_segments)
 
-        (
-            is_file,
-            is_directory,
-            is_link,
-            ) = self.filesystem.getAttributes(
-            link_segments,
-            attributes=('file', 'directory', 'link'))
+        attributes = self.filesystem.getAttributes(link_segments)
 
-        self.assertTrue(is_file)
-        self.assertTrue(is_link)
-        self.assertFalse(is_directory)
+        self.assertTrue(attributes.is_file)
+        self.assertTrue(attributes.is_link)
+        self.assertFalse(attributes.is_folder)
 
     @conditionals.onCapability('symbolic_link', True)
     def test_getAttributes_link_folder(self):
@@ -662,17 +643,11 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
             )
         self.addCleanup(mk.fs.deleteFolder, link_segments)
 
-        (
-            is_file,
-            is_directory,
-            is_link,
-            ) = self.filesystem.getAttributes(
-            link_segments,
-            attributes=('file', 'directory', 'link'))
+        attributes = self.filesystem.getAttributes(link_segments)
 
-        self.assertFalse(is_file)
-        self.assertTrue(is_link)
-        self.assertTrue(is_directory)
+        self.assertFalse(attributes.is_file)
+        self.assertTrue(attributes.is_link)
+        self.assertTrue(attributes.is_folder)
 
     def test_getStatus(self):
         """

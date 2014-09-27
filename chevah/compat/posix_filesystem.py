@@ -13,6 +13,8 @@ import stat
 import struct
 import sys
 
+from zope.interface import implements
+
 from chevah.compat.constants import (
     DEFAULT_FILE_MODE,
     DEFAULT_FOLDER_MODE,
@@ -22,6 +24,7 @@ from chevah.compat.exceptions import (
     CompatError,
     CompatException,
     )
+from chevah.compat.interfaces import IFileAttributes
 from chevah.compat.helpers import _, NoOpContext
 
 
@@ -195,14 +198,14 @@ class PosixFilesystemBase(object):
     def isFolder(self, segments):
         '''See `ILocalFilesystem`.'''
         try:
-            return self.getAttributes(segments, ('directory',))[0]
+            return self.getAttributes(segments).is_folder
         except OSError:
             return False
 
     def isFile(self, segments):
         '''See `ILocalFilesystem`.'''
         try:
-            return self.getAttributes(segments, ('file',))[0]
+            return self.getAttributes(segments).is_file
         except OSError:
             return False
 
@@ -384,11 +387,10 @@ class PosixFilesystemBase(object):
         with self._impersonateUser():
             return os.stat(path_encoded)
 
-    def getAttributes(self, segments, attributes):
+    def getAttributes(self, segments):
         """
         See `ILocalFilesystem`.
         """
-        results = []
         stats = self.getStatus(segments)
         mode = stats.st_mode
         is_directory = bool(stat.S_ISDIR(mode))
@@ -397,25 +399,25 @@ class PosixFilesystemBase(object):
             # which we don't use.
             mode = mode & 0077777
 
-        is_link = self.isLink(segments)
-        mapping = {
-            'size': stats.st_size,
-            'permissions': mode,
-            'hardlinks': stats.st_nlink,
-            'modified': stats.st_mtime,
-            'owner': str(stats.st_uid),
-            'group': str(stats.st_gid),
-            'uid': stats.st_uid,
-            'gid': stats.st_gid,
-            'directory': is_directory,
-            'link': is_link,
-            'file': bool(stat.S_ISREG(mode))
-            }
+        try:
+            name = segments[-1]
+        except:
+            name = None
+        path = self.getRealPathFromSegments(segments)
 
-        for attribute in attributes:
-            results.append(mapping[attribute])
-
-        return results
+        return FileAttributes(
+            name=name,
+            path=path,
+            size=stats.st_size,
+            is_file=bool(stat.S_ISREG(mode)),
+            is_folder=is_directory,
+            is_link=self.isLink(segments),
+            modified=stats.st_mtime,
+            mode=mode,
+            hardlinks=stats.st_nlink,
+            uid=stats.st_uid,
+            gid=stats.st_gid,
+            )
 
     def setAttributes(self, segments, attributes):
         '''See `ILocalFilesystem`.'''
@@ -424,8 +426,8 @@ class PosixFilesystemBase(object):
         with self._impersonateUser():
             if 'uid' in attributes and 'gid' in attributes:
                 os.chown(path_encoded, attributes['uid'], attributes['gid'])
-            if 'permissions' in attributes:
-                os.chmod(path_encoded, attributes['permissions'])
+            if 'mode' in attributes:
+                os.chmod(path_encoded, attributes['mode'])
             if 'atime' in attributes and 'mtime' in attributes:
                 os.utime(
                     path_encoded, (attributes['atime'], attributes['mtime']))
@@ -586,3 +588,29 @@ class PosixFilesystemBase(object):
         result['target'] = target_path
 
         return result
+
+
+class FileAttributes(object):
+    """
+    See: IFileAttributes.
+    """
+    implements(IFileAttributes)
+
+    def __init__(
+            self, name, path, size=0,
+            is_file=False, is_folder=False, is_link=False,
+            modified=False,
+            mode=0, hardlinks=1, uid=0, gid=0,
+            ):
+        self.name = name
+        self.path = path
+        self.size = size
+        self.is_folder = is_folder
+        self.is_file = is_file
+        self.is_link = is_link
+        self.modified = modified
+
+        self.mode = mode
+        self.hardlinks = hardlinks
+        self.uid = uid
+        self.gid = gid

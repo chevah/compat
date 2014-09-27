@@ -489,21 +489,9 @@ class ILocalFilesystem(Interface):
         st_mtime - time of most recent content modification,
         """
 
-    def getAttributes(segments, attributes):
+    def getAttributes(segments):
         """
-        Return a list of attributes for segment.
-
-        Values are returned in the same order as attributes list.
-        Valid attributes:
-         * size
-         * permissions
-         * hardlinks
-         * modified
-         * owner
-         * group
-         * directory
-         * link
-         * file
+        Return a list of IFileAttributes for segment.
         """
 
     def setAttributes(segments, attributes):
@@ -514,7 +502,7 @@ class ILocalFilesystem(Interface):
          * size -> s.st_size
          * uid -> s.st_uid
          * gid -> s.st_gid
-         * permissions -> s.st_mode
+         * mode -> s.st_mode
          * atime -> int(s.st_atime)
          * mtime -> int(s.st_mtime)
         """
@@ -560,22 +548,20 @@ class ILocalFilesystem(Interface):
         """
 
 
-class IFilesystemNodeAttributes(Interface):
+class IFileAttributes(Interface):
     """
-    Attributes for file or folder.
+    Attributes for file or folder, independent of filesystem.
     """
 
-    name = Attribute('Name if this member.')
+    name = Attribute('Name of this member.')
+    path = Attribute('Absolute path of this member.')
     size = Attribute('Size in bytes.')
     is_file = Attribute('True if member is a file.')
     is_folder = Attribute('True if member is a folder.')
     is_link = Attribute('True if member is a symbolic link.')
-    # attributes = {
-    #     'permissions': stats.st_mode,
-    #     'hardlinks': stats.st_nlink,
-    #     'modified': stats.st_mtime,
-    #     'owner': str(stats.st_uid),
-    #     'group': str(stats.st_gid),
-    #     'uid': stats.st_uid,
-    #     'gid': stats.st_gid,
-    #     }
+    modified = Attribute('Timestamp at which content modified.')
+
+    mode = Attribute('Protection bits. Unix specific.')
+    hardlinks = Attribute('Number of hard links.')
+    uid = Attribute('User ID or owner as integer.')
+    gid = Attribute('Group ID of owner as integer.')

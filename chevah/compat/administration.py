@@ -587,14 +587,13 @@ class OSAdministrationUnix(object):
             raise AssertionError(u'No such entry: %s' % (name))
 
     def _replaceFile(self, from_segments, to_segments):
-        (uid, gid, permissions) = self.fs.getAttributes(
-            to_segments, ('uid', 'gid', 'permissions'))
+        attributes = self.fs.getAttributes(to_segments)
         self.fs.setAttributes(
             from_segments,
             {
-                'permissions': permissions,
-                'uid': uid,
-                'gid': gid,
+                'mode': attributes.mode,
+                'uid': attributes.uid,
+                'gid': attributes.uid,
                 },
             )
         self.fs.rename(from_segments, to_segments)
