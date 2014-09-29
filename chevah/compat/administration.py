@@ -593,7 +593,7 @@ class OSAdministrationUnix(object):
             {
                 'mode': attributes.mode,
                 'uid': attributes.uid,
-                'gid': attributes.uid,
+                'gid': attributes.gid,
                 },
             )
         self.fs.rename(from_segments, to_segments)
