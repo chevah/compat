@@ -327,11 +327,10 @@ class NTFilesystem(PosixFilesystemBase):
         with self._windowsToOSError(segments):
             return super(NTFilesystem, self).getStatus(segments)
 
-    def getAttributes(self, segments, attributes):
+    def getAttributes(self, segments):
         '''See `ILocalFilesystem`.'''
         with self._windowsToOSError(segments):
-            return super(NTFilesystem, self).getAttributes(
-                segments, attributes)
+            return super(NTFilesystem, self).getAttributes(segments)
 
     def setAttributes(self, segments, attributes):
         '''See `ILocalFilesystem`.'''

@@ -122,9 +122,8 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''
-        attributes = self.getAttributes(segments, attributes=('owner',))
-        uid = attributes[0]
-        user_struct = pwd.getpwuid(int(uid))
+        attributes = self.getAttributes(segments)
+        user_struct = pwd.getpwuid(attributes.uid)
         return user_struct.pw_name.decode('utf-8')
 
     def addGroup(self, segments, group, permissions=None):
@@ -151,9 +150,8 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def hasGroup(self, segments, group):
         '''See `ILocalFilesystem`.'''
-        attributes = self.getAttributes(segments, attributes=('group',))
-        gid = int(attributes[0])
-        group_struct = grp.getgrgid(gid)
+        attributes = self.getAttributes(segments)
+        group_struct = grp.getgrgid(attributes.gid)
         if group_struct.gr_name.decode('utf-8') == group:
             return True
         else:

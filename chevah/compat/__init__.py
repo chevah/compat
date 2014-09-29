@@ -5,11 +5,6 @@
 Code for portable functions.
 """
 from __future__ import with_statement
-
-__metaclass__ = type
-
-__all__ = []
-
 import os
 
 if os.name == 'posix':
@@ -51,5 +46,8 @@ elif os.name == 'nt':
 
 else:
     raise AssertionError('Operating system "%s" not supported.' % (os.name))
+
+from chevah.compat.posix_filesystem import FileAttributes
+FileAttributes  # Silence the linter.
 
 local_filesystem = LocalFilesystem(avatar=DefaultAvatar())

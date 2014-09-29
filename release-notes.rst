@@ -2,6 +2,21 @@ Release notes for chevah.compat
 ===============================
 
 
+0.23.1 - 29/09/2014
+-------------------
+
+* Fix setting GID for file replace operation in OS administration.
+
+
+0.23.0 - 27/09/2014
+-------------------
+
+* Refactor getAttributes to return a IFileAttributes object, instead of a
+  tuple.
+* getAttributes no longer allow filtering attributes. All attributes are
+  populated in the returned object.
+
+
 0.22.0 - 04/07/2014
 -------------------
 
