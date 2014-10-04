@@ -316,7 +316,7 @@ class OSAdministrationUnix(object):
         # Create home folder.
         execute(['sudo', 'mkdir', home_folder])
         execute(['sudo', 'chown', user.name, home_folder])
-        execute(['sudo', 'chgrp', user.gid, home_folder])
+        execute(['sudo', 'chgrp', str(user.gid), home_folder])
 
         if user.home_group:
             execute(['sudo', 'chgrp', user.home_group, user.posix_home_path])
