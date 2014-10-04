@@ -12,6 +12,7 @@ import re
 import stat
 import struct
 import sys
+import unicodedata
 
 from zope.interface import implements
 
@@ -373,10 +374,28 @@ class PosixFilesystemBase(object):
         result = []
         with self._impersonateUser():
             for entry in os.listdir(path_encoded):
-                if not isinstance(entry, unicode):
-                    entry = entry.decode(self.INTERNAL_ENCODING)
-                result.append(entry)
+                result.append(self._decodeFilename(entry))
         return result
+
+    def _decodeFilename(self, name):
+        """
+        Return the Unicode representation of file from `name`.
+
+        `name` is the encoded format stored on the filesystem.
+        """
+        # This is done to allow lazy initialization of process_capabilities.
+        from chevah.compat import process_capabilities
+        if not isinstance(name, unicode):
+            name = name.decode(self.INTERNAL_ENCODING)
+
+        # OSX HFS+ store file as Unicode, but in normalized format.
+        # On OSX we might also read files from other filesystems, not only
+        # HFS+, but we are lucky here as normalize will not raise errors
+        # if input is already normalized.
+        if process_capabilities.os_name == 'osx':
+            name = unicodedata.normalize('NFC', name)
+
+        return name
 
     def getStatus(self, segments):
         """
