@@ -122,7 +122,8 @@ class TestSystemUsers(CompatTestCase):
         Check that shadow files are supported on the expected Unix systems.
         """
         # AIX and OSX only uses PAM.
-        if self.os_name in ['aix', 'osx']:
+        # Windows don't support shadow.
+        if self.os_name in ['aix', 'osx', 'windows']:
             raise self.skipTest()
 
         from chevah.compat.unix_users import HAS_SHADOW_SUPPORT
