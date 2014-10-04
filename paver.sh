@@ -12,6 +12,13 @@
 # * pip
 # * setuptools
 #
+# It will delegate the argument to the paver script, with the exception of
+# these commands:
+# * clean - remove everything, except cache
+# * detect_os - create DEFAULT_VALUES and exit
+# * get_python - download Python distribution in cache
+# * get_agent - download Rexx/Putty distribution in cache
+#
 
 # Script initialization.
 set -o nounset
@@ -261,10 +268,14 @@ copy_python() {
             echo "No ${setuptools_package}. Start downloading it..."
             get_binary_dist "$setuptools_package" "$PIP_INDEX/packages"
         fi
-        cp -RL "${CACHE_FOLDER}/$setuptools_package/setuptools" ${PYTHON_LIB}/site-packages/
-        cp -RL "${CACHE_FOLDER}/$setuptools_package//setuptools.egg-info" ${PYTHON_LIB}/site-packages/
-        cp "${CACHE_FOLDER}/$setuptools_package/pkg_resources.py" ${PYTHON_LIB}/site-packages/
-        cp "${CACHE_FOLDER}/$setuptools_package/easy_install.py" ${PYTHON_LIB}/site-package
+        cp -RL "${CACHE_FOLDER}/$setuptools_package/setuptools" \
+            ${PYTHON_LIB}/site-packages/
+        cp -RL "${CACHE_FOLDER}/$setuptools_package//setuptools.egg-info" \
+            ${PYTHON_LIB}/site-packages/
+        cp "${CACHE_FOLDER}/$setuptools_package/pkg_resources.py" \
+            ${PYTHON_LIB}/site-packages/
+        cp "${CACHE_FOLDER}/$setuptools_package/easy_install.py" \
+            ${PYTHON_LIB}/site-package
 
         # Once we have pip, we can use it.
         pip install "paver==$PAVER_VERSION"
@@ -422,23 +433,24 @@ detect_os() {
 
     elif [ "${OS}" = "darwin" ] ; then
         osx_version=`sw_vers -productVersion`
-        osx_major_version=${osx_version%.*}
-    	if [ "$osx_major_version" = "10.4" ] ; then
-    		OS='osx104'
-    	else
-    		echo 'Unsuported OS X version.'
-    		exit 1
-    	fi
+        if [ "$osx_version" = "10.8" ] ; then
+            OS='osx108'
+        else
+            echo 'Unsuported OS X version:' $osx_version
+            exit 1
+        fi
 
-    	osx_arch=`uname -m`
-    	if [ "$osx_arch" = "Power Macintosh" ] ; then
-    		ARCH='ppc'
-    	else
-    		echo 'Unsuported OS X architecture.'
-    		exit 1
-    	fi
+        osx_arch=`uname -m`
+        if [ "$osx_arch" = "Power Macintosh" ] ; then
+            ARCH='ppc'
+        elif [ "$osx_arch" = "x86_64" ] ; then
+            ARCH='x64'
+        else
+            echo 'Unsuported OS X architecture:' $osx_arch
+            exit 1
+        fi
     else
-        echo 'Unsuported operating system.'
+        echo 'Unsuported operating system:' $OS
         exit 1
     fi
 
@@ -464,7 +476,7 @@ if [ "$COMMAND" = "clean" ] ; then
     exit 0
 fi
 
-if [ "$COMMAND" = "get_default_values" ] ; then
+if [ "$COMMAND" = "detect_os" ] ; then
     write_default_values
     exit 0
 fi
