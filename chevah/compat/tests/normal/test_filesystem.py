@@ -6,6 +6,7 @@ Tests for portable filesystem access.
 import errno
 import os
 import stat
+import tempfile
 
 from chevah.compat import DefaultAvatar, LocalFilesystem
 from chevah.compat.exceptions import CompatError
@@ -76,14 +77,17 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         segments = self.filesystem.temp_segments
         self.assertTrue(self.filesystem.isFolder(segments))
 
+    @conditionals.onOSFamily('posix')
     def test_temp_segments_location_unix(self):
         """
         On unix the temporary folders are located inside the temp folder.
         """
-        if os.name != 'posix':
-            raise self.skipTest()
-
-        self.assertEqual([u'tmp'], self.filesystem.temp_segments)
+        if self.os_name == 'osx':
+            expected = self.filesystem.getSegmentsFromRealPath(
+                tempfile.gettempdir())
+        else:
+            expected = [u'tmp']
+        self.assertEqual(expected, self.filesystem.temp_segments)
 
     def test_temp_segments_location_nt(self):
         """

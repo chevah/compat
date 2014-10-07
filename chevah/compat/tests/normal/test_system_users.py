@@ -3,7 +3,6 @@
 """
 Test system users portable code.
 """
-import os
 import sys
 
 from chevah.compat import (
@@ -120,10 +119,11 @@ class TestSystemUsers(CompatTestCase):
 
     def test_shadow_support_unix(self):
         """
-        Check that shadow files are supported on the Unix systems, with
-        the exception of AIX.
+        Check that shadow files are supported on the expected Unix systems.
         """
-        if os.name != 'posix' or sys.platform.startswith('aix'):
+        # AIX and OSX only uses PAM.
+        # Windows don't support shadow.
+        if self.os_name in ['aix', 'osx', 'windows']:
             raise self.skipTest()
 
         from chevah.compat.unix_users import HAS_SHADOW_SUPPORT

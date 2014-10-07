@@ -34,11 +34,11 @@ def _get_supplementary_groups(username_encoded):
     '''Return all groups in which `username_encoded` is a member.
     username_encoded is provided as utf-8 encoded format.
     '''
-    groups = []
+    groups = set()
     for group in grp.getgrall():
         if username_encoded in group.gr_mem:
-            groups.append(group.gr_gid)
-    return groups
+            groups.add(group.gr_gid)
+    return list(groups)
 
 
 def _get_euid_and_egid(username_encoded):
@@ -115,7 +115,13 @@ class UnixUsers(CompatUsers):
                 username, _(u'Username not found.'))
 
     def userExists(self, username):
-        '''Returns `True` if username exists on this system.'''
+        """
+        Returns `True` if username exists on this system.
+        """
+        # OSX return an user with uid and gid 0 for empty user.
+        if not username:
+            return False
+
         username = username.encode('utf-8')
         with self._executeAsAdministrator():
             try:
