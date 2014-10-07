@@ -381,7 +381,7 @@ class PosixFilesystemBase(object):
         """
         Return the Unicode representation of file from `name`.
 
-        `name` is the encoded format stored on the filesystem.
+        `name` is in the encoded format stored on the filesystem.
         """
         # This is done to allow lazy initialization of process_capabilities.
         from chevah.compat import process_capabilities

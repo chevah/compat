@@ -12,7 +12,7 @@ if os.name == 'nt':
     tempfile.tempdir = "c:\\temp"
 
 RUN_PACKAGES = [
-    'chevah-empirical==0.26.2',
+    'chevah-empirical==0.30.1',
     'zope.interface==3.8.0',
     'twisted==12.1.0-chevah3',
     ]
