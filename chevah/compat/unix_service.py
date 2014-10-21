@@ -24,15 +24,14 @@ class Daemon(object):
 
     DaemonContext = daemon.DaemonContext
 
-    PRESERVE_STANDARD_STREAMS = False
-    DETACH_PROCESS = True
-
     def __init__(self, options):
         """
         See `IDaemon`.
         """
         self.options = options
         self._daemon_context = None
+        self.preserve_standard_streams = False
+        self.detach_process = True
 
     def _onStopSignal(self, signum, frame):
         """
@@ -47,7 +46,7 @@ class Daemon(object):
         stdin = None
         stdout = None
         stderr = None
-        if self.PRESERVE_STANDARD_STREAMS:
+        if self.preserve_standard_streams:
             stdin = sys.stdin
             stdout = sys.stdout
             stderr = sys.stderr
@@ -57,7 +56,7 @@ class Daemon(object):
             stdout=stdout,
             stderr=stderr,
             )
-        self._daemon_context.detach_process = self.DETACH_PROCESS
+        self._daemon_context.detach_process = self.detach_process
         self._daemon_context.signal_map = {
             signal.SIGINT: self._onStopSignal,
             signal.SIGTERM: self._onStopSignal,

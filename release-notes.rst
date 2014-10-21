@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.25.0 - 04/10/2014
+-------------------
+
+* Update Unix daemon to use instance variables for detach_process and
+  preserve_standard_streams.
+
+
 0.24.0 - 04/10/2014
 -------------------
 

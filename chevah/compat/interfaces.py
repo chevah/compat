@@ -12,13 +12,13 @@ class IDaemon(Interface):
     To stop the daemon you must send the KILL signal.
     """
 
-    PRESERVE_STANDARD_STREAMS = Attribute(
+    preserve_standard_streams = Attribute(
         """
         True if standard streams (input, output, error) should be redirected
         to the new daemon process.
         """)
 
-    DETACH_PROCESS = Attribute('True if process should detach from console.')
+    detach_process = Attribute('True if process should detach from console.')
 
     def __init__(options):
         """

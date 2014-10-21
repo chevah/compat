@@ -4,6 +4,7 @@
 Tests for Unix Daemon.
 """
 import os
+import sys
 
 from chevah.compat.exceptions import CompatError
 
@@ -79,39 +80,55 @@ class TestDaemon(CompatTestCase):
 
         self.assertProvides(IDaemon, daemon)
         self.assertEqual(options, daemon.options)
-        self.assertIsFalse(daemon.PRESERVE_STANDARD_STREAMS)
-        self.assertIsTrue(daemon.DETACH_PROCESS)
+        self.assertIsFalse(daemon.preserve_standard_streams)
+        self.assertIsTrue(daemon.detach_process)
 
-    def test_launch_PRESERVE_STANDARD_STREAMS(self):
+    def test_launch_preserve_standard_streams(self):
         """
-        When PRESERVE_STANDARD_STREAMS is set, the new daemon will
+        When preserve_standard_streams is set, the new daemon will
         inherit the standard stream.
         """
         pid_path = self.getPIDPath()
         options = self.Bunch(pid=pid_path)
         daemon = DaemonImplementation(options=options)
-        daemon.PRESERVE_STANDARD_STREAMS = True
+        daemon.preserve_standard_streams = True
 
         daemon.launch()
 
-        self.assertIsNotNone(daemon._daemon_context.stdin)
-        self.assertIsNotNone(daemon._daemon_context.stdout)
-        self.assertIsNotNone(daemon._daemon_context.stderr)
+        self.assertIs(sys.stdin, daemon._daemon_context.stdin)
+        self.assertIs(sys.stdout, daemon._daemon_context.stdout)
+        self.assertIs(sys.stderr, daemon._daemon_context.stderr)
 
-    def test_launch_DETACH_PROCESS(self):
+    def test_launch_preserve_standard_streams_not_set(self):
         """
-        At launch, DETACH_PROCESS is copied to the internal DaemonContext
+        When preserve_standard_streams is not set, the new daemon will use
+        a dedicated set of standard streams.
+        """
+        pid_path = self.getPIDPath()
+        options = self.Bunch(pid=pid_path)
+        daemon = DaemonImplementation(options=options)
+        daemon.preserve_standard_streams = False
+
+        daemon.launch()
+
+        self.assertIsNone(daemon._daemon_context.stdin)
+        self.assertIsNone(daemon._daemon_context.stdout)
+        self.assertIsNone(daemon._daemon_context.stderr)
+
+    def test_launch_detach_process(self):
+        """
+        At launch, detach_process is copied to the internal DaemonContext
         instance.
         """
         pid_path = self.getPIDPath()
         options = self.Bunch(pid=pid_path)
         daemon = DaemonImplementation(options=options)
-        daemon.DETACH_PROCESS = object()
+        daemon.detach_process = object()
 
         daemon.launch()
 
         self.assertEqual(
-            daemon.DETACH_PROCESS,
+            daemon.detach_process,
             daemon._daemon_context.detach_process,
             )
 
