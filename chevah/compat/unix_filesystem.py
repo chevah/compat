@@ -8,7 +8,6 @@ import errno
 import grp
 import os
 import pwd
-import shutil
 import stat
 
 
@@ -196,6 +195,6 @@ class UnixFilesystem(PosixFilesystemBase):
             if self.isLink(segments):
                 self.deleteFile(segments)
             elif recursive:
-                return shutil.rmtree(path_encoded)
+                return self._rmtree(path_encoded)
             else:
                 return os.rmdir(path_encoded)

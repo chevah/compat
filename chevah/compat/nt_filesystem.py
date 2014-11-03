@@ -9,7 +9,6 @@ import errno
 import ntsecuritycon
 import os
 import pywintypes
-import shutil
 import win32api
 import win32file
 import win32net
@@ -502,7 +501,7 @@ class NTFilesystem(PosixFilesystemBase):
                     recursive = False
 
                 if recursive:
-                    return shutil.rmtree(path_encoded)
+                    return self._rmtree(path_encoded)
                 else:
                     return os.rmdir(path_encoded)
         except OSError, error:

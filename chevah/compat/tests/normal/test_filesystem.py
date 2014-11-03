@@ -267,6 +267,23 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         self.assertFalse(self.filesystem.exists(segments))
 
+    @conditionals.onOSFamily('nt')
+    def test_deleteFolder_recursive_read_only_members(self):
+        """
+        On Windows, it will also delete the folders, even if it contains
+        files with read only attributes.
+        """
+        segments, child_name = self.createFolderWithChild()
+        # Create and make sure we have a read only child.
+        child_segments = segments[:]
+        child_segments.append(child_name)
+        path = self.filesystem.getRealPathFromSegments(child_segments)
+        os.chmod(path, stat.S_IREAD)
+
+        self.filesystem.deleteFolder(segments, recursive=True)
+
+        self.assertFalse(self.filesystem.exists(segments))
+
     def test_deleteFolder_non_found(self):
         """
         Raise OSError when folder is not found.

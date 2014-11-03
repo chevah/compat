@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.25.1 - 29/10/2014
+-------------------
+
+* Fix deleteFolder(recursive) on Windows to delete files which are read-only.
+
+
 0.25.0 - 04/10/2014
 -------------------
 
