@@ -9,6 +9,7 @@ import codecs
 import errno
 import os
 import re
+import shutil
 import stat
 import struct
 import sys
@@ -238,6 +239,36 @@ class PosixFilesystemBase(object):
         See `ILocalFilesystem`.
         """
         raise NotImplementedError()
+
+    def _rmtree(self, path):
+        """
+        Remove whole directory tree.
+        """
+        def on_error(func, path, exception_info):
+            """
+            Error handler for ``shutil.rmtree``.
+
+            If the error is due to an access error (ex, read only file)
+            it attempts to add write permission and then retries.
+
+            If the error is for another reason it re-raises the error.
+            """
+            if os.name != 'nt':
+                raise
+
+            if (
+                func in (os.rmdir, os.remove) and
+                exception_info[1].errno == errno.EACCES
+                    ):
+                os.chmod(
+                    path,
+                    stat.S_IWUSR | stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO,
+                    )
+                func(path)
+            else:
+                raise
+
+        shutil.rmtree(path, ignore_errors=False, onerror=on_error)
 
     def deleteFile(self, segments, ignore_errors=False):
         '''See `ILocalFilesystem`.'''
