@@ -242,9 +242,9 @@ class PosixFilesystemBase(object):
 
     def _rmtree(self, path):
         """
-        Remote whole directory tree.
+        Remove whole directory tree.
         """
-        def onerror(func, path, exception_info):
+        def on_error(func, path, exception_info):
             """
             Error handler for ``shutil.rmtree``.
 
@@ -268,7 +268,7 @@ class PosixFilesystemBase(object):
             else:
                 raise
 
-        shutil.rmtree(path, ignore_errors=False, onerror=onerror)
+        shutil.rmtree(path, ignore_errors=False, onerror=on_error)
 
     def deleteFile(self, segments, ignore_errors=False):
         '''See `ILocalFilesystem`.'''
