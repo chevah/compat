@@ -191,6 +191,21 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(self.filesystem.exists(self.test_segments))
         self.assertFalse(self.filesystem.exists(link_segments))
 
+    @conditionals.onOSFamily('nt')
+    def test_deleteFile_read_only(self):
+        """
+        On Windows, it will delete the file even if it has the read only
+        attribute.
+        """
+        segments = mk.fs.createFileInTemp()
+        path = self.filesystem.getRealPathFromSegments(segments)
+        os.chmod(path, stat.S_IREAD)
+        self.assertTrue(self.filesystem.exists(segments))
+
+        self.filesystem.deleteFile(segments)
+
+        self.assertFalse(self.filesystem.exists(segments))
+
     def test_deleteFolder_file_non_recursive(self):
         """
         Raise an OS error when trying to delete a file using folder API.
@@ -875,6 +890,25 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertFalse(self.filesystem.exists(initial_segments))
         self.assertFalse(self.filesystem.exists(self.test_segments))
         self.filesystem._touch(initial_segments)
+
+        self.filesystem.rename(initial_segments, self.test_segments)
+
+        self.assertFalse(self.filesystem.exists(initial_segments))
+        self.assertTrue(self.filesystem.exists(self.test_segments))
+
+    @conditionals.onOSFamily('nt')
+    def test_rename_file_read_only(self):
+        """
+        On Windows, it will rename the file even if it has the read only
+        attribute.
+        """
+        _, initial_segments = mk.fs.makePathInTemp()
+        _, self.test_segments = mk.fs.makePathInTemp()
+        self.assertFalse(self.filesystem.exists(initial_segments))
+        self.assertFalse(self.filesystem.exists(self.test_segments))
+        self.filesystem._touch(initial_segments)
+        path = self.filesystem.getRealPathFromSegments(initial_segments)
+        os.chmod(path, stat.S_IREAD)
 
         self.filesystem.rename(initial_segments, self.test_segments)
 

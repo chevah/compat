@@ -248,8 +248,9 @@ class PosixFilesystemBase(object):
             """
             Error handler for ``shutil.rmtree``.
 
-            If the error is due to an access error (ex, read only file)
-            it attempts to add write permission and then retries.
+            If the error is due to an access error on Windows (ex,
+            read only file) it attempts to add write permission and then
+            retries.
 
             If the error is for another reason it re-raises the error.
             """
@@ -271,7 +272,9 @@ class PosixFilesystemBase(object):
         shutil.rmtree(path, ignore_errors=False, onerror=on_error)
 
     def deleteFile(self, segments, ignore_errors=False):
-        '''See `ILocalFilesystem`.'''
+        """
+        See: `ILocalFilesystem`.
+        """
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
@@ -279,11 +282,24 @@ class PosixFilesystemBase(object):
                 try:
                     return os.unlink(path_encoded)
                 except OSError, error:
+                    # This is done to allow lazy initialization of this module.
+                    from chevah.compat import process_capabilities
+
                     # On Unix (AIX, Solaris) when segments is a folder,
                     # we get EPERM, so we force a EISDIR.
                     # For now, Unix is everything else, other than Linux.
-                    if not sys.platform.startswith('linux'):
+                    if process_capabilities.os_name != 'linux':
                         self._requireFile(segments)
+
+                    # On Windows we might get an permissions error when
+                    # file is ready-only.
+                    if (
+                        process_capabilities.os_name == 'windows' and
+                        error.errno == errno.EACCES
+                            ):
+                        os.chmod(path_encoded, stat.S_IWRITE)
+                        return os.unlink(path_encoded)
+
                     raise error
             except:
                 if ignore_errors:
