@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.25.2 - 13/11/2014
+-------------------
+
+* Fix deleteFile on Windows to delete files which are read-only.
+
+
 0.25.1 - 29/10/2014
 -------------------
 
