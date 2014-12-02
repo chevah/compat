@@ -7,6 +7,7 @@ import errno
 import os
 import stat
 import tempfile
+import time
 
 from chevah.compat import DefaultAvatar, LocalFilesystem
 from chevah.compat.exceptions import CompatError
@@ -857,17 +858,131 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
 
-    def test_touch(self):
+    def test_touch_no_parent(self):
         """
-        System test for private touch.
+        Raise an error when path does not exists and can not be created.
         """
-        self.test_segments = mk.fs.temp_segments
-        self.test_segments.append(mk.makeFilename(length=10))
-        self.assertFalse(self.filesystem.exists(self.test_segments))
+        with self.assertRaises(IOError) as context:
+            self.filesystem.touch(['c', 'no-such', 'path'])
 
-        self.filesystem._touch(self.test_segments)
+        self.assertEqual(errno.ENOENT, context.exception.errno)
 
-        self.assertTrue(self.filesystem.exists(self.test_segments))
+    def test_touch_dont_exists(self):
+        """
+        A file is created if it does not exists.
+        """
+        _, self.test_segments = mk.fs.makePathInTemp()
+        self.assertFalse(mk.fs.exists(self.test_segments))
+
+        self.filesystem.touch(self.test_segments)
+
+        self.assertTrue(mk.fs.exists(self.test_segments))
+
+    def test_touch_already_exists(self):
+        """
+        The modified time is updated path already exists.
+        """
+        self.test_segments = mk.fs.createFileInTemp()
+        now = time.time()
+        mk.fs.setAttributes(
+            self.test_segments, {'atime': now - 10, 'mtime': now - 10})
+
+        self.filesystem.touch(self.test_segments)
+
+        self.assertTrue(mk.fs.exists(self.test_segments))
+        attributes = mk.fs.getAttributes(self.test_segments)
+        self.assertAlmostEqual(now, attributes.modified, delta=1)
+
+    def test_copyFile_no_destination_parent(self):
+        """
+        Raises an exception when destination does not exists, and it can not
+        be created
+        """
+        self.test_segments = mk.fs.createFileInTemp(content=mk.string())
+        destination_segments = ['c', 'no-parent', 'path']
+
+        with self.assertRaises(IOError) as context:
+            self.filesystem.copyFile(self.test_segments, destination_segments)
+
+        self.assertEqual(errno.ENOENT, context.exception.errno)
+
+    def test_copyFile_destination_exists_no_overwrite_file(self):
+        """
+        Raise an error when destination exists and it was not instructed to
+        overwrite existing files.
+        """
+        source_segments = ['ignore', 'source']
+        self.test_segments = mk.fs.createFileInTemp()
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.copyFile(source_segments, self.test_segments)
+
+        self.assertEqual(errno.EEXIST, context.exception.errno)
+
+    def test_copyFile_destination_exists_no_overwrite_folder(self):
+        """
+        Raise an error when destination exists in destination folder
+        and it was not instructed to overwrite existing files.
+        """
+        self.test_segments = mk.fs.createFileInTemp()
+        destination_segments = self.test_segments[:-1]
+        source_segments = ['bla', self.test_segments[-1]]
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.copyFile(source_segments, destination_segments)
+
+        self.assertEqual(errno.EEXIST, context.exception.errno)
+
+    def test_copyFile_to_destination_when_overwrite_is_requested(self):
+        """
+        Copy file without errors when overwrite was asked.
+        """
+        content = mk.string()
+        self.test_segments = mk.fs.createFileInTemp(content=content)
+        destination_segments = mk.fs.createFileInTemp()
+
+        self.filesystem.copyFile(
+            self.test_segments, destination_segments, overwrite=True)
+
+        destination_content = mk.fs.getFileContent(destination_segments)
+        self.assertEqual(content, destination_content)
+        mk.fs.deleteFile(destination_segments)
+
+    def test_copyFile_with_explicit_destination(self):
+        """
+        Copy file in destination when destination does not exists, but
+        can be created.
+        """
+        content = mk.string()
+        _, destination_segments = mk.fs.makePathInTemp()
+        source_segments = mk.fs.createFileInTemp(content=content)
+
+        self.filesystem.copyFile(source_segments, destination_segments)
+
+        self.assertTrue(self.filesystem.exists(destination_segments))
+        destination_content = mk.fs.getFileContent(destination_segments)
+        self.assertEqual(content, destination_content)
+        # Clean new files.
+        self.filesystem.deleteFile(source_segments)
+        self.filesystem.deleteFile(destination_segments)
+
+    def test_copyFile_without_destination(self):
+        """
+        Copy file in destination when destination does not exists using
+        source name
+        """
+        content = mk.string()
+        source_segments = mk.fs.createFileInTemp(content=content)
+        self.test_segments = mk.fs.createFolderInTemp()
+        destination_segments = self.test_segments[:]
+        destination_segments.append(source_segments[-1])
+
+        self.filesystem.copyFile(source_segments, self.test_segments)
+
+        self.assertTrue(self.filesystem.exists(destination_segments))
+        destination_content = mk.fs.getFileContent(destination_segments)
+        self.assertEqual(content, destination_content)
+        self.filesystem.deleteFile(source_segments)
 
     def test_makeFolder(self):
         """
@@ -889,7 +1004,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         _, self.test_segments = mk.fs.makePathInTemp()
         self.assertFalse(self.filesystem.exists(initial_segments))
         self.assertFalse(self.filesystem.exists(self.test_segments))
-        self.filesystem._touch(initial_segments)
+        self.filesystem.touch(initial_segments)
 
         self.filesystem.rename(initial_segments, self.test_segments)
 
@@ -906,7 +1021,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         _, self.test_segments = mk.fs.makePathInTemp()
         self.assertFalse(self.filesystem.exists(initial_segments))
         self.assertFalse(self.filesystem.exists(self.test_segments))
-        self.filesystem._touch(initial_segments)
+        self.filesystem.touch(initial_segments)
         path = self.filesystem.getRealPathFromSegments(initial_segments)
         os.chmod(path, stat.S_IREAD)
 
