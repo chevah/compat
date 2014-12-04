@@ -954,16 +954,18 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         and it was instructed to overwrite existing files.
         """
         content = mk.string()
-        self.test_segments = mk.fs.createFileInTemp()
-        destination_segments = self.test_segments[:-1]
-        source_segments = mk.fs.createFileInTemp(content=content)
+        self.test_segments = mk.fs.createFileInTemp(content=content)
+        destination_segments = mk.fs.createFolderInTemp()
+        destination_file_segments = destination_segments[:]
+        destination_file_segments.append(self.test_segments[-1])
+        mk.fs.touch(destination_file_segments)
 
         self.filesystem.copyFile(
-            source_segments, destination_segments, overwrite=True)
+            self.test_segments, destination_segments, overwrite=True)
 
-        destination_content = mk.fs.getFileContent(destination_segments)
+        destination_content = mk.fs.getFileContent(destination_file_segments)
         self.assertEqual(content, destination_content)
-        mk.fs.deleteFile(source_segments)
+        mk.fs.deleteFolder(destination_segments, recursive=True)
 
     def test_copyFile_file_destination_no_exists(self):
         """
