@@ -557,7 +557,7 @@ class ILocalFilesystem(Interface):
         Copy file from `source_segments` to `destination_segments`.
 
         If `destination_segments` is a folder, the file will be copied at
-        `destination_path/SOURCE_FILENAME`.
+        `destination_segments/SOURCE_FILENAME`.
 
         If `destination_segments` already exists and `overwrite` is not `true`,
         copy will fail.

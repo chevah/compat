@@ -893,7 +893,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         attributes = mk.fs.getAttributes(self.test_segments)
         self.assertAlmostEqual(now, attributes.modified, delta=1)
 
-    def test_copyFile_no_destination_parent(self):
+    def test_copyFile_destination_no_parent(self):
         """
         Raises an exception when destination does not exists, and it can not
         be created
@@ -906,7 +906,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
 
-    def test_copyFile_destination_exists_no_overwrite_file(self):
+    def test_copyFile_file_destination_exists_no_overwrite(self):
         """
         Raise an error when destination exists and it was not instructed to
         overwrite existing files.
@@ -919,21 +919,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         self.assertEqual(errno.EEXIST, context.exception.errno)
 
-    def test_copyFile_destination_exists_no_overwrite_folder(self):
-        """
-        Raise an error when destination exists in destination folder
-        and it was not instructed to overwrite existing files.
-        """
-        self.test_segments = mk.fs.createFileInTemp()
-        destination_segments = self.test_segments[:-1]
-        source_segments = ['bla', self.test_segments[-1]]
-
-        with self.assertRaises(OSError) as context:
-            self.filesystem.copyFile(source_segments, destination_segments)
-
-        self.assertEqual(errno.EEXIST, context.exception.errno)
-
-    def test_copyFile_to_destination_when_overwrite_is_requested(self):
+    def test_copyFile_file_destination_exists_overwrite(self):
         """
         Copy file without errors when overwrite was asked.
         """
@@ -948,7 +934,38 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertEqual(content, destination_content)
         mk.fs.deleteFile(destination_segments)
 
-    def test_copyFile_with_explicit_destination(self):
+    def test_copyFile_folder_destination_exists_no_overwrite(self):
+        """
+        Raise an error when destination exists in destination folder
+        and it was not instructed to overwrite existing files.
+        """
+        self.test_segments = mk.fs.createFileInTemp()
+        destination_segments = self.test_segments[:-1]
+        source_segments = ['bla', self.test_segments[-1]]
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.copyFile(source_segments, destination_segments)
+
+        self.assertEqual(errno.EEXIST, context.exception.errno)
+
+    def test_copyFile_folder_destination_exists_overwrite(self):
+        """
+        Replace file when destination exists in destination folder
+        and it was instructed to overwrite existing files.
+        """
+        content = mk.string()
+        self.test_segments = mk.fs.createFileInTemp()
+        destination_segments = self.test_segments[:-1]
+        source_segments = mk.fs.createFileInTemp(content=content)
+
+        self.filesystem.copyFile(
+            source_segments, destination_segments, overwrite=True)
+
+        destination_content = mk.fs.getFileContent(destination_segments)
+        self.assertEqual(content, destination_content)
+        mk.fs.deleteFile(source_segments)
+
+    def test_copyFile_file_destination_no_exists(self):
         """
         Copy file in destination when destination does not exists, but
         can be created.
@@ -966,10 +983,11 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.filesystem.deleteFile(source_segments)
         self.filesystem.deleteFile(destination_segments)
 
-    def test_copyFile_without_destination(self):
+    def test_copyFile_folder_destination_no_exists(self):
         """
-        Copy file in destination when destination does not exists using
-        source name
+        When destination is a folder the file will be copied using the same
+        filename as the source, if the folder does not already contain
+        a member with the same name.
         """
         content = mk.string()
         source_segments = mk.fs.createFileInTemp(content=content)
