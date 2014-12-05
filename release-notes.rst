@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.26.0 - 02/12/2014
+-------------------
+
+* Add `touch` and `copyFile` method to Filesystem.
+
+
 0.25.2 - 13/11/2014
 -------------------
 

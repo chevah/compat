@@ -91,14 +91,6 @@ class PosixFilesystemBase(object):
                     self._avatar.name)),
                 )
 
-    def _touch(self, segments, times=None):
-        '''Update modified time.'''
-        path = self.getRealPathFromSegments(segments)
-        path_encoded = self.getEncodedPath(path)
-        with self._impersonateUser():
-            with file(path_encoded, 'a'):
-                os.utime(path_encoded, times)
-
     def _pathSplitRecursive(self, path):
         '''Recursive split of a path.'''
         separators = os.path.sep
@@ -497,6 +489,35 @@ class PosixFilesystemBase(object):
             if 'atime' in attributes and 'mtime' in attributes:
                 os.utime(
                     path_encoded, (attributes['atime'], attributes['mtime']))
+
+    def touch(self, segments):
+        """
+        See: ILocalFilesystem.
+        """
+        path = self.getRealPathFromSegments(segments)
+        path_encoded = self.getEncodedPath(path)
+        with self._impersonateUser():
+            with file(path_encoded, 'a'):
+                os.utime(path_encoded, None)
+
+    def copyFile(self, source_segments, destination_segments, overwrite=False):
+        """
+        See: ILocalFilesystem.
+        """
+        if not overwrite:
+            if self.isFolder(destination_segments):
+                destination_segments = destination_segments[:]
+                destination_segments.append(source_segments[-1])
+            if self.exists(destination_segments):
+                raise OSError(errno.EEXIST, 'Destination exists.')
+
+        source_path = self.getRealPathFromSegments(source_segments)
+        source_path_encoded = self.getEncodedPath(source_path)
+        destination_path = self.getRealPathFromSegments(destination_segments)
+        destination_path_encoded = self.getEncodedPath(destination_path)
+
+        with self._impersonateUser():
+            shutil.copy(source_path_encoded, destination_path_encoded)
 
     def setGroup(self, segments, group, permissions=None):
         '''Informational method for not using setGroup.'''

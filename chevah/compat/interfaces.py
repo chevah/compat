@@ -547,6 +547,22 @@ class ILocalFilesystem(Interface):
         Return True if file at `segments` has group in ACL.
         """
 
+    def touch(segments):
+        """
+        Create a new file at `segments` or update its modified date.
+        """
+
+    def copyFile(source_segments, destination_segments, overwrite=False):
+        """
+        Copy file from `source_segments` to `destination_segments`.
+
+        If `destination_segments` is a folder, the file will be copied at
+        `destination_segments/SOURCE_FILENAME`.
+
+        If `destination_segments` already exists and `overwrite` is not `true`,
+        copy will fail.
+        """
+
 
 class IFileAttributes(Interface):
     """
