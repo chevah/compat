@@ -67,7 +67,7 @@ ARCH='x86'
 # For non-LSB distros we use the oldest supported Linux distro. No guarantees
 # made... For details, please see the Linux bits in detect_os() below.
 OS_LINUX_LSB='ubuntu1204'
-OS_LINUX_NONLSB='rhel4'
+OS_LINUX_NONLSB='ubuntu1204'
 
 
 clean_build() {
@@ -359,11 +359,14 @@ detect_os() {
             5.1.*)
                 OS='aix51'
                 ARCH='ppc'
-                ;;
-            *)
-                # By default we go for AIX 5.3 on PPC64
+            ;;
+            5.3.*)
                 OS='aix53'
-                ARCH='ppc64'
+                ARCH='ppc'
+            ;;
+            7.1.*)
+                OS='aix71'
+                ARCH='ppc'
             ;;
         esac
 
@@ -433,12 +436,15 @@ detect_os() {
 
     elif [ "${OS}" = "darwin" ] ; then
         osx_version=`sw_vers -productVersion`
-        if [ "$osx_version" = "10.8" ] ; then
-            OS='osx108'
-        else
-            echo 'Unsuported OS X version:' $osx_version
-            exit 1
-        fi
+        case $osx_version in
+            10.8*)
+                OS='osx108'
+                ;;
+            *)
+                echo 'Unsuported OS X version:' $osx_version
+                exit 1
+                ;;
+        esac
 
         osx_arch=`uname -m`
         if [ "$osx_arch" = "Power Macintosh" ] ; then
