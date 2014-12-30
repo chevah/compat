@@ -67,7 +67,7 @@ ARCH='x86'
 # For non-LSB distros we use the oldest supported Linux distro. No guarantees
 # made... For details, please see the Linux bits in detect_os() below.
 OS_LINUX_LSB='ubuntu1204'
-OS_LINUX_NONLSB='ubuntu1204'
+OS_LINUX_NONLSB='rhel4'
 
 
 clean_build() {
