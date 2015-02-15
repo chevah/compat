@@ -11,6 +11,7 @@ if os.name == 'nt':
     import tempfile
     tempfile.tempdir = "c:\\temp"
 
+# Keep run_packages in sync with setup.py.
 RUN_PACKAGES = [
     'zope.interface==3.8.0',
     ]
