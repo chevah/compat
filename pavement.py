@@ -12,9 +12,7 @@ if os.name == 'nt':
     tempfile.tempdir = "c:\\temp"
 
 RUN_PACKAGES = [
-    'chevah-empirical==0.30.1',
     'zope.interface==3.8.0',
-    'twisted==12.1.0-chevah3',
     ]
 
 if os.name == 'posix':
@@ -33,6 +31,8 @@ BUILD_PACKAGES = [
     # Docutils is required for RST parsing and for Sphinx.
     'docutils>=0.9.1-chevah2',
 
+    'twisted==12.1.0-chevah3',
+
     # Buildbot is used for try scheduler
     'buildbot',
 
@@ -47,6 +47,8 @@ BUILD_PACKAGES = [
 
 
 TEST_PACKAGES = [
+    'chevah-empirical==0.30.1',
+
     'pyflakes==0.7.3',
     'pocketlint==1.4.4.c4',
 
