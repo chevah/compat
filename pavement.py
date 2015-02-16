@@ -35,7 +35,7 @@ BUILD_PACKAGES = [
     'twisted==12.1.0-chevah3',
 
     # Buildbot is used for try scheduler
-    'buildbot',
+    'buildbot==0.8.11.pre.143.gac88f1b.c2',
 
     # For PQM
     'chevah-github-hooks-server==0.1.6',

@@ -57,17 +57,13 @@ CACHE_FOLDER="cache"
 PYTHON_BIN=""
 PYTHON_LIB=""
 LOCAL_PYTHON_BINARY_DIST=""
+CLEAN_PYTHON_BINARY_DIST_CACHE=""
 
 # Put default values and create them as global variables.
 OS='not-detected-yet'
 ARCH='x86'
-
-# When run on Linux distros other then those supported by us (Red Hat, SUSE,
-# Ubuntu), we match the LSB distros to the oldest Ubuntu LTS supported by us.
-# For non-LSB distros we use the oldest supported Linux distro. No guarantees
-# made... For details, please see the Linux bits in detect_os() below.
-OS_LINUX_LSB='ubuntu1204'
-OS_LINUX_NONLSB='rhel4'
+CC='gcc'
+CXX='g++'
 
 
 clean_build() {
@@ -81,11 +77,27 @@ clean_build() {
     echo "Cleaning project temporary files..."
     rm -f DEFAULT_VALUES
     echo "Cleaning pyc files ..."
-    # AIX's find complains if there are no matching files when using +.
-    [ $(uname) == AIX ] && touch ./dummy_file_for_AIX.pyc
-    # Faster than '-exec \;' and supported in most OS'es,
-    # details at http://www.in-ulm.de/~mascheck/various/find/#xargs
-    find ./ -name '*.pyc' -exec rm {} +
+    if [ $OS = "rhel4" ]; then
+        # RHEL 4 don't support + option in -exec
+        # We use -print0 and xargs to no fork for each file.
+        # find will fail if no file is found.
+        touch ./dummy_file_for_RHEL4.pyc
+        find ./ -name '*.pyc' -print0 | xargs -0 rm
+    else
+        # AIX's find complains if there are no matching files when using +.
+        [ $(uname) == AIX ] && touch ./dummy_file_for_AIX.pyc
+        # Faster than '-exec rm {} \;' and supported in most OS'es,
+        # details at http://www.in-ulm.de/~mascheck/various/find/#xargs
+        find ./ -name '*.pyc' -exec rm {} +
+    fi
+    # In some case pip hangs with a build folder in temp and
+    # will not continue until it is manually removed.
+    rm -rf /tmp/pip*
+
+    if [ "$CLEAN_PYTHON_BINARY_DIST_CACHE" = "yes" ]; then
+        echo "Cleaning python binary ..."
+        rm -rf cache/python*
+    fi
 }
 
 
@@ -148,7 +160,8 @@ update_path_variables() {
 
 
 write_default_values() {
-    echo ${BUILD_FOLDER} ${PYTHON_VERSION} ${OS} ${ARCH} > DEFAULT_VALUES
+    echo ${BUILD_FOLDER} ${PYTHON_VERSION} ${OS} ${ARCH} ${CC} ${CXX} \
+        > DEFAULT_VALUES
 }
 
 
@@ -336,44 +349,42 @@ detect_os() {
 
     elif [ "${OS}" = "sunos" ] ; then
 
-        OS="solaris"
+        # By default, we use Sun's Studio compiler. Comment these two for GCC.
+        CC="cc"
+        CXX="CC"
+
         ARCH=`isainfo -n`
-        VERSION=`uname -r`
+        sunos_release=`uname -r`
 
-        if [ "$ARCH" = "i386" ] ; then
-            ARCH='x86'
-        elif [ "$ARCH" = "amd64" ]; then
-            ARCH='x64'
-        elif [ "$ARCH" = "sparcv9" ] ; then
-            ARCH='sparc64'
+        if [ "$sunos_release" \< "5.10" ] ; then
+            echo "Solaris version is too old: ${sunos_release}."
+            exit 13
         fi
 
-        if [ "$VERSION" = "5.10" ] ; then
-            OS="solaris10"
-        fi
+        OS="solaris"$(echo $sunos_release | cut -d '.' -f 2)
 
     elif [ "${OS}" = "aix" ] ; then
 
-        release=`oslevel`
-        case $release in
-            5.1.*)
-                OS='aix51'
-                ARCH='ppc'
-            ;;
-            5.3.*)
-                OS='aix53'
-                ARCH='ppc'
-            ;;
-            7.1.*)
-                OS='aix71'
-                ARCH='ppc'
-            ;;
-        esac
+        # By default, we use IBM's XL C compiler. Comment these two for GCC.
+        # Beware that GCC 4.2 from IBM's RPMs will fail with GMP and Python!
+        CC="xlc_r"
+        CXX="xlC_r"
+
+        ARCH="ppc`getconf HARDWARE_BITMODE`"
+        aix_release=`oslevel`
+
+        if [ "$aix_release" \< "5.3" ] ; then
+            echo "AIX version is too old: ${aix_release}."
+            exit 13
+        fi
+
+        OS="aix"$(echo $aix_release | cut -d '.' -f 1-2 | sed s/\\.//g)
 
     elif [ "${OS}" = "hp-ux" ] ; then
 
-        OS="hpux"
         ARCH=`uname -m`
+
+        OS="hpux"
 
     elif [ "${OS}" = "linux" ] ; then
 
@@ -387,32 +398,28 @@ detect_os() {
                 cat /etc/redhat-release | sed s/.*release\ // | sed s/\ .*//`
             # RHEL4 glibc is not compatible with RHEL 5 and 6.
             rhel_major_version=${rhel_version%%.*}
-            if [ "$rhel_major_version" = "4" ] ; then
-                OS='rhel4'
-            elif [ "$rhel_major_version" = "5" ] ; then
-                OS='rhel5'
-            elif [ "$rhel_major_version" = "6" ] ; then
-                OS='rhel6'
-            elif [ "$rhel_major_version" = "7" ] ; then
-                OS='rhel7'
-            else
-                echo 'Unsupported RHEL version.'
-                exit 1
+            if [ "$rhel_major_version" \< "4" ] ; then
+                echo "RHEL version is too old: ${rhel_version}."
+                exit 13
             fi
+            OS="rhel${rhel_major_version}"
         elif [ -f /etc/SuSE-release ] ; then
             sles_version=`\
                 grep VERSION /etc/SuSE-release | sed s/VERSION\ =\ //`
-            if [ "$sles_version" = "11" ] ; then
-                OS='sles11'
-            else
-                echo 'Unsuported SLES version.'
-                exit 1
+            if [ "$sles_version" \< "11" ] ; then
+                echo "SLES version is too old: ${sles_version}."
+                exit 13
             fi
-        elif [ -f /etc/lsb-release ] ; then
+            OS="sles${sles_version}"
+        elif [ $(command -v lsb_release) ]; then
             lsb_release_id=$(lsb_release -is)
+            lsb_release_nr=$(lsb_release -sr)
             if [ $lsb_release_id = Ubuntu ]; then
-                ubuntu_release=`lsb_release -sr`
-                case $ubuntu_release in
+                if [ "$lsb_release_nr" \< "10.04" ] ; then
+                    echo "Ubuntu version is too old: ${lsb_release_nr}"
+                    exit 13
+                fi
+                case $lsb_release_nr in
                     '10.04' | '10.10' | '11.04' | '11.10')
                         OS='ubuntu1004'
                     ;;
@@ -422,55 +429,37 @@ detect_os() {
                     '14.04' | '14.10' | '15.04' | '15.10')
                         OS='ubuntu1404'
                     ;;
-                    *)
-                        echo 'Unsupported Ubuntu version.'
-                        exit 1
-                    ;;
                 esac
-            else
-                OS=$OS_LINUX_LSB
             fi
-        else
-            OS=$OS_LINUX_NONLSB
         fi
 
     elif [ "${OS}" = "darwin" ] ; then
-        osx_version=`sw_vers -productVersion`
-        case $osx_version in
-            10.8*)
-                OS='osx108'
-                ;;
-            *)
-                echo 'Unsuported OS X version:' $osx_version
-                exit 1
-                ;;
-        esac
+        ARCH=`uname -m`
 
-        osx_arch=`uname -m`
-        if [ "$osx_arch" = "Power Macintosh" ] ; then
-            ARCH='ppc'
-        elif [ "$osx_arch" = "x86_64" ] ; then
-            ARCH='x64'
+        osx_version=`sw_vers -productVersion`
+        if [ "$osx_version" \< "10.4" ] ; then
+            echo "OS X version is too old: ${osx_version}."
+            exit 13
         else
-            echo 'Unsuported OS X architecture:' $osx_arch
-            exit 1
+            OS="osx"$(echo $osx_version | cut -d'.' -f 1-2 | sed s/\\.//g)
         fi
+
     else
-        echo 'Unsuported operating system:' $OS
-        exit 1
+        echo 'Unsupported operating system:' $OS
+        exit 14
     fi
 
     # Fix arch names.
-    if [ "$ARCH" = "i686" ] ; then
+    if [ "$ARCH" = "i686" -o "$ARCH" = "i386" ]; then
         ARCH='x86'
-
-    fi
-    if [ "$ARCH" = "i386" ] ; then
-        ARCH='x86'
-    fi
-
-    if [ "$ARCH" = "x86_64" ] ; then
+    elif [ "$ARCH" = "x86_64" -o "$ARCH" = "amd64" ]; then
         ARCH='x64'
+    elif [ "$ARCH" = "sparcv9" ]; then
+        ARCH='sparc64'
+    elif [ "$ARCH" = "ppc64" ]; then
+        # Python has not been fully tested on AIX when compiled as a 64 bit
+        # application and has math rounding error problems (at least with XL C).
+        ARCH='ppc'
     fi
 }
 
