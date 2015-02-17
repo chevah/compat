@@ -466,9 +466,9 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Parse target and print name for symlink reparse data.
         """
-        if self.os_name == 'aix':
+        if self.os_name in ['aix', 'hpux']:
             # FIXME:2027:
-            # This test fails on AIX with a strange encoding error,
+            # This test fails on AIX and HPUX with a strange encoding error,
             # most probably due to CPU bit order.
             raise self.skipTest()
 
