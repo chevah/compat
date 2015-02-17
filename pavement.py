@@ -11,10 +11,9 @@ if os.name == 'nt':
     import tempfile
     tempfile.tempdir = "c:\\temp"
 
+# Keep run_packages in sync with setup.py.
 RUN_PACKAGES = [
-    'chevah-empirical==0.30.1',
     'zope.interface==3.8.0',
-    'twisted==12.1.0-chevah3',
     ]
 
 if os.name == 'posix':
@@ -33,8 +32,10 @@ BUILD_PACKAGES = [
     # Docutils is required for RST parsing and for Sphinx.
     'docutils>=0.9.1-chevah2',
 
+    'twisted==12.1.0-chevah3',
+
     # Buildbot is used for try scheduler
-    'buildbot',
+    'buildbot==0.8.11.pre.143.gac88f1b.c2',
 
     # For PQM
     'chevah-github-hooks-server==0.1.6',
@@ -47,6 +48,8 @@ BUILD_PACKAGES = [
 
 
 TEST_PACKAGES = [
+    'chevah-empirical==0.30.1',
+
     'pyflakes==0.7.3',
     'pocketlint==1.4.4.c4',
 

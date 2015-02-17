@@ -57,6 +57,7 @@ CACHE_FOLDER="cache"
 PYTHON_BIN=""
 PYTHON_LIB=""
 LOCAL_PYTHON_BINARY_DIST=""
+CLEAN_PYTHON_BINARY_DIST_CACHE=""
 
 # Put default values and create them as global variables.
 OS='not-detected-yet'
@@ -352,13 +353,15 @@ detect_os() {
         CC="cc"
         CXX="CC"
 
-        OS="solaris"
         ARCH=`isainfo -n`
-        VERSION=`uname -r`
+        sunos_release=`uname -r`
 
-        if [ "$VERSION" = "5.10" ] ; then
-            OS="solaris10"
+        if [ "$sunos_release" \< "5.10" ] ; then
+            echo "Solaris version is too old: ${sunos_release}."
+            exit 13
         fi
+
+        OS="solaris"$(echo $sunos_release | cut -d '.' -f 2)
 
     elif [ "${OS}" = "aix" ] ; then
 
@@ -368,20 +371,20 @@ detect_os() {
         CXX="xlC_r"
 
         ARCH="ppc`getconf HARDWARE_BITMODE`"
-        release=`oslevel`
-        case $release in
-            5.3.*)
-                OS='aix53'
-            ;;
-            7.1.*)
-                OS='aix71'
-            ;;
-        esac
+        aix_release=`oslevel`
+
+        if [ "$aix_release" \< "5.3" ] ; then
+            echo "AIX version is too old: ${aix_release}."
+            exit 13
+        fi
+
+        OS="aix"$(echo $aix_release | cut -d '.' -f 1-2 | sed s/\\.//g)
 
     elif [ "${OS}" = "hp-ux" ] ; then
 
-        OS="hpux"
         ARCH=`uname -m`
+
+        OS="hpux"
 
     elif [ "${OS}" = "linux" ] ; then
 
@@ -395,32 +398,28 @@ detect_os() {
                 cat /etc/redhat-release | sed s/.*release\ // | sed s/\ .*//`
             # RHEL4 glibc is not compatible with RHEL 5 and 6.
             rhel_major_version=${rhel_version%%.*}
-            if [ "$rhel_major_version" = "4" ] ; then
-                OS='rhel4'
-            elif [ "$rhel_major_version" = "5" ] ; then
-                OS='rhel5'
-            elif [ "$rhel_major_version" = "6" ] ; then
-                OS='rhel6'
-            elif [ "$rhel_major_version" = "7" ] ; then
-                OS='rhel7'
-            else
-                echo 'Unsupported RHEL version.'
-                exit 1
+            if [ "$rhel_major_version" \< "4" ] ; then
+                echo "RHEL version is too old: ${rhel_version}."
+                exit 13
             fi
+            OS="rhel${rhel_major_version}"
         elif [ -f /etc/SuSE-release ] ; then
             sles_version=`\
                 grep VERSION /etc/SuSE-release | sed s/VERSION\ =\ //`
-            if [ "$sles_version" = "11" ] ; then
-                OS='sles11'
-            else
-                echo 'Unsupported SLES version.'
-                exit 1
+            if [ "$sles_version" \< "11" ] ; then
+                echo "SLES version is too old: ${sles_version}."
+                exit 13
             fi
-        elif [ -f /etc/lsb-release ] ; then
+            OS="sles${sles_version}"
+        elif [ $(command -v lsb_release) ]; then
             lsb_release_id=$(lsb_release -is)
+            lsb_release_nr=$(lsb_release -sr)
             if [ $lsb_release_id = Ubuntu ]; then
-                ubuntu_release=`lsb_release -sr`
-                case $ubuntu_release in
+                if [ "$lsb_release_nr" \< "10.04" ] ; then
+                    echo "Ubuntu version is too old: ${lsb_release_nr}"
+                    exit 13
+                fi
+                case $lsb_release_nr in
                     '10.04' | '10.10' | '11.04' | '11.10')
                         OS='ubuntu1004'
                     ;;
@@ -430,32 +429,24 @@ detect_os() {
                     '14.04' | '14.10' | '15.04' | '15.10')
                         OS='ubuntu1404'
                     ;;
-                    *)
-                        echo 'Unsupported Ubuntu version.'
-                        exit 1
-                    ;;
                 esac
             fi
-        else
-            OS='linux'
         fi
 
     elif [ "${OS}" = "darwin" ] ; then
-        osx_version=`sw_vers -productVersion`
-        case $osx_version in
-            10.8*)
-                OS='osx108'
-                ;;
-            *)
-                echo 'Unsupported OS X version:' $osx_version
-                exit 1
-                ;;
-        esac
-
         ARCH=`uname -m`
+
+        osx_version=`sw_vers -productVersion`
+        if [ "$osx_version" \< "10.4" ] ; then
+            echo "OS X version is too old: ${osx_version}."
+            exit 13
+        else
+            OS="osx"$(echo $osx_version | cut -d'.' -f 1-2 | sed s/\\.//g)
+        fi
+
     else
         echo 'Unsupported operating system:' $OS
-        exit 1
+        exit 14
     fi
 
     # Fix arch names.

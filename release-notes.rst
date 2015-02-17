@@ -2,6 +2,18 @@ Release notes for chevah.compat
 ===============================
 
 
+0.27.1 - 15/02/2015
+-------------------
+
+* Record dependencies in setup.py.
+
+
+0.27.0 - 15/02/2015
+-------------------
+
+* Remove twisted as a dependency.
+
+
 0.26.0 - 02/12/2014
 -------------------
 

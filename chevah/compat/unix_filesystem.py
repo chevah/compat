@@ -3,16 +3,13 @@
 """
 Module for hosting the Unix specific filesystem access.
 """
-
 import errno
 import grp
 import os
 import pwd
 import stat
 
-
 from zope.interface import implements
-from twisted.python.filepath import FilePath
 
 from chevah.compat.exceptions import CompatError
 from chevah.compat.interfaces import ILocalFilesystem
@@ -39,25 +36,24 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def _getRootPath(self):
         if not self._avatar:
-            return FilePath('/')
+            return u'/'
 
         if self._avatar.lock_in_home_folder:
-            return FilePath(self._avatar.home_folder_path)
+            return self._avatar.home_folder_path
 
         if self._avatar.root_folder_path is None:
-            return FilePath('/')
+            return u'/'
         else:
-            return FilePath(self._avatar.root_folder_path)
+            return self._avatar.root_folder_path
 
     def getRealPathFromSegments(self, segments):
         '''See `ILocalFilesystem`.'''
         if segments is None or len(segments) == 0:
-            return unicode(self._root_handler.path)
+            return unicode(self._root_handler)
         else:
             relative_path = u'/' + u'/'.join(segments)
             relative_path = os.path.abspath(relative_path).rstrip('/')
-            return unicode(
-                self._root_handler.path.rstrip('/') + relative_path)
+            return unicode(self._root_handler.rstrip('/') + relative_path)
 
     def getSegmentsFromRealPath(self, path):
         """
@@ -71,8 +67,8 @@ class UnixFilesystem(PosixFilesystemBase):
         tail = os.path.abspath(path)
 
         if self._avatar.lock_in_home_folder:
-            self._checkChildPath(self._root_handler.path, tail)
-            tail = tail[len(self._root_handler.path):]
+            self._checkChildPath(self._root_handler, tail)
+            tail = tail[len(self._root_handler):]
 
         while tail and head != u'/':
             head, tail = os.path.split(tail)
