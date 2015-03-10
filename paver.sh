@@ -337,112 +337,151 @@ check_source_folder() {
 
 
 #
+# Check version of current OS to see if it is supported.
+# If it's too old, exit with a nice informative message.
+# If it's supported, return through eval the version numbers to be used for
+# naming the package, for example '5' for RHEL 5.x, '1204' for Ubuntu 12.04',
+# '53' for AIX 5.3.x.x , '10' for Solaris 10 or '1010' for OS X 10.10.1.
+#
+check_os_version() {
+    # First parameter should be the human-readable name for the current OS.
+    # For example: "Red Hat Enterprise Linux" for RHEL, "OS X" for Darwin etc.
+    # Second and third parameters must be strings composed of integers
+    # delimited with dots, representing, in order, the oldest version
+    # supported for the current OS and the current detected version.
+    # The fourth parameter is used to return through eval the relevant numbers
+    # for naming the Python package for the current OS, as detailed above.
+    local name_fancy="$1"
+    local version_good="$2"
+    local version_raw="$3"
+    local version_chevah="$4"
+    local version_constructed=''
+    local flag_supported='good_enough'
+    local version_raw_array
+    local version_good_array
+
+    # Using '.' as a delimiter, populate the version_raw_* arrays.
+    IFS=. read -a version_raw_array <<< "$version_raw"
+    IFS=. read -a version_good_array <<< "$version_good"
+
+    # Iterate through all the integers from the good version to compare them
+    # one by one with the corresponding integers from the supported version.
+    for (( i=0 ; i < ${#version_good_array[@]}; i++ )); do
+        version_constructed="${version_constructed}${version_raw_array[$i]}"
+        if [ ${version_raw_array[$i]} -gt ${version_good_array[$i]} -a \
+            "$flag_supported" = 'good_enough' ]; then
+            flag_supported='true'
+        elif [  ${version_raw_array[$i]} -lt ${version_good_array[$i]} -a \
+            "$flag_supported" = 'good_enough' ]; then
+            flag_supported='false'
+        fi
+    done
+
+    if [ "$flag_supported" = 'false' ]; then
+        echo "The current version of ${name_fancy} is too old: ${version_raw}"
+        echo "Oldest supported version of ${name_fancy} is: ${version_good}"
+        exit 13
+    fi
+
+    # The sane way to return fancy values with a bash function is to use eval.
+    eval $version_chevah="'$version_constructed'"
+}
+
+
+#
 # Update OS and ARCH variables with the current values.
 #
 detect_os() {
-    OS=`uname -s | tr "[A-Z]" "[a-z]"`
 
-    if [ "${OS%mingw*}" = "" ] ; then
+    OS=$(uname -s | tr "[A-Z]" "[a-z]")
+
+    if [ "${OS%mingw*}" = "" ]; then
 
         OS='windows'
         ARCH='x86'
 
-    elif [ "${OS}" = "sunos" ] ; then
+    elif [ "${OS}" = "sunos" ]; then
 
         # By default, we use Sun's Studio compiler. Comment these two for GCC.
         CC="cc"
         CXX="CC"
 
-        ARCH=`isainfo -n`
-        sunos_release=`uname -r`
+        ARCH=$(isainfo -n)
+        os_version_raw=$(uname -r | cut -d'.' -f2)
+        check_os_version Solaris 10 "$os_version_raw" os_version_chevah
 
-        if [ "$sunos_release" \< "5.10" ] ; then
-            echo "Solaris version is too old: ${sunos_release}."
-            exit 13
-        fi
+        OS="solaris${os_version_chevah}"
 
-        OS="solaris"$(echo $sunos_release | cut -d '.' -f 2)
-
-    elif [ "${OS}" = "aix" ] ; then
+    elif [ "${OS}" = "aix" ]; then
 
         # By default, we use IBM's XL C compiler. Comment these two for GCC.
         # Beware that GCC 4.2 from IBM's RPMs will fail with GMP and Python!
         CC="xlc_r"
         CXX="xlC_r"
 
-        ARCH="ppc`getconf HARDWARE_BITMODE`"
-        aix_release=`oslevel`
+        ARCH="ppc$(getconf HARDWARE_BITMODE)"
+        os_version_raw=$(oslevel)
+        check_os_version AIX 5.3 "$os_version_raw" os_version_chevah
 
-        if [ "$aix_release" \< "5.3" ] ; then
-            echo "AIX version is too old: ${aix_release}."
-            exit 13
-        fi
+        OS="aix${os_version_chevah}"
 
-        OS="aix"$(echo $aix_release | cut -d '.' -f 1-2 | sed s/\\.//g)
+    elif [ "${OS}" = "hp-ux" ]; then
 
-    elif [ "${OS}" = "hp-ux" ] ; then
+        # libffi and GMP do not compile with the HP compiler, so we use GCC.
 
-        ARCH=`uname -m`
+        ARCH=$(uname -m)
+        os_version_raw=$(uname -r | cut -d'.' -f2-)
+        check_os_version HP-UX 11.31 "$os_version_raw" os_version_chevah
 
-        OS="hpux"
+        OS="hpux${os_version_chevah}"
 
-    elif [ "${OS}" = "linux" ] ; then
+    elif [ "${OS}" = "linux" ]; then
 
-        ARCH=`uname -m`
+        ARCH=$(uname -m)
 
-        if [ -f /etc/redhat-release ] ; then
-            # Careful with the indentation here.
-            # Make sure rhel_version does not has spaces before and after the
-            # number.
-            rhel_version=`\
-                cat /etc/redhat-release | sed s/.*release\ // | sed s/\ .*//`
-            # RHEL4 glibc is not compatible with RHEL 5 and 6.
-            rhel_major_version=${rhel_version%%.*}
-            if [ "$rhel_major_version" \< "4" ] ; then
-                echo "RHEL version is too old: ${rhel_version}."
-                exit 13
+        if [ -f /etc/redhat-release ]; then
+            # Avoid getting confused by Red Hat derivatives such as Fedora.
+            egrep 'Red\ Hat|CentOS|Scientific' /etc/redhat-release > /dev/null
+            if [ $? -eq 0 ]; then
+                os_version_raw=$(\
+                    cat /etc/redhat-release | sed s/.*release// | cut -d' ' -f2)
+                check_os_version "Red Hat Enterprise Linux" 4 \
+                    "$os_version_raw" os_version_chevah
+                OS="rhel${os_version_chevah}"
             fi
-            OS="rhel${rhel_major_version}"
-        elif [ -f /etc/SuSE-release ] ; then
-            sles_version=`\
-                grep VERSION /etc/SuSE-release | sed s/VERSION\ =\ //`
-            if [ "$sles_version" \< "11" ] ; then
-                echo "SLES version is too old: ${sles_version}."
-                exit 13
+        elif [ -f /etc/SuSE-release ]; then
+            # Avoid getting confused by SUSE derivatives such as OpenSUSE.
+            if [ $(head -n1 /etc/SuSE-release | cut -d' ' -f1) = 'SUSE' ]; then
+                os_version_raw=$(\
+                    grep VERSION /etc/SuSE-release | cut -d' ' -f3)
+                check_os_version "SUSE Linux Enterprise Server" 11 \
+                    "$os_version_raw" os_version_chevah
+                OS="sles${os_version_chevah}"
             fi
-            OS="sles${sles_version}"
         elif [ $(command -v lsb_release) ]; then
             lsb_release_id=$(lsb_release -is)
-            lsb_release_nr=$(lsb_release -sr)
+            os_version_raw=$(lsb_release -rs)
             if [ $lsb_release_id = Ubuntu ]; then
-                if [ "$lsb_release_nr" \< "10.04" ] ; then
-                    echo "Ubuntu version is too old: ${lsb_release_nr}"
-                    exit 13
+                check_os_version "Ubuntu Long-term Support" 10.04 \
+                    "$os_version_raw" os_version_chevah
+                # Only Long-term Support versions are oficially endorsed, thus
+                # $os_version_chevah should end in 04 and the first two digits
+                # should represent an even year.
+                if [ ${os_version_chevah%%04} != ${os_version_chevah} -a \
+                    $(( ${os_version_chevah%%04} % 2 )) -eq 0 ]; then
+                    OS="ubuntu${os_version_chevah}"
                 fi
-                case $lsb_release_nr in
-                    '10.04' | '10.10' | '11.04' | '11.10')
-                        OS='ubuntu1004'
-                    ;;
-                    '12.04' | '12.10' | '13.04' | '13.10')
-                        OS='ubuntu1204'
-                    ;;
-                    '14.04' | '14.10' | '15.04' | '15.10')
-                        OS='ubuntu1404'
-                    ;;
-                esac
             fi
         fi
 
-    elif [ "${OS}" = "darwin" ] ; then
-        ARCH=`uname -m`
+    elif [ "${OS}" = "darwin" ]; then
+        ARCH=$(uname -m)
 
-        osx_version=`sw_vers -productVersion`
-        if [ "$osx_version" \< "10.4" ] ; then
-            echo "OS X version is too old: ${osx_version}."
-            exit 13
-        else
-            OS="osx"$(echo $osx_version | cut -d'.' -f 1-2 | sed s/\\.//g)
-        fi
+        os_version_raw=$(sw_vers -productVersion)
+        check_os_version "Mac OS X" 10.4 "$os_version_raw" os_version_chevah
+
+        # For now, no matter the actual OS X version returned, we use '108'.
+        OS="osx108"
 
     else
         echo 'Unsupported operating system:' $OS
@@ -460,6 +499,8 @@ detect_os() {
         # Python has not been fully tested on AIX when compiled as a 64 bit
         # application and has math rounding error problems (at least with XL C).
         ARCH='ppc'
+    elif [ "$ARCH" = "aarch64" ]; then
+        ARCH='arm64'
     fi
 }
 
