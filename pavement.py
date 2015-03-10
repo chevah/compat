@@ -48,7 +48,7 @@ BUILD_PACKAGES = [
 
 
 TEST_PACKAGES = [
-    'chevah-empirical==0.32.2',
+    'chevah-empirical==0.34.2',
 
     'pyflakes==0.7.3',
     'pocketlint==1.4.4.c4',
@@ -60,9 +60,6 @@ TEST_PACKAGES = [
 
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
-
-    # Test SFTP service using a 3rd party client.
-    'paramiko',
 
     # Required for some unicode handling.
     'unidecode',
