@@ -207,7 +207,7 @@ class TestUser(object):
         os_name = process_capabilities.os_name
         if os_name in ['aix', 'hpux']:
             return _sanitize_name_legacy_unix(name)
-        elif os_name == 'nt':
+        elif os_name == 'windows':
             return _sanitize_name_windows(name)
 
         return name
