@@ -123,7 +123,9 @@ class TestSystemUsers(CompatTestCase):
         """
         # AIX and OSX only uses PAM.
         # Windows don't support shadow.
-        if self.os_name in ['aix', 'osx', 'windows']:
+        # FIXME:2717:
+        # HP-UX shadow support is not enabled in our python build.
+        if self.os_name in ['aix', 'osx', 'windows', 'hpux']:
             raise self.skipTest()
 
         from chevah.compat.unix_users import HAS_SHADOW_SUPPORT

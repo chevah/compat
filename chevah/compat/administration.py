@@ -145,6 +145,9 @@ class OSAdministrationUnix(object):
     def _addGroup_solaris(self, group):
         self._addGroup_unix(group)
 
+    def _addGroup_hpux(self, group):
+        self._addGroup_unix(group)
+
     def addUsersToGroup(self, group, users=None):
         """
         Add the users to the specified group.
@@ -188,6 +191,9 @@ class OSAdministrationUnix(object):
                 ])
 
     def _addUsersToGroup_solaris(self, group, users):
+        self._addUsersToGroup_unix(group, users)
+
+    def _addUsersToGroup_hpux(self, group, users):
         self._addUsersToGroup_unix(group, users)
 
     def addUser(self, user):
@@ -326,6 +332,9 @@ class OSAdministrationUnix(object):
     def _addUser_solaris(self, user):
         self._addUser_unix(user)
 
+    def _addUser_hpux(self, user):
+        self._addUser_unix(user)
+
     def setUserPassword(self, user):
         """
         Set a password for the user. The password is an attribute of the
@@ -395,6 +404,9 @@ class OSAdministrationUnix(object):
         """
         self._setUserPassword_unix(user)
 
+    def _setUserPassword_hpux(self, user):
+        self._setUserPassword_unix(user)
+
     def deleteUser(self, user):
         """
         Delete user from the local operating system.
@@ -416,6 +428,9 @@ class OSAdministrationUnix(object):
         self._deleteHomeFolder_unix(user)
 
     def _deleteHomeFolder_solaris(self, user):
+        self._deleteHomeFolder_unix(user)
+
+    def _deleteHomeFolder_hpux(self, user):
         self._deleteHomeFolder_unix(user)
 
     def _deleteHomeFolder_aix(self, user):
@@ -456,6 +471,9 @@ class OSAdministrationUnix(object):
     def _deleteUser_solaris(self, user):
         self._deleteUser_unix(user)
 
+    def _deleteUser_hpux(self, user):
+        self._deleteUser_unix(user)
+
     def deleteGroup(self, group):
         """
         Delete group from the local operating system.
@@ -480,6 +498,9 @@ class OSAdministrationUnix(object):
         execute(['sudo', 'dscl', '.', '-delete', groupdb_name])
 
     def _deleteGroup_solaris(self, group):
+        self._deleteGroup_unix(group)
+
+    def _deleteGroup_unix(self, group):
         self._deleteGroup_unix(group)
 
     def _appendUnixEntry(self, segments, new_line):
