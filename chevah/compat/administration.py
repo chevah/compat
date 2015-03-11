@@ -500,7 +500,7 @@ class OSAdministrationUnix(object):
     def _deleteGroup_solaris(self, group):
         self._deleteGroup_unix(group)
 
-    def _deleteGroup_unix(self, group):
+    def _deleteGroup_hpux(self, group):
         self._deleteGroup_unix(group)
 
     def _appendUnixEntry(self, segments, new_line):
