@@ -176,11 +176,11 @@ TEST_ACCOUNT_GROUP_DOMAIN = u'domain test_group'
 # FIXME:2106:
 # Get rid of global functions and replace with OS specialized TestUSer
 # instances: TestUserAIX, TestUserWindows, TestUserUnix, etc.
-def _sanitize_name_aix(candidate):
+def _sanitize_name_legacy_unix(candidate):
     """
-    Return valid user/group name for AIX from `candidate`.
+    Return valid user/group name for old Unix (AIX/HPUX) from `candidate`.
 
-    By default aix is limited to 8 characters without spaces.
+    By default password is limited to 8 characters without spaces.
     """
     return unicode(unidecode(candidate)).replace(' ', '_')[:8]
 
@@ -204,9 +204,10 @@ class TestUser(object):
         """
         Return name sanitized for current OS.
         """
-        if sys.platform.startswith('aix'):
-            return _sanitize_name_aix(name)
-        elif sys.platform.startswith('win'):
+        os_name = process_capabilities.os_name
+        if os_name in ['aix', 'hpux']:
+            return _sanitize_name_legacy_unix(name)
+        elif os_name == 'nt':
             return _sanitize_name_windows(name)
 
         return name
@@ -312,7 +313,7 @@ class TestGroup(object):
         Return name sanitized for current OS.
         """
         if sys.platform.startswith('aix'):
-            return _sanitize_name_aix(group)
+            return _sanitize_name_legacy_unix(group)
         elif sys.platform.startswith('win'):
             return _sanitize_name_windows(group)
 
