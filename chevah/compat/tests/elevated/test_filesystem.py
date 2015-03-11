@@ -254,34 +254,52 @@ class TestUnixFilesystem(FileSystemTestCase):
 
     def test_addGroup_denied_group_file(self):
         """
-        On Unix we can not set the group for a file that we own.
-
-        Stupid Unix!
+        On Unix we can not set the group for a file that we own to a group
+        to which we are not members, with the exception of HPUX.
         """
         file_name = mk.makeFilename()
         file_segments = self.filesystem.home_segments
         file_segments.append(file_name)
         file_object = self.filesystem.openFileForWriting(file_segments)
         file_object.close()
-        with self.assertRaises(CompatError) as context:
-            self.filesystem.addGroup(
-                file_segments, TEST_ACCOUNT_GROUP_OTHER)
-        self.assertEqual(1017, context.exception.event_id)
+
+        def act():
+            self.filesystem.addGroup(file_segments, TEST_ACCOUNT_GROUP_OTHER)
+
+        if self.os_name == 'hpux':
+            act()
+            self.assertTrue(self.filesystem.hasGroup(
+                file_segments, TEST_ACCOUNT_GROUP_OTHER))
+        else:
+            with self.assertRaises(CompatError) as context:
+                act()
+            self.assertEqual(1017, context.exception.event_id)
+            self.assertFalse(self.filesystem.hasGroup(
+                file_segments, TEST_ACCOUNT_GROUP_OTHER))
 
     def test_addGroup_denied_group_folder(self):
         """
-        On Unix we can not set the group for a folder that we own.
-
-        Stupid Unix!
+        On Unix we can not set the group for a folder that we own to a group
+        to which we are not members, with the exception of HPUX.
         """
         folder_name = mk.makeFilename()
         folder_segments = self.filesystem.home_segments
         folder_segments.append(folder_name)
         self.filesystem.createFolder(folder_segments)
-        with self.assertRaises(CompatError) as context:
-            self.filesystem.addGroup(
-                folder_segments, TEST_ACCOUNT_GROUP_OTHER)
-        self.assertEqual(1017, context.exception.event_id)
+
+        def act():
+            self.filesystem.addGroup(folder_segments, TEST_ACCOUNT_GROUP_OTHER)
+
+        if self.os_name == 'hpux':
+            act()
+            self.assertTrue(self.filesystem.hasGroup(
+                folder_segments, TEST_ACCOUNT_GROUP_OTHER))
+        else:
+            with self.assertRaises(CompatError) as context:
+                act()
+            self.assertEqual(1017, context.exception.event_id)
+            self.assertFalse(self.filesystem.hasGroup(
+                folder_segments, TEST_ACCOUNT_GROUP_OTHER))
 
     def test_removeGroup(self):
         """

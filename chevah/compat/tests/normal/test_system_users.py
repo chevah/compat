@@ -115,7 +115,12 @@ class TestSystemUsers(CompatTestCase):
 
         pam_authenticate = system_users._getPAMAuthenticate()
 
-        self.assertEqual(expected_authenticate, pam_authenticate)
+        # FIXME:2745:
+        # HP-UX PAM/Ctypes is not yet ready.
+        if self.os_name in ['hpux']:
+            self.assertFalse(pam_authenticate)
+        else:
+            self.assertEqual(expected_authenticate, pam_authenticate)
 
     def test_shadow_support_unix(self):
         """

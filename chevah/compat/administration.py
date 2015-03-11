@@ -380,7 +380,7 @@ class OSAdministrationUnix(object):
             segments=segments,
             name=user.name,
             field=2,
-            value_to_replace=segments,
+            value_to_replace=shadow_password,
             )
 
     def _setUserPassword_passwd(self, user, segments):

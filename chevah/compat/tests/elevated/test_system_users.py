@@ -267,7 +267,7 @@ class TestSystemUsers(SystemUsersTestCase):
         self.assertFalse(result)
         self.assertIsNone(token)
 
-    def test_authenticateWithUsernameAndPasswordPAM(self):
+    def test_authenticateWithUsernameAndPassword_PAM_ldap(self):
         """
         Test username and password authentication using PAM.
 
