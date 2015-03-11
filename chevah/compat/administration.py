@@ -64,6 +64,11 @@ def execute(
 
 class OSAdministrationUnix(object):
 
+    shadow_segments = ['etc', 'shadow']
+    passwd_segments = ['etc', 'passwd']
+    group_segments = ['etc', 'group']
+    gshadow_segments = ['etc', 'gshadow']
+
     def __init__(self):
         self.name = process_capabilities.os_name
         self.fs = LocalFilesystem(SuperAvatar())
@@ -76,15 +81,13 @@ class OSAdministrationUnix(object):
         add_group_method(group=group)
 
     def _addGroup_unix(self, group):
-        group_segments = ['etc', 'group']
         group_line = u'%s:x:%d:' % (group.name, group.gid)
-        gshadow_segments = ['etc', 'gshadow']
         gshadow_line = u'%s:!::' % (group.name)
 
-        self._appendUnixEntry(group_segments, group_line)
+        self._appendUnixEntry(self.group_segments, group_line)
 
-        if self.fs.exists(gshadow_segments):
-            self._appendUnixEntry(gshadow_segments, gshadow_line)
+        if self.fs.exists(self.gshadow_segments):
+            self._appendUnixEntry(self.gshadow_segments, gshadow_line)
 
         # Wait for group to be available.
         self._getUnixGroup(group.name)
@@ -145,6 +148,9 @@ class OSAdministrationUnix(object):
     def _addGroup_solaris(self, group):
         self._addGroup_unix(group)
 
+    def _addGroup_hpux(self, group):
+        self._addGroup_unix(group)
+
     def addUsersToGroup(self, group, users=None):
         """
         Add the users to the specified group.
@@ -190,6 +196,9 @@ class OSAdministrationUnix(object):
     def _addUsersToGroup_solaris(self, group, users):
         self._addUsersToGroup_unix(group, users)
 
+    def _addUsersToGroup_hpux(self, group, users):
+        self._addUsersToGroup_unix(group, users)
+
     def addUser(self, user):
         """
         Add the user and set the corresponding passwords to local computer
@@ -207,18 +216,17 @@ class OSAdministrationUnix(object):
         group = TestGroup(name=user.name, posix_gid=user.uid)
         self._addGroup_unix(group)
 
-        passwd_segments = ['etc', 'passwd']
         values = (
             user.name, user.uid, user.gid, user.posix_home_path, user.shell)
         passwd_line = u'%s:x:%d:%d::%s:%s' % values
 
-        shadow_segments = ['etc', 'shadow']
         shadow_line = u'%s:!:15218:0:99999:7:::' % (user.name)
 
-        self._appendUnixEntry(passwd_segments, passwd_line)
+        self._appendUnixEntry(self.passwd_segments, passwd_line)
 
-        if self.fs.exists(shadow_segments):
-            self._appendUnixEntry(shadow_segments, shadow_line)
+        if self.fs.exists(self.shadow_segments):
+            # Only write shadow if exists.
+            self._appendUnixEntry(self.shadow_segments, shadow_line)
 
         # Wait for user to be available before creating home folder.
         self._getUnixUser(user.name)
@@ -326,6 +334,9 @@ class OSAdministrationUnix(object):
     def _addUser_solaris(self, user):
         self._addUser_unix(user)
 
+    def _addUser_hpux(self, user):
+        self._addUser_unix(user)
+
     def setUserPassword(self, user):
         """
         Set a password for the user. The password is an attribute of the
@@ -336,8 +347,22 @@ class OSAdministrationUnix(object):
 
     def _setUserPassword_unix(self, user):
         """
-        Set a password for the user on Unix. The password is an attribute
-        of the 'user'. This function is common for Unix compliant OSes.
+        Set a password for the `user` on Unix.
+
+
+        The password is an attribute of the 'user'.
+
+        This function is common for Unix compliant OSes.
+        It is implemented by writing directly to shadow or passwd file.
+        """
+        if self.fs.exists(self.shadow_segments):
+            return self._setUserPassword_shadow(user, self.shadow_segments)
+        else:
+            return self._setUserPassword_passwd(user, self.passwd_segments)
+
+    def _setUserPassword_shadow(self, user, segments):
+        """
+        Set a password in shadow file.
         """
         import crypt
         ALPHABET = (
@@ -351,12 +376,31 @@ class OSAdministrationUnix(object):
             '$1$' + salt + '$',
             )
 
-        segments = ['etc', 'shadow']
         self._changeUnixEntry(
             segments=segments,
             name=user.name,
             field=2,
             value_to_replace=shadow_password,
+            )
+
+    def _setUserPassword_passwd(self, user, segments):
+        """
+        Set a password in passwd file.
+        """
+        import crypt
+        ALPHABET = (
+            '0123456789'
+            'abcdefghijklmnopqrstuvwxyz'
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            )
+        salt = ''.join(random.choice(ALPHABET) for i in range(2))
+        passwd_password = crypt.crypt(
+            user.password.encode('utf-8'), salt)
+        self._changeUnixEntry(
+            segments=segments,
+            name=user.name,
+            field=2,
+            value_to_replace=passwd_password,
             )
 
     def _setUserPassword_aix(self, user):
@@ -395,6 +439,9 @@ class OSAdministrationUnix(object):
         """
         self._setUserPassword_unix(user)
 
+    def _setUserPassword_hpux(self, user):
+        self._setUserPassword_unix(user)
+
     def deleteUser(self, user):
         """
         Delete user from the local operating system.
@@ -416,6 +463,9 @@ class OSAdministrationUnix(object):
         self._deleteHomeFolder_unix(user)
 
     def _deleteHomeFolder_solaris(self, user):
+        self._deleteHomeFolder_unix(user)
+
+    def _deleteHomeFolder_hpux(self, user):
         self._deleteHomeFolder_unix(user)
 
     def _deleteHomeFolder_aix(self, user):
@@ -456,6 +506,9 @@ class OSAdministrationUnix(object):
     def _deleteUser_solaris(self, user):
         self._deleteUser_unix(user)
 
+    def _deleteUser_hpux(self, user):
+        self._deleteUser_unix(user)
+
     def deleteGroup(self, group):
         """
         Delete group from the local operating system.
@@ -480,6 +533,9 @@ class OSAdministrationUnix(object):
         execute(['sudo', 'dscl', '.', '-delete', groupdb_name])
 
     def _deleteGroup_solaris(self, group):
+        self._deleteGroup_unix(group)
+
+    def _deleteGroup_hpux(self, group):
         self._deleteGroup_unix(group)
 
     def _appendUnixEntry(self, segments, new_line):

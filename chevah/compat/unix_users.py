@@ -315,11 +315,22 @@ class UnixUsers(CompatUsers):
         Lazy loading of pam library to mitigate module loading side effects
         on AIX.
         """
+        # We check for explicit None as this means that import was not tried.
         if self._pam_authenticate is None:
+            # Runtime PAM support was not checked yet.
+
+            from chevah.compat import process_capabilities
+            if process_capabilities.os_name == 'hpux':
+                # FIXME:2745:
+                # Ctypes and pam are broken on HPUX.
+                self._pam_authenticate = False
+                return self._pam_authenticate
+
             try:
                 from pam import authenticate as pam_authenticate
                 self._pam_authenticate = pam_authenticate
             except ImportError:
+                # We set this to false to not check it again.
                 self._pam_authenticate = False
 
         return self._pam_authenticate
