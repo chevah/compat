@@ -2,6 +2,19 @@ Release notes for chevah.compat
 ===============================
 
 
+0.28.1 - 11/03/2015
+-------------------
+
+* Add support for HP-UX in OS administration.
+* Disable PAM support for HP-UX.
+
+
+0.28.0 - 17/02/2015
+-------------------
+
+* Update support for HP-UX.
+
+
 0.27.1 - 15/02/2015
 -------------------
 

@@ -23,16 +23,16 @@ if os.name == 'posix':
         ])
 
 if sys.platform.startswith('aix'):
-    RUN_PACKAGES.append('arpy==1.1.1-c1')
+    RUN_PACKAGES.append('arpy==1.1.1.c2')
 
 
 BUILD_PACKAGES = [
-    'sphinx==1.1.3-chevah1',
-    'repoze.sphinx.autointerface==0.7.1-chevah2',
+    'sphinx==1.2.2',
+    'repoze.sphinx.autointerface==0.7.1.c4',
     # Docutils is required for RST parsing and for Sphinx.
-    'docutils>=0.9.1-chevah2',
+    'docutils==0.12.c1',
 
-    'twisted==12.1.0-chevah3',
+    'twisted==12.1.0.chevah4',
 
     # Buildbot is used for try scheduler
     'buildbot==0.8.11.pre.143.gac88f1b.c2',
@@ -48,21 +48,18 @@ BUILD_PACKAGES = [
 
 
 TEST_PACKAGES = [
-    'chevah-empirical==0.30.1',
+    'chevah-empirical==0.34.4',
 
     'pyflakes==0.7.3',
     'pocketlint==1.4.4.c4',
 
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
-    'nose==1.1.2-chevah1',
+    'nose==1.3.0.c6',
     'mock',
 
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
-
-    # Test SFTP service using a 3rd party client.
-    'paramiko',
 
     # Required for some unicode handling.
     'unidecode',
