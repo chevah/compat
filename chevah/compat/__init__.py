@@ -53,6 +53,7 @@ else:
     raise AssertionError('Operating system "%s" not supported.' % (os.name))
 
 from chevah.compat.posix_filesystem import FileAttributes
-
+# Silence the linter
+FileAttributes
 
 local_filesystem = LocalFilesystem(avatar=DefaultAvatar())

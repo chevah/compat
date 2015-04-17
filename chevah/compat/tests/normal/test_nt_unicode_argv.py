@@ -7,19 +7,10 @@ import os
 import subprocess
 import sys
 
-from chevah.compat.testing import CompatTestCase, conditionals, mk
-
-if os.name == 'nt':
-    import win32service
-    from chevah.compat.nt_service import ChevahNTService
-    # Silence the linter.
-    ChevahNTService
-else:
-    # This is here to allow defining test classes.
-    ChevahNTService = object
+from chevah.compat.testing import CompatTestCase, conditionals
 
 
-#@conditionals.onOSFamily('nt')
+@conditionals.onOSFamily('nt')
 class TestUnicodeArguments(CompatTestCase):
     """
     Unit tests for get_unicode_argv.
@@ -53,7 +44,7 @@ class TestUnicodeArguments(CompatTestCase):
         """
         out, err = self.runWithArguments([])
         self.assertEqual('', err)
-        self.assertEqual('[]', out)
+        self.assertEqual('[][]', out)
 
     def test_unicode_arguments_with_spaces(self):
         """
@@ -62,19 +53,29 @@ class TestUnicodeArguments(CompatTestCase):
         name = u'mon\u20acy'
 
         out, err = self.runWithArguments([
-            name.encode('utf-8'),
+            name.encode(sys.getfilesystemencoding()),
             '--with=simple',
             '--with=some spaces',
             '--with="double qoutes"',
             "--with='simple quotes'"
             ])
         self.assertEqual('', err)
-        self.assertEqual(
+
+        before = (
             '['
-            '\'mon\\xe2\\x82\\xacy\', '
+            '\'mon\\x80y\', '
             '\'--with=simple\', '
             '\'--with=some spaces\', '
             '\'--with="double qoutes"\', '
             '"--with=\'simple quotes\'"'
-            ']',
-            out)
+            ']')
+        after = (
+            '['
+            'u\'mon\\u20acy\', '
+            'u\'--with=simple\', '
+            'u\'--with=some spaces\', '
+            'u\'--with="double qoutes"\', '
+            'u"--with=\'simple quotes\'"'
+            ']'
+            )
+        self.assertEqual(before + after, out)

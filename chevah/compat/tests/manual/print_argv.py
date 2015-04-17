@@ -16,6 +16,8 @@ print 'Before import (for module import is already called)'
 print sys.argv
 
 from chevah import compat
+# Silence the linter
+compat
 print 'After import'
 print sys.argv
 
