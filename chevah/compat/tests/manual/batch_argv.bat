@@ -4,8 +4,6 @@
 :: updated.
 
 @ECHO OFF
-CHCP 65001 > nul
-SET PYTHONIOENCODING=utf-8
 
 SET python_exe=lib\python.exe
 if not exist %python_exe% (
@@ -14,8 +12,12 @@ if not exist %python_exe% (
     GOTO:EOF
 )
 
-ECHO "Call as file"
-IF "%1"=="" (%python_exe% ..\chevah\compat\tests\manual\print_argv.py) ELSE %python_exe% ..\chevah\compat\tests\manual\print_argv.py ^%*^
+ECHO -
+ECHO ----- As file -----
+ECHO -
+%python_exe% ..\chevah\compat\tests\manual\print_argv.py ^%*^
 
-ECHO "Call as module"
-IF "%1"=="" (%python_exe% -m chevah.compat.tests.manual.print_argv) ELSE %python_exe% -m chevah.compat.tests.manual.print_argv ^%*^
+ECHO -
+ECHO ----- As module -----
+ECHO -
+%python_exe% -m chevah.compat.tests.manual.print_argv ^%*^

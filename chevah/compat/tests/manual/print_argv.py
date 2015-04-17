@@ -25,5 +25,3 @@ if os.name == 'nt':
     from chevah.compat.nt_unicode_argv import get_unicode_argv
     print 'Call again'
     print get_unicode_argv()
-    print 'And again'
-    print get_unicode_argv()
