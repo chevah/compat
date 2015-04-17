@@ -13,11 +13,11 @@ if not exist %python_exe% (
 )
 
 ECHO -
-ECHO ----- As file -----
+ECHO ----- As file with -----
 ECHO -
-%python_exe% ..\chevah\compat\tests\manual\print_argv.py ^%*^
+%python_exe% ..\chevah\compat\tests\manual\print_argv.py ^%*
 
-ECHO -
+echo -
 ECHO ----- As module -----
 ECHO -
-%python_exe% -m chevah.compat.tests.manual.print_argv ^%*^
+%python_exe% -m chevah.compat.tests.manual.print_argv ^%*
