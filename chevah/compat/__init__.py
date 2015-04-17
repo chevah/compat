@@ -37,7 +37,7 @@ elif os.name == 'nt':
         )
     from chevah.compat.nt_capabilities import NTProcessCapabilities
     from chevah.compat.nt_filesystem import NTFilesystem
-    from chevah.compat.nt_unicode_argv import get_unicode_argv()
+    from chevah.compat.nt_unicode_argv import get_unicode_argv
 
     system_users = NTUsers()
     process_capabilities = NTProcessCapabilities()
