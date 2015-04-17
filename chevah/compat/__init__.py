@@ -6,6 +6,7 @@ Code for portable functions.
 """
 from __future__ import with_statement
 import os
+import sys
 
 if os.name == 'posix':
     from chevah.compat.unix_users import (
@@ -36,6 +37,7 @@ elif os.name == 'nt':
         )
     from chevah.compat.nt_capabilities import NTProcessCapabilities
     from chevah.compat.nt_filesystem import NTFilesystem
+    from chevah.compat.nt_unicode_argv import get_unicode_argv()
 
     system_users = NTUsers()
     process_capabilities = NTProcessCapabilities()
@@ -44,10 +46,13 @@ elif os.name == 'nt':
     DefaultAvatar = NTDefaultAvatar
     SuperAvatar = NTSuperAvatar
 
+    # Path Unicode sys.argv on Windows.
+    sys.argv = get_unicode_argv()
+
 else:
     raise AssertionError('Operating system "%s" not supported.' % (os.name))
 
 from chevah.compat.posix_filesystem import FileAttributes
-FileAttributes  # Silence the linter.
+
 
 local_filesystem = LocalFilesystem(avatar=DefaultAvatar())
