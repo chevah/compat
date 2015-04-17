@@ -12,4 +12,4 @@ if not exist %python_exe% (
     GOTO:EOF
 )
 
-%python_exe% -m chevah.compat.tests.manual.print_argv ^%*^
+%python_exe% ..\chevah\compat\tests\manual\print_argv.py ^%*^
