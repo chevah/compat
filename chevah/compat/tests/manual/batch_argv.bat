@@ -18,4 +18,4 @@ ECHO "Call as file"
 %python_exe% ..\chevah\compat\tests\manual\print_argv.py ^%*^
 
 ECHO "Call as module"
-%python_exe% -m chevah\compat\tests\manual\print_argv.py ^%*^
+%python_exe% -m chevah.compat.tests.manual.print_argv ^%*^
