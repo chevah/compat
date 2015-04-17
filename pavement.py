@@ -109,13 +109,12 @@ test_super
 SETUP['product']['name'] = 'chevah-compat'
 SETUP['folders']['source'] = u'chevah/compat'
 SETUP['repository']['name'] = u'compat'
-SETUP['github']['repo'] = 'chevah/compat'
+SETUP['repository']['github'] = u'https://github.com/chevah/compat'
 SETUP['pocket-lint']['include_files'] = ['pavement.py', 'release-notes.rst']
 SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
-SETUP['github']['url'] = 'https://github.com/chevah/compat'
 SETUP['buildbot']['server'] = 'build.chevah.com'
 SETUP['buildbot']['web_url'] = 'http://build.chevah.com:10088'
 SETUP['pypi']['index_url'] = 'http://pypi.chevah.com:10042/simple'
