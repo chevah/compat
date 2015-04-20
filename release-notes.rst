@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.29.0 - 17/04/2015
+-------------------
+
+* Populate sys.argv with Unicode values on Windows.
+
+
 0.28.1 - 11/03/2015
 -------------------
 

@@ -15,6 +15,9 @@ and Windows, see IOSUsers.
 
 Support for staring Unix daemon and installing and starting Windows services.
 
+Importing this module on Windows will populate the sys.argv with Unicode
+values.
+
 Unified interface for working with operating system file systems provides:
 
 * Unicode
