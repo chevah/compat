@@ -296,7 +296,7 @@ class TestSystemUsers(SystemUsersTestCase):
         # The Centrify server was accidentally removed. We wait for it
         # to be reinstalled and re-enabled this test.
         raise self.skipTest()
-        if not 'sles-11-x64' in self.getHostname():
+        if 'sles-11-x64' not in self.getHostname():
             raise self.skipTest()
 
         result, token = system_users.authenticateWithUsernameAndPassword(

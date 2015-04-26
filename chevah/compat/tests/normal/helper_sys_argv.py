@@ -9,7 +9,7 @@ import sys
 sys.stdout.write(repr(sys.argv[1:]))
 
 # List after importing.
-from chevah import compat
+from chevah import compat  # noqa
 # Silence the linter.
 compat
 sys.stdout.write(repr(sys.argv[1:]))

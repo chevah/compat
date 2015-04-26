@@ -29,7 +29,7 @@ class PublishCommand(Command):
         upload_command.repository = u'chevah'
         self.run_command('upload')
 
-dependencies = ['zope.interface ==3.8.0']
+dependencies = ['zope.interface ==3.8.0', 'future']
 if os.name == 'posix':
     dependencies.extend([
         'python-daemon==1.5.5',

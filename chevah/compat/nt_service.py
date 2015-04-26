@@ -31,7 +31,7 @@ class ChevahNTService(win32serviceutil.ServiceFramework, object):
         # is untestable since it imports servicemanager inside the method.
         service_name, = args[0]
 
-        #FIXME:1328: isolate registry creating code
+        # FIXME:1328: isolate registry creating code
         self.ssh = self._service_manager.RegisterServiceCtrlHandler(
             service_name, self.ServiceCtrlHandlerEx, True)
         self._service_manager.SetEventSourceName(service_name)
