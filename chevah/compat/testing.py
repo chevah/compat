@@ -7,6 +7,7 @@ Helpers for testing.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from builtins import str
 import os
 import random
 import sys
@@ -185,7 +186,7 @@ def _sanitize_name_legacy_unix(candidate):
 
     By default password is limited to 8 characters without spaces.
     """
-    return unicode(unidecode(candidate)).replace(' ', '_')[:8]
+    return str(unidecode(candidate)).replace(' ', '_')[:8]
 
 
 def _sanitize_name_windows(candidate):
@@ -194,7 +195,7 @@ def _sanitize_name_windows(candidate):
     """
     # FIXME:927:
     # On Windows, we can't delete home folders with unicode names.
-    return unicode(unidecode(candidate))
+    return str(unidecode(candidate))
 
 
 class TestUser(object):

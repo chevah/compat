@@ -20,6 +20,9 @@ for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from builtins import object
 from contextlib import contextmanager
 import os
 import random
@@ -105,7 +108,7 @@ class OSAdministrationUnix(object):
 
         # Try to get the group in list of all groups.
         group_found = False
-        for iterator in xrange(1000):
+        for iterator in range(1000):
             if group_found:
                 break
             for group in grp.getgrall():
@@ -121,7 +124,7 @@ class OSAdministrationUnix(object):
         # Now we find the group in list of all groups, but
         # we need to make sure it is also available to be
         # retrieved by name.
-        for iterator in xrange(1000):
+        for iterator in range(1000):
             try:
                 return grp.getgrnam(name_encoded)
             except KeyError:
@@ -264,7 +267,7 @@ class OSAdministrationUnix(object):
         import pwd
         import time
         name_encoded = name.encode('utf-8')
-        for iterator in xrange(1000):
+        for iterator in range(1000):
             try:
                 user = pwd.getpwnam(name_encoded)
                 return user

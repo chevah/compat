@@ -6,6 +6,8 @@ Windows specific implementation of filesystem access.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from builtins import str
+from builtins import range
 from contextlib import contextmanager
 from winioctlcon import FSCTL_GET_REPARSE_POINT
 import errno
@@ -83,12 +85,12 @@ class NTFilesystem(PosixFilesystemBase):
             return u'c:\\'
 
         if self._lock_in_home:
-            path = unicode(self._avatar.home_folder_path)
+            path = str(self._avatar.home_folder_path)
         else:
             if self._avatar.root_folder_path is None:
                 path = u'c:\\'
             else:
-                path = unicode(self._avatar.root_folder_path)
+                path = str(self._avatar.root_folder_path)
 
         # Fix folder separators.
         path = path.replace('/', '\\')
@@ -163,7 +165,7 @@ class NTFilesystem(PosixFilesystemBase):
                         result = result.replace('\\', ':\\', 1)
             self._validateDrivePath(result)
 
-        return unicode(result)
+        return str(result)
 
     # Windows allows only 26 drive letters and is case insensitive.
     _allowed_drive_letters = [
@@ -581,7 +583,7 @@ class NTFilesystem(PosixFilesystemBase):
                 if error.winerror == 1307:
                     self.raiseFailedToSetOwner(owner, path, u'Not permitted.')
                 else:
-                    self.raiseFailedToSetOwner(owner, path, unicode(error))
+                    self.raiseFailedToSetOwner(owner, path, str(error))
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''
@@ -653,7 +655,7 @@ class NTFilesystem(PosixFilesystemBase):
                 # Nothing in the list, nothing to remove.
                 return
             index_ace_to_remove = -1
-            for index in xrange(ace_count):
+            for index in range(ace_count):
                 ((ace_type, ace_flag), mask, sid) = dacl.GetAce(index)
                 if group_sid == sid:
                     index_ace_to_remove = index
@@ -692,7 +694,7 @@ class NTFilesystem(PosixFilesystemBase):
             if ace_count < 1:
                 # Nothing in the list.
                 return False
-            for index in xrange(ace_count):
+            for index in range(ace_count):
                 ((ace_type, ace_flag), mask, sid) = dacl.GetAce(index)
                 if group_sid == sid:
                     return True

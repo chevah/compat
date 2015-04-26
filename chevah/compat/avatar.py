@@ -6,6 +6,7 @@ An account as used by Chevah services.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from builtins import str
 from zope.interface import implements
 
 from chevah.compat import HasImpersonatedAvatar
@@ -29,9 +30,9 @@ class FilesystemAvatar(HasImpersonatedAvatar):
         self._token = token
         self._lock_in_home_folder = lock_in_home_folder
 
-        assert type(self._home_folder_path) is unicode
+        assert isinstance(self._home_folder_path, str)
         if self._root_folder_path:
-            assert type(self._root_folder_path) is unicode
+            assert isinstance(self._root_folder_path, str)
 
     @property
     def token(self):

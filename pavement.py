@@ -72,7 +72,7 @@ BUILD_PACKAGES = [
 
 
 TEST_PACKAGES = [
-    'chevah-empirical==0.34.4',
+    'chevah-empirical==0.35.0',
 
     'pyflakes==0.8.1',
     'pocketlint==1.4.4.c4',

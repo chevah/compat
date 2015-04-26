@@ -7,6 +7,7 @@ Windows has its layer of POSIX compatibility.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from builtins import str
 from contextlib import contextmanager
 import codecs
 import errno
@@ -116,7 +117,7 @@ class PosixFilesystemBase(object):
         '''See `ILocalFilesystem`.'''
 
         if not self._avatar:
-            return self._pathSplitRecursive(unicode(os.path.expanduser('~')))
+            return self._pathSplitRecursive(str(os.path.expanduser('~')))
 
         if self._avatar.root_folder_path is None:
             return self._pathSplitRecursive(self._avatar.home_folder_path)
@@ -155,7 +156,7 @@ class PosixFilesystemBase(object):
         if path is None or path == '' or path == '.':
             return self.home_segments
 
-        if not isinstance(path, unicode):
+        if not isinstance(path, str):
             path = path.decode(self.INTERNAL_ENCODING)
 
         if not path.startswith('/'):
@@ -183,11 +184,11 @@ class PosixFilesystemBase(object):
 
     def getAbsoluteRealPath(self, path):
         '''See `ILocalFilesystem`.'''
-        if not isinstance(path, unicode):
+        if not isinstance(path, str):
             path = path.decode(self.INTERNAL_ENCODING)
 
         absolute_path = os.path.abspath(path)
-        if not isinstance(absolute_path, unicode):
+        if not isinstance(absolute_path, str):
             absolute_path = absolute_path.decode(self.INTERNAL_ENCODING)
 
         return absolute_path
@@ -427,7 +428,7 @@ class PosixFilesystemBase(object):
         """
         # This is done to allow lazy initialization of process_capabilities.
         from chevah.compat import process_capabilities
-        if not isinstance(name, unicode):
+        if not isinstance(name, str):
             name = name.decode(self.INTERNAL_ENCODING)
 
         # OSX HFS+ store file as Unicode, but in normalized format.
@@ -500,7 +501,7 @@ class PosixFilesystemBase(object):
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
-            with file(path_encoded, 'a'):
+            with open(path_encoded, 'a'):
                 os.utime(path_encoded, None)
 
     def copyFile(self, source_segments, destination_segments, overwrite=False):

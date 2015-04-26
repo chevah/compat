@@ -6,6 +6,7 @@ Provides information about capabilities for a process on Windows.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from builtins import str
 from contextlib import contextmanager
 import platform
 import pywintypes
@@ -35,7 +36,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
 
         for privilege in self._getAvailablePrivileges():
             name = win32security.LookupPrivilegeName('', privilege[0])
-            value = unicode(privilege[1])
+            value = str(privilege[1])
             result.append(name + u':' + value)
 
         return u', '.join(result)

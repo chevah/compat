@@ -7,6 +7,7 @@ be a list of Unicode strings.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from builtins import range
 import sys
 
 
@@ -36,6 +37,6 @@ def get_unicode_argv():
     if argc.value > 0:
         # Remove Python executable and commands if present
         start = argc.value - len(sys.argv)
-        return [argv[i] for i in xrange(start, argc.value)]
+        return [argv[i] for i in range(start, argc.value)]
     else:
         return sys.argv
