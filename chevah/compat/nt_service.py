@@ -3,6 +3,7 @@
 """
 Module for launching Windows services.
 """
+from __future__ import print_function
 
 import os
 import pywintypes
@@ -126,19 +127,19 @@ def install_nt_service(service_class, options):
             service_class._svc_display_name_,
             startType=win32service.SERVICE_AUTO_START,
             )
-        print _(
+        print(_(
             'Service "%s" successfully installed.\n'
             'Please use "sc" command or Windows Services to manage '
-            'this service.' % (service_class._svc_name_))
-    except pywintypes.error, error:
+            'this service.' % (service_class._svc_name_)))
+    except pywintypes.error as error:
         if error[0] == 5:
-            print _(
+            print(_(
                 'You do not have permissions to install this service.\n'
-                'Please install the service as an administrator.')
+                'Please install the service as an administrator.'))
         else:
-            print _(
+            print(_(
                 'Failed to install the service %s:%s.\n'
                 '%s:%d %s' % (
                     service_class._svc_name_,
                     service_class._svc_display_name_,
-                    error[1], error[0], error[2]))
+                    error[1], error[0], error[2])))

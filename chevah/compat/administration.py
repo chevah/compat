@@ -17,6 +17,7 @@ Default groups and users have a maximum length of 9. Check `lsattr -El sys0`
 for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 
 """
+from __future__ import print_function
 from contextlib import contextmanager
 import os
 import random
@@ -43,7 +44,7 @@ def execute(
     input.
     """
     if verbose:
-        print 'Calling: %s' % command
+        print('Calling: %s' % command)
 
     if output is None:
         output = subprocess.PIPE
@@ -55,7 +56,7 @@ def execute(
     exit_code = process.returncode
     if exit_code != 0:
         if verbose:
-            print u'Failed to execute %s\n%s' % (command, stderrdata)
+            print(u'Failed to execute %s\n%s' % (command, stderrdata))
         if not ignore_errors:
             sys.exit(exit_code)
 
@@ -265,7 +266,7 @@ class OSAdministrationUnix(object):
             try:
                 user = pwd.getpwnam(name_encoded)
                 return user
-            except (KeyError, OSError), e:
+            except (KeyError, OSError) as e:
                 pass
             time.sleep(0.2)
         raise AssertionError(
@@ -682,7 +683,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         data = {'name': group.name}
         try:
             win32net.NetLocalGroupAdd(group.pdc, 0, data)
-        except Exception, error:
+        except Exception as error:
             raise AssertionError(
                 'Failed to add group %s in domain %s. %s' % (
                     group.name, group.pdc, error))
@@ -760,8 +761,8 @@ class OSAdministrationWindows(OSAdministrationUnix):
             win32net.NetUserChangePassword(
                 pdc, user.name, user.password, user.password)
         except:
-            print 'Failed to set password "%s" for user "%s" on pdc "%s".' % (
-                user.password, user.name, pdc)
+            print('Failed to set password "%s" for user "%s" on pdc "%s".' % (
+                user.password, user.name, pdc))
             raise
 
     def deleteUser(self, user):
@@ -775,7 +776,9 @@ class OSAdministrationWindows(OSAdministrationUnix):
         import win32net
         try:
             win32net.NetUserDel(user.pdc, user.name)
-        except win32net.error, (number, context, message):
+        except win32net.error as xxx_todo_changeme:
+            # Ignore user not found error.
+            (number, context, message) = xxx_todo_changeme.args
             # Ignore user not found error.
             if number != ERROR_NONE_MAPPED:
                 raise

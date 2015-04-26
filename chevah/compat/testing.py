@@ -535,13 +535,13 @@ def teardown_access_control(users, groups):
     for user in users.values():
         try:
             os_administration.deleteUser(user)
-        except Exception, error:
+        except Exception as error:
             errors.append(error)
 
     for group in groups.values():
         try:
             os_administration.deleteGroup(group)
-        except Exception, error:
+        except Exception as error:
             errors.append(error)
 
     if errors:

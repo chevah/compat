@@ -635,7 +635,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertFalse(attributes.is_link)
         if self.os_family == 'posix':
             current_umask = mk.fs._getCurrentUmask()
-            expected_mode = 0100666 ^ current_umask
+            expected_mode = 0o100666 ^ current_umask
             self.assertEqual(expected_mode, attributes.mode)
 
     def test_getAttributes_folder(self):
@@ -651,7 +651,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertFalse(attributes.is_link)
         if self.os_family == 'posix':
             current_umask = mk.fs._getCurrentUmask()
-            expected_mode = 040777 ^ current_umask
+            expected_mode = 0o40777 ^ current_umask
             self.assertEqual(expected_mode, attributes.mode)
 
     @conditionals.onCapability('symbolic_link', True)
@@ -795,7 +795,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         path = mk.fs.getRealPathFromSegments(self.test_segments)
 
         with self.assertRaises(OSError) as context:
-            self.filesystem.openFile(self.test_segments, os.O_RDONLY, 0777)
+            self.filesystem.openFile(self.test_segments, os.O_RDONLY, 0o777)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)

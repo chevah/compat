@@ -112,7 +112,7 @@ class UnixFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 return os.chown(path_encoded, uid, -1)
-            except Exception, error:
+            except Exception as error:
                 self.raiseFailedToSetOwner(owner, path, str(error))
 
     def getOwner(self, segments):
@@ -133,7 +133,7 @@ class UnixFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 return os.chown(path_encoded, -1, gid)
-            except OSError, error:
+            except OSError as error:
                 if error.errno == errno.ENOENT:
                     self.raiseFailedToAddGroup(group, path, u'No such path.')
                 elif error.errno == errno.EPERM:
@@ -162,7 +162,7 @@ class UnixFilesystem(PosixFilesystemBase):
         # a single method wich does both get/set.
         # We use 0002 since it is de default mask and statistically we should
         # create less side effects.
-        current_umask = os.umask(0002)
+        current_umask = os.umask(0o002)
         os.umask(current_umask)
         return current_umask
 

@@ -184,7 +184,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
             try:
                 win32security.AdjustTokenPrivileges(
                     process_token, 0, new_privileges)
-            except win32security.error, error:
+            except win32security.error as error:
                 raise AdjustPrivilegeException(str(error))
 
     def _getPrivilegeID(self, privilege_name):

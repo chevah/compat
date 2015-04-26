@@ -273,7 +273,7 @@ class PosixFilesystemBase(object):
             try:
                 try:
                     return os.unlink(path_encoded)
-                except OSError, error:
+                except OSError as error:
                     # This is done to allow lazy initialization of this module.
                     from chevah.compat import process_capabilities
 
@@ -314,7 +314,7 @@ class PosixFilesystemBase(object):
         """
         try:
             yield
-        except IOError, error:
+        except IOError as error:
             raise OSError(
                 error.errno,
                 error.strerror.encode('utf-8'),
@@ -455,7 +455,7 @@ class PosixFilesystemBase(object):
         if is_directory and sys.platform.startswith('aix'):
             # On AIX mode contains an extra most significant bit
             # which we don't use.
-            mode = mode & 0077777
+            mode = mode & 0o077777
 
         try:
             name = segments[-1]

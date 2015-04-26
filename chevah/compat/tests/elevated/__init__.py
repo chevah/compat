@@ -4,6 +4,7 @@
 Code for testing compat module that requires access to system security
 functions.
 """
+from __future__ import print_function
 
 from chevah.compat import process_capabilities
 from chevah.compat.testing import (
@@ -38,8 +39,8 @@ def setup_package():
         setup_access_control(users=TEST_USERS, groups=TEST_GROUPS)
     except:
         import traceback
-        print traceback.format_exc()
-        print "Failed to initialized the system accounts!"
+        print(traceback.format_exc())
+        print("Failed to initialized the system accounts!")
         teardown_access_control(users=TEST_USERS, groups=TEST_GROUPS)
         raise
 
