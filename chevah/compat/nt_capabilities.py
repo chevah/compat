@@ -3,6 +3,9 @@
 """
 Provides information about capabilities for a process on Windows.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
 from contextlib import contextmanager
 import platform
 import pywintypes

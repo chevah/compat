@@ -3,6 +3,9 @@
 """
 Windows specific implementation of filesystem access.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
 from contextlib import contextmanager
 from winioctlcon import FSCTL_GET_REPARSE_POINT
 import errno

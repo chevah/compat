@@ -3,6 +3,9 @@
 """
 Test for portable system users access for Domain Controller.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
 import os
 
 from chevah.compat import (

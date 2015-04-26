@@ -3,6 +3,9 @@
 """
 Constants for the compatibility layer.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
 
 # Combine with another CSIDL to force the creation of the associated folder
 # if it does not exist.

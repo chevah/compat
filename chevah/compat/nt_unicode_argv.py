@@ -4,6 +4,9 @@ See: http://code.activestate.com/recipes/572200/
 Usage: simply import this module into a script. sys.argv is changed to
 be a list of Unicode strings.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
 import sys
 
 

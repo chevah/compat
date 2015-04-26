@@ -4,6 +4,9 @@
 Adapter for working with NT users.
 """
 from __future__ import with_statement
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
 
 from win32com.shell import shell, shellcon
 from zope.interface import implements

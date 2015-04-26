@@ -4,6 +4,9 @@
 Filesystem code used by all operating systems, including Windows as
 Windows has its layer of POSIX compatibility.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
 from contextlib import contextmanager
 import codecs
 import errno
