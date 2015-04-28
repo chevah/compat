@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from builtins import str
+import codecs
 import errno
 import grp
 import os
@@ -127,7 +128,7 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def addGroup(self, segments, group, permissions=None):
         '''See `ILocalFilesystem`.'''
-        encoded_group = group.encode('utf-8')
+        encoded_group = codecs.encode(group, 'utf-8')
         path = self.getRealPathFromSegments(segments)
         path_encoded = path.encode('utf-8')
         try:

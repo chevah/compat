@@ -25,6 +25,7 @@ from builtins import range
 from builtins import object
 from contextlib import contextmanager
 import os
+import codecs
 import random
 import subprocess
 import sys
@@ -104,7 +105,7 @@ class OSAdministrationUnix(object):
         """
         import grp
         import time
-        name_encoded = name.encode('utf-8')
+        name_encoded = codecs.encode(name, 'utf-8')
 
         # Try to get the group in list of all groups.
         group_found = False

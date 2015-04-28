@@ -1,12 +1,15 @@
 # Copyright (c) 2010 Adi Roiban.
 # See LICENSE for details.
-'''Adapter for working with Unix users.'''
+"""
+Adapter for working with Unix users.
+"""
 from __future__ import with_statement
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-
-
+# On Python2.7 grp module does no accept bytes so we use the codecs module
+# to convert Unicode to native str.
+import codecs
 import crypt
 import grp
 import os
@@ -137,7 +140,7 @@ class UnixUsers(CompatUsers):
         '''Return true if `username` is a member of `groups`.'''
         username_encode = username.encode('utf-8')
         for group in groups:
-            group_name = group.encode('utf-8')
+            group_name = codecs.encode(group, 'utf-8')
             try:
                 group_struct = grp.getgrnam(group_name)
             except KeyError:

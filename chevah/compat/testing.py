@@ -140,27 +140,27 @@ mk = manufacture = CompatManufacture()
 
 
 # Test accounts and passwords.
-TEST_ACCOUNT_USERNAME = u'mâț mițișor'
-TEST_ACCOUNT_PASSWORD = u'Baroșanu42!'
-TEST_ACCOUNT_GROUP = u'g mâțmițișor'
+TEST_ACCOUNT_USERNAME = str(u'mâț mițișor')
+TEST_ACCOUNT_PASSWORD = str(u'Baroșanu42!')
+TEST_ACCOUNT_GROUP = str(u'g mâțmițișor')
 # FIXME:2106:
 # Replace hard-coded constant with posixID()
 TEST_ACCOUNT_UID = 2000
 TEST_ACCOUNT_GID = 2010
-TEST_ACCOUNT_GROUP_WIN = u'Users'
-TEST_ACCOUNT_USERNAME_OTHER = u'miț motan'
-TEST_ACCOUNT_PASSWORD_OTHER = u'altapara'
+TEST_ACCOUNT_GROUP_WIN = str(u'Users')
+TEST_ACCOUNT_USERNAME_OTHER = str(u'miț motan')
+TEST_ACCOUNT_PASSWORD_OTHER = str(u'altapara')
 # FIXME:2106:
 # Replace hard-coded constant with posixID()
 TEST_ACCOUNT_UID_OTHER = 2001
 TEST_ACCOUNT_GID_OTHER = 2011
-TEST_ACCOUNT_GROUP_OTHER = u'g mițmotan'
-TEST_ACCOUNT_LDAP_USERNAME = u'ldap mâț test-account'
-TEST_ACCOUNT_LDAP_PASSWORD = u'ldap mâț test-password'
+TEST_ACCOUNT_GROUP_OTHER = str(u'g mițmotan')
+TEST_ACCOUNT_LDAP_USERNAME = str(u'ldap mâț test-account')
+TEST_ACCOUNT_LDAP_PASSWORD = str(u'ldap mâț test-password')
 
 # Centrify testing account.
-TEST_ACCOUNT_CENTRIFY_USERNAME = u'centrify-user'
-TEST_ACCOUNT_CENTRIFY_PASSWORD = u'Parola01!'
+TEST_ACCOUNT_CENTRIFY_USERNAME = str(u'centrify-user')
+TEST_ACCOUNT_CENTRIFY_PASSWORD = str(u'Parola01!')
 TEST_ACCOUNT_CENTRIFY_UID = 1363149908
 
 # Another test group to test an user belonging to multiple groups.
@@ -170,11 +170,11 @@ TEST_ACCOUNT_GROUP_ANOTHER = u'g-another-test'
 TEST_ACCOUNT_GID_ANOTHER = 2012
 
 # Domain controller helpers.
-TEST_PDC = u'\\\\CHEVAH-DC'
-TEST_DOMAIN = u'chevah'
-TEST_ACCOUNT_USERNAME_DOMAIN = u'domain test-user'
-TEST_ACCOUNT_PASSWORD_DOMAIN = u'qwe123QWE'
-TEST_ACCOUNT_GROUP_DOMAIN = u'domain test_group'
+TEST_PDC = str(u'\\\\CHEVAH-DC')
+TEST_DOMAIN = str(u'chevah')
+TEST_ACCOUNT_USERNAME_DOMAIN = str(u'domain test-user')
+TEST_ACCOUNT_PASSWORD_DOMAIN = str(u'qwe123QWE')
+TEST_ACCOUNT_GROUP_DOMAIN = str(u'domain test_group')
 
 
 # FIXME:2106:
