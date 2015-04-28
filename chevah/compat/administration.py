@@ -806,12 +806,11 @@ class OSAdministrationWindows(OSAdministrationUnix):
         # FIXME:927:
         # We need to look for a way to delete home folders with unicode
         # names.
-        encoded_folder_path = profile_folder_path.encode('utf-8')
-        command = 'rmdir /S /Q "%s"' % encoded_folder_path
-        result = subprocess.call(command, shell=True)
+        command = u'rmdir /S /Q "%s"' % profile_folder_path
+        result = subprocess.call(command.encode('utf-8'), shell=True)
         if result != 0:
-            message = u'Unable to remove folder [%s]: %s.' % (
-                result, profile_folder_path)
+            message = u'Unable to remove folder [%s]: %s\n%s.' % (
+                result, profile_folder_path, command)
             raise AssertionError(message.encode('utf-8'))
 
     def deleteGroup(self, group):

@@ -349,8 +349,9 @@ class UnixUsers(CompatUsers):
         if not pam_authenticate:
             return None
 
-        username = username.encode('utf-8')
-        password = password.encode('utf-8')
+        # On Python2.7/OSX PAM require str not bytes.
+        username = codecs.encode(username, 'utf-8')
+        password = codecs.encode(password, 'utf-8')
         with self._executeAsAdministrator():
             return pam_authenticate(username, password)
 
