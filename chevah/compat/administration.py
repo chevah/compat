@@ -782,9 +782,9 @@ class OSAdministrationWindows(OSAdministrationUnix):
         import win32net
         try:
             win32net.NetUserDel(user.pdc, user.name)
-        except win32net.error as xxx_todo_changeme:
+        except win32net.error as error:
             # Ignore user not found error.
-            (number, context, message) = xxx_todo_changeme.args
+            (number, context, message) = error
             # Ignore user not found error.
             if number != ERROR_NONE_MAPPED:
                 raise

@@ -184,8 +184,8 @@ class NTUsers(CompatUsers):
         try:
             win32security.LookupAccountName('', username)
             return True
-        except win32security.error as xxx_todo_changeme1:
-            (number, name, message) = xxx_todo_changeme1.args
+        except win32security.error as error:
+            (number, name, message) = error
             if number == ERROR_NONE_MAPPED:
                 return False
             else:
