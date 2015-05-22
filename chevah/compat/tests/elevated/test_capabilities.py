@@ -3,6 +3,9 @@
 """
 Capabilities detection tests for accounts with elevated permissions.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
 import os
 
 from chevah.compat import process_capabilities, system_users

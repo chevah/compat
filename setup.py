@@ -1,7 +1,7 @@
 from setuptools import Command, find_packages, setup
 import os
 
-VERSION = '0.29.0'
+VERSION = '0.30.0'
 
 
 class PublishCommand(Command):
@@ -29,7 +29,7 @@ class PublishCommand(Command):
         upload_command.repository = u'chevah'
         self.run_command('upload')
 
-dependencies = ['zope.interface ==3.8.0']
+dependencies = ['zope.interface ==3.8.0', 'future']
 if os.name == 'posix':
     dependencies.extend([
         'python-daemon==1.5.5',

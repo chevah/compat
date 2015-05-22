@@ -4,6 +4,9 @@
 Adapter for working with NT users.
 """
 from __future__ import with_statement
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
 
 from win32com.shell import shell, shellcon
 from zope.interface import implements
@@ -99,7 +102,7 @@ class NTUsers(CompatUsers):
             try:
                 with self.executeAsUser(username, token):
                     return self._getHomeFolderPath(token)
-            except ChangeUserException, error:
+            except ChangeUserException as error:
                 self.raiseFailedToGetHomeFolder(username, error.message)
 
         try:
@@ -161,7 +164,8 @@ class NTUsers(CompatUsers):
 
             profile = win32profile.LoadUserProfile(token, profile_info)
             win32profile.UnloadUserProfile(token, profile)
-        except win32security.error, (error_id, error_call, error_message):
+        except win32security.error as error:
+            (error_id, error_call, error_message) = error
             error_text = (
                 u'Failed to create user profile. '
                 u'Make sure you have SeBackupPrivilege and '
@@ -180,7 +184,8 @@ class NTUsers(CompatUsers):
         try:
             win32security.LookupAccountName('', username)
             return True
-        except win32security.error, (number, name, message):
+        except win32security.error as error:
+            (number, name, message) = error
             if number == ERROR_NONE_MAPPED:
                 return False
             else:

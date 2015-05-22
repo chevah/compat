@@ -17,8 +17,15 @@ Default groups and users have a maximum length of 9. Check `lsattr -El sys0`
 for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from builtins import object
 from contextlib import contextmanager
 import os
+import codecs
 import random
 import subprocess
 import sys
@@ -43,7 +50,7 @@ def execute(
     input.
     """
     if verbose:
-        print 'Calling: %s' % command
+        print('Calling: %s' % command)
 
     if output is None:
         output = subprocess.PIPE
@@ -55,7 +62,7 @@ def execute(
     exit_code = process.returncode
     if exit_code != 0:
         if verbose:
-            print u'Failed to execute %s\n%s' % (command, stderrdata)
+            print(u'Failed to execute %s\n%s' % (command, stderrdata))
         if not ignore_errors:
             sys.exit(exit_code)
 
@@ -98,11 +105,11 @@ class OSAdministrationUnix(object):
         """
         import grp
         import time
-        name_encoded = name.encode('utf-8')
+        name_encoded = codecs.encode(name, 'utf-8')
 
         # Try to get the group in list of all groups.
         group_found = False
-        for iterator in xrange(1000):
+        for iterator in range(1000):
             if group_found:
                 break
             for group in grp.getgrall():
@@ -118,7 +125,7 @@ class OSAdministrationUnix(object):
         # Now we find the group in list of all groups, but
         # we need to make sure it is also available to be
         # retrieved by name.
-        for iterator in xrange(1000):
+        for iterator in range(1000):
             try:
                 return grp.getgrnam(name_encoded)
             except KeyError:
@@ -261,11 +268,11 @@ class OSAdministrationUnix(object):
         import pwd
         import time
         name_encoded = name.encode('utf-8')
-        for iterator in xrange(1000):
+        for iterator in range(1000):
             try:
                 user = pwd.getpwnam(name_encoded)
                 return user
-            except (KeyError, OSError), e:
+            except (KeyError, OSError) as e:
                 pass
             time.sleep(0.2)
         raise AssertionError(
@@ -682,7 +689,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         data = {'name': group.name}
         try:
             win32net.NetLocalGroupAdd(group.pdc, 0, data)
-        except Exception, error:
+        except Exception as error:
             raise AssertionError(
                 'Failed to add group %s in domain %s. %s' % (
                     group.name, group.pdc, error))
@@ -760,8 +767,8 @@ class OSAdministrationWindows(OSAdministrationUnix):
             win32net.NetUserChangePassword(
                 pdc, user.name, user.password, user.password)
         except:
-            print 'Failed to set password "%s" for user "%s" on pdc "%s".' % (
-                user.password, user.name, pdc)
+            print('Failed to set password "%s" for user "%s" on pdc "%s".' % (
+                user.password, user.name, pdc))
             raise
 
     def deleteUser(self, user):
@@ -775,7 +782,9 @@ class OSAdministrationWindows(OSAdministrationUnix):
         import win32net
         try:
             win32net.NetUserDel(user.pdc, user.name)
-        except win32net.error, (number, context, message):
+        except win32net.error as error:
+            # Ignore user not found error.
+            (number, context, message) = error
             # Ignore user not found error.
             if number != ERROR_NONE_MAPPED:
                 raise
@@ -797,12 +806,11 @@ class OSAdministrationWindows(OSAdministrationUnix):
         # FIXME:927:
         # We need to look for a way to delete home folders with unicode
         # names.
-        encoded_folder_path = profile_folder_path.encode('utf-8')
-        command = 'rmdir /S /Q "%s"' % encoded_folder_path
-        result = subprocess.call(command, shell=True)
+        command = u'rmdir /S /Q "%s"' % profile_folder_path
+        result = subprocess.call(command.encode('utf-8'), shell=True)
         if result != 0:
-            message = u'Unable to remove folder [%s]: %s.' % (
-                result, profile_folder_path)
+            message = u'Unable to remove folder [%s]: %s\n%s.' % (
+                result, profile_folder_path, command)
             raise AssertionError(message.encode('utf-8'))
 
     def deleteGroup(self, group):

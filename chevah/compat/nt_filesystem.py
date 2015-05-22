@@ -3,6 +3,11 @@
 """
 Windows specific implementation of filesystem access.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import str
+from builtins import range
 from contextlib import contextmanager
 from winioctlcon import FSCTL_GET_REPARSE_POINT
 import errno
@@ -80,12 +85,12 @@ class NTFilesystem(PosixFilesystemBase):
             return u'c:\\'
 
         if self._lock_in_home:
-            path = unicode(self._avatar.home_folder_path)
+            path = str(self._avatar.home_folder_path)
         else:
             if self._avatar.root_folder_path is None:
                 path = u'c:\\'
             else:
-                path = unicode(self._avatar.root_folder_path)
+                path = str(self._avatar.root_folder_path)
 
         # Fix folder separators.
         path = path.replace('/', '\\')
@@ -160,7 +165,7 @@ class NTFilesystem(PosixFilesystemBase):
                         result = result.replace('\\', ':\\', 1)
             self._validateDrivePath(result)
 
-        return unicode(result)
+        return str(result)
 
     # Windows allows only 26 drive letters and is case insensitive.
     _allowed_drive_letters = [
@@ -226,7 +231,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         try:
             yield
-        except WindowsError, error:
+        except WindowsError as error:
             encoded_filename = None
             if error.filename:
                 encoded_filename = error.filename.encode('utf-8')
@@ -318,7 +323,7 @@ class NTFilesystem(PosixFilesystemBase):
                         win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
                     win32file.CreateSymbolicLink(
                         link_path, target_path, flags)
-            except AdjustPrivilegeException, error:
+            except AdjustPrivilegeException as error:
                 raise OSError(errno.EINVAL, error.message)
 
     def getStatus(self, segments):
@@ -348,7 +353,7 @@ class NTFilesystem(PosixFilesystemBase):
             if self._lock_in_home or segments not in [[], ['.'], ['..']]:
                 try:
                     return super(NTFilesystem, self).getFolderContent(segments)
-                except OSError, error:
+                except OSError as error:
                     if error.errno == errno.EINVAL:
                         # When path is not a folder EINVAL is raised instead of
                         # the more specific ENOTDIR.
@@ -396,7 +401,7 @@ class NTFilesystem(PosixFilesystemBase):
                         path.encode('utf-8'),
                         )
                 data = search[0]
-        except pywintypes.error, error:
+        except pywintypes.error as error:
             message = u'%s %s %s' % (error.winerror, error.strerror, path)
             raise OSError(
                 errno.EINVAL,
@@ -455,7 +460,7 @@ class NTFilesystem(PosixFilesystemBase):
             with self._windowsToOSError(segments):
                 return super(NTFilesystem, self).deleteFile(
                     segments, ignore_errors=ignore_errors)
-        except OSError, error:
+        except OSError as error:
             # Windows return a bad error code for folders.
             if self.isFolder(segments):
                 raise OSError(
@@ -504,7 +509,7 @@ class NTFilesystem(PosixFilesystemBase):
                     return self._rmtree(path_encoded)
                 else:
                     return os.rmdir(path_encoded)
-        except OSError, error:
+        except OSError as error:
             # Windows return a generic EINVAL when path is not a folder.
             if error.errno == errno.EINVAL:
                 self._requireFolder(segments)
@@ -523,7 +528,7 @@ class NTFilesystem(PosixFilesystemBase):
         path = self.getRealPathFromSegments(segments)
         try:
             self._setOwner(path, owner)
-        except CompatException, error:
+        except CompatException as error:
             self.raiseFailedToSetOwner(owner, path, error.message)
 
     def _setOwner(self, path, owner):
@@ -572,13 +577,13 @@ class NTFilesystem(PosixFilesystemBase):
                     d_acl,
                     None,
                     )
-            except win32net.error, error:
+            except win32net.error as error:
                 if error.winerror == 1332:
                     self.raiseFailedToSetOwner(owner, path, u'No such owner.')
                 if error.winerror == 1307:
                     self.raiseFailedToSetOwner(owner, path, u'Not permitted.')
                 else:
-                    self.raiseFailedToSetOwner(owner, path, unicode(error))
+                    self.raiseFailedToSetOwner(owner, path, str(error))
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''
@@ -592,7 +597,7 @@ class NTFilesystem(PosixFilesystemBase):
                 name, domain, type = win32security.LookupAccountSid(
                     None, owner_sid)
                 return name
-            except win32net.error, error:
+            except win32net.error as error:
                 raise OSError(
                     error.winerror, error.strerror)
 
@@ -619,7 +624,7 @@ class NTFilesystem(PosixFilesystemBase):
                 security.SetDacl(True, dacl, False)
                 win32security.SetFileSecurity(
                     path, win32security.DACL_SECURITY_INFORMATION, security)
-            except win32net.error, error:
+            except win32net.error as error:
                 self.raiseFailedToAddGroup(
                     group, path, u'%s: %s' % (error.winerror, error.strerror))
 
@@ -640,7 +645,7 @@ class NTFilesystem(PosixFilesystemBase):
             try:
                 security = win32security.GetFileSecurity(
                     path, win32security.DACL_SECURITY_INFORMATION)
-            except win32net.error, error:
+            except win32net.error as error:
                 raise OSError(
                     error.winerror, error.strerror)
 
@@ -650,7 +655,7 @@ class NTFilesystem(PosixFilesystemBase):
                 # Nothing in the list, nothing to remove.
                 return
             index_ace_to_remove = -1
-            for index in xrange(ace_count):
+            for index in range(ace_count):
                 ((ace_type, ace_flag), mask, sid) = dacl.GetAce(index)
                 if group_sid == sid:
                     index_ace_to_remove = index
@@ -680,7 +685,7 @@ class NTFilesystem(PosixFilesystemBase):
             try:
                 security = win32security.GetFileSecurity(
                     path, win32security.DACL_SECURITY_INFORMATION)
-            except win32net.error, error:
+            except win32net.error as error:
                 raise OSError(
                     error.winerror, error.strerror)
 
@@ -689,7 +694,7 @@ class NTFilesystem(PosixFilesystemBase):
             if ace_count < 1:
                 # Nothing in the list.
                 return False
-            for index in xrange(ace_count):
+            for index in range(ace_count):
                 ((ace_type, ace_flag), mask, sid) = dacl.GetAce(index)
                 if group_sid == sid:
                     return True

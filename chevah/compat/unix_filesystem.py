@@ -3,6 +3,11 @@
 """
 Module for hosting the Unix specific filesystem access.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import str
+import codecs
 import errno
 import grp
 import os
@@ -49,11 +54,11 @@ class UnixFilesystem(PosixFilesystemBase):
     def getRealPathFromSegments(self, segments):
         '''See `ILocalFilesystem`.'''
         if segments is None or len(segments) == 0:
-            return unicode(self._root_handler)
+            return str(self._root_handler)
         else:
             relative_path = u'/' + u'/'.join(segments)
             relative_path = os.path.abspath(relative_path).rstrip('/')
-            return unicode(self._root_handler.rstrip('/') + relative_path)
+            return str(self._root_handler.rstrip('/') + relative_path)
 
     def getSegmentsFromRealPath(self, path):
         """
@@ -73,7 +78,7 @@ class UnixFilesystem(PosixFilesystemBase):
         while tail and head != u'/':
             head, tail = os.path.split(tail)
             if tail != u'':
-                if not isinstance(tail, unicode):
+                if not isinstance(tail, str):
                     tail = tail.decode('utf-8')
                 segments.insert(0, tail)
             tail = head
@@ -112,7 +117,7 @@ class UnixFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 return os.chown(path_encoded, uid, -1)
-            except Exception, error:
+            except Exception as error:
                 self.raiseFailedToSetOwner(owner, path, str(error))
 
     def getOwner(self, segments):
@@ -123,7 +128,7 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def addGroup(self, segments, group, permissions=None):
         '''See `ILocalFilesystem`.'''
-        encoded_group = group.encode('utf-8')
+        encoded_group = codecs.encode(group, 'utf-8')
         path = self.getRealPathFromSegments(segments)
         path_encoded = path.encode('utf-8')
         try:
@@ -133,7 +138,7 @@ class UnixFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 return os.chown(path_encoded, -1, gid)
-            except OSError, error:
+            except OSError as error:
                 if error.errno == errno.ENOENT:
                     self.raiseFailedToAddGroup(group, path, u'No such path.')
                 elif error.errno == errno.EPERM:
@@ -162,7 +167,7 @@ class UnixFilesystem(PosixFilesystemBase):
         # a single method wich does both get/set.
         # We use 0002 since it is de default mask and statistically we should
         # create less side effects.
-        current_umask = os.umask(0002)
+        current_umask = os.umask(0o002)
         os.umask(current_umask)
         return current_umask
 

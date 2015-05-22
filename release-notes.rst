@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.30.0 - 26/04/2015
+-------------------
+
+* Initial code update for Python 3 support.
+
+
 0.29.0 - 17/04/2015
 -------------------
 

@@ -5,6 +5,28 @@ Build script for chevah-compat.
 """
 import os
 import sys
+import warnings
+
+from brink.pavement_commons import (
+    buildbot_list,
+    buildbot_try,
+    default,
+    github,
+    harness,
+    help,
+    lint,
+    merge_init,
+    merge_commit,
+    pave,
+    pqm,
+    SETUP,
+    test_python,
+    test_remote,
+    test_review,
+    test_normal,
+    test_super,
+    )
+from paver.easy import call_task, consume_args, needs, task
 
 if os.name == 'nt':
     # Use shorter temp folder on Windows.
@@ -14,6 +36,8 @@ if os.name == 'nt':
 # Keep run_packages in sync with setup.py.
 RUN_PACKAGES = [
     'zope.interface==3.8.0',
+    # Py3 compat.
+    'future',
     ]
 
 if os.name == 'posix':
@@ -48,10 +72,14 @@ BUILD_PACKAGES = [
 
 
 TEST_PACKAGES = [
-    'chevah-empirical==0.34.4',
+    'chevah-empirical==0.35.0',
 
-    'pyflakes==0.7.3',
+    'pyflakes==0.8.1',
     'pocketlint==1.4.4.c4',
+
+    # Used for py3 porting and other checks.
+    'pylint==1.4.3',
+    'pep8 >= 1.6.2',
 
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
@@ -66,28 +94,6 @@ TEST_PACKAGES = [
 
     'bunch',
     ]
-
-
-from brink.pavement_commons import (
-    buildbot_list,
-    buildbot_try,
-    default,
-    github,
-    harness,
-    help,
-    lint,
-    merge_init,
-    merge_commit,
-    pave,
-    pqm,
-    SETUP,
-    test_python,
-    test_remote,
-    test_review,
-    test_normal,
-    test_super,
-    )
-from paver.easy import call_task, consume_args, needs, task
 
 # Make pylint shut up.
 buildbot_list
@@ -225,4 +231,65 @@ def test_ci(args):
     if test_type == 'os-independent':
         return call_task('test_os_independent')
 
+    if test_type == 'py3':
+        return call_task('test_py3', args=args)
+
     return call_task('test_os_dependent', args=args)
+
+
+@task
+def test_py3():
+    """
+    Run checks for py3 compatibility.
+    """
+    from pylint.lint import Run
+    from nose.core import main as nose_main
+    arguments = ['--py3k', SETUP['folders']['source']]
+    linter = Run(arguments, exit=False)
+    stats = linter.linter.stats
+    errors = (
+        stats['info'] + stats['error'] + stats['refactor'] +
+        stats['fatal'] + stats['convention'] + stats['warning']
+        )
+    if errors:
+        print 'Pylint failed'
+        sys.exit(1)
+
+    print 'Compiling in Py3 ...',
+    command = ['python3', '-m', 'compileall', '-q', 'chevah']
+    pave.execute(command, output=sys.stdout)
+    print 'done'
+
+    sys.argv = sys.argv[:1]
+    pave.python_command_normal.extend(['-3'])
+
+    warnings.filterwarnings('always', module='chevah.empirical')
+    captured_warnings = []
+
+    def capture_warning(
+        message, category, filename,
+        lineno=None, file=None, line=None
+            ):
+        if not filename.startswith('chevah'):
+            # Not our code.
+            return
+        line = (message.message, filename, lineno)
+        if line in captured_warnings:
+            # Don't include duplicate warnings.
+            return
+        captured_warnings.append(line)
+
+    warnings.showwarning = capture_warning
+
+    sys.args = ['nose', 'chevah.empirical.tests.normal']
+    runner = nose_main(exit=False)
+    if not runner.success:
+        print 'Test failed'
+        sys.exit(1)
+    if not captured_warnings:
+        sys.exit(0)
+
+    print '\nCaptured warnings\n'
+    for warning, filename, line in captured_warnings:
+        print '%s:%s %s' % (filename, line, warning)
+    sys.exit(1)

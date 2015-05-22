@@ -3,6 +3,10 @@
 """
 Tests for portable filesystem access.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import str
 import errno
 import os
 import stat
@@ -635,7 +639,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertFalse(attributes.is_link)
         if self.os_family == 'posix':
             current_umask = mk.fs._getCurrentUmask()
-            expected_mode = 0100666 ^ current_umask
+            expected_mode = 0o100666 ^ current_umask
             self.assertEqual(expected_mode, attributes.mode)
 
     def test_getAttributes_folder(self):
@@ -651,7 +655,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertFalse(attributes.is_link)
         if self.os_family == 'posix':
             current_umask = mk.fs._getCurrentUmask()
-            expected_mode = 040777 ^ current_umask
+            expected_mode = 0o40777 ^ current_umask
             self.assertEqual(expected_mode, attributes.mode)
 
     @conditionals.onCapability('symbolic_link', True)
@@ -784,7 +788,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         content = self.filesystem.getFolderContent(self.test_segments)
 
         self.assertIsNotEmpty(content)
-        self.assertTrue(isinstance(content[0], unicode))
+        self.assertTrue(isinstance(content[0], str))
         self.assertItemsEqual([folder_name, file_name], content)
 
     def test_openFile_folder(self):
@@ -795,7 +799,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         path = mk.fs.getRealPathFromSegments(self.test_segments)
 
         with self.assertRaises(OSError) as context:
-            self.filesystem.openFile(self.test_segments, os.O_RDONLY, 0777)
+            self.filesystem.openFile(self.test_segments, os.O_RDONLY, 0o777)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
@@ -1470,7 +1474,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         content = self.unlocked_filesystem.getFolderContent(['c'])
         self.assertTrue(len(content) > 0)
         self.assertTrue(u'Program Files' in content)
-        self.assertTrue(isinstance(content[0], unicode))
+        self.assertTrue(isinstance(content[0], str))
 
     def test_getSegmentsFromRealPath_none(self):
         """
@@ -1667,7 +1671,7 @@ class TestLocalFilesystemLocked(CompatTestCase):
         '''
 
         def _p(*path):
-            return unicode(
+            return str(
                 os.path.join(self.locked_avatar.root_folder_path, *path))
 
         path = self.locked_filesystem.getRealPathFromSegments([])
