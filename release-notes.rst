@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.30.1 - 22/05/2015
+-------------------
+
+* Fix userExists on Unix to not read /etc/passwd as root.
+
+
 0.30.0 - 26/04/2015
 -------------------
 
