@@ -129,12 +129,11 @@ class UnixUsers(CompatUsers):
             return False
 
         username = username.encode('utf-8')
-        with self._executeAsAdministrator():
-            try:
-                pwd.getpwnam(username)
-            except KeyError:
-                return False
-            return True
+        try:
+            pwd.getpwnam(username)
+        except KeyError:
+            return False
+        return True
 
     def isUserInGroups(self, username, groups, token=None):
         '''Return true if `username` is a member of `groups`.'''
