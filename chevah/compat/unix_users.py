@@ -26,7 +26,7 @@ from zope.interface import implements
 from chevah.compat.compat_users import CompatUsers
 from chevah.compat.exceptions import ChangeUserException
 from chevah.compat.helpers import (
-    _,
+    _impersonation_lock,
     NoOpContext,
     )
 from chevah.compat.interfaces import (
@@ -54,7 +54,7 @@ def _get_euid_and_egid(username_encoded):
     try:
         pwnam = pwd.getpwnam(username_encoded)
     except KeyError:
-        raise ChangeUserException(_(u'User does not exists.'))
+        raise ChangeUserException(u'User does not exists.')
 
     return (pwnam.pw_uid, pwnam.pw_gid)
 
@@ -69,7 +69,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None,
         try:
             pwnam = pwd.getpwnam(username_encoded)
         except KeyError:
-            raise ChangeUserException(_(u'User does not exists.'))
+            raise ChangeUserException(u'User does not exists.')
         euid = pwnam.pw_uid
         egid = pwnam.pw_gid
     else:
@@ -118,7 +118,7 @@ class UnixUsers(CompatUsers):
             return home_folder
         except KeyError:
             self.raiseFailedToGetHomeFolder(
-                username, _(u'Username not found.'))
+                username, u'Username not found.')
 
     def userExists(self, username):
         """
@@ -364,7 +364,7 @@ class _ExecuteAsUser(object):
             try:
                 pwnam = pwd.getpwnam(username.encode('utf-8'))
             except KeyError:
-                raise ChangeUserException(_(u'User does not exists.'))
+                raise ChangeUserException(u'User does not exists.')
             euid = pwnam.pw_uid
             egid = pwnam.pw_gid
         self.euid = euid
@@ -376,6 +376,7 @@ class _ExecuteAsUser(object):
 
     def __enter__(self):
         '''Change process effective user.'''
+        _impersonation_lock.aquire(blocking=True)
         _change_effective_privileges(
             euid=self.euid, egid=self.egid, groups=self.groups)
         return self
@@ -387,6 +388,7 @@ class _ExecuteAsUser(object):
             egid=self.initial_egid,
             groups=self.initial_groups,
             )
+        _impersonation_lock.release()
         return False
 
 

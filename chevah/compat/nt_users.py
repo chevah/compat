@@ -23,7 +23,7 @@ from chevah.compat.constants import (
 from chevah.compat.exceptions import (
     ChangeUserException,
     )
-from chevah.compat.helpers import NoOpContext
+from chevah.compat.helpers import _impersonation_lock, NoOpContext
 from chevah.compat.interfaces import (
     IFileSystemAvatar,
     IHasImpersonatedAvatar,
@@ -303,6 +303,7 @@ class _ExecuteAsUser(object):
         """
         Change process effective user.
         """
+        _impersonation_lock.aquire(blocking=True)
         win32security.RevertToSelf()
         win32security.ImpersonateLoggedOnUser(self.token)
         return self
@@ -312,6 +313,7 @@ class _ExecuteAsUser(object):
         Reverting previous effective ID.
         """
         win32security.RevertToSelf()
+        _impersonation_lock.release()
         return False
 
 
