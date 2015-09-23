@@ -376,7 +376,7 @@ class _ExecuteAsUser(object):
 
     def __enter__(self):
         '''Change process effective user.'''
-        _impersonation_lock.aquire(blocking=True)
+        _impersonation_lock.acquire(True)
         _change_effective_privileges(
             euid=self.euid, egid=self.egid, groups=self.groups)
         return self

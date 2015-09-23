@@ -303,7 +303,7 @@ class _ExecuteAsUser(object):
         """
         Change process effective user.
         """
-        _impersonation_lock.aquire(blocking=True)
+        _impersonation_lock.acquire(True)
         win32security.RevertToSelf()
         win32security.ImpersonateLoggedOnUser(self.token)
         return self

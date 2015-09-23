@@ -2,6 +2,14 @@ Release notes for chevah.compat
 ===============================
 
 
+0.31.0 - 18/09/2015
+-------------------
+
+* Fix the security issue for execteAsUser when used together with thread.
+  When execteAsUser is called it will no longer allow executing another call
+  to execteAsUser until the first call was done.
+
+
 0.30.1 - 22/05/2015
 -------------------
 

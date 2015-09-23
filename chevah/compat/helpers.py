@@ -6,10 +6,11 @@ Any methods from here is a sign of bad design.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from threading import Lock
+from threading import RLock
 
 
-_impersonation_lock = Lock()
+# Reentrant lock is used to allow the same thread to do nested calls.
+_impersonation_lock = RLock()
 
 
 def _(string):
