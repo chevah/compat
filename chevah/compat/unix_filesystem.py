@@ -199,3 +199,12 @@ class UnixFilesystem(PosixFilesystemBase):
                 return self._rmtree(path_encoded)
             else:
                 return os.rmdir(path_encoded)
+
+    def getStatus(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
+        path = self.getRealPathFromSegments(segments)
+        path_encoded = self.getEncodedPath(path)
+        with self._impersonateUser():
+            return os.stat(path_encoded)

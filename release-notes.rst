@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.31.0 - 08/10/2015
+-------------------
+
+* Add node_id, owner and group to IFileAttributes.
+* Add comparison between IFileAttributes.
+
+
 0.30.1 - 22/05/2015
 -------------------
 

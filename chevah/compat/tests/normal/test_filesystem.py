@@ -13,9 +13,9 @@ import stat
 import tempfile
 import time
 
-from chevah.compat import DefaultAvatar, LocalFilesystem
+from chevah.compat import DefaultAvatar, FileAttributes, LocalFilesystem
 from chevah.compat.exceptions import CompatError
-from chevah.compat.interfaces import ILocalFilesystem
+from chevah.compat.interfaces import IFileAttributes, ILocalFilesystem
 from chevah.compat.testing import CompatTestCase, conditionals, mk
 
 
@@ -637,6 +637,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertFalse(attributes.is_folder)
         self.assertTrue(attributes.is_file)
         self.assertFalse(attributes.is_link)
+        self.assertNotEqual(0, attributes.node_id)
+        self.assertIsNotNone(attributes.node_id)
         if self.os_family == 'posix':
             current_umask = mk.fs._getCurrentUmask()
             expected_mode = 0o100666 ^ current_umask
@@ -653,6 +655,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(attributes.is_folder)
         self.assertFalse(attributes.is_file)
         self.assertFalse(attributes.is_link)
+        self.assertNotEqual(0, attributes.node_id)
+        self.assertIsNotNone(attributes.node_id)
         if self.os_family == 'posix':
             current_umask = mk.fs._getCurrentUmask()
             expected_mode = 0o40777 ^ current_umask
@@ -690,9 +694,9 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(attributes.is_link)
         self.assertTrue(attributes.is_folder)
 
-    def test_getStatus(self):
+    def test_getStatus_file(self):
         """
-        For non links will return the same status.
+        Will return the os.stat result for a file.
         """
         self.test_segments = mk.fs.createFileInTemp()
 
@@ -703,6 +707,31 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(stat.S_ISREG(status.st_mode))
         self.assertFalse(stat.S_ISDIR(status.st_mode))
         self.assertFalse(stat.S_ISLNK(status.st_mode))
+        self.assertNotEqual(0, status.st_ino)
+
+    def test_getStatus_directory(self):
+        """
+        Will return the os.stat result for a directory.
+        """
+        self.test_segments = mk.fs.createFolderInTemp()
+
+        status = self.filesystem.getStatus(self.test_segments)
+
+        # We can not test to much here, but getStatus is used by other
+        # high level method and we should have specific tests there.
+        self.assertFalse(stat.S_ISREG(status.st_mode))
+        self.assertTrue(stat.S_ISDIR(status.st_mode))
+        self.assertFalse(stat.S_ISLNK(status.st_mode))
+        self.assertNotEqual(0, status.st_ino)
+
+    def test_getStatus_not_found(self):
+        """
+        Will raise an error if path does not exists.
+        """
+        segments = mk.fs.temp_segments + [mk.string()]
+
+        with self.assertRaises(OSError):
+            self.filesystem.getStatus(segments)
 
     @conditionals.onOSFamily('posix')
     def test_checkChildPath_unix(self):
@@ -1810,3 +1839,102 @@ class TestLocalFilesystemLocked(CompatTestCase):
 
         with self.assertRaises(CompatError):
             self.locked_filesystem.readLink(link_segments)
+
+
+class TestFileAttributes(CompatTestCase):
+    """
+    Unit test for the FileAttributes.
+    """
+
+    def test_init(self):
+        """
+        Check initialization with minimum arguments.
+        """
+        name = mk.string()
+        path = os.path.join(mk.string(), name)
+
+        sut = FileAttributes(name=name, path=path)
+
+        self.assertProvides(IFileAttributes, sut)
+        self.assertEqual(name, sut.name)
+        self.assertEqual(path, sut.path)
+        self.assertEqual(0, sut.size)
+        self.assertIsFalse(sut.is_file)
+        self.assertIsFalse(sut.is_folder)
+        self.assertIsFalse(sut.is_link)
+        self.assertEqual(0, sut.modified)
+        self.assertEqual(0, sut.mode)
+        self.assertEqual(1, sut.hardlinks)
+        self.assertIsNone(sut.uid)
+        self.assertIsNone(sut.gid)
+        self.assertIsNone(sut.owner)
+        self.assertIsNone(sut.group)
+        self.assertIsNone(sut.node_id)
+
+    def test_init_all_arguments(self):
+        """
+        Check initialization with all arguments.
+        """
+        name = mk.string()
+        path = os.path.join(mk.string(), name)
+
+        sut = FileAttributes(
+            name=name,
+            path=path,
+            size=990,
+            is_file=True,
+            is_folder=True,
+            is_link=True,
+            modified=1234,
+            mode=0x640,
+            hardlinks=2,
+            uid=12,
+            gid=42,
+            owner=u'john',
+            group=u'adm',
+            node_id=12345678910,
+            )
+
+        self.assertProvides(IFileAttributes, sut)
+        self.assertEqual(name, sut.name)
+        self.assertEqual(path, sut.path)
+        self.assertEqual(990, sut.size)
+        self.assertIsTrue(sut.is_file)
+        self.assertIsTrue(sut.is_folder)
+        self.assertIsTrue(sut.is_link)
+        self.assertEqual(1234, sut.modified)
+        self.assertEqual(0x640, sut.mode)
+        self.assertEqual(2, sut.hardlinks)
+        self.assertEqual(12, sut.uid)
+        self.assertEqual(42, sut.gid)
+        self.assertEqual(u'john', sut.owner)
+        self.assertEqual(u'adm', sut.group)
+        self.assertEqual(12345678910, sut.node_id)
+
+    def test_equality(self):
+        """
+        Objects with same attributes are equal.
+        """
+        name = mk.string()
+        path = os.path.join(mk.string(), name)
+
+        sut1 = FileAttributes(name=name, path=path)
+        sut2 = FileAttributes(name=name, path=path)
+
+        self.assertEqual(sut1, sut2)
+
+    def test_inequality(self):
+        """
+        Objects with different attributes are not equal.
+        """
+        name = mk.string()
+        path = os.path.join(mk.string(), name)
+
+        sut1 = FileAttributes(name=name, path=path)
+        sut2 = FileAttributes(name=name, path='other-path')
+
+        self.assertNotEqual(sut1, sut2)
+        self.assertNotEqual(None, sut1)
+        self.assertNotEqual(sut1, None)
+        self.assertNotEqual(object(), sut1)
+        self.assertNotEqual(sut1, object())

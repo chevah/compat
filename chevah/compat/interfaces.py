@@ -578,9 +578,14 @@ class IFileAttributes(Interface):
     is_file = Attribute('True if member is a file.')
     is_folder = Attribute('True if member is a folder.')
     is_link = Attribute('True if member is a symbolic link.')
-    modified = Attribute('Timestamp at which content modified.')
+    modified = Attribute('Timestamp at which content was last modified.')
 
     mode = Attribute('Protection bits. Unix specific.')
     hardlinks = Attribute('Number of hard links.')
+
     uid = Attribute('User ID or owner as integer.')
-    gid = Attribute('Group ID of owner as integer.')
+    gid = Attribute('Group ID as integer.')
+
+    node_id = Attribute('ID inside the filesystem.')
+    owner = Attribute('Name of the owner of this path.')
+    group = Attribute('Name of the group to which this path is associated.')
