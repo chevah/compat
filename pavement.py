@@ -65,8 +65,8 @@ BUILD_PACKAGES = [
     'chevah-github-hooks-server==0.1.6',
     'smmap==0.8.2',
     'async==0.6.1',
-    'gitdb==0.5.4',
-    'gitpython==0.3.2.RC1',
+    'gitdb==0.6.4',
+    'gitpython==1.0.1',
     'pygithub==1.10.0',
     ]
 
