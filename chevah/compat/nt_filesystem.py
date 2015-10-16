@@ -327,9 +327,40 @@ class NTFilesystem(PosixFilesystemBase):
                 raise OSError(errno.EINVAL, error.message)
 
     def getStatus(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
+        path = self.getRealPathFromSegments(segments)
+        path_encoded = self.getEncodedPath(path)
         with self._windowsToOSError(segments):
-            return super(NTFilesystem, self).getStatus(segments)
+            with self._impersonateUser():
+                stats = os.stat(path_encoded)
+            file_handle = win32file.CreateFileW(
+                path_encoded,
+                win32file.GENERIC_READ,
+                win32file.FILE_SHARE_READ,
+                None,
+                win32file.OPEN_EXISTING,
+                win32file.FILE_FLAG_BACKUP_SEMANTICS,
+                None,
+                )
+
+        try:
+            file_info = win32file.GetFileInformationByHandle(file_handle)
+            (
+                attributes,
+                created_at, accessed_at, written_at,
+                volume_id,
+                file_high, file_low,
+                n_links,
+                index_high, index_low
+                ) = file_info
+        finally:
+            win32file.CloseHandle(file_handle)
+        stats_list = list(stats)
+        # Set node_id by concatenating the volume and the file_id.
+        stats_list[1] = volume_id << 64 | index_high << 32 | index_low
+        return type(stats)(stats_list)
 
     def getAttributes(self, segments):
         '''See `ILocalFilesystem`.'''

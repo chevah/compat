@@ -234,7 +234,7 @@ class PosixFilesystemBase(object):
         """
         See `ILocalFilesystem`.
         """
-        raise NotImplementedError()
+        raise NotImplementedError('deleteFolder not implemented.')
 
     def _rmtree(self, path):
         """
@@ -440,15 +440,6 @@ class PosixFilesystemBase(object):
 
         return name
 
-    def getStatus(self, segments):
-        """
-        See `ILocalFilesystem`.
-        """
-        path = self.getRealPathFromSegments(segments)
-        path_encoded = self.getEncodedPath(path)
-        with self._impersonateUser():
-            return os.stat(path_encoded)
-
     def getAttributes(self, segments):
         """
         See `ILocalFilesystem`.
@@ -479,6 +470,7 @@ class PosixFilesystemBase(object):
             hardlinks=stats.st_nlink,
             uid=stats.st_uid,
             gid=stats.st_gid,
+            node_id=stats.st_ino,
             )
 
     def setAttributes(self, segments, attributes):
@@ -690,8 +682,11 @@ class FileAttributes(object):
     def __init__(
             self, name, path, size=0,
             is_file=False, is_folder=False, is_link=False,
-            modified=False,
-            mode=0, hardlinks=1, uid=0, gid=0,
+            modified=0,
+            mode=0, hardlinks=1,
+            uid=None, gid=None,
+            owner=None, group=None,
+            node_id=None,
             ):
         self.name = name
         self.path = path
@@ -705,3 +700,18 @@ class FileAttributes(object):
         self.hardlinks = hardlinks
         self.uid = uid
         self.gid = gid
+        self.node_id = node_id
+        self.owner = owner
+        self.group = group
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, self.__class__) and
+            self.__dict__ == other.__dict__
+            )
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        return u"%s:%s:%s" % (self.__class__, id(self), self.__dict__)
