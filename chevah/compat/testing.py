@@ -155,8 +155,6 @@ TEST_ACCOUNT_PASSWORD_OTHER = str(u'altapara')
 TEST_ACCOUNT_UID_OTHER = 2001
 TEST_ACCOUNT_GID_OTHER = 2011
 TEST_ACCOUNT_GROUP_OTHER = str(u'g mițmotan')
-TEST_ACCOUNT_LDAP_USERNAME = str(u'ldap mâț test-account')
-TEST_ACCOUNT_LDAP_PASSWORD = str(u'ldap mâț test-password')
 
 # Centrify testing account.
 TEST_ACCOUNT_CENTRIFY_USERNAME = str(u'centrify-user')

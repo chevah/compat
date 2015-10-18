@@ -7,10 +7,12 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from builtins import str
+import os
 import sys
 
 from chevah.compat import (
     DefaultAvatar,
+    process_capabilities,
     system_users,
     SuperAvatar,
     )
@@ -26,7 +28,7 @@ from chevah.compat.testing import (
 
 class TestSystemUsers(CompatTestCase):
     """
-    Test system users operations.
+    Test system users operations under a non-elevated account.
     """
 
     def test_init(self):
@@ -110,22 +112,6 @@ class TestSystemUsers(CompatTestCase):
         self.assertEqual(u'/Users/' + mk.username, home_folder)
         self.assertIsInstance(str, home_folder)
 
-    @conditionals.onOSFamily('posix')
-    def test_pam_support_unix(self):
-        """
-        Check that PAM is supported on the Unix systems.
-        """
-        from pam import authenticate as expected_authenticate
-
-        pam_authenticate = system_users._getPAMAuthenticate()
-
-        # FIXME:2745:
-        # HP-UX PAM/Ctypes is not yet ready.
-        if self.os_name in ['hpux']:
-            self.assertFalse(pam_authenticate)
-        else:
-            self.assertEqual(expected_authenticate, pam_authenticate)
-
     def test_shadow_support_unix(self):
         """
         Check that shadow files are supported on the expected Unix systems.
@@ -140,6 +126,73 @@ class TestSystemUsers(CompatTestCase):
         from chevah.compat.unix_users import HAS_SHADOW_SUPPORT
 
         self.assertTrue(HAS_SHADOW_SUPPORT)
+
+    def test_pamWithUsernameAndPassword_fail(self):
+        """
+        It is a method on all system and will return False when not supported,
+        or user/pass are invalid.
+        """
+        result = system_users.pamWithUsernameAndPassword(
+            username='no-such-user',
+            password='no-such-pass',
+            service='chevah-pam-test',
+            )
+
+        self.assertIsFalse(result)
+
+
+class TestSystemUsersPAM(CompatTestCase):
+    """
+    Test system users operations for PAM.
+
+    These test requires a dedicated slave wich PAM configured with a
+    `chevah-pam-test` service.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        if not process_capabilities.pam:
+            raise cls.skipTest()
+        if not os.path.exists('/etc/pam.d/chevah-pam-test'):
+            raise AssertionError(
+                'chevah-pam-test PAM module not configured on this machine.')
+
+    def test_pamWithUsernameAndPassword_ok(self):
+        """
+        When a valid username and password is provided it will return True.
+        """
+        result = system_users.pamWithUsernameAndPassword(
+            username='test-user',
+            password='test-pass',
+            service='chevah-pam-test',
+            )
+
+        self.assertIsTrue(result)
+
+    def test_pamWithUsernameAndPassword_bad_pass(self):
+        """
+        When a valid username but invalid password is provided it will return
+        False
+        """
+        result = system_users.pamWithUsernameAndPassword(
+            username='test-user',
+            password='bad-pass',
+            service='chevah-pam-test',
+            )
+
+        self.assertIsFalse(result)
+
+    def test_pamWithUsernameAndPassword_bad_user(self):
+        """
+        When an invalid username is provided it will return False.
+        """
+        result = system_users.pamWithUsernameAndPassword(
+            username='bad-user',
+            password='test-pass',
+            service='chevah-pam-test',
+            )
+
+        self.assertIsFalse(result)
 
 
 class TestDefaultAvatar(CompatTestCase):

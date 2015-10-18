@@ -35,8 +35,6 @@ from chevah.compat.testing import (
     TEST_ACCOUNT_GROUP_WIN,
     TEST_ACCOUNT_PASSWORD,
     TEST_ACCOUNT_USERNAME,
-    TEST_ACCOUNT_LDAP_PASSWORD,
-    TEST_ACCOUNT_LDAP_USERNAME,
     )
 from chevah.compat.exceptions import (
     ChangeUserException,
@@ -271,31 +269,12 @@ class TestSystemUsers(SystemUsersTestCase):
         self.assertFalse(result)
         self.assertIsNone(token)
 
-    def test_authenticateWithUsernameAndPassword_PAM_ldap(self):
-        """
-        Test username and password authentication using PAM.
-
-        This test is only executed on slaves which are configured
-        with PAM-LDAP.
-
-        I tried to create a custom PAM module, which allows only a specific
-        username, but I failed (adi).
-        """
-        if 'ldap' not in self.getHostname():
-            raise self.skipTest()
-
-        result, token = system_users.authenticateWithUsernameAndPassword(
-            username=TEST_ACCOUNT_LDAP_USERNAME,
-            password=TEST_ACCOUNT_LDAP_PASSWORD,
-            )
-        self.assertTrue(result)
-        self.assertIsNone(token)
-
     def test_authenticateWithUsernameAndPassword_centrify(self):
-        '''Test username and password authentication using Centrify.
+        """
+        Test username and password authentication using Centrify.
 
         Centrify client is only installed on SLES-11-x64.
-        '''
+        """
         # FIXME:1265:
         # The Centrify server was accidentally removed. We wait for it
         # to be reinstalled and re-enabled this test.

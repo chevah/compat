@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.32.0 - 18/10/2015
+-------------------
+
+* Add dedicated PAM method to authenticate based on username and password.
+
+
 0.31.0 - 08/10/2015
 -------------------
 

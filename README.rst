@@ -30,6 +30,20 @@ Unified interface for working with operating system file systems provides:
 * open file in various modes: read-only, write-only, append,
 
 
+PAM
+---
+
+PAM test requires the chevah-pam-test PAM module to be enabled.
+
+Create a file `/etc/pam.d/chevah-pam-test` with the following content::
+
+    auth sufficient /srv/buildslave/pam_chevah_test.so
+    account sufficient /srv/buildslave/pam_chevah_test.so
+
+Build the `pam_chevah_test.so` with the code from:
+https://github.com/chevah/simple-pam/tree/chevah-pam-test
+
+
 TODO
 ----
 
