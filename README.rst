@@ -43,6 +43,9 @@ Create a file `/etc/pam.d/chevah-pam-test` with the following content::
 Build the `pam_chevah_test.so` with the code from:
 https://github.com/chevah/simple-pam/tree/chevah-pam-test
 
+The accepted credentials are: pam_user/test-pass.
+`lp` account is used as it should be available as an OS account on all systems.
+
 
 TODO
 ----

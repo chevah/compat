@@ -197,7 +197,12 @@ class UnixUsers(CompatUsers):
         username = codecs.encode(username, 'utf-8')
         password = codecs.encode(password, 'utf-8')
 
-        checked = pam_authenticate(username, password, service)
+        with self._executeAsAdministrator():
+            # FIXME:3059:
+            # PAM can be used without admin right but I have no idea why
+            # it fails with errors like:
+            # audit_log_acct_message() failed: Operation not permitted.
+            checked = pam_authenticate(username, password, service)
 
         if checked is True:
             return True

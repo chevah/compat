@@ -534,3 +534,57 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
 
         self.assertEqual(
             mk.username, system_users.getCurrentUserName())
+
+
+class TestSystemUsersPAM(CompatTestCase):
+    """
+    Test system users operations for PAM.
+
+    These test requires a dedicated slave wich PAM configured with a
+    `chevah-pam-test` service.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        if not process_capabilities.pam:
+            raise cls.skipTest()
+        if not os.path.exists('/etc/pam.d/chevah-pam-test'):
+            raise AssertionError(
+                'chevah-pam-test PAM module not configured on this machine.')
+
+    def test_pamWithUsernameAndPassword_ok(self):
+        """
+        When a valid username and password is provided it will return True.
+        """
+        result = system_users.pamWithUsernameAndPassword(
+            username='pam_user',
+            password='test-pass',
+            service='chevah-pam-test',
+            )
+
+        self.assertIsTrue(result)
+
+    def test_pamWithUsernameAndPassword_bad_pass(self):
+        """
+        When a valid username but invalid password is provided it will return
+        False
+        """
+        result = system_users.pamWithUsernameAndPassword(
+            username='pam_user',
+            password='bad-pass',
+            service='chevah-pam-test',
+            )
+
+        self.assertIsFalse(result)
+
+    def test_pamWithUsernameAndPassword_bad_user(self):
+        """
+        When an invalid username is provided it will return False.
+        """
+        result = system_users.pamWithUsernameAndPassword(
+            username='bad-user',
+            password='test-pass',
+            service='chevah-pam-test',
+            )
+
+        self.assertIsFalse(result)
