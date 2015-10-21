@@ -44,7 +44,7 @@ Build the `pam_chevah_test.so` with the code from:
 https://github.com/chevah/simple-pam/tree/chevah-pam-test
 
 The accepted credentials are: pam_user/test-pass.
-`lp` account is used as it should be available as an OS account on all systems.
+`pam_user` account should be auto-created by the test runner.
 
 
 TODO
