@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.31.2 - 17/11/2015
+-------------------
+
+* Remove dependencies from setup.py as we have POSIX only deps which fail on
+  Windows.
+
+
 0.31.1 - 17/11/2015
 -------------------
 
