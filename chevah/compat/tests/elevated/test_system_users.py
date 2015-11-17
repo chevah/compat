@@ -371,7 +371,7 @@ class TestSystemUsers(SystemUsersTestCase):
             self.assertNotEqual(initial_uid, uid)
             self.assertNotEqual(initial_gid, gid)
             if self.os_name != 'osx':
-                # On OSX never than 10.5 get/set groups are useless.
+                # On OSX newer than 10.5 get/set groups are useless.
                 self.assertItemsEqual(
                     self.getGroupsIDForTestAccount(), impersonated_groups)
 
