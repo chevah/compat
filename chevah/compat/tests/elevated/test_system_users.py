@@ -348,13 +348,16 @@ class TestSystemUsers(SystemUsersTestCase):
 
     @conditionals.onOSFamily('posix')
     def test_executeAsUser_Unix(self):
-        '''Test executing as a different user.'''
-        if os.name != 'posix':
-            raise self.skipTest()
-
+        """
+        Test executing as a different user.
+        """
         initial_uid, initial_gid = os.geteuid(), os.getegid()
         initial_groups = os.getgroups()
         test_user = mk.getTestUser(u'normal')
+        self.assertNotEqual(
+            sorted(self.getGroupsIDForTestAccount()),
+            sorted(os.getgroups()),
+            )
 
         with system_users.executeAsUser(username=test_user.name):
             import pwd
@@ -367,8 +370,10 @@ class TestSystemUsers(SystemUsersTestCase):
             self.assertEqual(TEST_ACCOUNT_GROUP, impersonated_groupname)
             self.assertNotEqual(initial_uid, uid)
             self.assertNotEqual(initial_gid, gid)
-            self.assertItemsEqual(
-                self.getGroupsIDForTestAccount(), impersonated_groups)
+            if self.os_name != 'osx':
+                # On OSX never than 10.5 get/set groups are useless.
+                self.assertItemsEqual(
+                    self.getGroupsIDForTestAccount(), impersonated_groups)
 
         self.assertEqual(initial_uid, os.geteuid())
         self.assertEqual(initial_gid, os.getegid())
@@ -490,7 +495,6 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
 
         # On Unix we have some cached values.
         if os.name == 'posix':
-            self.assertIsNone(avatar._groups)
             self.assertIsNone(avatar._euid)
             self.assertIsNone(avatar._egid)
 
@@ -506,7 +510,6 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
 
         # On Unix the cached values should not change.
         if os.name == 'posix':
-            self.assertIsNone(avatar._groups)
             self.assertIsNone(avatar._euid)
             self.assertIsNone(avatar._egid)
 
@@ -531,8 +534,6 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
         _, kwargs = mock_execute.call_args
         self.assertEqual(TEST_ACCOUNT_GID, kwargs['egid'])
         self.assertEqual(TEST_ACCOUNT_UID, kwargs['euid'])
-        self.assertItemsEqual(
-            self.getGroupsIDForTestAccount(), kwargs['groups'])
 
     @conditionals.onOSFamily('nt')
     def test_getImpersonationContext_use_impersonation_nt(self):

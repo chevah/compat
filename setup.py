@@ -1,7 +1,7 @@
 from setuptools import Command, find_packages, setup
 import os
 
-VERSION = '0.31.0'
+VERSION = '0.31.1'
 
 
 class PublishCommand(Command):
@@ -34,6 +34,8 @@ if os.name == 'posix':
     dependencies.extend([
         'python-daemon==1.5.5',
         'pam==0.1.4.c3',
+        # AIX only ar archive utility.
+        'arpy==1.1.1.c2',
         ])
 
 distribution = setup(
