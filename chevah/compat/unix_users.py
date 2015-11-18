@@ -36,17 +36,6 @@ from chevah.compat.interfaces import (
     )
 
 
-def _get_supplementary_groups(username_encoded):
-    '''Return all groups in which `username_encoded` is a member.
-    username_encoded is provided as utf-8 encoded format.
-    '''
-    groups = set()
-    for group in grp.getgrall():
-        if username_encoded in group.gr_mem:
-            groups.add(group.gr_gid)
-    return list(groups)
-
-
 def _get_euid_and_egid(username_encoded):
     """
     Return a tuple of (euid, egid) for username.
@@ -59,8 +48,7 @@ def _get_euid_and_egid(username_encoded):
     return (pwnam.pw_uid, pwnam.pw_gid)
 
 
-def _change_effective_privileges(username=None, euid=None, egid=None,
-                                 groups=None):
+def _change_effective_privileges(username=None, euid=None, egid=None):
     """
     Change current process effective user and group.
     """
@@ -81,9 +69,6 @@ def _change_effective_privileges(username=None, euid=None, egid=None,
     if uid == euid and gid == egid:
         return
 
-    if groups is None:
-        groups = _get_supplementary_groups(username_encoded)
-
     try:
         if uid != 0:
             # We set root euid first to get full permissions.
@@ -92,7 +77,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None,
 
         # Make sure to set user euid as the last action. Otherwise we will no
         # longer have permissions to change egid.
-        os.setgroups(groups)
+        os.initgroups(username_encoded, egid)
         os.setegid(egid)
         os.seteuid(euid)
     except OSError:
@@ -358,7 +343,7 @@ class UnixUsers(CompatUsers):
 class _ExecuteAsUser(object):
     '''Context manager for running under a different user.'''
 
-    def __init__(self, username=None, euid=0, egid=0, groups=None):
+    def __init__(self, username=None, euid=0, egid=0):
         '''Initialize the context manager.'''
         if username is not None:
             try:
@@ -369,24 +354,18 @@ class _ExecuteAsUser(object):
             egid = pwnam.pw_gid
         self.euid = euid
         self.egid = egid
-        self.groups = groups
         self.initial_euid = os.geteuid()
         self.initial_egid = os.getegid()
-        self.initial_groups = os.getgroups()
 
     def __enter__(self):
         '''Change process effective user.'''
-        _change_effective_privileges(
-            euid=self.euid, egid=self.egid, groups=self.groups)
+        _change_effective_privileges(euid=self.euid, egid=self.egid)
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
         '''Reverting previous effective ID.'''
         _change_effective_privileges(
-            euid=self.initial_euid,
-            egid=self.initial_egid,
-            groups=self.initial_groups,
-            )
+            euid=self.initial_euid, egid=self.initial_egid)
         return False
 
 
@@ -394,14 +373,12 @@ class UnixHasImpersonatedAvatar(object):
 
     implements(IHasImpersonatedAvatar)
 
-    _groups = None
     _euid = None
     _egid = None
 
     def __init__(self):
         self._euid = None
         self._egid = None
-        self._groups = None
 
     @property
     def use_impersonation(self):
@@ -421,13 +398,8 @@ class UnixHasImpersonatedAvatar(object):
         if not (self._euid and self._egid):
             username_encoded = self.name.encode('utf-8')
             (self._euid, self._egid) = _get_euid_and_egid(username_encoded)
-            self._groups = _get_supplementary_groups(username_encoded)
 
-        return _ExecuteAsUser(
-            euid=self._euid,
-            egid=self._egid,
-            groups=self._groups,
-            )
+        return _ExecuteAsUser(euid=self._euid, egid=self._egid)
 
 
 class UnixDefaultAvatar(UnixHasImpersonatedAvatar):

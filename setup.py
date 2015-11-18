@@ -1,7 +1,7 @@
 from setuptools import Command, find_packages, setup
 import os
 
-VERSION = '0.31.0'
+VERSION = '0.31.2'
 
 
 class PublishCommand(Command):
@@ -24,17 +24,12 @@ class PublishCommand(Command):
         assert os.getcwd() == self.cwd, (
             'Must be in package root: %s' % self.cwd)
         self.run_command('sdist')
-        self.distribution.get_command_obj('sdist')
+        self.run_command('bdist_wheel')
+
         upload_command = self.distribution.get_command_obj('upload')
         upload_command.repository = u'chevah'
         self.run_command('upload')
 
-dependencies = ['zope.interface ==3.8.0', 'future']
-if os.name == 'posix':
-    dependencies.extend([
-        'python-daemon==1.5.5',
-        'pam==0.1.4.c3',
-        ])
 
 distribution = setup(
     name="chevah-compat",
@@ -56,5 +51,4 @@ distribution = setup(
     cmdclass={
         'publish': PublishCommand,
         },
-    install_requires=dependencies,
     )

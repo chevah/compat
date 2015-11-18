@@ -2,6 +2,20 @@ Release notes for chevah.compat
 ===============================
 
 
+0.31.2 - 17/11/2015
+-------------------
+
+* Remove dependencies from setup.py as we have POSIX only deps which fail on
+  Windows.
+
+
+0.31.1 - 17/11/2015
+-------------------
+
+* Refactor group impersonation to use initgroups() rather than
+  getgroups/setgroups.
+
+
 0.31.0 - 08/10/2015
 -------------------
 
