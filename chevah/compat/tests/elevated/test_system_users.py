@@ -244,6 +244,84 @@ class TestSystemUsers(SystemUsersTestCase):
         else:
             self.assertIsNotNone(token)
 
+    @conditionals.onOSFamily('posix')
+    def test_authenticateWithUsernameAndPassword_passwd_not_here(self):
+        """
+        On most OS system password is not stored in the passwd file so even
+        if we pass the correct pass it will return None to inform that
+        password is not here.
+        """
+        result = system_users._checkPasswdFile(
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
+            )
+
+        self.assertIsNone(result)
+
+    @conditionals.onOSFamily('posix')
+    def test_authenticateWithUsernameAndPassword_passwd_aix_ok(self):
+        """
+        On AIX the password is stored in /etc/security/passwd and can be
+        read by root.
+        """
+        if self.os_name != 'aix':
+            raise self.skipTest()
+
+        result = system_users._checkPasswdFile(
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
+            )
+
+        self.assertTrue(result)
+
+    @conditionals.onOSFamily('posix')
+    def test_authenticateWithUsernameAndPassword_shadow(self):
+        """
+        Check successful call to authenticateWithUsernameAndPassword.
+        """
+        if self.os_name == 'aix':
+            # AIX has no shadow
+            raise self.skipTest()
+
+        result = system_users._checkShadowFile(
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
+            )
+
+        self.assertTrue(result)
+
+    @conditionals.onOSFamily('posix')
+    def test_authenticateWithUsernameAndPassword_pam(self):
+        """
+        Check successful call to authenticateWithUsernameAndPassword.
+        """
+        if self.os_name == 'hpux':
+            # HPUX does not support PAM
+            raise self.skipTest()
+
+        result = system_users._checkPAM(
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
+            )
+
+        self.assertTrue(result)
+
+    @conditionals.onOSFamily('posix')
+    def test_authenticateWithUsernameAndPassword_pam_hpux(self):
+        """
+        Check successful call to authenticateWithUsernameAndPassword.
+        """
+        if self.os_name != 'hpux':
+            # Test only for HPUX.
+            raise self.skipTest()
+
+        result = system_users._checkPAM(
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
+            )
+
+        self.assertIsNone(result)
+
     def test_authenticateWithUsernameAndPassword_bad_password(self):
         """
         authenticateWithUsernameAndPassword will return False if
