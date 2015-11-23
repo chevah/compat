@@ -44,7 +44,7 @@ if os.name == 'posix':
     RUN_PACKAGES.extend([
         'python-daemon==1.5.5',
         # This is required as any other version will try to also update pip.
-        'lockfile==0.10.2',
+        'lockfile==0.9.1',
         'pam==0.1.4.c3',
         # Required for loading PAM lib on AIX.
         'arpy==1.1.1.c2',
