@@ -245,7 +245,7 @@ class TestSystemUsers(SystemUsersTestCase):
             self.assertIsNotNone(token)
 
     @conditionals.onOSFamily('posix')
-    def test_authenticateWithUsernameAndPassword_passwd_not_here(self):
+    def test_authenticateWithUsernameAndPassword_passwd_valid(self):
         """
         On most OS system password is not stored in the passwd file so even
         if we pass the correct pass it will return None to inform that
@@ -256,31 +256,38 @@ class TestSystemUsers(SystemUsersTestCase):
             password=TEST_ACCOUNT_PASSWORD,
             )
 
-        self.assertIsNone(result)
+        if self.os_name in ['aix', 'hpux']:
+            # On AIX and HPUX password is here.
+            self.assertTrue(result)
+        else:
+            # Not here.
+            self.assertIsNone(result)
 
     @conditionals.onOSFamily('posix')
-    def test_authenticateWithUsernameAndPassword_passwd_aix_ok(self):
+    def test_authenticateWithUsernameAndPassword_passwd_invalid(self):
         """
-        On AIX the password is stored in /etc/security/passwd and can be
-        read by root.
+        When an invalid password is provided, on most OS system password is not
+        stored in the passwd file it return None to inform that
+        password is not here.
+        On systems with passwd it return False.
         """
-        if self.os_name != 'aix':
-            raise self.skipTest()
-
         result = system_users._checkPasswdFile(
-            username=TEST_ACCOUNT_USERNAME,
-            password=TEST_ACCOUNT_PASSWORD,
-            )
+            username=TEST_ACCOUNT_USERNAME, password='')
 
-        self.assertTrue(result)
+        if self.os_name in ['aix', 'hpux']:
+            # On AIX and HPUX invalid passwords are not accepted.
+            self.assertFalse(result)
+        else:
+            # On all other OSs password is not here.
+            self.assertIsNone(result)
 
     @conditionals.onOSFamily('posix')
     def test_authenticateWithUsernameAndPassword_shadow(self):
         """
         Check successful call to authenticateWithUsernameAndPassword.
         """
-        if self.os_name == 'aix':
-            # AIX has no shadow
+        if self.os_name in ['aix', 'hpux']:
+            # AIX and HPUX has no shadow
             raise self.skipTest()
 
         result = system_users._checkShadowFile(
@@ -288,15 +295,20 @@ class TestSystemUsers(SystemUsersTestCase):
             password=TEST_ACCOUNT_PASSWORD,
             )
 
-        self.assertTrue(result)
+        if self.os_name in ['aix', 'hpux', 'osx']:
+            # AIX and HPUX has no shadow
+            self.assertIsNone(result)
+        else:
+            self.assertTrue(result)
 
     @conditionals.onOSFamily('posix')
     def test_authenticateWithUsernameAndPassword_pam(self):
         """
         Check successful call to authenticateWithUsernameAndPassword.
         """
-        if self.os_name == 'hpux':
-            # HPUX does not support PAM
+        if self.os_name == 'solaris':
+            # FIXME:3128:
+            # PAM is broken on Solaris.
             raise self.skipTest()
 
         result = system_users._checkPAM(
@@ -304,23 +316,11 @@ class TestSystemUsers(SystemUsersTestCase):
             password=TEST_ACCOUNT_PASSWORD,
             )
 
-        self.assertTrue(result)
-
-    @conditionals.onOSFamily('posix')
-    def test_authenticateWithUsernameAndPassword_pam_hpux(self):
-        """
-        Check successful call to authenticateWithUsernameAndPassword.
-        """
-        if self.os_name != 'hpux':
-            # Test only for HPUX.
-            raise self.skipTest()
-
-        result = system_users._checkPAM(
-            username=TEST_ACCOUNT_USERNAME,
-            password=TEST_ACCOUNT_PASSWORD,
-            )
-
-        self.assertIsNone(result)
+        if self.os_name in ['hpux']:
+            # PAM is not supported.
+            self.assertIsNone(result)
+        else:
+            self.assertTrue(result)
 
     def test_authenticateWithUsernameAndPassword_bad_password(self):
         """

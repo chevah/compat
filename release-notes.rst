@@ -2,10 +2,10 @@ Release notes for chevah.compat
 ===============================
 
 
-0.31.3 - 20/11/2015
+0.31.3 - 23/11/2015
 -------------------
 
-* Fix checking password stored in /etc/passwd in AIX..
+* Fix checking password stored in /etc/passwd in AIX.
 
 
 0.31.2 - 17/11/2015

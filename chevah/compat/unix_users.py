@@ -84,6 +84,24 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
         raise ChangeUserException(u'Could not switch user.')
 
 
+def _verifyCrypt(password, crypted_password):
+    """
+    Return `True` if password can be associated with `crypted_password`,
+    and return `False` otherwise.
+    """
+    provided_password = crypt.crypt(password, crypted_password)
+
+    if os.sys.platform == 'sunos5' and provided_password.startswith('$6$'):
+        # There is a bug in Python 2.5 and crypt add some extra
+        # values for shadow passwords of type 6.
+        provided_password = provided_password[:12] + provided_password[20:]
+
+    if provided_password == crypted_password:
+        return True
+
+    return False
+
+
 class UnixUsers(CompatUsers):
     """
     Container for Unix users specific methods.
@@ -253,24 +271,7 @@ class UnixUsers(CompatUsers):
             # stored in passwd.
             return None
 
-        return self._verifyCrypt(password, crypted_password)
-
-    def _verifyCrypt(self, password, crypted_password):
-        """
-        Return `True` if password can be associated with `crypted_password`,
-        and return `False` otherwise.
-        """
-        provided_password = crypt.crypt(password, crypted_password)
-
-        if os.sys.platform == 'sunos5' and provided_password.startswith('$6$'):
-            # There is a bug in Python 2.5 and crypt add some extra
-            # values for shadow passwords of type 6.
-            provided_password = provided_password[:12] + provided_password[20:]
-
-        if provided_password == crypted_password:
-            return True
-
-        return False
+        return _verifyCrypt(password, crypted_password)
 
     def _checkShadowFile(self, username, password):
         '''
@@ -320,7 +321,7 @@ class UnixUsers(CompatUsers):
         except KeyError:
             return None
 
-        return self._verifyCrypt(password, crypted_password)
+        return _verifyCrypt(password, crypted_password)
 
     def _getPAMAuthenticate(self):
         """
