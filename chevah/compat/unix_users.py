@@ -257,14 +257,13 @@ class UnixUsers(CompatUsers):
                     crypted_password = pwd.getpwnam(username)[1]
             else:
                 crypted_password = pwd.getpwnam(username)[1]
-
-            # On OSX the crypted_password is returned as '********'.
-            if '**' in crypted_password:
-                crypted_password = 'x'
-
         except KeyError:
             # User does not exists.
             return None
+
+        if process_capabilities.os_name == 'osx' and '**' in crypted_password:
+            # On OSX the crypted_password is returned as '********'.
+            crypted_password = 'x'
 
         if crypted_password in self._NOT_HERE:
             # Allow other methods to take over if password is not
