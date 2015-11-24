@@ -26,7 +26,7 @@ from chevah.compat.testing import (
 
 class TestSystemUsers(CompatTestCase):
     """
-    Test system users operations.
+    Test system users operations under a non-elevated account.
     """
 
     def test_init(self):
@@ -109,22 +109,6 @@ class TestSystemUsers(CompatTestCase):
 
         self.assertEqual(u'/Users/' + mk.username, home_folder)
         self.assertIsInstance(str, home_folder)
-
-    @conditionals.onOSFamily('posix')
-    def test_pam_support_unix(self):
-        """
-        Check that PAM is supported on the Unix systems.
-        """
-        from pam import authenticate as expected_authenticate
-
-        pam_authenticate = system_users._getPAMAuthenticate()
-
-        # FIXME:2745:
-        # HP-UX PAM/Ctypes is not yet ready.
-        if self.os_name in ['hpux']:
-            self.assertFalse(pam_authenticate)
-        else:
-            self.assertEqual(expected_authenticate, pam_authenticate)
 
     def test_shadow_support_unix(self):
         """

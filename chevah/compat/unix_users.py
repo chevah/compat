@@ -173,6 +173,8 @@ class UnixUsers(CompatUsers):
         Check the username and password against local accounts.
 
         Returns True if credentials are accepted, False otherwise.
+        Returns `None` if credentials are not defined in the
+        /etc/passwd or the /etc/shadow files.
         """
         checked = self._checkPasswdFile(username, password)
         if checked is not None:
@@ -188,16 +190,37 @@ class UnixUsers(CompatUsers):
             else:
                 return (False, None)
 
-        checked = self._checkPAM(username, password)
-        if checked is not None:
-            if checked is True:
-                return (True, None)
-            else:
-                # For PAM account we don't know if this is a failure due to
-                # a bad credentials or non existent credentials.
-                return (None, None)
-
         return (None, None)
+
+    def pamWithUsernameAndPassword(self, username, password, service='login'):
+        """
+        Check username and password using PAM.
+
+        Returns True if credentials are accepted, False otherwise.
+        """
+        pam_authenticate = self._getPAMAuthenticate()
+        if not pam_authenticate:
+            # PAM is not supported.
+            return False
+
+        # On Python2.7/OSX PAM require str not bytes.
+        username = codecs.encode(username, 'utf-8')
+        password = codecs.encode(password, 'utf-8')
+
+        with self._executeAsAdministrator():
+            # FIXME:3059:
+            # PAM can be used without admin right but I have no idea why
+            # it fails with errors like:
+            # audit_log_acct_message() failed: Operation not permitted.
+            checked = pam_authenticate(username, password, service)
+
+        if checked is True:
+            return True
+
+        # For PAM account we don't know if this is a failure due to
+        # a bad credentials or non existent credentials.
+        # Credentials are always rejected.
+        return False
 
     def dropPrivileges(self, username):
         '''Change process privileges to `username`.
@@ -347,20 +370,6 @@ class UnixUsers(CompatUsers):
                 self._pam_authenticate = False
 
         return self._pam_authenticate
-
-    def _checkPAM(self, username, password):
-        """
-        Authenticate against PAM library.
-        """
-        pam_authenticate = self._getPAMAuthenticate()
-        if not pam_authenticate:
-            return None
-
-        # On Python2.7/OSX PAM require str not bytes.
-        username = codecs.encode(username, 'utf-8')
-        password = codecs.encode(password, 'utf-8')
-        with self._executeAsAdministrator():
-            return pam_authenticate(username, password)
 
 
 class _ExecuteAsUser(object):

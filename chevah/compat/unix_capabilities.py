@@ -72,3 +72,14 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
         See `IProcessCapabilities`.
         """
         return True
+
+    @property
+    def pam(self):
+        """
+        See `IProcessCapabilities`.
+        """
+        if self.os_name == 'hpux':
+            # FIXME:2745:
+            # We don't yet support PAM on HPUX.
+            return False
+        return True

@@ -35,8 +35,6 @@ from chevah.compat.testing import (
     TEST_ACCOUNT_GROUP_WIN,
     TEST_ACCOUNT_PASSWORD,
     TEST_ACCOUNT_USERNAME,
-    TEST_ACCOUNT_LDAP_PASSWORD,
-    TEST_ACCOUNT_LDAP_USERNAME,
     )
 from chevah.compat.exceptions import (
     ChangeUserException,
@@ -238,8 +236,12 @@ class TestSystemUsers(SystemUsersTestCase):
             password=TEST_ACCOUNT_PASSWORD,
             )
 
-        self.assertTrue(result)
-        if os.name != 'nt':
+        if self.os_name == 'osx':
+            self.assertIsNone(result)
+        else:
+            self.assertTrue(result)
+
+        if self.os_family != 'nt':
             self.assertIsNone(token)
         else:
             self.assertIsNotNone(token)
@@ -297,8 +299,8 @@ class TestSystemUsers(SystemUsersTestCase):
         else:
             self.assertTrue(result)
 
-    @conditionals.onOSFamily('posix')
-    def test_checkPAM(self):
+    @conditionals.onCapability('pam', True)
+    def test_pamWithUsernameAndPassword(self):
         """
         Check PAM authentication.
         """
@@ -307,16 +309,12 @@ class TestSystemUsers(SystemUsersTestCase):
             # PAM is broken on Solaris.
             raise self.skipTest()
 
-        result = system_users._checkPAM(
+        result = system_users.pamWithUsernameAndPassword(
             username=TEST_ACCOUNT_USERNAME,
             password=TEST_ACCOUNT_PASSWORD,
             )
 
-        if self.os_name in ['hpux']:
-            # PAM is not supported.
-            self.assertIsNone(result)
-        else:
-            self.assertTrue(result)
+        self.assertTrue(result)
 
     def test_authenticateWithUsernameAndPassword_bad_password(self):
         """
@@ -345,31 +343,12 @@ class TestSystemUsers(SystemUsersTestCase):
         self.assertFalse(result)
         self.assertIsNone(token)
 
-    def test_authenticateWithUsernameAndPassword_PAM_ldap(self):
-        """
-        Test username and password authentication using PAM.
-
-        This test is only executed on slaves which are configured
-        with PAM-LDAP.
-
-        I tried to create a custom PAM module, which allows only a specific
-        username, but I failed (adi).
-        """
-        if 'ldap' not in self.getHostname():
-            raise self.skipTest()
-
-        result, token = system_users.authenticateWithUsernameAndPassword(
-            username=TEST_ACCOUNT_LDAP_USERNAME,
-            password=TEST_ACCOUNT_LDAP_PASSWORD,
-            )
-        self.assertTrue(result)
-        self.assertIsNone(token)
-
     def test_authenticateWithUsernameAndPassword_centrify(self):
-        '''Test username and password authentication using Centrify.
+        """
+        Test username and password authentication using Centrify.
 
         Centrify client is only installed on SLES-11-x64.
-        '''
+        """
         # FIXME:1265:
         # The Centrify server was accidentally removed. We wait for it
         # to be reinstalled and re-enabled this test.
@@ -633,3 +612,59 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
 
         self.assertEqual(
             mk.username, system_users.getCurrentUserName())
+
+
+class TestSystemUsersPAM(CompatTestCase):
+    """
+    Test system users operations for PAM.
+
+    These test requires a dedicated slave wich PAM configured with a
+    `chevah-pam-test` service.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        if not process_capabilities.pam:
+            raise cls.skipTest()
+        if not os.path.exists('/etc/pam.d/chevah-pam-test'):
+            # FIXME:3061:
+            # 'chevah-pam-test PAM module not configured on this machine.
+            # Later we might want to force this on all systems supporting PAM.
+            raise cls.skipTest()
+
+    def test_pamWithUsernameAndPassword_ok(self):
+        """
+        When a valid username and password is provided it will return True.
+        """
+        result = system_users.pamWithUsernameAndPassword(
+            username='pam_user',
+            password='test-pass',
+            service='chevah-pam-test',
+            )
+
+        self.assertIsTrue(result)
+
+    def test_pamWithUsernameAndPassword_bad_pass(self):
+        """
+        When a valid username but invalid password is provided it will return
+        False
+        """
+        result = system_users.pamWithUsernameAndPassword(
+            username='pam_user',
+            password='bad-pass',
+            service='chevah-pam-test',
+            )
+
+        self.assertIsFalse(result)
+
+    def test_pamWithUsernameAndPassword_bad_user(self):
+        """
+        When an invalid username is provided it will return False.
+        """
+        result = system_users.pamWithUsernameAndPassword(
+            username='bad-user',
+            password='test-pass',
+            service='chevah-pam-test',
+            )
+
+        self.assertIsFalse(result)

@@ -222,6 +222,14 @@ class NTUsers(CompatUsers):
             return (False, None)
         return (True, token)
 
+    def pamWithUsernameAndPassword(self, username, password, service='login'):
+        """
+        Check username and password using PAM.
+        """
+        # PAM is not supported on Windows so this always fails.
+        # Here to comply with the compat interface.
+        return False
+
     def dropPrivileges(self, username):
         """
         Change process privileges to `username`

@@ -104,6 +104,8 @@ class IProcessCapabilities(Interface):
         'True if it can retrieve home folders for any local account.')
     symbolic_link = Attribute(
         'True if it supports symbolic links.')
+    pam = Attribute(
+        'True if it supports PAM authentication.')
 
 
 class IHasImpersonatedAvatar(Interface):
@@ -166,6 +168,13 @@ class IOSUsers(Interface):
         Returns a tuple of (result, token).
         `result` is `True` if credentials are accepted, False otherwise.
         `token` is None on Unix system and a token handler on Windows.
+        """
+
+    def pamWithUsernameAndPassword(username, password, service='login'):
+        """
+        Check username and password using PAM.
+
+        Returns True if credentials are accepted, False otherwise.
         """
 
     def dropPrivileges(username):

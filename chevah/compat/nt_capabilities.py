@@ -62,6 +62,14 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         return True
 
     @property
+    def pam(self):
+        """
+        See `IProcessCapabilities`.
+        """
+        # On Windows we don't support PAM.
+        return False
+
+    @property
     def create_home_folder(self):
         """
         See `IProcessCapabilities`.
