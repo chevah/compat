@@ -2,10 +2,37 @@ Release notes for chevah.compat
 ===============================
 
 
-0.32.0 - 18/10/2015
+0.34.0 - 18/10/2015
 -------------------
 
 * Add dedicated PAM method to authenticate based on username and password.
+
+
+0.33.0 - 24/11/2015
+-------------------
+
+* Fix checking password stored in /etc/passwd in AIX.
+
+
+0.32.0 - 24/11/2015
+-------------------
+
+* Remove dependencies from setup.py as we have POSIX only deps which fail on
+  Windows.
+
+
+0.31.2 - 17/11/2015
+-------------------
+
+* Remove dependencies from setup.py as we have POSIX only deps which fail on
+  Windows.
+
+
+0.31.1 - 17/11/2015
+-------------------
+
+* Refactor group impersonation to use initgroups() rather than
+  getgroups/setgroups.
 
 
 0.31.0 - 08/10/2015

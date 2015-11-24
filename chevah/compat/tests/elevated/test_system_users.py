@@ -242,6 +242,80 @@ class TestSystemUsers(SystemUsersTestCase):
         else:
             self.assertIsNotNone(token)
 
+    @conditionals.onOSFamily('posix')
+    def test_checkPasswdFile_valid(self):
+        """
+        On most OS system password is not stored in the passwd file so even
+        if we pass the correct pass it will return None to inform that
+        password is not here.
+        """
+        result = system_users._checkPasswdFile(
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
+            )
+
+        if self.os_name in ['aix', 'hpux']:
+            # On AIX and HPUX password is here.
+            self.assertTrue(result)
+        else:
+            # Not here.
+            self.assertIsNone(result)
+
+    @conditionals.onOSFamily('posix')
+    def test_checkPasswdFile_invalid(self):
+        """
+        When an invalid password is provided, on most OS system password is not
+        stored in the passwd file it return None to inform that
+        password is not here.
+        On systems with passwd it return False.
+        """
+        result = system_users._checkPasswdFile(
+            username=TEST_ACCOUNT_USERNAME, password='')
+
+        if self.os_name in ['aix', 'hpux']:
+            # On AIX and HPUX invalid passwords are not accepted.
+            self.assertFalse(result)
+        else:
+            # On all other OSs password is not here.
+            self.assertIsNone(result)
+
+    @conditionals.onOSFamily('posix')
+    def test_checkShadowFile(self):
+        """
+        Check /etc/shadow authentication.
+        """
+        result = system_users._checkShadowFile(
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
+            )
+
+        if self.os_name in ['aix', 'hpux', 'osx']:
+            # No shadow support.
+            self.assertIsNone(result)
+        else:
+            self.assertTrue(result)
+
+    @conditionals.onOSFamily('posix')
+    def test_checkPAM(self):
+        """
+        Check PAM authentication.
+        """
+        if self.os_name == 'solaris':
+            # FIXME:3128:
+            # PAM is broken on Solaris.
+            raise self.skipTest()
+
+        result = system_users._checkPAM(
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
+            )
+
+        if self.os_name in ['hpux']:
+            # PAM is not supported.
+            self.assertIsNone(result)
+        else:
+            self.assertTrue(result)
+
     def test_authenticateWithUsernameAndPassword_bad_password(self):
         """
         authenticateWithUsernameAndPassword will return False if
@@ -327,13 +401,16 @@ class TestSystemUsers(SystemUsersTestCase):
 
     @conditionals.onOSFamily('posix')
     def test_executeAsUser_Unix(self):
-        '''Test executing as a different user.'''
-        if os.name != 'posix':
-            raise self.skipTest()
-
+        """
+        Test executing as a different user.
+        """
         initial_uid, initial_gid = os.geteuid(), os.getegid()
         initial_groups = os.getgroups()
         test_user = mk.getTestUser(u'normal')
+        self.assertNotEqual(
+            sorted(self.getGroupsIDForTestAccount()),
+            sorted(os.getgroups()),
+            )
 
         with system_users.executeAsUser(username=test_user.name):
             import pwd
@@ -346,8 +423,13 @@ class TestSystemUsers(SystemUsersTestCase):
             self.assertEqual(TEST_ACCOUNT_GROUP, impersonated_groupname)
             self.assertNotEqual(initial_uid, uid)
             self.assertNotEqual(initial_gid, gid)
-            self.assertItemsEqual(
-                self.getGroupsIDForTestAccount(), impersonated_groups)
+            self.assertNotEqual(initial_groups, impersonated_groups)
+            if self.os_name != 'osx':
+                # On OSX newer than 10.5 get/set groups are useless.
+                self.assertEqual(
+                    sorted(self.getGroupsIDForTestAccount()),
+                    sorted(impersonated_groups),
+                    )
 
         self.assertEqual(initial_uid, os.geteuid())
         self.assertEqual(initial_gid, os.getegid())
@@ -469,7 +551,6 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
 
         # On Unix we have some cached values.
         if os.name == 'posix':
-            self.assertIsNone(avatar._groups)
             self.assertIsNone(avatar._euid)
             self.assertIsNone(avatar._egid)
 
@@ -485,7 +566,6 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
 
         # On Unix the cached values should not change.
         if os.name == 'posix':
-            self.assertIsNone(avatar._groups)
             self.assertIsNone(avatar._euid)
             self.assertIsNone(avatar._egid)
 
@@ -510,8 +590,6 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
         _, kwargs = mock_execute.call_args
         self.assertEqual(TEST_ACCOUNT_GID, kwargs['egid'])
         self.assertEqual(TEST_ACCOUNT_UID, kwargs['euid'])
-        self.assertItemsEqual(
-            self.getGroupsIDForTestAccount(), kwargs['groups'])
 
     @conditionals.onOSFamily('nt')
     def test_getImpersonationContext_use_impersonation_nt(self):

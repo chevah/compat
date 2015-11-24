@@ -36,17 +36,6 @@ from chevah.compat.interfaces import (
     )
 
 
-def _get_supplementary_groups(username_encoded):
-    '''Return all groups in which `username_encoded` is a member.
-    username_encoded is provided as utf-8 encoded format.
-    '''
-    groups = set()
-    for group in grp.getgrall():
-        if username_encoded in group.gr_mem:
-            groups.add(group.gr_gid)
-    return list(groups)
-
-
 def _get_euid_and_egid(username_encoded):
     """
     Return a tuple of (euid, egid) for username.
@@ -59,8 +48,7 @@ def _get_euid_and_egid(username_encoded):
     return (pwnam.pw_uid, pwnam.pw_gid)
 
 
-def _change_effective_privileges(username=None, euid=None, egid=None,
-                                 groups=None):
+def _change_effective_privileges(username=None, euid=None, egid=None):
     """
     Change current process effective user and group.
     """
@@ -81,9 +69,6 @@ def _change_effective_privileges(username=None, euid=None, egid=None,
     if uid == euid and gid == egid:
         return
 
-    if groups is None:
-        groups = _get_supplementary_groups(username_encoded)
-
     try:
         if uid != 0:
             # We set root euid first to get full permissions.
@@ -92,11 +77,29 @@ def _change_effective_privileges(username=None, euid=None, egid=None,
 
         # Make sure to set user euid as the last action. Otherwise we will no
         # longer have permissions to change egid.
-        os.setgroups(groups)
+        os.initgroups(username_encoded, egid)
         os.setegid(egid)
         os.seteuid(euid)
     except OSError:
         raise ChangeUserException(u'Could not switch user.')
+
+
+def _verifyCrypt(password, crypted_password):
+    """
+    Return `True` if password can be associated with `crypted_password`,
+    and return `False` otherwise.
+    """
+    provided_password = crypt.crypt(password, crypted_password)
+
+    if os.sys.platform == 'sunos5' and provided_password.startswith('$6$'):
+        # There is a bug in Python 2.5 and crypt add some extra
+        # values for shadow passwords of type 6.
+        provided_password = provided_password[:12] + provided_password[20:]
+
+    if provided_password == crypted_password:
+        return True
+
+    return False
 
 
 class UnixUsers(CompatUsers):
@@ -108,6 +111,13 @@ class UnixUsers(CompatUsers):
 
     # Lazy loaded method to pam authenticate.
     _pam_authenticate = None
+
+    # Values which mark that password is stored somewhere.
+    # `*` is for denied accounts but it is also used for LDAP accounts
+    # which are listed on Ubuntu `getent shadow` with password '*', even if
+    # they are active.
+    # `NP` is Centrify way of saying `*NP*`.
+    _NOT_HERE = ('x', 'NP', '*NP*', '*')
 
     def getHomeFolder(self, username, token=None):
         '''Get home folder for local (or NIS) user.'''
@@ -250,36 +260,44 @@ class UnixUsers(CompatUsers):
         return _ExecuteAsUser(euid=0, egid=0)
 
     def _checkPasswdFile(self, username, password):
-        '''Authenticate against the /etc/passwd file.
+        """
+        Authenticate against the /etc/passwd file.
 
         Return False if user was not found or password is wrong.
         Returns None if password is stored in shadow file.
-        '''
+        """
+        from chevah.compat import process_capabilities
+
         username = username.encode('utf-8')
         password = password.encode('utf-8')
+
         try:
-            # Passwd file is available to anyone.
-            crypted_password = pwd.getpwnam(username)[1]
-            # On OSX the crypted_password is returned as '********'.
-            if '**' in crypted_password:
-                crypted_password = '*'
+            # Crypted password should be readable to all users.
+            # With the exception of AIX which has /etc/security/passwd to
+            # store passwd and that file is only readable by root.
+            if process_capabilities.os_name == 'aix':
+                with self._executeAsAdministrator():
+                    crypted_password = pwd.getpwnam(username)[1]
+            else:
+                crypted_password = pwd.getpwnam(username)[1]
         except KeyError:
+            # User does not exists.
             return None
-        else:
-            if crypted_password in ('*', 'x'):
-                # Allow other methods to take over if password is not
-                # stored in passwd file.
-                return None
-            provided_password = crypt.crypt(
-                password, crypted_password)
-            if crypted_password == provided_password:
-                return True
-        return False
+
+        if process_capabilities.os_name == 'osx' and '**' in crypted_password:
+            # On OSX the crypted_password is returned as '********'.
+            crypted_password = 'x'
+
+        if crypted_password in self._NOT_HERE:
+            # Allow other methods to take over if password is not
+            # stored in passwd.
+            return None
+
+        return _verifyCrypt(password, crypted_password)
 
     def _checkShadowFile(self, username, password):
         '''
         Authenticate against /etc/shadow file.
-
 
         salt and hashed password OR a status exception value e.g.:
             * "$id$salt$hashed", where "$id" is the algorithm used:
@@ -315,27 +333,17 @@ class UnixUsers(CompatUsers):
                 crypted_password = spwd.getspnam(username).sp_pwd
 
             # Locked account
-            if crypted_password in ('LK'):
+            if crypted_password in ('LK',):
                 return False
-
-            # Also locked account but LDAP accounts are listed on Ubuntu
-            # `getent shadow` with password '*', even if they are active.
-            if crypted_password in ('*'):
-                return None
 
             # Allow other methods to take over if password is not
             # stored in shadow file.
-            # NP is added by Centrify.
-            if crypted_password in ('!', 'x', 'NP'):
+            if crypted_password in self._NOT_HERE:
                 return None
         except KeyError:
             return None
-        else:
-            provided_password = get_crypted_password(
-                password, crypted_password)
-            if crypted_password == provided_password:
-                return True
-        return False
+
+        return _verifyCrypt(password, crypted_password)
 
     def _getPAMAuthenticate(self):
         """
@@ -367,7 +375,7 @@ class UnixUsers(CompatUsers):
 class _ExecuteAsUser(object):
     '''Context manager for running under a different user.'''
 
-    def __init__(self, username=None, euid=0, egid=0, groups=None):
+    def __init__(self, username=None, euid=0, egid=0):
         '''Initialize the context manager.'''
         if username is not None:
             try:
@@ -378,24 +386,18 @@ class _ExecuteAsUser(object):
             egid = pwnam.pw_gid
         self.euid = euid
         self.egid = egid
-        self.groups = groups
         self.initial_euid = os.geteuid()
         self.initial_egid = os.getegid()
-        self.initial_groups = os.getgroups()
 
     def __enter__(self):
         '''Change process effective user.'''
-        _change_effective_privileges(
-            euid=self.euid, egid=self.egid, groups=self.groups)
+        _change_effective_privileges(euid=self.euid, egid=self.egid)
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
         '''Reverting previous effective ID.'''
         _change_effective_privileges(
-            euid=self.initial_euid,
-            egid=self.initial_egid,
-            groups=self.initial_groups,
-            )
+            euid=self.initial_euid, egid=self.initial_egid)
         return False
 
 
@@ -403,14 +405,12 @@ class UnixHasImpersonatedAvatar(object):
 
     implements(IHasImpersonatedAvatar)
 
-    _groups = None
     _euid = None
     _egid = None
 
     def __init__(self):
         self._euid = None
         self._egid = None
-        self._groups = None
 
     @property
     def use_impersonation(self):
@@ -430,13 +430,8 @@ class UnixHasImpersonatedAvatar(object):
         if not (self._euid and self._egid):
             username_encoded = self.name.encode('utf-8')
             (self._euid, self._egid) = _get_euid_and_egid(username_encoded)
-            self._groups = _get_supplementary_groups(username_encoded)
 
-        return _ExecuteAsUser(
-            euid=self._euid,
-            egid=self._egid,
-            groups=self._groups,
-            )
+        return _ExecuteAsUser(euid=self._euid, egid=self._egid)
 
 
 class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
