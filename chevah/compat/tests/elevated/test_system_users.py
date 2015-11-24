@@ -296,7 +296,7 @@ class TestSystemUsers(SystemUsersTestCase):
             self.assertTrue(result)
 
     @conditionals.onOSFamily('posix')
-    def test_checkPAM(self):
+    def test_pamWithUsernameAndPassword(self):
         """
         Check PAM authentication.
         """
@@ -305,7 +305,7 @@ class TestSystemUsers(SystemUsersTestCase):
             # PAM is broken on Solaris.
             raise self.skipTest()
 
-        result = system_users._checkPAM(
+        result = system_users.pamWithUsernameAndPassword(
             username=TEST_ACCOUNT_USERNAME,
             password=TEST_ACCOUNT_PASSWORD,
             )
@@ -627,8 +627,9 @@ class TestSystemUsersPAM(CompatTestCase):
         if not process_capabilities.pam:
             raise cls.skipTest()
         if not os.path.exists('/etc/pam.d/chevah-pam-test'):
-            raise AssertionError(
-                'chevah-pam-test PAM module not configured on this machine.')
+            # 'chevah-pam-test PAM module not configured on this machine.
+            # Later we might want to force this on all systems supporting PAM.
+            raise cls.skipTest()
 
     def test_pamWithUsernameAndPassword_ok(self):
         """
