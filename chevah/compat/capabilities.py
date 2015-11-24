@@ -27,6 +27,8 @@ def _get_os_name():
         return 'solaris'
     elif family.startswith('hp-ux11'):
         return 'hpux'
+    elif family.startswith('openbsd'):
+        return 'openbsd'
     else:
         raise AssertionError('OS "%s" not supported.' % family)
 

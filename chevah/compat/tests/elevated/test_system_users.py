@@ -244,6 +244,80 @@ class TestSystemUsers(SystemUsersTestCase):
         else:
             self.assertIsNotNone(token)
 
+    @conditionals.onOSFamily('posix')
+    def test_checkPasswdFile_valid(self):
+        """
+        On most OS system password is not stored in the passwd file so even
+        if we pass the correct pass it will return None to inform that
+        password is not here.
+        """
+        result = system_users._checkPasswdFile(
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
+            )
+
+        if self.os_name in ['aix', 'hpux']:
+            # On AIX and HPUX password is here.
+            self.assertTrue(result)
+        else:
+            # Not here.
+            self.assertIsNone(result)
+
+    @conditionals.onOSFamily('posix')
+    def test_checkPasswdFile_invalid(self):
+        """
+        When an invalid password is provided, on most OS system password is not
+        stored in the passwd file it return None to inform that
+        password is not here.
+        On systems with passwd it return False.
+        """
+        result = system_users._checkPasswdFile(
+            username=TEST_ACCOUNT_USERNAME, password='')
+
+        if self.os_name in ['aix', 'hpux']:
+            # On AIX and HPUX invalid passwords are not accepted.
+            self.assertFalse(result)
+        else:
+            # On all other OSs password is not here.
+            self.assertIsNone(result)
+
+    @conditionals.onOSFamily('posix')
+    def test_checkShadowFile(self):
+        """
+        Check /etc/shadow authentication.
+        """
+        result = system_users._checkShadowFile(
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
+            )
+
+        if self.os_name in ['aix', 'hpux', 'osx']:
+            # No shadow support.
+            self.assertIsNone(result)
+        else:
+            self.assertTrue(result)
+
+    @conditionals.onOSFamily('posix')
+    def test_checkPAM(self):
+        """
+        Check PAM authentication.
+        """
+        if self.os_name == 'solaris':
+            # FIXME:3128:
+            # PAM is broken on Solaris.
+            raise self.skipTest()
+
+        result = system_users._checkPAM(
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
+            )
+
+        if self.os_name in ['hpux']:
+            # PAM is not supported.
+            self.assertIsNone(result)
+        else:
+            self.assertTrue(result)
+
     def test_authenticateWithUsernameAndPassword_bad_password(self):
         """
         authenticateWithUsernameAndPassword will return False if

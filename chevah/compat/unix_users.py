@@ -84,6 +84,24 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
         raise ChangeUserException(u'Could not switch user.')
 
 
+def _verifyCrypt(password, crypted_password):
+    """
+    Return `True` if password can be associated with `crypted_password`,
+    and return `False` otherwise.
+    """
+    provided_password = crypt.crypt(password, crypted_password)
+
+    if os.sys.platform == 'sunos5' and provided_password.startswith('$6$'):
+        # There is a bug in Python 2.5 and crypt add some extra
+        # values for shadow passwords of type 6.
+        provided_password = provided_password[:12] + provided_password[20:]
+
+    if provided_password == crypted_password:
+        return True
+
+    return False
+
+
 class UnixUsers(CompatUsers):
     """
     Container for Unix users specific methods.
@@ -93,6 +111,13 @@ class UnixUsers(CompatUsers):
 
     # Lazy loaded method to pam authenticate.
     _pam_authenticate = None
+
+    # Values which mark that password is stored somewhere.
+    # `*` is for denied accounts but it is also used for LDAP accounts
+    # which are listed on Ubuntu `getent shadow` with password '*', even if
+    # they are active.
+    # `NP` is Centrify way of saying `*NP*`.
+    _NOT_HERE = ('x', 'NP', '*NP*', '*')
 
     def getHomeFolder(self, username, token=None):
         '''Get home folder for local (or NIS) user.'''
@@ -212,41 +237,44 @@ class UnixUsers(CompatUsers):
         return _ExecuteAsUser(euid=0, egid=0)
 
     def _checkPasswdFile(self, username, password):
-        '''Authenticate against the /etc/passwd file.
+        """
+        Authenticate against the /etc/passwd file.
 
         Return False if user was not found or password is wrong.
         Returns None if password is stored in shadow file.
-        '''
+        """
         from chevah.compat import process_capabilities
-        if process_capabilities.os_name == 'aix':
-            # AIX /etc/passwd auth is disabled for this release.
-            return None
 
         username = username.encode('utf-8')
         password = password.encode('utf-8')
+
         try:
-            with self._executeAsAdministrator():
+            # Crypted password should be readable to all users.
+            # With the exception of AIX which has /etc/security/passwd to
+            # store passwd and that file is only readable by root.
+            if process_capabilities.os_name == 'aix':
+                with self._executeAsAdministrator():
+                    crypted_password = pwd.getpwnam(username)[1]
+            else:
                 crypted_password = pwd.getpwnam(username)[1]
-            # On OSX the crypted_password is returned as '********'.
-            if '**' in crypted_password:
-                crypted_password = '*'
         except KeyError:
+            # User does not exists.
             return None
-        else:
-            if crypted_password in ('*', 'x'):
-                # Allow other methods to take over if password is not
-                # stored in passwd file.
-                return None
-            provided_password = crypt.crypt(
-                password, crypted_password)
-            if crypted_password == provided_password:
-                return True
-        return False
+
+        if process_capabilities.os_name == 'osx' and '**' in crypted_password:
+            # On OSX the crypted_password is returned as '********'.
+            crypted_password = 'x'
+
+        if crypted_password in self._NOT_HERE:
+            # Allow other methods to take over if password is not
+            # stored in passwd.
+            return None
+
+        return _verifyCrypt(password, crypted_password)
 
     def _checkShadowFile(self, username, password):
         '''
         Authenticate against /etc/shadow file.
-
 
         salt and hashed password OR a status exception value e.g.:
             * "$id$salt$hashed", where "$id" is the algorithm used:
@@ -282,27 +310,17 @@ class UnixUsers(CompatUsers):
                 crypted_password = spwd.getspnam(username).sp_pwd
 
             # Locked account
-            if crypted_password in ('LK'):
+            if crypted_password in ('LK',):
                 return False
-
-            # Also locked account but LDAP accounts are listed on Ubuntu
-            # `getent shadow` with password '*', even if they are active.
-            if crypted_password in ('*'):
-                return None
 
             # Allow other methods to take over if password is not
             # stored in shadow file.
-            # NP is added by Centrify.
-            if crypted_password in ('!', 'x', 'NP'):
+            if crypted_password in self._NOT_HERE:
                 return None
         except KeyError:
             return None
-        else:
-            provided_password = get_crypted_password(
-                password, crypted_password)
-            if crypted_password == provided_password:
-                return True
-        return False
+
+        return _verifyCrypt(password, crypted_password)
 
     def _getPAMAuthenticate(self):
         """
