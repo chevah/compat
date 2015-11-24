@@ -924,7 +924,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         self.assertTrue(mk.fs.exists(self.test_segments))
         attributes = mk.fs.getAttributes(self.test_segments)
-        self.assertAlmostEqual(now, attributes.modified, delta=1)
+        self.assertAlmostEqual(now, attributes.modified, delta=1.5)
 
     def test_copyFile_destination_no_parent(self):
         """
