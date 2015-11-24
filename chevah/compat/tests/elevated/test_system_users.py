@@ -245,7 +245,7 @@ class TestSystemUsers(SystemUsersTestCase):
             self.assertIsNotNone(token)
 
     @conditionals.onOSFamily('posix')
-    def test_authenticateWithUsernameAndPassword_passwd_valid(self):
+    def test_checkPasswdFile_valid(self):
         """
         On most OS system password is not stored in the passwd file so even
         if we pass the correct pass it will return None to inform that
@@ -264,7 +264,7 @@ class TestSystemUsers(SystemUsersTestCase):
             self.assertIsNone(result)
 
     @conditionals.onOSFamily('posix')
-    def test_authenticateWithUsernameAndPassword_passwd_invalid(self):
+    def test_checkPasswdFile_invalid(self):
         """
         When an invalid password is provided, on most OS system password is not
         stored in the passwd file it return None to inform that
@@ -282,29 +282,25 @@ class TestSystemUsers(SystemUsersTestCase):
             self.assertIsNone(result)
 
     @conditionals.onOSFamily('posix')
-    def test_authenticateWithUsernameAndPassword_shadow(self):
+    def test_checkShadowFile(self):
         """
-        Check successful call to authenticateWithUsernameAndPassword.
+        Check /etc/shadow authentication.
         """
-        if self.os_name in ['aix', 'hpux']:
-            # AIX and HPUX has no shadow
-            raise self.skipTest()
-
         result = system_users._checkShadowFile(
             username=TEST_ACCOUNT_USERNAME,
             password=TEST_ACCOUNT_PASSWORD,
             )
 
         if self.os_name in ['aix', 'hpux', 'osx']:
-            # AIX and HPUX has no shadow
+            # No shadow support.
             self.assertIsNone(result)
         else:
             self.assertTrue(result)
 
     @conditionals.onOSFamily('posix')
-    def test_authenticateWithUsernameAndPassword_pam(self):
+    def test_checkPAM(self):
         """
-        Check successful call to authenticateWithUsernameAndPassword.
+        Check PAM authentication.
         """
         if self.os_name == 'solaris':
             # FIXME:3128:
