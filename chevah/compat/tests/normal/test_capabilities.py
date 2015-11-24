@@ -110,23 +110,13 @@ class TestProcessCapabilities(CompatTestCase):
                 self.assertNotContains(
                     'SeCreateSymbolicLinkPrivilege', text)
 
-
-class TestUnixProcessCapabilities(TestProcessCapabilities):
-    """
-    Capability tests executed only on Unix.
-    """
-
-    def setUp(self):
-        super(TestUnixProcessCapabilities, self).setUp()
-
-        if self.os_family != 'posix':
-            raise self.skipTest('Tests only for Unix/Linux.')
-
     def test_pam(self):
         """
         PAM is supported on Linux/Unix with the exception of HPUX.
+
+        PAM is not supported on Windows
         """
-        if self.os_name == 'hpux':
+        if self.os_name in ['hpux', 'windows']:
             self.assertFalse(self.capabilities.pam)
         else:
             self.assertTrue(self.capabilities.pam)
@@ -352,9 +342,3 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
             self.assertTrue(symbolic_link)
         else:
             self.assertFalse(symbolic_link)
-
-    def test_pam(self):
-        """
-        PAM is not supported on Windows.
-        """
-        self.assertFalse(self.capabilities.pam)
