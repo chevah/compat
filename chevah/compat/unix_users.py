@@ -217,6 +217,11 @@ class UnixUsers(CompatUsers):
         Return False if user was not found or password is wrong.
         Returns None if password is stored in shadow file.
         '''
+        from chevah.compat import process_capabilities
+        if process_capabilities.os_name == 'aix':
+            # AIX /etc/passwd auth is disabled for this release.
+            return None
+
         username = username.encode('utf-8')
         password = password.encode('utf-8')
         try:
