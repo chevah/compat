@@ -236,8 +236,12 @@ class TestSystemUsers(SystemUsersTestCase):
             password=TEST_ACCOUNT_PASSWORD,
             )
 
-        self.assertTrue(result)
-        if os.name != 'nt':
+        if self.os_name == 'osx':
+            self.assertIsNone(result)
+        else:
+            self.assertTrue(result)
+
+        if self.os_family != 'nt':
             self.assertIsNone(token)
         else:
             self.assertIsNotNone(token)
@@ -295,7 +299,7 @@ class TestSystemUsers(SystemUsersTestCase):
         else:
             self.assertTrue(result)
 
-    @conditionals.onOSFamily('posix')
+    @conditionals.onCapability('pam', True)
     def test_pamWithUsernameAndPassword(self):
         """
         Check PAM authentication.
@@ -310,11 +314,7 @@ class TestSystemUsers(SystemUsersTestCase):
             password=TEST_ACCOUNT_PASSWORD,
             )
 
-        if self.os_name in ['hpux']:
-            # PAM is not supported.
-            self.assertIsNone(result)
-        else:
-            self.assertTrue(result)
+        self.assertTrue(result)
 
     def test_authenticateWithUsernameAndPassword_bad_password(self):
         """
@@ -627,6 +627,7 @@ class TestSystemUsersPAM(CompatTestCase):
         if not process_capabilities.pam:
             raise cls.skipTest()
         if not os.path.exists('/etc/pam.d/chevah-pam-test'):
+            # FIXME:3061:
             # 'chevah-pam-test PAM module not configured on this machine.
             # Later we might want to force this on all systems supporting PAM.
             raise cls.skipTest()
