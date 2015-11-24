@@ -2,10 +2,17 @@ Release notes for chevah.compat
 ===============================
 
 
-0.31.3 - 23/11/2015
+0.33.0 - 24/11/2015
 -------------------
 
 * Fix checking password stored in /etc/passwd in AIX.
+
+
+0.32.0 - 24/11/2015
+-------------------
+
+* Remove dependencies from setup.py as we have POSIX only deps which fail on
+  Windows.
 
 
 0.31.2 - 17/11/2015
