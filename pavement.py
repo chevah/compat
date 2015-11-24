@@ -43,11 +43,12 @@ RUN_PACKAGES = [
 if os.name == 'posix':
     RUN_PACKAGES.extend([
         'python-daemon==1.5.5',
+        # This is required as any other version will try to also update pip.
+        'lockfile==0.9.1',
         'pam==0.1.4.c3',
+        # Required for loading PAM lib on AIX.
+        'arpy==1.1.1.c2',
         ])
-
-if sys.platform.startswith('aix'):
-    RUN_PACKAGES.append('arpy==1.1.1.c2')
 
 
 BUILD_PACKAGES = [
@@ -142,12 +143,7 @@ def deps_testing():
     print('Installing testing dependencies to %s...' % (pave.path.build))
     pave.pip(
         command='install',
-        arguments=RUN_PACKAGES,
-        silent=True,
-        )
-    pave.pip(
-        command='install',
-        arguments=TEST_PACKAGES,
+        arguments=RUN_PACKAGES + TEST_PACKAGES,
         silent=True,
         )
 
