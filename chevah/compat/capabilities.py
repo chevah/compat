@@ -29,6 +29,8 @@ def _get_os_name():
         return 'hpux'
     elif family.startswith('openbsd'):
         return 'openbsd'
+    elif family.startswith('freebsd'):
+        return 'freebsd'
     else:
         raise AssertionError('OS "%s" not supported.' % family)
 

@@ -11,6 +11,27 @@ from __future__ import absolute_import
 import os
 import sys
 
+# Check stdblib shadow support.
+try:
+    import spwd
+    _HAS_SHADOW_SUPPORT = True
+except ImportError:
+    spwd = None
+    _HAS_SHADOW_SUPPORT = False
+
+# Check if OS is storing users in databases.
+try:
+    import dbm
+    import whichdb
+    db_type = whichdb.whichdb('/etc/pwd')
+    if db_type in ['dbm', 'bsddb185']:
+        _HAS_NDBM_SUPPORT = True
+    else:
+        _HAS_NDBM_SUPPORT = False
+except ImportError:
+    dbm = None
+    _HAS_NDBM_SUPPORT = False
+
 if os.name == 'posix':
     from chevah.compat.unix_users import (
         UnixDefaultAvatar,

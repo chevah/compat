@@ -293,7 +293,7 @@ class TestSystemUsers(SystemUsersTestCase):
             password=TEST_ACCOUNT_PASSWORD,
             )
 
-        if self.os_name in ['aix', 'hpux', 'osx']:
+        if self.os_name in ['aix', 'hpux', 'osx', 'freebsd', 'openbsd']:
             # No shadow support.
             self.assertIsNone(result)
         else:
