@@ -27,7 +27,7 @@ from brink.pavement_commons import (
     test_normal,
     test_super,
     )
-from paver.easy import call_task, consume_args, needs, task
+from paver.easy import call_task, consume_args, needs, no_help, task
 
 if os.name == 'nt':
     # Use shorter temp folder on Windows.
@@ -133,6 +133,14 @@ SETUP['buildbot']['web_url'] = 'http://build.chevah.com:10088'
 SETUP['pypi']['index_url'] = 'http://pypi.chevah.com:10042/simple'
 
 
+@no_help
+@task
+def update_setup():
+    """
+    Nothing to do.
+    """
+
+
 @task
 @needs('deps_testing', 'deps_build')
 def deps():
@@ -169,6 +177,7 @@ def deps_build():
 
 
 @task
+@needs('update_setup')
 def build():
     """
     Copy new source code to build folder.
@@ -188,7 +197,6 @@ def build():
 
 
 @task
-@needs('deps_testing')
 @consume_args
 def test_os_dependent(args):
     """
