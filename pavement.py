@@ -10,6 +10,7 @@ import warnings
 from brink.pavement_commons import (
     buildbot_list,
     buildbot_try,
+    coverage_prepare,
     coverage_publish,
     default,
     github,
@@ -21,13 +22,14 @@ from brink.pavement_commons import (
     pave,
     pqm,
     SETUP,
+    test_coverage,
     test_python,
     test_remote,
     test_review,
     test_normal,
     test_super,
     )
-from paver.easy import call_task, consume_args, needs, no_help, task
+from paver.easy import call_task, consume_args, needs, task
 
 if os.name == 'nt':
     # Use shorter temp folder on Windows.
@@ -74,7 +76,7 @@ BUILD_PACKAGES = [
 
 
 TEST_PACKAGES = [
-    'chevah-empirical==0.35.0',
+    'chevah-empirical==0.38.0',
 
     'pyflakes==0.8.1',
     'pocketlint==1.4.4.c4',
@@ -103,6 +105,7 @@ TEST_PACKAGES = [
 # Make pylint shut up.
 buildbot_list
 buildbot_try
+coverage_prepare
 coverage_publish
 default
 github
@@ -112,6 +115,7 @@ lint
 merge_init
 merge_commit
 pqm
+test_coverage
 test_python
 test_remote
 test_review
@@ -127,18 +131,9 @@ SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
-SETUP['test']['cover_package'] = 'chevah.compat'
 SETUP['buildbot']['server'] = 'build.chevah.com'
 SETUP['buildbot']['web_url'] = 'http://build.chevah.com:10088'
 SETUP['pypi']['index_url'] = 'http://pypi.chevah.com:10042/simple'
-
-
-@no_help
-@task
-def update_setup():
-    """
-    Nothing to do.
-    """
 
 
 @task
@@ -177,7 +172,7 @@ def deps_build():
 
 
 @task
-@needs('update_setup')
+@needs('coverage_prepare')
 def build():
     """
     Copy new source code to build folder.
