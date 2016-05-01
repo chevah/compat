@@ -586,9 +586,18 @@ for paver_task in "deps" "test_os_dependent" "test_os_independent"; do
     fi
 done
 
+case $COMMAND in
+    test_ci|test_py3)
+        PYTHON3_CHECK='-3'
+        ;;
+    *)
+        PYTHON3_CHECK=''
+        ;;
+esac
+
 # Now that we have Python and Paver, let's call Paver from Python :)
 set +e
-${PYTHON_BIN} -c 'from paver.tasks import main; main()' "$@"
+${PYTHON_BIN} $PYTHON3_CHECK -c 'from paver.tasks import main; main()' "$@"
 exit_code=$?
 set -e
 exit $exit_code
