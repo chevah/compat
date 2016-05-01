@@ -10,6 +10,7 @@ import warnings
 from brink.pavement_commons import (
     buildbot_list,
     buildbot_try,
+    coverage_publish,
     default,
     github,
     harness,
@@ -57,10 +58,10 @@ BUILD_PACKAGES = [
     # Docutils is required for RST parsing and for Sphinx.
     'docutils==0.12.c1',
 
-    'twisted==12.1.0.chevah4',
+    'twisted==15.5.0.chevah3',
 
     # Buildbot is used for try scheduler
-    'buildbot==0.8.11.pre.143.gac88f1b.c2',
+    'buildbot==0.8.11.c7',
 
     # For PQM
     'chevah-github-hooks-server==0.1.6',
@@ -84,8 +85,11 @@ TEST_PACKAGES = [
 
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
-    'nose==1.3.0.c6',
+    'nose==1.3.0.c7',
     'mock',
+
+    'coverage==4.0.3',
+    'codecov==2.0.3',
 
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
@@ -99,6 +103,7 @@ TEST_PACKAGES = [
 # Make pylint shut up.
 buildbot_list
 buildbot_try
+coverage_publish
 default
 github
 harness
@@ -122,6 +127,7 @@ SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
+SETUP['test']['cover_package'] = 'chevah.compat'
 SETUP['buildbot']['server'] = 'build.chevah.com'
 SETUP['buildbot']['web_url'] = 'http://build.chevah.com:10088'
 SETUP['pypi']['index_url'] = 'http://pypi.chevah.com:10042/simple'
@@ -182,12 +188,19 @@ def build():
 
 
 @task
-@needs('deps_testing', 'test_python')
+@needs('deps_testing')
 @consume_args
 def test_os_dependent(args):
     """
     Run os dependent tests.
     """
+    call_task('test_python', args=args)
+
+    # Only publish coverage for os dependent tests.
+    codecov_token = os.environ.get('CODECOV_TOKEN', '')
+    if codecov_token:
+        # Only publish if we have a token.
+        call_task('coverage_publish')
 
 
 @task

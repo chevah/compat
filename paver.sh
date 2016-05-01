@@ -2,7 +2,7 @@
 # Copyright (c) 2010-2013 Adi Roiban.
 # See LICENSE for details.
 #
-# Helper script for bootstraping the build system on Unix/Msys.
+# Helper script for bootstrapping the build system on Unix/Msys.
 # It will write the default values in the 'DEFAULT_VALUES' file.
 #
 # To use this script you will need to publish binary archive files for the
@@ -14,11 +14,12 @@
 #
 # It will delegate the argument to the paver script, with the exception of
 # these commands:
+#
 # * clean - remove everything, except cache
+# * purge - remove (empty) the cache
 # * detect_os - detect operating system, create the DEFAULT_VALUES file and exit
 # * get_python - download Python distribution in cache
 # * get_agent - download Rexx/Putty distribution in cache
-#
 
 # Script initialization.
 set -o nounset
@@ -29,10 +30,9 @@ set -o pipefail
 COMMAND=${1-''}
 DEBUG=${DEBUG-0}
 
-
 # Set default locale.
 # We use C (alias for POSIX) for having a basic default value and
-# to make sure we explictly convert all unicode values.
+# to make sure we explicitly convert all unicode values.
 export LANG='C'
 export LANGUAGE='C'
 export LC_ALL='C'
@@ -62,12 +62,11 @@ ARCH='x86'
 
 # Initialize default values from paver.conf
 PYTHON_VERSION='python2.7'
-BINARY_DIST_URI='http://chevah.com/binary'
-PIP_INDEX='http://chevah.com/pypi'
+BINARY_DIST_URI='https://binary.chevah.com/production'
+PIP_INDEX='http://pypi.chevah.com'
 PAVER_VERSION='1.2.1'
 PIP_VERSION="1.4.1.c4"
 SETUPTOOLS_VERSION="1.4.1"
-CLEAN_PYTHON_BINARY_DIST_CACHE=""
 
 # Load repo specific configuration.
 source paver.conf
@@ -100,11 +99,18 @@ clean_build() {
     # In some case pip hangs with a build folder in temp and
     # will not continue until it is manually removed.
     rm -rf /tmp/pip*
+}
 
-    if [ "$CLEAN_PYTHON_BINARY_DIST_CACHE" = "yes" ]; then
-        echo "Cleaning python binary ..."
-        rm -rf cache/python*
-    fi
+
+#
+# Removes the download/pip cache entries. Must be called before
+# building/generating the distribution.
+#
+purge_cache() {
+    clean_build
+
+    echo "Cleaning download cache ..."
+    rm -rf cache/*
 }
 
 
@@ -132,7 +138,7 @@ execute() {
         echo "Executing:" $@
     fi
 
-    #Make sure $@ is called in quotes as otherwise it will not work.
+    # Make sure $@ is called in quotes as otherwise it will not work.
     set +e
     "$@"
     exit_code=$?
@@ -147,7 +153,6 @@ execute() {
 # Update global variables with current paths.
 #
 update_path_variables() {
-
     if [ "${OS}" = "windows" ] ; then
         PYTHON_BIN="/lib/python.exe"
         PYTHON_LIB="/lib/Lib/"
@@ -198,7 +203,6 @@ pip() {
             --index-url=$PIP_INDEX/simple \
             --download-cache=${CACHE_FOLDER} \
             --find-links=file://${CACHE_FOLDER} \
-            --use-wheel \
             --upgrade
 
     exit_code=$?
@@ -252,7 +256,7 @@ copy_python() {
     # Check that python dist was installed
     if [ ! -s ${PYTHON_BIN} ]; then
         # Install python-dist since everything else depends on it.
-        echo "Bootstraping ${PYTHON_VERSION} environment to ${BUILD_FOLDER}..."
+        echo "Bootstrapping ${PYTHON_VERSION} environment to ${BUILD_FOLDER}..."
         mkdir -p ${BUILD_FOLDER}
 
         # If we don't have a cached python distributable,
@@ -262,7 +266,7 @@ copy_python() {
             get_binary_dist \
                 ${PYTHON_VERSION}-${OS}-${ARCH} "$BINARY_DIST_URI/python"
         fi
-        echo "Copying bootstraping files... "
+        echo "Copying bootstrapping files... "
         cp -R ${python_distributable}/* ${BUILD_FOLDER}
 
         # Backwards compatibility with python 2.5 build.
@@ -282,7 +286,6 @@ copy_python() {
             echo "No ${pip_package}. Start downloading it..."
             get_binary_dist "$pip_package" "$PIP_INDEX/packages"
         fi
-        # Clean previous pip installation.
         rm -rf ${PYTHON_LIB}/site-packages/pip
         cp -RL "${CACHE_FOLDER}/$pip_package/pip" ${PYTHON_LIB}/site-packages/
 
@@ -292,7 +295,9 @@ copy_python() {
         fi
         cp -RL "${CACHE_FOLDER}/$setuptools_package/setuptools" \
             ${PYTHON_LIB}/site-packages/
-        cp -RL "${CACHE_FOLDER}/$setuptools_package//setuptools.egg-info" \
+        cp -RL "${CACHE_FOLDER}/$setuptools_package/_markerlib" \
+            ${PYTHON_LIB}/site-packages/
+        cp -RL "${CACHE_FOLDER}/$setuptools_package/setuptools.egg-info" \
             ${PYTHON_LIB}/site-packages/
         cp "${CACHE_FOLDER}/$setuptools_package/pkg_resources.py" \
             ${PYTHON_LIB}/site-packages/
@@ -457,6 +462,9 @@ detect_os() {
                     "$os_version_raw" os_version_chevah
                 OS="sles${os_version_chevah}"
             fi
+        elif [ -f /etc/arch-release ]; then
+            # ArchLinux is a rolling distro, no version info available.
+            OS="archlinux"
         elif [ -f /etc/rpi-issue ]; then
             # Raspbian is a special case, a Debian unofficial derivative.
             if egrep -q ^'NAME="Raspbian GNU/Linux' /etc/os-release; then
@@ -483,7 +491,6 @@ detect_os() {
                 fi
             fi
         fi
-
     elif [ "${OS}" = "darwin" ]; then
         ARCH=$(uname -m)
 
@@ -493,14 +500,23 @@ detect_os() {
         # For now, no matter the actual OS X version returned, we use '108'.
         OS="osx108"
 
+    elif [ "${OS}" = "freebsd" ]; then
+        ARCH=$(uname -m)
+
+        os_version_raw=$(uname -r | cut -d'.' -f1)
+        check_os_version "FreeBSD" 10 "$os_version_raw" os_version_chevah
+
+        # For now, no matter the actual FreeBSD version returned, we use '10'.
+        OS="freebsd10"
+
     elif [ "${OS}" = "openbsd" ]; then
         ARCH=$(uname -m)
 
         os_version_raw=$(uname -r)
-        check_os_version "OpenBSD" 5.8 "$os_version_raw" os_version_chevah
+        check_os_version "OpenBSD" 5.9 "$os_version_raw" os_version_chevah
 
-        # For now, no matter the actual OpenBSD version returned, we use '58'.
-        OS="openbsd58"
+        # For now, no matter the actual OpenBSD version returned, we use '59'.
+        OS="openbsd59"
 
     else
         echo 'Unsupported operating system:' $OS
@@ -531,6 +547,11 @@ if [ "$COMMAND" = "clean" ] ; then
     exit 0
 fi
 
+if [ "$COMMAND" = "purge" ] ; then
+    purge_cache
+    exit 0
+fi
+
 if [ "$COMMAND" = "detect_os" ] ; then
     write_default_values
     exit 0
@@ -551,6 +572,13 @@ write_default_values
 copy_python
 install_dependencies
 
+# Update while we migrate to wheels.
+# Should be removed later after we roll all new
+# python packages.
+setuptools_package="setuptools-$SETUPTOOLS_VERSION"
+cp -RL "${CACHE_FOLDER}/$setuptools_package/_markerlib" \
+    ${PYTHON_LIB}/site-packages/
+
 # Always update brink when running buildbot tasks.
 for paver_task in "deps" "test_os_dependent" "test_os_independent"; do
     if [ "$COMMAND" == "$paver_task" ] ; then
@@ -558,18 +586,9 @@ for paver_task in "deps" "test_os_dependent" "test_os_independent"; do
     fi
 done
 
-case $COMMAND in
-    test_ci|test_py3)
-        PYTHON3_CHECK='-3'
-        ;;
-    *)
-        PYTHON3_CHECK=''
-        ;;
-esac
-
 # Now that we have Python and Paver, let's call Paver from Python :)
 set +e
-${PYTHON_BIN} $PYTHON3_CHECK -c 'from paver.tasks import main; main()' "$@"
+${PYTHON_BIN} -c 'from paver.tasks import main; main()' "$@"
 exit_code=$?
 set -e
 exit $exit_code
