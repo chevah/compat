@@ -1,6 +1,9 @@
 chevah-compat
 =============
 
+.. image:: https://codecov.io/gh/chevah/compat/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/chevah/compat
+
 Chevah OS Compatibility Layer.
 
 Depends on:
