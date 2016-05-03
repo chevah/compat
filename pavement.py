@@ -23,6 +23,8 @@ from brink.pavement_commons import (
     pqm,
     SETUP,
     test_coverage,
+    test_os_dependent,
+    test_os_independent,
     test_python,
     test_remote,
     test_review,
@@ -116,6 +118,8 @@ merge_init
 merge_commit
 pqm
 test_coverage
+test_os_dependent
+test_os_independent
 test_python
 test_remote
 test_review
@@ -192,36 +196,18 @@ def build():
 
 
 @task
-@consume_args
-def test_os_dependent(args):
-    """
-    Run os dependent tests.
-    """
-    call_task('test_python', args=args)
-
-    # Only publish coverage for os dependent tests.
-    codecov_token = os.environ.get('CODECOV_TOKEN', '')
-    if codecov_token:
-        # Only publish if we have a token.
-        call_task('coverage_publish')
-
-
-@task
-@needs('deps_build')
-@consume_args
-def test_os_independent(args):
-    """
-    Run os independent tests.
-    """
-    call_task('lint', options={'all': True})
-
-
-@task
 @needs('test_python')
 @consume_args
 def test(args):
     """
     Run all Python tests.
+    """
+
+
+@task
+def test_documentation():
+    """
+    Does nothing.
     """
 
 
