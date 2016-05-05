@@ -37,6 +37,7 @@ if os.name == 'nt':
     # Use shorter temp folder on Windows.
     import tempfile
     tempfile.tempdir = "c:\\temp"
+    os.mkdir(tempfile.tempdir)
 
 # Keep run_packages in sync with setup.py.
 RUN_PACKAGES = [
