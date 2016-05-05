@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2013 Adi Roiban.
+# Copyright (c) 2010-2016 Adi Roiban.
 # See LICENSE for details.
 """
 Build script for chevah-compat.
@@ -10,6 +10,8 @@ import warnings
 from brink.pavement_commons import (
     buildbot_list,
     buildbot_try,
+    coverage_prepare,
+    coverage_publish,
     default,
     github,
     harness,
@@ -20,6 +22,9 @@ from brink.pavement_commons import (
     pave,
     pqm,
     SETUP,
+    test_coverage,
+    test_os_dependent,
+    test_os_independent,
     test_python,
     test_remote,
     test_review,
@@ -32,6 +37,10 @@ if os.name == 'nt':
     # Use shorter temp folder on Windows.
     import tempfile
     tempfile.tempdir = "c:\\temp"
+    try:
+        os.mkdir(tempfile.tempdir)
+    except OSError:
+        pass
 
 # Keep run_packages in sync with setup.py.
 RUN_PACKAGES = [
@@ -57,10 +66,10 @@ BUILD_PACKAGES = [
     # Docutils is required for RST parsing and for Sphinx.
     'docutils==0.12.c1',
 
-    'twisted==12.1.0.chevah4',
+    'twisted==15.5.0.chevah3',
 
     # Buildbot is used for try scheduler
-    'buildbot==0.8.11.pre.143.gac88f1b.c2',
+    'buildbot==0.8.11.c7',
 
     # For PQM
     'chevah-github-hooks-server==0.1.6',
@@ -73,7 +82,7 @@ BUILD_PACKAGES = [
 
 
 TEST_PACKAGES = [
-    'chevah-empirical==0.35.0',
+    'chevah-empirical==0.38.1',
 
     'pyflakes==0.8.1',
     'pocketlint==1.4.4.c4',
@@ -84,8 +93,11 @@ TEST_PACKAGES = [
 
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
-    'nose==1.3.0.c6',
+    'nose==1.3.6',
     'mock',
+
+    'coverage==4.0.3',
+    'codecov==2.0.3',
 
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
@@ -99,6 +111,8 @@ TEST_PACKAGES = [
 # Make pylint shut up.
 buildbot_list
 buildbot_try
+coverage_prepare
+coverage_publish
 default
 github
 harness
@@ -107,6 +121,9 @@ lint
 merge_init
 merge_commit
 pqm
+test_coverage
+test_os_dependent
+test_os_independent
 test_python
 test_remote
 test_review
@@ -122,9 +139,16 @@ SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
-SETUP['buildbot']['server'] = 'build.chevah.com'
-SETUP['buildbot']['web_url'] = 'http://build.chevah.com:10088'
-SETUP['pypi']['index_url'] = 'http://pypi.chevah.com:10042/simple'
+SETUP['buildbot']['server'] = 'buildbot.chevah.com'
+SETUP['buildbot']['web_url'] = 'https://buildbot.chevah.com:10443'
+SETUP['pypi']['index_url'] = 'http://pypi.chevah.com/simple'
+
+
+@task
+def update_setup():
+    """
+    Does nothing for now. Here to comply with standard build system.
+    """
 
 
 @task
@@ -163,6 +187,7 @@ def deps_build():
 
 
 @task
+@needs('coverage_prepare')
 def build():
     """
     Copy new source code to build folder.
@@ -182,30 +207,18 @@ def build():
 
 
 @task
-@needs('deps_testing', 'test_python')
-@consume_args
-def test_os_dependent(args):
-    """
-    Run os dependent tests.
-    """
-
-
-@task
-@needs('deps_build')
-@consume_args
-def test_os_independent(args):
-    """
-    Run os independent tests.
-    """
-    call_task('lint', options={'all': True})
-
-
-@task
 @needs('test_python')
 @consume_args
 def test(args):
     """
     Run all Python tests.
+    """
+
+
+@task
+def test_documentation():
+    """
+    Does nothing.
     """
 
 

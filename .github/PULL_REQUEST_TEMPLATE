@@ -1,0 +1,27 @@
+Scope
+=====
+
+Describe the scope of the changes or the problem that these changes wants
+to solve.
+
+Changes
+=======
+
+Describe how the problem was fixed.
+
+
+List all changes for which an *ideal* solution was not found.
+Describe the current solution.
+
+What was not yet done and link to the ticket for the still to do work.
+
+As a drive-by change add comments about out-of-scope minor drive-by changes.
+
+
+How to try and test the changes
+===============================
+
+reviewers: @robi-net
+
+How the changes can be tested and verified by team members.
+How to run manual tests.
