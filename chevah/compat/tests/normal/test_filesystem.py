@@ -733,6 +733,24 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         with self.assertRaises(OSError):
             self.filesystem.getStatus(segments)
 
+    @conditionals.onOSFamily('nt')
+    def test_getStatus_already_opened(self):
+        """
+        It will get status for file even if it's opened for writing.
+        """
+        self.test_segments = mk.fs.createFileInTemp()
+        handle = self.filesystem.openFileForWriting(self.test_segments)
+        handle.write(mk.ascii())
+        handle.flush()
+        self.addCleanup(lambda: handle.close())
+
+        status = self.filesystem.getStatus(self.test_segments)
+
+        self.assertTrue(stat.S_ISREG(status.st_mode))
+        self.assertFalse(stat.S_ISDIR(status.st_mode))
+        self.assertFalse(stat.S_ISLNK(status.st_mode))
+        self.assertNotEqual(0, status.st_ino)
+
     @conditionals.onOSFamily('posix')
     def test_checkChildPath_unix(self):
         """
