@@ -32,19 +32,35 @@ from chevah.compat.nt_users import NTDefaultAvatar, NTUsers
 from chevah.compat.posix_filesystem import PosixFilesystemBase
 
 
-# cut-and-pasted from MSDN
+#: https://msdn.microsoft.com/en-us/library/windows/desktop/aa364939.aspx
 # 0 Unknown
 # 1 No Root Directory
 # 2 Removable Disk
 # 3 Local Disk
 # 4 Network Drive
-# 5 Compact Disc
+# 5 Compact Disk
 # 6 RAM Disk
 LOCAL_DRIVE = 3
 
 # Not defined in win32api.
 # (0x400)
 FILE_ATTRIBUTE_REPARSE_POINT = 1024
+
+#: Win32 - File Access Rights Constants
+#: https://msdn.microsoft.com/en-us/library/windows/desktop/gg258116.aspx
+FILE_READ_ATTRIBUTES = 128
+
+#: Win32 - File Share Mode
+#: https://msdn.microsoft.com/en-us/library/windows/desktop/aa363858.aspx
+FILE_SHARE_PREVENT_OTHERS = 0
+
+#: Flags used for getStatus.
+#: https://github.com/python/cpython/blob/master/Modules/posixmodule.c#L1511
+FILE_STATUS_FLAGS = (
+    win32file.FILE_ATTRIBUTE_NORMAL |
+    win32file.FILE_FLAG_BACKUP_SEMANTICS |
+    win32file.FILE_FLAG_OPEN_REPARSE_POINT
+    )
 
 
 class NTFilesystem(PosixFilesystemBase):
@@ -337,11 +353,11 @@ class NTFilesystem(PosixFilesystemBase):
                 stats = os.stat(path_encoded)
             file_handle = win32file.CreateFileW(
                 path_encoded,
-                win32file.GENERIC_READ,
-                win32file.FILE_SHARE_READ,
+                FILE_READ_ATTRIBUTES,
+                FILE_SHARE_PREVENT_OTHERS,
                 None,
                 win32file.OPEN_EXISTING,
-                win32file.FILE_FLAG_BACKUP_SEMANTICS,
+                FILE_STATUS_FLAGS,
                 None,
                 )
 
