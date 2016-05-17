@@ -1,6 +1,12 @@
 Release notes for chevah.compat
 ===============================
 
+0.35.0 - 17/05/2016
+-------------------
+
+* Fix getStatus on Windows to support files that are kept open by other
+  processes.
+
 
 0.34.0 - 18/10/2015
 -------------------
