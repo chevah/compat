@@ -1,0 +1,12 @@
+# Changes are disabled.
+coverage:
+  precision: 2
+  round: down
+  status:
+    patch:
+      default:
+        target: 100%
+
+comment:
+  layout: "header, diff, uncovered"
+  behavior: default
