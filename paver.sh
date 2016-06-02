@@ -458,7 +458,7 @@ detect_os() {
             if [ $(head -n1 /etc/SuSE-release | cut -d' ' -f1) = 'SUSE' ]; then
                 os_version_raw=$(\
                     grep VERSION /etc/SuSE-release | cut -d' ' -f3)
-                check_os_version "SUSE Linux Enterprise Server" 11 \
+                check_os_version "SUSE Linux Enterprise Server" 10 \
                     "$os_version_raw" os_version_chevah
                 OS="sles${os_version_chevah}"
             fi
