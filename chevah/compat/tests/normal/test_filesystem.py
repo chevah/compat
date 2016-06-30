@@ -1394,6 +1394,24 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         segments = self.unlocked_filesystem.getSegments(u'/Aa/././bB')
         self.assertEqual([u'Aa', u'bB'], segments)
 
+        segments = self.unlocked_filesystem.getSegments(u'../a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.unlocked_filesystem.getSegments(u'/../a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.unlocked_filesystem.getSegments(u'//../a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.unlocked_filesystem.getSegments(u'./a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.unlocked_filesystem.getSegments(u'/./a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.unlocked_filesystem.getSegments(u'//./a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
     def test_getRealPathFromSegments_unix(self):
         """
         Check getting real path for Unix.
@@ -1704,6 +1722,24 @@ class TestLocalFilesystemLocked(CompatTestCase):
 
         segments = self.locked_filesystem.getSegments(u'/././b')
         self.assertEqual([u'b'], segments)
+
+        segments = self.locked_filesystem.getSegments(u'../a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.locked_filesystem.getSegments(u'/../a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.locked_filesystem.getSegments(u'//../a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.locked_filesystem.getSegments(u'./a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.locked_filesystem.getSegments(u'/./a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.locked_filesystem.getSegments(u'//./a/b')
+        self.assertEqual([u'a', u'b'], segments)
 
         # Non unicode text will be converted to unicode
         segments = self.locked_filesystem.getSegments('/cAca')
