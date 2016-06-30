@@ -12,6 +12,7 @@ from contextlib import contextmanager
 import codecs
 import errno
 import os
+import posixpath
 import re
 import shutil
 import stat
@@ -144,7 +145,7 @@ class PosixFilesystemBase(object):
         if segments == []:
             return u'/'
         else:
-            normalize_path = os.path.normpath('/'.join(segments))
+            normalize_path = posixpath.normpath('/'.join(segments))
             return u'/' + '/'.join(self._pathSplitRecursive(normalize_path))
 
     def getSegments(self, path):
@@ -164,7 +165,7 @@ class PosixFilesystemBase(object):
             home_path = u'/' + u'/'.join(self.home_segments) + u'/'
             path = home_path + path
 
-        normalize_path = os.path.normpath(path)
+        normalize_path = posixpath.normpath(path)
         return self._pathSplitRecursive(normalize_path)
 
     @property
