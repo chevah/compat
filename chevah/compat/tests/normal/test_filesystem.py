@@ -38,6 +38,65 @@ class FilesystemTestMixin(object):
             self.addCleanup(mk.fs.deleteFile, link_segments)
         return link_segments
 
+    def test_getSegments_upper_paths(self):
+        """
+        It will properly remove parent folder (..) and root folder (.) in
+        relative and absolute paths.
+        """
+        segments = self.filesystem.getSegments(u'../a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.filesystem.getSegments(u'/../a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.filesystem.getSegments(u'//../a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.filesystem.getSegments(u'./a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.filesystem.getSegments(u'/./a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+        segments = self.filesystem.getSegments(u'//./a/b')
+        self.assertEqual([u'a', u'b'], segments)
+
+    def test_getPath_empty(self):
+        """
+        It will return `/` when segments are empty.
+        """
+        result = self.filesystem.getPath([])
+        self.assertEqual(u'/', result)
+
+    def test_getPath(self):
+        """
+        It will convert the segments to a `ChevahPath`.
+        """
+        path = self.filesystem.getPath([u'a', u'b'])
+        self.assertEqual(u'/a/b', path)
+
+        path = self.filesystem.getPath([u'.', 'a', u'b'])
+        self.assertEqual(u'/a/b', path)
+
+    def test_getPath_upper_paths(self):
+        """
+        It will convert segments that have root and parent folder references to
+        a `ChevahPath`.
+        """
+        path = self.filesystem.getPath([u'a', u'.', u'b'])
+        self.assertEqual(u'/a/b', path)
+
+        path = self.filesystem.getPath([u'..', u'..', 'a', u'b'])
+        self.assertEqual(u'/../../a/b', path)
+
+        # Fix relative segments handling when multiple parent folder references
+        # are present.
+        path = self.filesystem.getPath([u'a', u'..', u'..', u'b', u'c'])
+        self.assertEqual(u'/../b/c', path)
+
+        path = self.filesystem.getPath([u'a', u'..', u'b', u'..', u'c'])
+        self.assertEqual(u'/c', path)
+
 
 class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
     """
@@ -1355,6 +1414,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
     def setUpClass(cls):
         super(TestLocalFilesystemUnlocked, cls).setUpClass()
         cls.unlocked_filesystem = LocalFilesystem(avatar=DefaultAvatar())
+        cls.filesystem = cls.unlocked_filesystem
 
     def test_getSegments(self):
         """
@@ -1381,36 +1441,21 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         segments = self.unlocked_filesystem.getSegments(u'/a/../../../B')
         self.assertEqual([u'B'], segments)
 
+        segments = self.unlocked_filesystem.getSegments(u'/Aa/././bB')
+        self.assertEqual([u'Aa', u'bB'], segments)
+
         bubu_segments = home_segments[:]
         bubu_segments.append(u'Bubu')
         segments = self.unlocked_filesystem.getSegments(u'./Bubu')
         self.assertEqual(bubu_segments, segments)
 
-        # Going deep in the root will block at root folder.
+    def get_getSegments_deep_upper(self):
+        """
+        Going deep in the root will block at root folder.
+        """
         segments = self.unlocked_filesystem.getSegments(
             u'../../../../../../B')
         self.assertEqual([u'B'], segments)
-
-        segments = self.unlocked_filesystem.getSegments(u'/Aa/././bB')
-        self.assertEqual([u'Aa', u'bB'], segments)
-
-        segments = self.unlocked_filesystem.getSegments(u'../a/b')
-        self.assertEqual([u'a', u'b'], segments)
-
-        segments = self.unlocked_filesystem.getSegments(u'/../a/b')
-        self.assertEqual([u'a', u'b'], segments)
-
-        segments = self.unlocked_filesystem.getSegments(u'//../a/b')
-        self.assertEqual([u'a', u'b'], segments)
-
-        segments = self.unlocked_filesystem.getSegments(u'./a/b')
-        self.assertEqual([u'a', u'b'], segments)
-
-        segments = self.unlocked_filesystem.getSegments(u'/./a/b')
-        self.assertEqual([u'a', u'b'], segments)
-
-        segments = self.unlocked_filesystem.getSegments(u'//./a/b')
-        self.assertEqual([u'a', u'b'], segments)
 
     def test_getRealPathFromSegments_unix(self):
         """
@@ -1664,7 +1709,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(self.unlocked_filesystem.isLink(link_to_broken_link))
 
 
-class TestLocalFilesystemLocked(CompatTestCase):
+class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
     """
     Tests for locked filesystem.
     """
@@ -1676,6 +1721,7 @@ class TestLocalFilesystemLocked(CompatTestCase):
         cls.locked_avatar.home_folder_path = mk.fs.temp_path
         cls.locked_avatar.lock_in_home_folder = True
         cls.locked_filesystem = LocalFilesystem(avatar=cls.locked_avatar)
+        cls.filesystem = cls.locked_filesystem
 
     def test_getSegments_locked(self):
         """
@@ -1723,24 +1769,6 @@ class TestLocalFilesystemLocked(CompatTestCase):
         segments = self.locked_filesystem.getSegments(u'/././b')
         self.assertEqual([u'b'], segments)
 
-        segments = self.locked_filesystem.getSegments(u'../a/b')
-        self.assertEqual([u'a', u'b'], segments)
-
-        segments = self.locked_filesystem.getSegments(u'/../a/b')
-        self.assertEqual([u'a', u'b'], segments)
-
-        segments = self.locked_filesystem.getSegments(u'//../a/b')
-        self.assertEqual([u'a', u'b'], segments)
-
-        segments = self.locked_filesystem.getSegments(u'./a/b')
-        self.assertEqual([u'a', u'b'], segments)
-
-        segments = self.locked_filesystem.getSegments(u'/./a/b')
-        self.assertEqual([u'a', u'b'], segments)
-
-        segments = self.locked_filesystem.getSegments(u'//./a/b')
-        self.assertEqual([u'a', u'b'], segments)
-
         # Non unicode text will be converted to unicode
         segments = self.locked_filesystem.getSegments('/cAca')
         self.assertEqual([u'cAca'], segments)
@@ -1749,10 +1777,9 @@ class TestLocalFilesystemLocked(CompatTestCase):
         self.assertEqual([u'm\u021b'], segments)
 
     def test_getRealPathFromSegments(self):
-        '''
+        """
         Test conversion of segments to a real path.
-        '''
-
+        """
         def _p(*path):
             return str(
                 os.path.join(self.locked_avatar.root_folder_path, *path))
@@ -1862,7 +1889,7 @@ class TestLocalFilesystemLocked(CompatTestCase):
             self.locked_filesystem.getSegmentsFromRealPath('..\\..\\outside')
 
     @conditionals.onCapability('symbolic_link', True)
-    def test_exists_ouside_link(self):
+    def test_exists_outside_link(self):
         """
         Will return false when link target is outside of home folder.
         """
