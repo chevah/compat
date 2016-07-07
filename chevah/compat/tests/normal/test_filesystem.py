@@ -1449,7 +1449,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         segments = self.unlocked_filesystem.getSegments(u'./Bubu')
         self.assertEqual(bubu_segments, segments)
 
-    def get_getSegments_deep_upper(self):
+    def test_getSegments_deep_upper(self):
         """
         Going deep in the root will block at root folder.
         """
