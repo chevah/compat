@@ -12,6 +12,7 @@ from contextlib import contextmanager
 import codecs
 import errno
 import os
+import posixpath
 import re
 import shutil
 import stat
@@ -140,19 +141,22 @@ class PosixFilesystemBase(object):
         return self._pathSplitRecursive(path)
 
     def getPath(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         if segments == []:
             return u'/'
-        else:
-            normalize_path = os.path.normpath('/'.join(segments))
-            return u'/' + '/'.join(self._pathSplitRecursive(normalize_path))
+
+        normalized_path = posixpath.normpath(u'/'.join(segments))
+        return u'/' + u'/'.join(self._pathSplitRecursive(normalized_path))
 
     def getSegments(self, path):
-        '''See `ILocalFilesystem`.
+        """
+        See `ILocalFilesystem`.
 
         Get segment is the place where segments are created and we make sure
         they are in the internal encoding.
-        '''
+        """
         if path is None or path == '' or path == '.':
             return self.home_segments
 
@@ -164,7 +168,7 @@ class PosixFilesystemBase(object):
             home_path = u'/' + u'/'.join(self.home_segments) + u'/'
             path = home_path + path
 
-        normalize_path = os.path.normpath(path)
+        normalize_path = posixpath.normpath(path)
         return self._pathSplitRecursive(normalize_path)
 
     @property
