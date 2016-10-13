@@ -364,7 +364,8 @@ class PosixFilesystemBase(object):
                 fd = os.open(
                     path_encoded,
                     self.OPEN_READ_ONLY,
-                    DEFAULT_FILE_MODE)
+                    DEFAULT_FILE_MODE,
+                    )
                 return os.fdopen(fd, 'rb')
 
     def openFileForWriting(self, segments, utf8=False):
@@ -381,6 +382,32 @@ class PosixFilesystemBase(object):
                     path_encoded,
                     (self.OPEN_WRITE_ONLY | self.OPEN_CREATE |
                         self.OPEN_TRUNCATE),
+                    DEFAULT_FILE_MODE)
+                return os.fdopen(fd, 'wb')
+
+    def openFileForUpdating(self, segments, utf8=False):
+        """
+        See `ILocalFilesystem`.
+        """
+        path = self.getRealPathFromSegments(segments)
+        path_encoded = self.getEncodedPath(path)
+
+        self._requireFile(segments)
+        with self._IOToOSError(path), self._impersonateUser():
+            if utf8:
+                # This will also allow reading, but I hope we will
+                # remove this API soon, and we patch the high level API.
+                file = codecs.open(path_encoded, 'r+', 'utf-8')
+
+                def deny_read(size=None):
+                    raise IOError('File not open for reading')
+
+                file.read = deny_read
+                return file
+            else:
+                fd = os.open(
+                    path_encoded,
+                    self.OPEN_WRITE_ONLY,
                     DEFAULT_FILE_MODE)
                 return os.fdopen(fd, 'wb')
 
