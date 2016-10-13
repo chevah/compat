@@ -929,7 +929,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
 
-    def test_openFileForWriting_ascii_folder(self):
+    def test_openFileForWriting_folder(self):
         """
         Raise OSError when trying to open a folder as file for writing.
         """
@@ -948,7 +948,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
 
-    def test_openFileForAppending_ascii_folder(self):
+    def test_openFileForAppending_folder(self):
         """
         Raise OSError when trying to open a folder as file for appending.
         """
@@ -964,6 +964,26 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForAppending(self.test_segments, utf8=True)
+
+        self.assertEqual(errno.EISDIR, context.exception.errno)
+        self.assertEqual(path.encode('utf-8'), context.exception.filename)
+
+    def test_openFileForUpdating_folder(self):
+        """
+        Raise OSError when trying to open a folder as file for updating.
+        """
+        self.test_segments = mk.fs.createFolderInTemp()
+        path = mk.fs.getRealPathFromSegments(self.test_segments)
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForUpdating(
+                self.test_segments, utf8=False)
+
+        self.assertEqual(errno.EISDIR, context.exception.errno)
+        self.assertEqual(path.encode('utf-8'), context.exception.filename)
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForUpdating(self.test_segments, utf8=True)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
@@ -1355,6 +1375,116 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         file_content = mk.fs.getFileContent(self.test_segments)
         self.assertEqual(new_content, file_content)
+
+    def test_openFileForUpdating_non_existing(self):
+        """
+        An error is raised when trying to open a file which does not
+        exists for updating..
+        """
+        path, segments = mk.fs.makePathInTemp()
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForUpdating(segments, utf8=False)
+
+        self.assertEqual(errno.ENOENT, context.exception.errno)
+        if self.os_family == 'posix':
+            # On Windows, the path is not set to the exception.
+            self.assertEqual(path.encode('utf-8'), context.exception.filename)
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForUpdating(segments, utf8=True)
+
+        self.assertEqual(errno.ENOENT, context.exception.errno)
+        self.assertEqual(path.encode('utf-8'), context.exception.filename)
+
+    def test_openFileForUpdating_existing_binary(self):
+        """
+        When a file is opened for updating the previous content is kept and
+        it will allow writing at arbitrary offsets.
+        """
+        content = b'some existing content'
+        new_content = b'more here'
+        # Create initial content.
+        self.test_segments = mk.fs.createFileInTemp(content=content)
+
+        # Write new content into file.
+        test_file = self.filesystem.openFileForUpdating(
+            self.test_segments, utf8=False)
+        test_file.seek(10, 0)
+        test_file.write(new_content.encode('utf-8'))
+        test_file.close()
+
+        file_content = mk.fs.getFileContent(self.test_segments)
+        self.assertEqual(u'some existmore herent', file_content)
+
+    def test_openFileForUpdating_existing_utf8(self):
+        """
+        When a file is opened for updating the previous content is kept and
+        it will allow writing at arbitrary offsets.
+        """
+        content = b'some existing content'
+        # Snowman Unicode has 3 bytes.
+        new_content = u'more \N{snowman}'
+        # Create initial content.
+        self.test_segments = mk.fs.createFileInTemp(content=content)
+
+        # Write new content into file.
+        test_file = self.filesystem.openFileForUpdating(
+            self.test_segments, utf8=True)
+        test_file.seek(10, 0)
+        test_file.write(new_content)
+        test_file.close()
+
+        file_content = mk.fs.getFileContent(self.test_segments)
+        self.assertEqual(u'some existmore \N{snowman}ent', file_content)
+
+    def test_openFileForUpdating_read_binary(self):
+        """
+        Will not allow reading the file.
+        """
+        content = b'some existing content'
+        # Create initial content.
+        self.test_segments = mk.fs.createFileInTemp(content=content)
+
+        # Write new content into file.
+        test_file = self.filesystem.openFileForUpdating(
+            self.test_segments, utf8=False)
+        test_file.seek(10, 0)
+        with self.assertRaises(IOError) as context:
+            test_file.read()
+
+        exception = context.exception
+        self.assertEqual('File not open for reading', exception.message)
+
+        # Even if we go for the low level FD, we can't read it.
+        with self.assertRaises(OSError) as context:
+            os.read(test_file.fileno(), 1)
+
+        test_file.close()
+
+    def test_openFileForUpdating_read_utf8(self):
+        """
+        Will not allow reading the file.
+        """
+        content = b'some existing content'
+        # Create initial content.
+        self.test_segments = mk.fs.createFileInTemp(content=content)
+
+        # Write new content into file.
+        test_file = self.filesystem.openFileForUpdating(
+            self.test_segments, utf8=True)
+        test_file.seek(10, 0)
+        with self.assertRaises(IOError) as context:
+            test_file.read()
+
+        exception = context.exception
+        self.assertEqual('File not open for reading', exception.message)
+
+        # We can read it if we go to the low level API.
+        # This is a known issue.
+        os.read(test_file.fileno(), 1)
+
+        test_file.close()
 
     def test_openFileForAppending(self):
         """

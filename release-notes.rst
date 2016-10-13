@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.36.0 - 13/11/2016
+-------------------
+
+* Add API for opening a file in write mode for updating. With seek enabled and
+  without truncation.
+
+
 0.35.0 - 17/05/2016
 -------------------
 

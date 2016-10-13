@@ -471,11 +471,24 @@ class ILocalFilesystem(Interface):
     def openFileForWriting(segments, utf8=False):
         """
         Return a file object for writing into the file.
+
+        File is created if it does not exist.
+        File is truncated if it exists.
+        """
+
+    def openFileForUpdating(segments, utf8=False):
+        """
+        Return a file object for writing into the file.
+
+        File is not created if it does not exist.
+        File is not truncated if it exists.
         """
 
     def openFileForAppending(segments, utf8=False):
         """
         Return a file object for writing at the end a file.
+
+        File is created if it does not exists.
         """
 
     def getFileSize(segments):
