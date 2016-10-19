@@ -1379,7 +1379,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
     def test_openFileForUpdating_non_existing(self):
         """
         An error is raised when trying to open a file which does not
-        exists for updating..
+        exists for updating.
         """
         path, segments = mk.fs.makePathInTemp()
 
