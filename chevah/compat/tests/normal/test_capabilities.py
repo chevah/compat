@@ -64,8 +64,8 @@ class TestProcessCapabilities(CompatTestCase):
     @conditionals.onOSFamily('nt')
     def test_impersonate_local_account_windows(self):
         """
-        Impersonation is enabled on machines running the tests in administration
-        mode and disabled for the rest.
+        Impersonation is enabled on machines running the tests in
+        administration mode and disabled for the rest.
 
         See: runningAsAdministrator
         """
