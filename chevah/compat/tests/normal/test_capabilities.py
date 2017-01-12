@@ -18,7 +18,11 @@ from zope.interface.verify import verifyObject
 from chevah.compat import process_capabilities
 from chevah.compat.exceptions import AdjustPrivilegeException
 from chevah.compat.interfaces import IProcessCapabilities
-from chevah.compat.testing import CompatTestCase, mk
+from chevah.compat.testing import (
+    CompatTestCase,
+    mk,
+    conditionals,
+    )
 
 
 class TestProcessCapabilities(CompatTestCase):
@@ -48,18 +52,29 @@ class TestProcessCapabilities(CompatTestCase):
         """
         verifyObject(IProcessCapabilities, self.capabilities)
 
-    def test_impersonate_local_account(self):
+    @conditionals.onOSFamily('posix')
+    def test_impersonate_local_account_posix(self):
         """
         When running under normal account, impersonation is always False
-        on Unix and always True on Windows.
+        on Unix.
         """
         result = self.capabilities.impersonate_local_account
-        if os.name == 'posix':
-            self.assertFalse(result)
-        elif os.name == 'nt':
+        self.assertFalse(result)
+
+    @conditionals.onOSFamily('nt')
+    def test_impersonate_local_account_windows(self):
+        """
+        Impersonation is enabled on machines running the tests in administration
+        mode and disabled for the rest.
+
+        See: runningAsAdministrator
+        """
+        result = self.capabilities.impersonate_local_account
+
+        if self.runningAsAdministrator():
             self.assertTrue(result)
         else:
-            raise AssertionError('Unsupported os.')
+            self.assertFalse(result)
 
     def test_create_home_folder(self):
         """
