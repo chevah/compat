@@ -39,14 +39,12 @@ class TestProcessCapabilities(CompatTestCase):
         capabilities, but here we are testing the capabilities itself so is
         kind of chicken and egg problem.
         """
-        admin = False
-        try:
-            admin = os.getuid() == 0
-        except AttributeError:
-            import ctypes
-            admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
-
-        return admin
+        # Windows 2008 and DC client tests are done in administration mode,
+        # 2003 and XP under normal mode.
+        if 'win-2003' in self.hostname or 'win-xp' in self.hostname:
+            return False
+        else:
+            return True
 
     def test_init(self):
         """
