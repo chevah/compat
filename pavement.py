@@ -157,32 +157,11 @@ def deps():
     """
     Install all dependencies.
     """
-
-
-@task
-def deps_testing():
-    """
-    Install dependencies for testing.
-    """
-    print('Installing testing dependencies to %s...' % (pave.path.build,))
+    print('Installing dependencies to %s...' % (pave.path.build,))
     pave.pip(
         command='install',
-        arguments=RUN_PACKAGES + TEST_PACKAGES,
-        silent=True,
-        )
-
-
-@task
-@needs('deps_testing')
-def deps_build():
-    """
-    Install dependencies for build environment.
-    """
-    print('Installing build dependencies to %s...' % (pave.path.build,))
-    pave.pip(
-        command='install',
-        arguments=BUILD_PACKAGES,
-        silent=True,
+        arguments=RUN_PACKAGES + TEST_PACKAGES + BUILD_PACKAGES,
+        silent=False,
         )
 
 
