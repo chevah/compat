@@ -43,8 +43,17 @@ class TestProcessCapabilities(CompatTestCase):
         # 2003 and XP under normal mode.
         if 'win-2003' in self.hostname or 'win-xp' in self.hostname:
             return False
-        else:
-            return True
+
+        return True
+
+    def hasUAC(self):
+        """
+        Return True if Windows version has is UAC capable, False otherwise.
+        """
+        if 'win-2003' in self.hostname or 'win-xp' in self.hostname:
+            return False
+
+        return True
 
     def test_init(self):
         """
@@ -68,13 +77,16 @@ class TestProcessCapabilities(CompatTestCase):
         administration mode and disabled for the rest.
 
         See: runningAsAdministrator
+        See: hasUAC
         """
         result = self.capabilities.impersonate_local_account
 
         if self.runningAsAdministrator():
             self.assertTrue(result)
-        else:
+        elif self.hasUAC():
             self.assertFalse(result)
+        else:
+            self.assertTrue(result)
 
     def test_create_home_folder(self):
         """
