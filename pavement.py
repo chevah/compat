@@ -152,7 +152,6 @@ def update_setup():
 
 
 @task
-@needs('deps_testing', 'deps_build')
 def deps():
     """
     Install all dependencies.
