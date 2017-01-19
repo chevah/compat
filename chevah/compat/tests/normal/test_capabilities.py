@@ -70,10 +70,10 @@ class TestProcessCapabilities(CompatTestCase):
         result = self.capabilities.impersonate_local_account
 
         # Windows 2003 BS is configured to execute with a non admin user.
-        if 'win-2003' in self.hostname:
-            self.assertFalse(result)
-        else:
+        if self.runningAsAdministrator():
             self.assertTrue(result)
+        else:
+            self.assertFalse(result)
 
     def test_create_home_folder(self):
         """
@@ -87,7 +87,10 @@ class TestProcessCapabilities(CompatTestCase):
         if os.name == 'posix':
             self.assertFalse(result)
         elif os.name == 'nt':
-            self.assertTrue(result)
+            if self.runningAsAdministrator():
+                self.assertTrue(result)
+            else:
+                self.assertFalse(result)
         else:
             raise AssertionError('Unsupported os.')
 
@@ -119,6 +122,11 @@ class TestProcessCapabilities(CompatTestCase):
             if self.runningAsAdministrator():
                 self.assertContains('SeCreateSymbolicLinkPrivilege:0', text)
                 self.assertContains('SeImpersonatePrivilege:3', text)
+                self.assertContains('SeCreateGlobalPrivilege:3', text)
+            elif 'win-xp' in self.hostname:
+                self.assertNotContains('SeCreateSymbolicLinkPrivilege', text)
+                self.assertNotContains('SeImpersonatePrivilege', text)
+                # Windows XP has SeCreateGlobalPrivilege enabled.
                 self.assertContains('SeCreateGlobalPrivilege:3', text)
             else:
                 self.assertNotContains('SeCreateSymbolicLinkPrivilege', text)
