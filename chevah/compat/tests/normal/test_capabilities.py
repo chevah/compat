@@ -72,8 +72,8 @@ class TestProcessCapabilities(CompatTestCase):
         # Windows 2003 BS is configured to execute with a non admin user.
         if 'win-2003' in self.hostname:
             self.assertFalse(result)
-
-        self.assertTrue(result)
+        else:
+            self.assertTrue(result)
 
     def test_create_home_folder(self):
         """
@@ -110,19 +110,20 @@ class TestProcessCapabilities(CompatTestCase):
         Check getCurrentPrivilegesDescription.
         """
         text = self.capabilities.getCurrentPrivilegesDescription()
+
         if self.os_family == 'posix':
             self.assertEqual(u'root capabilities disabled.', text)
         else:
-            # Normal Window account can impersonate.
             self.assertContains('SeChangeNotifyPrivilege:3', text)
-            self.assertContains('SeImpersonatePrivilege:3', text)
-            self.assertContains('SeCreateGlobalPrivilege:3', text)
 
             if self.runningAsAdministrator():
                 self.assertContains('SeCreateSymbolicLinkPrivilege:0', text)
+                self.assertContains('SeImpersonatePrivilege:3', text)
+                self.assertContains('SeCreateGlobalPrivilege:3', text)
             else:
-                self.assertNotContains(
-                    'SeCreateSymbolicLinkPrivilege', text)
+                self.assertNotContains('SeCreateSymbolicLinkPrivilege', text)
+                self.assertNotContains('SeImpersonatePrivilege', text)
+                self.assertNotContains('SeCreateGlobalPrivilege', text)
 
     def test_pam(self):
         """
@@ -163,15 +164,16 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         result = self.capabilities._getAvailablePrivileges()
 
         self.assertIsNotEmpty(result)
-        privilege = self.capabilities._getPrivilegeID(
-            win32security.SE_IMPERSONATE_NAME)
-        self.assertContains((privilege, 3), result)
-
-        privilege = self.capabilities._getPrivilegeID(
-            win32security.SE_SECURITY_NAME)
-        self.assertContains((privilege, 0), result)
 
         if self.runningAsAdministrator():
+            privilege = self.capabilities._getPrivilegeID(
+                win32security.SE_SECURITY_NAME)
+            self.assertContains((privilege, 0), result)
+
+            privilege = self.capabilities._getPrivilegeID(
+                win32security.SE_IMPERSONATE_NAME)
+            self.assertContains((privilege, 3), result)
+
             privilege = self.capabilities._getPrivilegeID(
                 win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
             self.assertContains((privilege, 0), result)
@@ -204,7 +206,10 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         result = self.capabilities._getPrivilegeState(
             win32security.SE_SECURITY_NAME)
 
-        self.assertEqual(u'present', result)
+        if self.runningAsAdministrator():
+            self.assertEqual(u'present', result)
+        else:
+            self.assertEqual(u'absent', result)
 
     def test_getPrivilegeState_enabled_default(self):
         """
@@ -214,7 +219,10 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         result = self.capabilities._getPrivilegeState(
             win32security.SE_IMPERSONATE_NAME)
 
-        self.assertEqual(u'enabled-by-default', result)
+        if self.runningAsAdministrator():
+            self.assertEqual(u'enabled-by-default', result)
+        else:
+            self.assertEqual(u'absent', result)
 
     def test_isPrivilegeEnabled_enabled(self):
         """
@@ -222,7 +230,11 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         """
         # We use SE_IMPERSONATE privilege as it is enabled by default.
         privilege = win32security.SE_IMPERSONATE_NAME
-        self.assertTrue(self.capabilities._isPrivilegeEnabled(privilege))
+
+        if self.runningAsAdministrator():
+            self.assertTrue(self.capabilities._isPrivilegeEnabled(privilege))
+        else:
+            self.assertFalse(self.capabilities._isPrivilegeEnabled(privilege))
 
     def test_isPrivilegeEnabled_disabled(self):
         """
@@ -284,6 +296,9 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         privileges for current process upon entering the context,
         and restore them on exit.
         """
+        if not self.runningAsAdministrator():
+            raise self.skipTest('Present only if running as Administrator')
+
         # We use SE_TAKE_OWNERSHIP privilege as it should be present for
         # super user and disabled by default.
         privilege = win32security.SE_TAKE_OWNERSHIP_NAME
@@ -303,6 +318,9 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         elevatePrivilege will not modify the process if the privilege is
         already enabled.
         """
+        if not self.runningAsAdministrator():
+            raise self.skipTest('Present only if running as Administrator')
+
         # We use SE_IMPERSONATE as it should be enabled by default.
         privilege = win32security.SE_IMPERSONATE_NAME
         self.assertTrue(self.capabilities._isPrivilegeEnabled(privilege))
@@ -320,6 +338,9 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         elevatePrivileges supports a variable list of privilege name
         arguments and will make sure all of them are enabled.
         """
+        if not self.runningAsAdministrator():
+            raise self.skipTest('Present only if running as Administrator')
+
         # We use SE_IMPERSONATE as it is enabled by default
         # We also use SE_TAKE_OWNERSHIP as it is disabled by default but can
         # be enabled when running as super user.
