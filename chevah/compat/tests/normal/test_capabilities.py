@@ -7,7 +7,6 @@ Test for platform capabilities detection.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-import os
 try:
     import win32security
 except ImportError:
@@ -21,30 +20,21 @@ from chevah.compat.interfaces import IProcessCapabilities
 from chevah.compat.testing import (
     CompatTestCase,
     mk,
-    conditionals,
     )
 
 
-class TestProcessCapabilities(CompatTestCase):
+class TestProcessCapabilitiesPosix(CompatTestCase):
+    """
+    Unit tests for process capabilities executed on Posix platforms.
+    """
 
     def setUp(self):
-        super(TestProcessCapabilities, self).setUp()
+        super(TestProcessCapabilitiesPosix, self).setUp()
+
+        if self.os_family != 'posix':
+            raise self.skipTest('Only Posix platforms are supported')
+
         self.capabilities = process_capabilities
-
-    def runningAsAdministrator(self):
-        """
-        Return True if slave runs as administrator.
-
-        This could have been implementing by checking the available,
-        capabilities, but here we are testing the capabilities itself so is
-        kind of chicken and egg problem.
-        """
-        # Windows 2008 and DC client tests are done in administration mode,
-        # 2003 and XP under normal mode.
-        if 'win-2003' in self.hostname or 'win-xp' in self.hostname:
-            return False
-        else:
-            return True
 
     def test_init(self):
         """
@@ -52,8 +42,7 @@ class TestProcessCapabilities(CompatTestCase):
         """
         verifyObject(IProcessCapabilities, self.capabilities)
 
-    @conditionals.onOSFamily('posix')
-    def test_impersonate_local_account_posix(self):
+    def test_impersonate_local_account(self):
         """
         When running under normal account, impersonation is always False
         on Unix.
@@ -61,38 +50,14 @@ class TestProcessCapabilities(CompatTestCase):
         result = self.capabilities.impersonate_local_account
         self.assertFalse(result)
 
-    @conditionals.onOSFamily('nt')
-    def test_impersonate_local_account_windows(self):
-        """
-        Impersonation is available on all our Windows machines except Windows
-        2003.
-        """
-        result = self.capabilities.impersonate_local_account
-
-        # Windows 2003 BS is configured to execute with a non admin user.
-        if self.runningAsAdministrator():
-            self.assertTrue(result)
-        else:
-            self.assertFalse(result)
-
     def test_create_home_folder(self):
         """
         When running under normal account, we can not create home folders
         on Unix.
-
-        On Windows home folders can be created if required privileges
-        are configured for the process.
         """
         result = self.capabilities.create_home_folder
-        if os.name == 'posix':
-            self.assertFalse(result)
-        elif os.name == 'nt':
-            if self.runningAsAdministrator():
-                self.assertTrue(result)
-            else:
-                self.assertFalse(result)
-        else:
-            raise AssertionError('Unsupported os.')
+
+        self.assertFalse(result)
 
     def test_get_home_folder(self):
         """
@@ -100,13 +65,8 @@ class TestProcessCapabilities(CompatTestCase):
         On Windows, only Windows 2008 and Windows 7 can get home folder path.
         """
         result = self.capabilities.get_home_folder
-        if os.name == 'posix':
-            self.assertTrue(result)
-        elif os.name == 'nt':
-            # The Windows test is handled in elevated module.
-            pass
-        else:
-            raise AssertionError('Unsupported os.')
+
+        self.assertTrue(result)
 
     def test_getCurrentPrivilegesDescription(self):
         """
@@ -114,40 +74,29 @@ class TestProcessCapabilities(CompatTestCase):
         """
         text = self.capabilities.getCurrentPrivilegesDescription()
 
-        if self.os_family == 'posix':
-            self.assertEqual(u'root capabilities disabled.', text)
-        else:
-            self.assertContains('SeChangeNotifyPrivilege:3', text)
-
-            if self.runningAsAdministrator():
-                self.assertContains('SeCreateSymbolicLinkPrivilege:0', text)
-                self.assertContains('SeImpersonatePrivilege:3', text)
-                self.assertContains('SeCreateGlobalPrivilege:3', text)
-            elif 'win-xp' in self.hostname:
-                self.assertNotContains('SeCreateSymbolicLinkPrivilege', text)
-                self.assertNotContains('SeImpersonatePrivilege', text)
-                # Windows XP has SeCreateGlobalPrivilege enabled.
-                self.assertContains('SeCreateGlobalPrivilege:3', text)
-            else:
-                self.assertNotContains('SeCreateSymbolicLinkPrivilege', text)
-                self.assertNotContains('SeImpersonatePrivilege', text)
-                self.assertNotContains('SeCreateGlobalPrivilege', text)
+        self.assertEqual(u'root capabilities disabled.', text)
 
     def test_pam(self):
         """
         PAM is supported on Linux/Unix with the exception of HPUX.
-
-        PAM is not supported on Windows
         """
-        if self.os_name in ['hpux', 'windows']:
+        if self.os_name in ['hpux']:
             self.assertFalse(self.capabilities.pam)
         else:
             self.assertTrue(self.capabilities.pam)
 
+    def test_symbolic_link(self):
+        """
+        Support on all Unix.
+        """
+        symbolic_link = self.capabilities.symbolic_link
 
-class TestNTProcessCapabilities(TestProcessCapabilities):
+        self.assertTrue(symbolic_link)
+
+
+class TestNTProcessCapabilities(CompatTestCase):
     """
-    Capability tests executed only on Windows.
+    Capability tests executed only on Windows slaves.
     """
 
     def setUp(self):
@@ -155,6 +104,14 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
 
         if self.os_family != 'nt':
             raise self.skipTest("Only Windows platforms supported.")
+
+        self.capabilities = process_capabilities
+
+    def test_init(self):
+        """
+        Check ProcessCapabilities initialization.
+        """
+        verifyObject(IProcessCapabilities, self.capabilities)
 
     def test_openProcess_success(self):
         """
@@ -165,6 +122,63 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
                 process_token):
             self.assertIsNotNone(process_token)
 
+    def test_isPrivilegeEnabled_absent(self):
+        """
+        Returns False for a privilege which is not present.
+        """
+        # By default SE_RELABEL_NAME should not be available to test
+        # accounts.
+        privilege = win32security.SE_RELABEL_NAME
+        self.assertEqual(
+            u'absent', self.capabilities._getPrivilegeState(privilege))
+
+        self.assertFalse(self.capabilities._isPrivilegeEnabled(privilege))
+
+    def test_elevatePrivileges_invalid_privilege(self):
+        """
+        It raises an exception when an invalid privilege name is requested.
+        """
+        with self.assertRaises(AdjustPrivilegeException):
+            with (self.capabilities._elevatePrivileges(
+                    win32security.SE_IMPERSONATE_NAME,
+                    'no-such-privilege-name',
+                    )):
+                pass
+
+    def test_get_home_folder(self):
+        """
+        On Windows, only Windows 2008 and Windows 7 can get home folder path.
+        """
+        # The Windows test is handled in elevated module.
+        pass
+
+    def test_pam(self):
+        """
+        PAM is not supported on Windows
+        """
+        self.assertFalse(self.capabilities.pam)
+
+
+class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
+    """
+    Capability tests executed only on Windows slaves that are configured to
+    run without administrator rights.
+    """
+
+    def setUp(self):
+        super(TestNTProcessCapabilitiesNormalUser, self).setUp()
+
+        if self.os_family != 'nt':
+            raise self.skipTest("Only Windows platforms supported.")
+
+        # Windows 2008 and DC client tests are done in administration mode,
+        # 2003 and XP under normal mode.
+        if 'win-2003' not in self.hostname and 'win-xp' not in self.hostname:
+            message = "Only Windows with normal rights supported"
+            raise self.skipTest(message)
+
+        self.capabilities = process_capabilities
+
     def test_getAvailablePrivileges(self):
         """
         Return a list with privileges and state value.
@@ -173,18 +187,9 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
 
         self.assertIsNotEmpty(result)
 
-        if self.runningAsAdministrator():
-            privilege = self.capabilities._getPrivilegeID(
-                win32security.SE_SECURITY_NAME)
-            self.assertContains((privilege, 0), result)
-
-            privilege = self.capabilities._getPrivilegeID(
-                win32security.SE_IMPERSONATE_NAME)
-            self.assertContains((privilege, 3), result)
-
-            privilege = self.capabilities._getPrivilegeID(
-                win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
-            self.assertContains((privilege, 0), result)
+        privilege = self.capabilities._getPrivilegeID(
+            win32security.SE_CHANGE_NOTIFY_NAME)
+        self.assertContains((privilege, 3), result)
 
     def test_getPrivilegeState_invalid(self):
         """
@@ -208,41 +213,32 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
 
     def test_getPrivilegeState_present(self):
         """
-        Return `present` for privileges which are attached to current
+        Return `absent` for privileges which are attached to current
         process but are not enabled.
         """
         result = self.capabilities._getPrivilegeState(
             win32security.SE_SECURITY_NAME)
 
-        if self.runningAsAdministrator():
-            self.assertEqual(u'present', result)
-        else:
-            self.assertEqual(u'absent', result)
+        self.assertEqual(u'absent', result)
 
     def test_getPrivilegeState_enabled_default(self):
         """
-        Return `enabled-by-default` for privileges which are attached to
-        current process but are enabled by default.
+        Return `absent` for privileges which are attached to
+        current process but are not enabled by default.
         """
         result = self.capabilities._getPrivilegeState(
             win32security.SE_IMPERSONATE_NAME)
 
-        if self.runningAsAdministrator():
-            self.assertEqual(u'enabled-by-default', result)
-        else:
-            self.assertEqual(u'absent', result)
+        self.assertEqual(u'absent', result)
 
     def test_isPrivilegeEnabled_enabled(self):
         """
-        Returns True for a privilege which is present and is enabled.
+        Returns False for a privilege which is present and is not enabled.
         """
         # We use SE_IMPERSONATE privilege as it is enabled by default.
         privilege = win32security.SE_IMPERSONATE_NAME
 
-        if self.runningAsAdministrator():
-            self.assertTrue(self.capabilities._isPrivilegeEnabled(privilege))
-        else:
-            self.assertFalse(self.capabilities._isPrivilegeEnabled(privilege))
+        self.assertFalse(self.capabilities._isPrivilegeEnabled(privilege))
 
     def test_isPrivilegeEnabled_disabled(self):
         """
@@ -252,17 +248,121 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         privilege = win32security.SE_SECURITY_NAME
         self.assertFalse(self.capabilities._isPrivilegeEnabled(privilege))
 
-    def test_isPrivilegeEnabled_absent(self):
+    def test_symbolic_link(self):
         """
-        Returns False for a privilege which is not present.
+        Not supported on Windows without elevated permissions.
         """
-        # By default SE_RELABEL_NAME should not be available to test
-        # accounts.
-        privilege = win32security.SE_RELABEL_NAME
-        self.assertEqual(
-            u'absent', self.capabilities._getPrivilegeState(privilege))
+        symbolic_link = self.capabilities.symbolic_link
 
-        self.assertFalse(self.capabilities._isPrivilegeEnabled(privilege))
+        self.assertFalse(symbolic_link)
+
+    def test_impersonate_local_account_windows(self):
+        """
+        Impersonation is not available when running as a normal user.
+        """
+        result = self.capabilities.impersonate_local_account
+
+        self.assertFalse(result)
+
+    def test_create_home_folder(self):
+        """
+        On Windows home folders can be created if required privileges
+        are configured for the process.
+        """
+        result = self.capabilities.create_home_folder
+
+        if 'win-xp' in self.hostname:
+            self.assertFalse(result)
+        else:
+            self.assertTrue(result)
+
+    def test_getCurrentPrivilegesDescription(self):
+        """
+        Check getCurrentPrivilegesDescription.
+        """
+        text = self.capabilities.getCurrentPrivilegesDescription()
+
+        self.assertContains('SeChangeNotifyPrivilege:3', text)
+
+        if 'win-xp' in self.hostname:
+            self.assertNotContains('SeCreateSymbolicLinkPrivilege', text)
+            self.assertNotContains('SeImpersonatePrivilege', text)
+            # Windows XP has SeCreateGlobalPrivilege enabled.
+            self.assertContains('SeCreateGlobalPrivilege:3', text)
+        else:
+            self.assertNotContains('SeCreateSymbolicLinkPrivilege', text)
+            self.assertNotContains('SeImpersonatePrivilege', text)
+            self.assertNotContains('SeCreateGlobalPrivilege', text)
+
+
+class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
+    """
+    Capability tests executed only on Windows slaves that are configured to
+    run with administrator rights.
+    """
+
+    def setUp(self):
+        super(TestNTProcessCapabilitiesAdministrator, self).setUp()
+
+        if self.os_family != 'nt':
+            raise self.skipTest("Only Windows platforms supported.")
+
+        # Windows 2008 and DC client tests are done in administration mode,
+        # 2003 and XP under normal mode.
+        if 'win-2003' in self.hostname or 'win-xp' in self.hostname:
+            message = "Only Windows with administrator rights supported"
+            raise self.skipTest(message)
+
+        self.capabilities = process_capabilities
+
+    def test_getAvailablePrivileges(self):
+        """
+        Return a list with privileges and state value.
+        """
+        result = self.capabilities._getAvailablePrivileges()
+
+        self.assertIsNotEmpty(result)
+
+        privilege = self.capabilities._getPrivilegeID(
+            win32security.SE_SECURITY_NAME)
+        self.assertContains((privilege, 0), result)
+
+        privilege = self.capabilities._getPrivilegeID(
+            win32security.SE_IMPERSONATE_NAME)
+        self.assertContains((privilege, 3), result)
+
+        privilege = self.capabilities._getPrivilegeID(
+            win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
+        self.assertContains((privilege, 0), result)
+
+    def test_getPrivilegeState_present(self):
+        """
+        Return `present` for privileges which are attached to current
+        process but are not enabled.
+        """
+        result = self.capabilities._getPrivilegeState(
+            win32security.SE_SECURITY_NAME)
+
+        self.assertEqual(u'present', result)
+
+    def test_getPrivilegeState_enabled_default(self):
+        """
+        Return `enabled-by-default` for privileges which are attached to
+        current process but are enabled by default.
+        """
+        result = self.capabilities._getPrivilegeState(
+            win32security.SE_IMPERSONATE_NAME)
+
+        self.assertEqual(u'enabled-by-default', result)
+
+    def test_isPrivilegeEnabled_enabled(self):
+        """
+        Returns True for a privilege which is present and is enabled.
+        """
+        # We use SE_IMPERSONATE privilege as it is enabled by default.
+        privilege = win32security.SE_IMPERSONATE_NAME
+
+        self.assertTrue(self.capabilities._isPrivilegeEnabled(privilege))
 
     def test_adjustPrivilege_success(self):
         """
@@ -287,26 +387,12 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
                 win32security.SE_BACKUP_NAME),
             )
 
-    def test_elevatePrivileges_invalid_privilege(self):
-        """
-        It raise an exception when an invalid privilege name is requested.
-        """
-        with self.assertRaises(AdjustPrivilegeException):
-            with (self.capabilities._elevatePrivileges(
-                win32security.SE_IMPERSONATE_NAME,
-                'no-such-privilege-name',
-                    )):
-                pass
-
     def test_elevatePrivileges_take_ownership_success(self):
         """
         elevatePrivileges is a context manager which will elevate the
         privileges for current process upon entering the context,
         and restore them on exit.
         """
-        if not self.runningAsAdministrator():
-            raise self.skipTest('Present only if running as Administrator')
-
         # We use SE_TAKE_OWNERSHIP privilege as it should be present for
         # super user and disabled by default.
         privilege = win32security.SE_TAKE_OWNERSHIP_NAME
@@ -326,9 +412,6 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         elevatePrivilege will not modify the process if the privilege is
         already enabled.
         """
-        if not self.runningAsAdministrator():
-            raise self.skipTest('Present only if running as Administrator')
-
         # We use SE_IMPERSONATE as it should be enabled by default.
         privilege = win32security.SE_IMPERSONATE_NAME
         self.assertTrue(self.capabilities._isPrivilegeEnabled(privilege))
@@ -346,9 +429,6 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
         elevatePrivileges supports a variable list of privilege name
         arguments and will make sure all of them are enabled.
         """
-        if not self.runningAsAdministrator():
-            raise self.skipTest('Present only if running as Administrator')
-
         # We use SE_IMPERSONATE as it is enabled by default
         # We also use SE_TAKE_OWNERSHIP as it is disabled by default but can
         # be enabled when running as super user.
@@ -371,17 +451,29 @@ class TestNTProcessCapabilities(TestProcessCapabilities):
 
     def test_symbolic_link(self):
         """
-        Support on all Unix and Vista and above.
-
-        Not supported on Windows without elevated permissions.
+        Support on Vista and above.
         """
         symbolic_link = self.capabilities.symbolic_link
 
-        if self.os_family == 'posix':
-            self.assertTrue(symbolic_link)
-            return
+        self.assertTrue(symbolic_link)
 
-        if self.runningAsAdministrator():
-            self.assertTrue(symbolic_link)
-        else:
-            self.assertFalse(symbolic_link)
+    def test_create_home_folder(self):
+        """
+        On Windows home folders can be created if required privileges
+        are configured for the process.
+        """
+        result = self.capabilities.create_home_folder
+
+        self.assertTrue(result)
+
+    def test_getCurrentPrivilegesDescription(self):
+        """
+        Check getCurrentPrivilegesDescription.
+        """
+        text = self.capabilities.getCurrentPrivilegesDescription()
+
+        self.assertContains('SeChangeNotifyPrivilege:3', text)
+
+        self.assertContains('SeCreateSymbolicLinkPrivilege:0', text)
+        self.assertContains('SeImpersonatePrivilege:3', text)
+        self.assertContains('SeCreateGlobalPrivilege:3', text)
