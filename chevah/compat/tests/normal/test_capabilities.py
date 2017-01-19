@@ -64,9 +64,14 @@ class TestProcessCapabilities(CompatTestCase):
     @conditionals.onOSFamily('nt')
     def test_impersonate_local_account_windows(self):
         """
-        Impersonation is available on all our Windows machines.
+        Impersonation is available on all our Windows machines except Windows
+        2003.
         """
         result = self.capabilities.impersonate_local_account
+
+        # Windows 2003 BS is configured to execute with a non admin user.
+        if 'win-2003' in self.hostname:
+            self.assertFalse(result)
 
         self.assertTrue(result)
 
