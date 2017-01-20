@@ -80,10 +80,12 @@ class TestProcessCapabilitiesPosix(CompatTestCase):
         """
         PAM is supported on Linux/Unix with the exception of HPUX.
         """
-        if self.os_name in ['hpux']:
-            self.assertFalse(self.capabilities.pam)
-        else:
-            self.assertTrue(self.capabilities.pam)
+        # FIXME:3813:
+        # Re-enable once we have a HP-UX buildslave.
+        # if self.os_name in ['hpux']:
+        #    self.assertFalse(self.capabilities.pam)
+
+        self.assertTrue(self.capabilities.pam)
 
     def test_symbolic_link(self):
         """
@@ -139,11 +141,8 @@ class TestNTProcessCapabilities(CompatTestCase):
         It raises an exception when an invalid privilege name is requested.
         """
         with self.assertRaises(AdjustPrivilegeException):
-            with (self.capabilities._elevatePrivileges(
-                    win32security.SE_IMPERSONATE_NAME,
-                    'no-such-privilege-name',
-                    )):
-                pass
+            self.capabilities._elevatePrivileges(
+                win32security.SE_IMPERSONATE_NAME, 'no-such-privilege-name')
 
     def test_get_home_folder(self):
         """
