@@ -145,6 +145,7 @@ class TestNTProcessCapabilities(CompatTestCase):
                     win32security.SE_IMPERSONATE_NAME,
                     'no-such-privilege-name',
                     )):
+                # pragma: no cover
                 pass
 
     def test_get_home_folder(self):
