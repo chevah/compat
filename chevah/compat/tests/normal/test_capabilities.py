@@ -141,8 +141,11 @@ class TestNTProcessCapabilities(CompatTestCase):
         It raises an exception when an invalid privilege name is requested.
         """
         with self.assertRaises(AdjustPrivilegeException):
-            self.capabilities._elevatePrivileges(
-                win32security.SE_IMPERSONATE_NAME, 'no-such-privilege-name')
+            with (self.capabilities._elevatePrivileges(
+                    win32security.SE_IMPERSONATE_NAME,
+                    'no-such-privilege-name',
+                    )):
+                pass
 
     def test_get_home_folder(self):
         """
