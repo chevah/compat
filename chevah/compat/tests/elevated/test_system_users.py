@@ -423,9 +423,10 @@ class TestSystemUsers(SystemUsersTestCase):
             self.assertEqual(TEST_ACCOUNT_GROUP, impersonated_groupname)
             self.assertNotEqual(initial_uid, uid)
             self.assertNotEqual(initial_gid, gid)
-            self.assertNotEqual(initial_groups, impersonated_groups)
+
             if self.os_name != 'osx':
                 # On OSX newer than 10.5 get/set groups are useless.
+                self.assertNotEqual(initial_groups, impersonated_groups)
                 self.assertEqual(
                     sorted(self.getGroupsIDForTestAccount()),
                     sorted(impersonated_groups),
