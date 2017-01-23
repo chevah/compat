@@ -296,7 +296,7 @@ class TestTwistedTestCase(EmpiricalTestCase):
         self.called = False
 
         def last_call():
-            time.sleep(0.1)
+            time.sleep(0.2)
             self.called = True
 
         deferred = threads.deferToThread(last_call)
@@ -407,7 +407,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
         value = mk.string()
 
         with self.patch(
-            'chevah.empirical.tests.normal.test_testcase.Dummy.method',
+            'chevah.compat.tests.normal.testing.test_testcase.Dummy.method',
             return_value=value,
                 ):
             instance = Dummy()

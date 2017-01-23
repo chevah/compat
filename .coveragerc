@@ -1,6 +1,6 @@
 [run]
 branch = True
-source = chevah.compat
+source = chevah.compat, chevah.empirical
 
 [report]
 show_missing = False
