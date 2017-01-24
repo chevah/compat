@@ -617,6 +617,31 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
                 'is True.'
                 )
 
+    @conditionals.onAdminPrivileges(True)
+    def test_onAdminPrivileges_present(self):
+        """
+        Run test only on machines that execute the tests with administrator
+        privileges.
+        """
+        if 'win-2003' in self.hostname:
+            raise AssertionError(
+                'Windows 2003 BS does not run as administrator')
+        elif 'win-xp' in self.hostname:
+            raise AssertionError('Windows XP BS does not run as administrator')
+
+    @conditionals.onAdminPrivileges(False)
+    def test_onAdminPrivileges_missing(self):
+        """
+        Run test on build slaves that do not have administrator privileges.
+        """
+        if 'win-2003' in self.hostname:
+            return
+        elif 'win-xp' in self.hostname:
+            return
+
+        raise AssertionError(
+            '"%s" is running with administrator privileges' % (self.hostname,))
+
     def test_cleanup_test_segments_file(self):
         """
         When self.test_segments is defined it will be automatically
