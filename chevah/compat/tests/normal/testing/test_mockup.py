@@ -307,6 +307,8 @@ class TestFactory(EmpiricalTestCase):
         """
         value = mk.bytes()
 
+        self.assertEqual(len(value), 8)
+
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode()
 
@@ -331,6 +333,8 @@ class TestFactory(EmpiricalTestCase):
         arbitrary size.
         """
         value = mk.bytes(8)
+
+        self.assertEqual(len(value), 8)
 
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode()
@@ -365,6 +369,8 @@ class TestFactory(EmpiricalTestCase):
         """
         value = mk.bytes(16)
 
+        self.assertEqual(len(value), 16)
+
         value.decode(encoding='utf-16')
 
     def test_bytes_string_conversion_utf16_invalid(self):
@@ -373,6 +379,8 @@ class TestFactory(EmpiricalTestCase):
         is used.
         """
         value = mk.bytes(size=15)
+
+        self.assertEqual(len(value), 15)
 
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode(encoding='utf-16')
