@@ -2,7 +2,7 @@ Release notes for chevah.compat
 ===============================
 
 
-0.37.1 - 24/01/2017
+0.38.0 - 24/01/2017
 -------------------
 
 * Add conditional for skipping tests depending on availability of
