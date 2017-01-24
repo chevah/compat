@@ -421,7 +421,7 @@ class ResponseDefinition(object):
             self.persistent,
             )
 
-    def updateReponseContent(self, content):
+    def updateResponseContent(self, content):
         """
         Will update the content returned to the server.
         """

@@ -247,7 +247,7 @@ class TestHTTPServerContext(EmpiricalTestCase):
             response_content='first-content-of-different-length'
             )
         with HTTPServerContext([response]) as self.httpd:
-            response.updateReponseContent('updated-content')
+            response.updateResponseContent('updated-content')
 
             result = self.getPage('/url', persistent=False)
 
