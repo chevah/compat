@@ -483,9 +483,9 @@ class ChevahCommonsFactory(object):
         Returns a bytes array with random values that cannot be decoded
         as UTF-8.
         """
-        result = bytearray(b'\xff\xd8\x00\x01')
-        for _ in range(max(4, size - 4)):
-            result.append(random.getrandbits(8))
+        result = bytearray(b'\xff')
+        for _ in range(max(1, size - 1)):
+            result.append(random.getrandbits(4))
         return result
 
     def TCPPort(self, factory=None, address='', port=1234):
