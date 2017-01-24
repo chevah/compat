@@ -61,6 +61,7 @@ class TestProcessCapabilities(CompatTestCase):
         else:
             raise AssertionError('Unsupported os.')
 
+    @conditionals.onAdminPrivileges(True)
     def test_create_home_folder(self):
         """
         When running under normal account, we can not create home folders
@@ -91,6 +92,7 @@ class TestProcessCapabilities(CompatTestCase):
         else:
             raise AssertionError('Unsupported os.')
 
+    @conditionals.onAdminPrivileges(True)
     def test_getCurrentPrivilegesDescription(self):
         """
         Check getCurrentPrivilegesDescription.
