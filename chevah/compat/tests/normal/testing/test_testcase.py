@@ -16,7 +16,7 @@ from twisted.internet.task import Clock
 from twisted.python.failure import Failure
 
 from chevah.compat import process_capabilities
-from chevah.empirical import conditionals, EmpiricalTestCase, mk
+from chevah.compat.testing import conditionals, ChevahTestCase, mk
 
 
 class Dummy(object):
@@ -45,9 +45,9 @@ class ErrorWithID(Exception):
         return self._id
 
 
-class TestTwistedTestCase(EmpiricalTestCase):
+class TestTwistedTestCase(ChevahTestCase):
     """
-    General tests for TwistedTestCase as part of EmpiricalTestCase.
+    General tests for TwistedTestCase as part of ChevahTestCase.
     """
 
     def test_runDeferred_non_deferred(self):
@@ -346,9 +346,9 @@ class TestTwistedTestCase(EmpiricalTestCase):
         self.executeReactor()
 
 
-class TestEmpiricalTestCase(EmpiricalTestCase):
+class TestChevahTestCase(ChevahTestCase):
     """
-    General tests for EmpiricalTestCase.
+    General tests for ChevahTestCase.
     """
 
     def test_cleanTemporaryFolder_empty(self):
@@ -689,7 +689,7 @@ class TestEmpiricalTestCase(EmpiricalTestCase):
 
 
 @conditionals.onOSFamily('posiX')
-class TestClassConditionalsPosix(EmpiricalTestCase):
+class TestClassConditionalsPosix(ChevahTestCase):
     """
     Conditionals also work on classes.
     """
@@ -702,7 +702,7 @@ class TestClassConditionalsPosix(EmpiricalTestCase):
 
 
 @conditionals.onOSFamily('nt')
-class TestClassConditionalsNT(EmpiricalTestCase):
+class TestClassConditionalsNT(ChevahTestCase):
     """
     This is the complement of the previous tests.
     """
@@ -714,7 +714,7 @@ class TestClassConditionalsNT(EmpiricalTestCase):
             raise AssertionError('This should be called only on nt.')
 
 
-class TestEmpiricalTestCaseSkipSetup(EmpiricalTestCase):
+class TestChevahTestCaseSkipSetup(ChevahTestCase):
     """
     Test skipped test at setup level.
     """
@@ -725,7 +725,7 @@ class TestEmpiricalTestCaseSkipSetup(EmpiricalTestCase):
 
         This will prevent calling of tearDown.
         """
-        super(TestEmpiricalTestCaseSkipSetup, self).setUp()
+        super(TestChevahTestCaseSkipSetup, self).setUp()
 
         raise self.skipTest()
 
@@ -739,18 +739,18 @@ class TestEmpiricalTestCaseSkipSetup(EmpiricalTestCase):
         raise AssertionError('Should not be called')
 
 
-class TestEmpiricalTestCaseAddCleanup(EmpiricalTestCase):
+class TestChevahTestCaseAddCleanup(ChevahTestCase):
     """
     Test case for checking addCleanup.
     """
 
     def setUp(self):
-        super(TestEmpiricalTestCaseAddCleanup, self).setUp()
+        super(TestChevahTestCaseAddCleanup, self).setUp()
         self.cleanup_call_count = 0
 
     def tearDown(self):
         self.assertEqual(0, self.cleanup_call_count)
-        super(TestEmpiricalTestCaseAddCleanup, self).tearDown()
+        super(TestChevahTestCaseAddCleanup, self).tearDown()
         self.assertEqual(1, self.cleanup_call_count)
 
     def cleanUp(self):
@@ -765,18 +765,18 @@ class TestEmpiricalTestCaseAddCleanup(EmpiricalTestCase):
         self.assertEqual(0, self.cleanup_call_count)
 
 
-class TestEmpiricalTestCaseCallCleanup(EmpiricalTestCase):
+class TestChevahTestCaseCallCleanup(ChevahTestCase):
     """
     Test case for checking callCleanup.
     """
 
     def setUp(self):
-        super(TestEmpiricalTestCaseCallCleanup, self).setUp()
+        super(TestChevahTestCaseCallCleanup, self).setUp()
         self.cleanup_call_count = 0
 
     def tearDown(self):
         self.assertEqual(1, self.cleanup_call_count)
-        super(TestEmpiricalTestCaseCallCleanup, self).tearDown()
+        super(TestChevahTestCaseCallCleanup, self).tearDown()
         self.assertEqual(1, self.cleanup_call_count)
 
     def cleanUp(self):

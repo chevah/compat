@@ -13,11 +13,11 @@ from chevah.compat import (
 from chevah.compat.testing import (
     mk as compat_mk,
     )
-from chevah.empirical import EmpiricalTestCase, mk, conditionals
-from chevah.empirical.filesystem import LocalTestFilesystem
+from chevah.compat.testing import ChevahTestCase, mk, conditionals
+from chevah.compat.testing.filesystem import LocalTestFilesystem
 
 
-class TestElevatedLocalTestFilesystem(EmpiricalTestCase):
+class TestElevatedLocalTestFilesystem(ChevahTestCase):
     """
     Test for LocalTestFilesystem using different account.
     """

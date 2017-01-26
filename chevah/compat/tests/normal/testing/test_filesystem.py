@@ -7,11 +7,11 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from builtins import str
-from chevah.empirical import EmpiricalTestCase, mk
-from chevah.empirical.filesystem import LocalTestFilesystem
+from chevah.compat.testing import ChevahTestCase, mk
+from chevah.compat.testing.filesystem import LocalTestFilesystem
 
 
-class TestLocalTestFilesystem(EmpiricalTestCase):
+class TestLocalTestFilesystem(ChevahTestCase):
     """
     Test for LocalTestFilesystem.
     """

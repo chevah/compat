@@ -19,10 +19,12 @@ import os
 import random
 import socket
 import string
+import sys
 import threading
 import uuid
 
 from OpenSSL import SSL, crypto
+from unidecode import unidecode
 
 try:
     from twisted.internet import address, defer
@@ -32,9 +34,13 @@ except ImportError:
     # Twisted support is optional.
     pass
 
-from chevah.compat import DefaultAvatar
-from chevah.empirical.filesystem import LocalTestFilesystem
-from chevah.empirical.constants import (
+from chevah.compat import DefaultAvatar, process_capabilities, system_users
+from chevah.compat.avatar import (
+    FilesystemApplicationAvatar,
+    FilesystemOSAvatar,
+    )
+from chevah.compat.testing.filesystem import LocalTestFilesystem
+from chevah.compat.testing.constants import (
     TEST_NAME_MARKER,
     )
 
@@ -443,13 +449,179 @@ class TestSSLContextFactory(object):
 
     def getContext(self):
         if self._context is None:
-            self._context = factory.makeSSLContext(
+            self._context = mk.makeSSLContext(
                 method=self.method,
                 cipher_list=self.cipher_list,
                 certificate_path=self.certificate_path,
                 key_path=self.key_path,
                 )
         return self._context
+
+
+# FIXME:2106:
+# Get rid of global functions and replace with OS specialized TestUSer
+# instances: TestUserAIX, TestUserWindows, TestUserUnix, etc.
+def _sanitize_name_legacy_unix(candidate):
+    """
+    Return valid user/group name for old Unix (AIX/HPUX) from `candidate`.
+
+    By default password is limited to 8 characters without spaces.
+    """
+    return str(unidecode(candidate)).replace(' ', '_')[:8]
+
+
+def _sanitize_name_windows(candidate):
+    """
+    Return valid user/group name for Windows OSs from `candidate.
+    """
+    # FIXME:927:
+    # On Windows, we can't delete home folders with unicode names.
+    return str(unidecode(candidate))
+
+
+class TestUser(object):
+    """
+    An object storing all user information.
+    """
+
+    @classmethod
+    def sanitizeName(cls, name):
+        """
+        Return name sanitized for current OS.
+        """
+        os_name = process_capabilities.os_name
+        if os_name in ['aix', 'hpux']:
+            return _sanitize_name_legacy_unix(name)
+        elif os_name == 'windows':
+            return _sanitize_name_windows(name)
+
+        return name
+
+    def __init__(
+        self, name, posix_uid=None, posix_gid=None, posix_home_path=None,
+        home_group=None, shell=None, shadow=None, password=None,
+        domain=None, pdc=None, primary_group_name=None,
+        create_local_profile=False, windows_required_rights=None,
+            ):
+        """
+        Convert user name to an OS valid value.
+        """
+        if posix_home_path is None:
+            posix_home_path = u'/tmp'
+
+        if shell is None:
+            shell = u'/bin/sh'
+
+        if shadow is None:
+            shadow = '!'
+
+        if posix_gid is None:
+            posix_gid = posix_uid
+
+        self._name = self.sanitizeName(name)
+        self.uid = posix_uid
+        self.gid = posix_gid
+        self.posix_home_path = posix_home_path
+        self.home_group = home_group
+        self.shell = shell
+        self.shadow = shadow
+        self.password = password
+        self.domain = domain
+        self.pdc = pdc
+        self.primary_group_name = primary_group_name
+
+        self.windows_sid = None
+        self.windows_create_local_profile = create_local_profile
+        self.windows_required_rights = windows_required_rights
+        self._windows_token = None
+
+    @property
+    def name(self):
+        """
+        Actual user name.
+        """
+        return self._name
+
+    @property
+    def token(self):
+        """
+        Windows token for user.
+        """
+        if os.name != 'nt':
+            return None
+
+        if not self._windows_token:
+            self._windows_token = self._getToken()
+
+        return self._windows_token
+
+    @property
+    def upn(self):
+        """
+        Returns User Principal Name: plain user name if no domain name defined
+        or Active Directory compatible full domain user name.
+        """
+        if not self.domain:
+            return self.name
+
+        return u'%s@%s' % (self.name, self.domain)
+
+    def _getToken(self):
+        """
+        Generate the Windows token for `user`.
+        """
+        result, token = system_users.authenticateWithUsernameAndPassword(
+            username=self.upn, password=self.password)
+
+        if not result:
+            message = u'Failed to get a valid token for "%s" with "%s".' % (
+                self.upn, self.password)
+            raise AssertionError(message.encode('utf-8'))
+
+        return token
+
+    def _invalidateToken(self):
+        """
+        Invalidates cache for Windows token value.
+        """
+        self._windows_token = None
+
+
+class TestGroup(object):
+    """
+    An object storing all group information.
+    """
+
+    @classmethod
+    def sanitizeName(cls, group):
+        """
+        Return name sanitized for current OS.
+        """
+        if sys.platform.startswith('aix'):
+            return _sanitize_name_legacy_unix(group)
+        elif sys.platform.startswith('win'):
+            return _sanitize_name_windows(group)
+
+        return group
+
+    def __init__(self, name, posix_gid=None, members=None, pdc=None):
+        """
+        Convert name to an OS valid value.
+        """
+        if members is None:
+            members = []
+
+        self._name = self.sanitizeName(name)
+        self.gid = posix_gid
+        self.members = members
+        self.pdc = pdc
+
+    @property
+    def name(self):
+        """
+        Actual group name.
+        """
+        return self._name
 
 
 # Singleton member used to generate unique integers across whole tests.
@@ -462,6 +634,9 @@ class ChevahCommonsFactory(object):
     """
     Generator of objects to help testing.
     """
+
+    # Class member used for generating unique user/group id(s).
+    _posix_id = random.randint(2000, 3000)
 
     @classmethod
     def getUniqueInteger(cls):
@@ -657,5 +832,96 @@ class ChevahCommonsFactory(object):
         """
         return defer.fail(failure)
 
+    def makeFilesystemOSAvatar(
+        self, name=None, home_folder_path=None, root_folder_path=None,
+        lock_in_home_folder=False, token=None,
+            ):
+        """
+        Creates a valid FilesystemOSAvatar.
+        """
+        if name is None:
+            name = self.username
 
-factory = ChevahCommonsFactory()
+        if home_folder_path is None:
+            home_folder_path = self.fs.temp_path
+
+        return FilesystemOSAvatar(
+            name=name,
+            home_folder_path=home_folder_path,
+            root_folder_path=root_folder_path,
+            lock_in_home_folder=lock_in_home_folder,
+            token=token,
+            )
+
+    def makeFilesystemApplicationAvatar(
+            self, name=None, home_folder_path=None, root_folder_path=None):
+        """
+        Creates a valid FilesystemApplicationAvatar.
+        """
+        if name is None:
+            name = self.getUniqueString()
+
+        if home_folder_path is None:
+            home_folder_path = self.fs.temp_path
+
+        # Application avatars are locked inside home folders.
+        if root_folder_path is None:
+            root_folder_path = home_folder_path
+
+        return FilesystemApplicationAvatar(
+            name=name,
+            home_folder_path=home_folder_path,
+            root_folder_path=root_folder_path,
+            )
+
+    @classmethod
+    def posixID(cls):
+        """
+        Return a valid Posix ID.
+        """
+        cls._posix_id += 1
+        return cls._posix_id
+
+    def getTestUser(self, name):
+        """
+        Return an existing test user instance for user with `name`.
+        Return `None` if user is undefined.
+        """
+        from chevah.compat.testing import TEST_USERS
+        try:
+            result = TEST_USERS[name]
+        except KeyError:
+            result = None
+
+        return result
+
+    def makeTestUser(self, name=None, password=None, posix_home_path=None,
+                     home_group=None
+                     ):
+        """
+        Return an instance of TestUser with specified name and password.
+        """
+        if name is None:
+            name = self.string()
+
+        if password is None:
+            password = self.string()
+
+        if posix_home_path is None:
+            if process_capabilities.os_name == 'solaris':
+                posix_home_path = u'/export/home/%s' % name
+            elif process_capabilities.os_name == 'osx':
+                posix_home_path = u'/Users/%s' % name
+            else:  # Linux and normal Unix
+                posix_home_path = u'/home/%s' % name
+
+        return TestUser(
+            name=name,
+            password=password,
+            posix_uid=self.posixID(),
+            posix_home_path=posix_home_path,
+            home_group=home_group,
+            )
+
+
+mk = ChevahCommonsFactory()

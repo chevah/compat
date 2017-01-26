@@ -25,7 +25,7 @@ from chevah.compat.exceptions import (
     CompatError,
     CompatException,
     )
-from chevah.compat.testing import (
+from chevah.compat.testing.testcase import (
     FileSystemTestCase,
     OSAccountFileSystemTestCase,
     )

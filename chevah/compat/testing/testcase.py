@@ -43,10 +43,13 @@ from chevah.compat import (
     system_users,
     SuperAvatar,
     )
-from chevah.empirical.mockup import factory
-from chevah.empirical.constants import (
+from chevah.compat.exceptions import CompatError
+from chevah.compat.administration import os_administration
+from chevah.compat.testing.mockup import mk
+from chevah.compat.testing.constants import (
     TEST_NAME_MARKER,
     )
+from chevah.compat.testing.filesystem import LocalTestFilesystem
 
 # For Python below 2.7 we use the separate unittest2 module.
 # It comes by default in Python 2.7.
@@ -408,8 +411,8 @@ class TwistedTestCase(TestCase):
 
         Usage::
 
-            protocol = factory.makeFTPProtocol()
-            transport = factory.makeStringTransportProtocol()
+            protocol = mk.makeFTPProtocol()
+            transport = mk.makeStringTransportProtocol()
             protocol.makeConnection(transport)
             transport.protocol = protocol
 
@@ -786,11 +789,11 @@ class ChevahTestCase(TwistedTestCase):
         # FIXME:922:
         # Move all filesystem checks into a specialized class
         if self.test_segments:
-            if factory.fs.isFolder(self.test_segments):
-                factory.fs.deleteFolder(
+            if mk.fs.isFolder(self.test_segments):
+                mk.fs.deleteFolder(
                     self.test_segments, recursive=True)
             else:
-                factory.fs.deleteFile(self.test_segments)
+                mk.fs.deleteFile(self.test_segments)
 
         checks = [
             self.assertTempIsClean,
@@ -947,12 +950,12 @@ class ChevahTestCase(TwistedTestCase):
 
         Return a list of members which were removed.
         """
-        return cls._cleanFolder(factory.fs.temp_segments)
+        return cls._cleanFolder(mk.fs.temp_segments)
 
     @classmethod
     def cleanWorkingFolder(cls):
-        path = factory.fs.getAbsoluteRealPath('.')
-        segments = factory.fs.getSegmentsFromRealPath(path)
+        path = mk.fs.getAbsoluteRealPath('.')
+        segments = mk.fs.getSegmentsFromRealPath(path)
         return cls._cleanFolder(segments)
 
     @classmethod
@@ -962,7 +965,7 @@ class ChevahTestCase(TwistedTestCase):
 
         Return a list of members which were removed.
         """
-        if not factory.fs.exists(folder_segments):
+        if not mk.fs.exists(folder_segments):
             return []
 
         # In case we are running the test suite as super user,
@@ -1009,6 +1012,35 @@ class ChevahTestCase(TwistedTestCase):
             return int(peak_working_set_size)
         else:
             raise AssertionError('OS not supported.')
+
+    def runningAsAdministrator(self):
+        """
+        Return True if slave runs as administrator.
+        """
+        # Windows 2008 and DC client tests are done in administration mode,
+        # 2003 and XP under normal mode.
+        if 'win-2008' in self.hostname or 'win-dc' in self.hostname:
+            return True
+        else:
+            return False
+
+    def assertCompatError(self, expected_id, actual_error):
+        """
+        Raise an error if `actual_error` is not a `CompatError` instance.
+
+        Raise an error if `expected_id` does not match event_id of
+        `actual_error`.
+        """
+        if not isinstance(actual_error, CompatError):
+            values = (actual_error, type(actual_error))
+            message = u'Error %s not CompatError but %s' % values
+            raise AssertionError(message.encode('utf-8'))
+
+        actual_id = getattr(actual_error, 'event_id', None)
+        if expected_id != actual_id:
+            values = (actual_error, str(expected_id), str(actual_id))
+            message = u'Error id for %s is not %s, but %s.' % values
+            raise AssertionError(message.encode('utf-8'))
 
     @classmethod
     def assertTempIsClean(cls):
@@ -1337,3 +1369,72 @@ class CommandTestCase(ChevahTestCase):
         sys.stderr = sys.__stderr__
         sys.exit = self.sys_exit
         super(CommandTestCase, self).tearDown()
+
+
+class FileSystemTestCase(ChevahTestCase):
+    """
+    Common test case for all file-system tests using a real OS account.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        # FIXME:924:
+        # Disabled when we can not find the home folder path.
+        if not process_capabilities.get_home_folder:
+            raise cls.skipTest()
+
+        super(FileSystemTestCase, cls).setUpClass()
+
+        cls.os_user = cls.setUpTestUser()
+
+        home_folder_path = system_users.getHomeFolder(
+            username=cls.os_user.name, token=cls.os_user.token)
+
+        cls.avatar = mk.makeFilesystemOSAvatar(
+            name=cls.os_user.name,
+            home_folder_path=home_folder_path,
+            token=cls.os_user.token,
+            )
+        cls.filesystem = LocalFilesystem(avatar=cls.avatar)
+
+    @classmethod
+    def tearDownClass(cls):
+        if not cls.os_user.windows_create_local_profile:
+            os_administration.deleteHomeFolder(cls.os_user)
+        os_administration.deleteUser(cls.os_user)
+
+        super(FileSystemTestCase, cls).tearDownClass()
+
+    @classmethod
+    def setUpTestUser(cls):
+        """
+        Set-up OS user for file system testing.
+        """
+        from chevah.compat.testing import TEST_ACCOUNT_GROUP
+        user = mk.makeTestUser(home_group=TEST_ACCOUNT_GROUP)
+        os_administration.addUser(user)
+        return user
+
+    def setUp(self):
+        super(FileSystemTestCase, self).setUp()
+        # Initialized only to clean the home folder.
+        test_filesystem = LocalTestFilesystem(avatar=self.avatar)
+        test_filesystem.cleanHomeFolder()
+
+
+class OSAccountFileSystemTestCase(FileSystemTestCase):
+    """
+    Test case for tests that need a local OS account present.
+    """
+
+    #: User will be created before running the test case and removed on
+    #: teardown.
+    CREATE_TEST_USER = None
+
+    @classmethod
+    def setUpTestUser(cls):
+        """
+        Add `CREATE_TEST_USER` to local OS.
+        """
+        os_administration.addUser(cls.CREATE_TEST_USER)
+        return cls.CREATE_TEST_USER

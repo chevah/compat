@@ -13,7 +13,7 @@ import re
 import uuid
 
 from chevah.compat import LocalFilesystem
-from chevah.empirical.constants import TEST_NAME_MARKER
+from chevah.compat.testing.constants import TEST_NAME_MARKER
 
 
 class LocalTestFilesystem(LocalFilesystem):
@@ -147,8 +147,8 @@ class LocalTestFilesystem(LocalFilesystem):
         """
         # It's required to use a delayed import in order to avoid a
         # circular import reference as factory uses filesystem.
-        from chevah.empirical import factory
-        return factory.makeFilename(prefix=prefix, suffix=suffix)
+        from chevah.compat.testing import mk
+        return mk.makeFilename(prefix=prefix, suffix=suffix)
 
     def makePathInTemp(self):
         """

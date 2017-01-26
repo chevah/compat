@@ -9,10 +9,10 @@ from __future__ import absolute_import
 
 from nose.plugins.attrib import attr
 
-from chevah.empirical import EmpiricalTestCase
+from chevah.compat.testing import ChevahTestCase
 
 
-class TestTestTimer(EmpiricalTestCase):
+class TestTestTimer(ChevahTestCase):
     """
     Test for TestTimer.
     """

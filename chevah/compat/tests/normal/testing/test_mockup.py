@@ -9,15 +9,15 @@ from __future__ import absolute_import
 from future.types import newstr
 import requests
 
-from chevah.empirical.mockup import (
+from chevah.compat.testing.mockup import (
     ChevahCommonsFactory,
     ResponseDefinition,
     HTTPServerContext,
     )
-from chevah.empirical import EmpiricalTestCase, mk
+from chevah.compat.testing import ChevahTestCase, mk
 
 
-class TestHTTPServerContext(EmpiricalTestCase):
+class TestHTTPServerContext(ChevahTestCase):
     """
     Tests for HTTPServerContext.
     """
@@ -256,7 +256,7 @@ class TestHTTPServerContext(EmpiricalTestCase):
         self.assertEqual('15', result.headers['content-length'])
 
 
-class TestFactory(EmpiricalTestCase):
+class TestFactory(ChevahTestCase):
     """
     Test for test objects factory.
     """

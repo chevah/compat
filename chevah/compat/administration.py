@@ -27,12 +27,10 @@ from contextlib import contextmanager
 import os
 import codecs
 import random
+import socket
 import subprocess
 import sys
 
-from chevah.empirical.testcase import (
-    ChevahTestCase,
-    )
 from chevah.compat import (
     LocalFilesystem,
     process_capabilities,
@@ -760,7 +758,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         # like the rest of Net* functions.
         pdc = user.pdc
         if not pdc:
-            pdc = ChevahTestCase.getHostname()
+            pdc = socket.gethostname()
 
         try:
             import win32net

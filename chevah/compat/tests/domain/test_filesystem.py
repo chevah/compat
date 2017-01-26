@@ -17,7 +17,7 @@ from chevah.compat.testing import (
     TestUser,
     )
 
-from chevah.compat.testing import OSAccountFileSystemTestCase
+from chevah.compat.testing.testcase import OSAccountFileSystemTestCase
 from chevah.compat.tests.mixin.filesystem import SymbolicLinksMixin
 
 
