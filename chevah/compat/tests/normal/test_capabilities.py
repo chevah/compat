@@ -17,10 +17,7 @@ from zope.interface.verify import verifyObject
 from chevah.compat import process_capabilities
 from chevah.compat.exceptions import AdjustPrivilegeException
 from chevah.compat.interfaces import IProcessCapabilities
-from chevah.compat.testing import (
-    CompatTestCase,
-    mk,
-    )
+from chevah.compat.testing import conditionals, CompatTestCase, mk
 
 
 class TestProcessCapabilitiesPosix(CompatTestCase):

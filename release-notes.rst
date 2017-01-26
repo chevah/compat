@@ -2,11 +2,18 @@ Release notes for chevah.compat
 ===============================
 
 
-0.36.1 - 02/12/2016
+0.38.0 - 24/01/2017
 -------------------
 
-* Impersonating local accounts is determined by the availability of
-  SeImpersonatePrivilege on Windows.
+* Add conditional for skipping tests depending on availability of
+  administrator privileges
+* Update empirical to the latest version
+
+
+0.37.0 - 23/01/2017
+-------------------
+
+* Move chevah.empirical to compat.
 
 
 0.36.0 - 13/11/2016

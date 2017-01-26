@@ -66,7 +66,7 @@ BUILD_PACKAGES = [
     # Docutils is required for RST parsing and for Sphinx.
     'docutils==0.12.c1',
 
-    'twisted==15.5.0.chevah3',
+    'twisted==15.5.0.chevah4',
 
     # Buildbot is used for try scheduler
     'buildbot==0.8.11.c7',
