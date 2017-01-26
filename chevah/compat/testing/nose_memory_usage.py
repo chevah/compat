@@ -28,9 +28,8 @@ class MemoryUsage(Plugin):
         """
         Method to prevent circular import.
         """
-        # pragma: no cover
-        from chevah.compat.testing import ChevahTestCase
-        return ChevahTestCase.getPeakMemoryUsage()
+        from chevah.compat.testing import ChevahTestCase  # pragma: no cover
+        return ChevahTestCase.getPeakMemoryUsage()  # pragma: no cover
 
     def configure(self, options, config):
         """Configures the test timer plugin."""

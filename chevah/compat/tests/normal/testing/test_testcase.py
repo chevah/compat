@@ -16,6 +16,7 @@ from twisted.internet.task import Clock
 from twisted.python.failure import Failure
 
 from chevah.compat import process_capabilities
+from chevah.compat.exceptions import CompatError
 from chevah.compat.testing import conditionals, ChevahTestCase, mk
 
 
@@ -701,6 +702,23 @@ class TestChevahTestCase(ChevahTestCase):
         self.assertEqual(
             "Error generic-error not CompatError but "
             "<type 'exceptions.Exception'>",
+            exception.args[0],
+            )
+
+    def test_assertCompatError_bad_id(self):
+        """
+        Will show the details if error is not an CompatError.
+        """
+        exception = self.assertRaises(
+            AssertionError,
+            self.assertCompatError,
+            u'123-id',
+            CompatError(u'456', u'Some details.')
+            )
+
+        self.assertEqual(
+            'Error id for CompatError 456 - Some details. is not 123-id, '
+            'but 456.',
             exception.args[0],
             )
 

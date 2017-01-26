@@ -23,16 +23,15 @@ import sys
 import threading
 import uuid
 
-from OpenSSL import SSL, crypto
 from unidecode import unidecode
 
 try:
     from twisted.internet import address, defer
     from twisted.internet.protocol import Factory
     from twisted.internet.tcp import Port
-except ImportError:
+except ImportError:  # pragma: no cover
     # Twisted support is optional.
-    pass  # pragma: no cover
+    pass
 
 from chevah.compat import DefaultAvatar, process_capabilities, system_users
 from chevah.compat.avatar import (
@@ -755,51 +754,11 @@ class ChevahCommonsFactory(object):
         ipv4 = address.IPv4Address(protocol, host, port)
         return ipv4
 
-    def makeSSLContext(
-        self, method=None, cipher_list=None,
-        certificate_path=None, key_path=None,
-            ):
-        '''Create an SSL context.'''
-        if method is None:
-            method = SSL.SSLv23_METHOD
-
-        if key_path is None:
-            key_path = certificate_path
-
-        ssl_context = SSL.Context(method)
-
-        if certificate_path:
-            ssl_context.use_certificate_file(certificate_path)
-        if key_path:
-            ssl_context.use_privatekey_file(key_path)
-
-        if cipher_list:
-            ssl_context.set_cipher_list(cipher_list)
-
-        return ssl_context
-
-    def makeSSLCertificate(self, path):
-        '''Return an SSL instance loaded from path.'''
-        certificate = None
-        cert_file = open(path, 'r')
-        try:
-            certificate = crypto.load_certificate(
-                crypto.FILETYPE_PEM, cert_file.read())
-        finally:
-            cert_file.close()
-        return certificate
-
     def makeDeferredSucceed(self, data=None):
         """
         Creates a deferred for which already succeeded.
         """
         return defer.succeed(data)
-
-    def makeDeferredFail(self, failure=None):
-        """
-        Creates a deferred which already failed.
-        """
-        return defer.fail(failure)
 
     def makeFilesystemOSAvatar(
         self, name=None, home_folder_path=None, root_folder_path=None,
