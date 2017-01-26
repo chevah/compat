@@ -36,24 +36,40 @@ class TestProcessCapabilities(FileSystemTestCase):
         result = self.capabilities.create_home_folder
         self.assertTrue(result)
 
-    def test_get_home_folder(self):
+    @conditionals.onOSFamily('posix')
+    def test_get_home_folder_posix(self):
         """
-        On unix we can always get home folder.
-
-        On Windows 7 and 2008 home folder path can be retrieved. On
-        all other system below Windows 7, the home folder can not be
-        retrieved yet.
+        On Unix we can always get home folder.
         """
         result = self.capabilities.get_home_folder
-        hostname = self.getHostname()
-        if 'win-xp' in hostname or 'win-2003' in hostname:
-            self.assertFalse(result)
-        else:
-            self.assertTrue(result)
+
+        self.assertTrue(result)
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onAdminPrivileges(True)
+    def test_get_home_folder_windows_admin(self):
+        """
+        Home folder can be retrieved when running with administrator
+        privileges.
+        """
+        result = self.capabilities.get_home_folder
+
+        self.assertTrue(result)
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onAdminPrivileges(False)
+    def test_get_home_folder_windows_regular(self):
+        """
+        Home folder cannot be retrieved when administrator privileges are
+        disabled (Windows 2003/Windows XP).
+        """
+        result = self.capabilities.get_home_folder
+
+        self.assertFalse(result)
 
     def test_getCurrentPrivilegesDescription(self):
         """
-        Check getCurrentPrivilegesDescription.
+        Lists all available privileges and their state.
         """
         text = self.capabilities.getCurrentPrivilegesDescription()
         if os.name == 'posix':

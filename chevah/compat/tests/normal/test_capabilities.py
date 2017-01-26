@@ -136,13 +136,6 @@ class TestNTProcessCapabilities(CompatTestCase):
                 # pragma: no cover
                 pass
 
-    def test_get_home_folder(self):
-        """
-        On Windows, only Windows 2008 and Windows 7 can get home folder path.
-        """
-        # The Windows test is handled in elevated module.
-        pass
-
     def test_pam(self):
         """
         PAM is not supported on Windows
@@ -248,13 +241,23 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
 
         self.assertFalse(result)
 
+    def test_get_home_folder(self):
+        """
+        The home folder cannot be retrieved.
+        """
+        result = self.capabilities.get_home_folder
+
+        self.assertFalse(result)
+
     def test_create_home_folder(self):
         """
-        On Windows home folders can be created if required privileges
-        are configured for the process.
+        On Windows home folders can be created if SE_BACKUP and SE_RESTORE
+        privileges are available for the process.
         """
         result = self.capabilities.create_home_folder
 
+        # Windows XP does not have SE_BACKUP/SE_RESTORE enabled when not
+        # running with administrator privileges.
         if 'win-xp' in self.hostname:
             self.assertFalse(result)
         else:
@@ -267,15 +270,14 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         text = self.capabilities.getCurrentPrivilegesDescription()
 
         self.assertContains('SeChangeNotifyPrivilege:3', text)
+        self.assertNotContains('SeCreateSymbolicLinkPrivilege', text)
+        self.assertNotContains('SeImpersonatePrivilege', text)
 
+        # Windows XP has SE_CREATE_GLOBAL enabled even when not
+        # running with administrator privileges.
         if 'win-xp' in self.hostname:
-            self.assertNotContains('SeCreateSymbolicLinkPrivilege', text)
-            self.assertNotContains('SeImpersonatePrivilege', text)
-            # Windows XP has SeCreateGlobalPrivilege enabled.
             self.assertContains('SeCreateGlobalPrivilege:3', text)
         else:
-            self.assertNotContains('SeCreateSymbolicLinkPrivilege', text)
-            self.assertNotContains('SeImpersonatePrivilege', text)
             self.assertNotContains('SeCreateGlobalPrivilege', text)
 
 
@@ -428,11 +430,19 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
 
     def test_symbolic_link(self):
         """
-        Support on Vista and above.
+        Supported on Vista and above.
         """
         symbolic_link = self.capabilities.symbolic_link
 
         self.assertTrue(symbolic_link)
+
+    def test_get_home_folder(self):
+        """
+        The home folder can be retrieved.
+        """
+        result = self.capabilities.get_home_folder
+
+        self.assertTrue(result)
 
     def test_create_home_folder(self):
         """
@@ -445,7 +455,12 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
 
     def test_getCurrentPrivilegesDescription(self):
         """
-        Check getCurrentPrivilegesDescription.
+        Check that SE_CHANGE_NOTIFY_NAME, SE_IMPERSONATE_NAME and
+        SE_CREATE_GLOBAL_NAME are all present in the privileges description
+        and enabled.
+
+        Check that SE_CREATE_SYMBOLIC_LINK_NAME is present in the privileges
+        description and it's disabled.
         """
         text = self.capabilities.getCurrentPrivilegesDescription()
 
