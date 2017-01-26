@@ -20,6 +20,7 @@ from chevah.compat.interfaces import IProcessCapabilities
 from chevah.compat.testing import conditionals, CompatTestCase, mk
 
 
+@conditionals.onOSFamily('posix')
 class TestProcessCapabilitiesPosix(CompatTestCase):
     """
     Unit tests for process capabilities executed on Posix platforms.
@@ -27,9 +28,6 @@ class TestProcessCapabilitiesPosix(CompatTestCase):
 
     def setUp(self):
         super(TestProcessCapabilitiesPosix, self).setUp()
-
-        if self.os_family != 'posix':
-            raise self.skipTest('Only Posix platforms are supported')
 
         self.capabilities = process_capabilities
 
@@ -77,11 +75,6 @@ class TestProcessCapabilitiesPosix(CompatTestCase):
         """
         PAM is supported on Linux/Unix with the exception of HPUX.
         """
-        # FIXME:3813:
-        # Re-enable once we have a HP-UX buildslave.
-        # if self.os_name in ['hpux']:
-        #    self.assertFalse(self.capabilities.pam)
-
         self.assertTrue(self.capabilities.pam)
 
     def test_symbolic_link(self):
@@ -93,6 +86,7 @@ class TestProcessCapabilitiesPosix(CompatTestCase):
         self.assertTrue(symbolic_link)
 
 
+@conditionals.onOSFamily('nt')
 class TestNTProcessCapabilities(CompatTestCase):
     """
     Capability tests executed only on Windows slaves.
@@ -100,9 +94,6 @@ class TestNTProcessCapabilities(CompatTestCase):
 
     def setUp(self):
         super(TestNTProcessCapabilities, self).setUp()
-
-        if self.os_family != 'nt':
-            raise self.skipTest("Only Windows platforms supported.")
 
         self.capabilities = process_capabilities
 
@@ -159,6 +150,8 @@ class TestNTProcessCapabilities(CompatTestCase):
         self.assertFalse(self.capabilities.pam)
 
 
+@conditionals.onOSFamily('nt')
+@conditionals.onAdminPrivileges(False)
 class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
     """
     Capability tests executed only on Windows slaves that are configured to
@@ -167,15 +160,6 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
 
     def setUp(self):
         super(TestNTProcessCapabilitiesNormalUser, self).setUp()
-
-        if self.os_family != 'nt':
-            raise self.skipTest("Only Windows platforms supported.")
-
-        # Windows 2008 and DC client tests are done in administration mode,
-        # 2003 and XP under normal mode.
-        if 'win-2003' not in self.hostname and 'win-xp' not in self.hostname:
-            message = "Only Windows with normal rights supported"
-            raise self.skipTest(message)
 
         self.capabilities = process_capabilities
 
@@ -295,6 +279,8 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
             self.assertNotContains('SeCreateGlobalPrivilege', text)
 
 
+@conditionals.onOSFamily('nt')
+@conditionals.onAdminPrivileges(True)
 class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
     """
     Capability tests executed only on Windows slaves that are configured to
@@ -303,15 +289,6 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
 
     def setUp(self):
         super(TestNTProcessCapabilitiesAdministrator, self).setUp()
-
-        if self.os_family != 'nt':
-            raise self.skipTest("Only Windows platforms supported.")
-
-        # Windows 2008 and DC client tests are done in administration mode,
-        # 2003 and XP under normal mode.
-        if 'win-2003' in self.hostname or 'win-xp' in self.hostname:
-            message = "Only Windows with administrator rights supported"
-            raise self.skipTest(message)
 
         self.capabilities = process_capabilities
 
