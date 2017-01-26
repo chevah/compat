@@ -26,7 +26,7 @@ import uuid
 from unidecode import unidecode
 
 try:
-    from twisted.internet import address, defer
+    from twisted.internet import address
     from twisted.internet.protocol import Factory
     from twisted.internet.tcp import Port
 except ImportError:  # pragma: no cover
@@ -753,12 +753,6 @@ class ChevahCommonsFactory(object):
 
         ipv4 = address.IPv4Address(protocol, host, port)
         return ipv4
-
-    def makeDeferredSucceed(self, data=None):
-        """
-        Creates a deferred for which already succeeded.
-        """
-        return defer.succeed(data)
 
     def makeFilesystemOSAvatar(
         self, name=None, home_folder_path=None, root_folder_path=None,
