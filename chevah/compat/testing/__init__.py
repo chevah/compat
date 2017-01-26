@@ -9,6 +9,7 @@ Here are a few import shortcuts.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from builtins import str
 from future import standard_library
 
 from chevah.compat import process_capabilities
@@ -29,25 +30,25 @@ CompatTestCase = ChevahTestCase
 mk
 
 # Test accounts and passwords.
-TEST_ACCOUNT_USERNAME = unicode(u'mâț mițișor')
-TEST_ACCOUNT_PASSWORD = unicode(u'Baroșanu42!')
-TEST_ACCOUNT_GROUP = unicode(u'g mâțmițișor')
+TEST_ACCOUNT_USERNAME = str(u'mâț mițișor')
+TEST_ACCOUNT_PASSWORD = str(u'Baroșanu42!')
+TEST_ACCOUNT_GROUP = str(u'g mâțmițișor')
 # FIXME:2106:
 # Replace hard-coded constant with posixID()
 TEST_ACCOUNT_UID = 2000
 TEST_ACCOUNT_GID = 2010
-TEST_ACCOUNT_GROUP_WIN = unicode(u'Users')
-TEST_ACCOUNT_USERNAME_OTHER = unicode(u'miț motan')
-TEST_ACCOUNT_PASSWORD_OTHER = unicode(u'altapara')
+TEST_ACCOUNT_GROUP_WIN = str(u'Users')
+TEST_ACCOUNT_USERNAME_OTHER = str(u'miț motan')
+TEST_ACCOUNT_PASSWORD_OTHER = str(u'altapara')
 # FIXME:2106:
 # Replace hard-coded constant with posixID()
 TEST_ACCOUNT_UID_OTHER = 2001
 TEST_ACCOUNT_GID_OTHER = 2011
-TEST_ACCOUNT_GROUP_OTHER = unicode(u'g mițmotan')
+TEST_ACCOUNT_GROUP_OTHER = str(u'g mițmotan')
 
 # Centrify testing account.
-TEST_ACCOUNT_CENTRIFY_USERNAME = unicode(u'centrify-user')
-TEST_ACCOUNT_CENTRIFY_PASSWORD = unicode(u'Parola01!')
+TEST_ACCOUNT_CENTRIFY_USERNAME = str(u'centrify-user')
+TEST_ACCOUNT_CENTRIFY_PASSWORD = str(u'Parola01!')
 TEST_ACCOUNT_CENTRIFY_UID = 1363149908
 
 # Another test group to test an user belonging to multiple groups.
@@ -57,11 +58,11 @@ TEST_ACCOUNT_GROUP_ANOTHER = u'g-another-test'
 TEST_ACCOUNT_GID_ANOTHER = 2012
 
 # Domain controller helpers.
-TEST_PDC = unicode(u'\\\\CHEVAH-DC')
-TEST_DOMAIN = unicode(u'chevah')
-TEST_ACCOUNT_USERNAME_DOMAIN = unicode(u'domain test-user')
-TEST_ACCOUNT_PASSWORD_DOMAIN = unicode(u'qwe123QWE')
-TEST_ACCOUNT_GROUP_DOMAIN = unicode(u'domain test_group')
+TEST_PDC = str(u'\\\\CHEVAH-DC')
+TEST_DOMAIN = str(u'chevah')
+TEST_ACCOUNT_USERNAME_DOMAIN = str(u'domain test-user')
+TEST_ACCOUNT_PASSWORD_DOMAIN = str(u'qwe123QWE')
+TEST_ACCOUNT_GROUP_DOMAIN = str(u'domain test_group')
 
 TEST_ACCOUNT_USERNAME = TestUser.sanitizeName(TEST_ACCOUNT_USERNAME)
 TEST_ACCOUNT_GROUP = TestGroup.sanitizeName(TEST_ACCOUNT_GROUP)
