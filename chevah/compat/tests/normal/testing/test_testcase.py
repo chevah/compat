@@ -687,6 +687,23 @@ class TestChevahTestCase(ChevahTestCase):
         self.assertEqual(
             'Iterable is not empty.\n(1, 2).', context.exception.args[0])
 
+    def test_assertCompatError_no_CompatError(self):
+        """
+        Will show the details if error is not an CompatError.
+        """
+        exception = self.assertRaises(
+            AssertionError,
+            self.assertCompatError,
+            u'123-id',
+            Exception('generic-error')
+            )
+
+        self.assertEqual(
+            "Error generic-error not CompatError but "
+            "<type 'exceptions.Exception'>",
+            exception.args[0],
+            )
+
 
 @conditionals.onOSFamily('posiX')
 class TestClassConditionalsPosix(ChevahTestCase):

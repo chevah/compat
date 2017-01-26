@@ -1013,16 +1013,18 @@ class ChevahTestCase(TwistedTestCase):
         else:
             raise AssertionError('OS not supported.')
 
-    def runningAsAdministrator(self):
+    def assertRaises(self, exception_class, callback=None, *args, **kwargs):
         """
-        Return True if slave runs as administrator.
+        Wrapper around the stdlib call to allow non-context usage.
         """
-        # Windows 2008 and DC client tests are done in administration mode,
-        # 2003 and XP under normal mode.
-        if 'win-2008' in self.hostname or 'win-dc' in self.hostname:
-            return True
-        else:
-            return False
+        super_assertRaises = super(ChevahTestCase, self).assertRaises
+        if callback is None:
+            return super_assertRaises(exception_class)
+
+        with super_assertRaises(exception_class) as context:
+            callback(*args, **kwargs)
+
+        return context.exception
 
     def assertCompatError(self, expected_id, actual_error):
         """

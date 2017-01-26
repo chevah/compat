@@ -28,6 +28,7 @@ class MemoryUsage(Plugin):
         """
         Method to prevent circular import.
         """
+        # pragma: no cover
         from chevah.compat.testing import ChevahTestCase
         return ChevahTestCase.getPeakMemoryUsage()
 

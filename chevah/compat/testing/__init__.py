@@ -155,13 +155,13 @@ def teardown_access_control(users, groups):
     for user in users.values():
         try:
             os_administration.deleteUser(user)
-        except Exception as error:
+        except Exception as error:  # pragma: no cover
             errors.append(error)
 
     for group in groups.values():
         try:
             os_administration.deleteGroup(group)
-        except Exception as error:
+        except Exception as error:  # pragma: no cover
             errors.append(error)
 
     if errors:

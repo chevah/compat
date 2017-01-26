@@ -409,3 +409,11 @@ class TestFactory(ChevahTestCase):
             one.getUniqueInteger(),
             other.getUniqueInteger(),
             )
+
+    def test_getTestUser_not_found(self):
+        """
+        Returns `None` if user is not found.
+        """
+        result = mk.getTestUser(u'no-such-user-ever')
+
+        self.assertIsNone(result)

@@ -32,7 +32,7 @@ try:
     from twisted.internet.tcp import Port
 except ImportError:
     # Twisted support is optional.
-    pass
+    pass  # pragma: no cover
 
 from chevah.compat import DefaultAvatar, process_capabilities, system_users
 from chevah.compat.avatar import (
@@ -436,28 +436,6 @@ class ResponseDefinition(object):
         self.response_length = str(response_length)
 
 
-class TestSSLContextFactory(object):
-    '''An SSLContextFactory used in tests.'''
-
-    def __init__(self, factory, method=None, cipher_list=None,
-                 certificate_path=None, key_path=None):
-        self.method = method
-        self.cipher_list = cipher_list
-        self.certificate_path = certificate_path
-        self.key_path = key_path
-        self._context = None
-
-    def getContext(self):
-        if self._context is None:
-            self._context = mk.makeSSLContext(
-                method=self.method,
-                cipher_list=self.cipher_list,
-                certificate_path=self.certificate_path,
-                key_path=self.key_path,
-                )
-        return self._context
-
-
 # FIXME:2106:
 # Get rid of global functions and replace with OS specialized TestUSer
 # instances: TestUserAIX, TestUserWindows, TestUserUnix, etc.
@@ -799,15 +777,6 @@ class ChevahCommonsFactory(object):
             ssl_context.set_cipher_list(cipher_list)
 
         return ssl_context
-
-    def makeSSLContextFactory(
-        self, method=None, cipher_list=None,
-        certificate_path=None, key_path=None,
-            ):
-        '''Return an instance of SSLContextFactory.'''
-        return TestSSLContextFactory(
-            self, method=method, cipher_list=cipher_list,
-            certificate_path=certificate_path, key_path=key_path)
 
     def makeSSLCertificate(self, path):
         '''Return an SSL instance loaded from path.'''
