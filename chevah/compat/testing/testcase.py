@@ -1361,15 +1361,18 @@ class CommandTestCase(ChevahTestCase):
         self.test_stdout = StringIO()
         self.test_stderr = StringIO()
         self.sys_exit = sys.exit
+        self.sys_argv = sys.argv
         sys.exit = _fake_exit
         sys.stdout = self.test_stdout
         sys.stderr = self.test_stderr
 
     def tearDown(self):
+        self.callCleanup()
         self.test_stdout.close()
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
         sys.exit = self.sys_exit
+        sys.argv = self.sys_argv
         super(CommandTestCase, self).tearDown()
 
 
