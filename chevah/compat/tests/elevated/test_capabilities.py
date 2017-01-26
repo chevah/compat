@@ -56,17 +56,6 @@ class TestProcessCapabilities(FileSystemTestCase):
 
         self.assertTrue(result)
 
-    @conditionals.onOSFamily('nt')
-    @conditionals.onAdminPrivileges(False)
-    def test_get_home_folder_windows_regular(self):
-        """
-        Home folder cannot be retrieved when administrator privileges are
-        disabled (Windows 2003/Windows XP).
-        """
-        result = self.capabilities.get_home_folder
-
-        self.assertFalse(result)
-
     def test_getCurrentPrivilegesDescription(self):
         """
         Lists all available privileges and their state.

@@ -133,8 +133,7 @@ class TestNTProcessCapabilities(CompatTestCase):
                     win32security.SE_IMPERSONATE_NAME,
                     'no-such-privilege-name',
                     )):
-                # pragma: no cover
-                pass
+                pass  # pragma: no cover
 
     def test_pam(self):
         """
