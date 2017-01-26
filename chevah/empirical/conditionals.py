@@ -6,8 +6,9 @@ Decorators used for testing.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from nose import SkipTest
 from functools import wraps
+from nose import SkipTest
+from socket import gethostname
 from unittest import TestCase
 
 from chevah.compat import process_capabilities
@@ -82,3 +83,26 @@ def onCapability(name, value):
 
     return skipOnCondition(
         check_capability, 'Capability "%s" not present.' % name)
+
+
+def onAdminPrivileges(present):
+    """
+    Run test only if administrator privileges match the `present` value on
+    the machine running the tests.
+
+    For the moment only Windows 2003 and Windows XP build slaves execute the
+    tests suite with a regular account.
+    """
+    hostname = gethostname()
+    is_running_as_admin = 'win-2003' in hostname or 'win-xp' in hostname
+
+    def check_administrator():
+        if present:
+            return is_running_as_admin
+
+        return not is_running_as_admin
+
+    return skipOnCondition(
+        check_administrator,
+        'Administrator privileges not present on "%s".' % (hostname,)
+        )

@@ -18,7 +18,7 @@ from zope.interface.verify import verifyObject
 from chevah.compat import process_capabilities
 from chevah.compat.exceptions import AdjustPrivilegeException
 from chevah.compat.interfaces import IProcessCapabilities
-from chevah.compat.testing import CompatTestCase, mk
+from chevah.compat.testing import conditionals, CompatTestCase, mk
 
 
 class TestProcessCapabilities(CompatTestCase):
@@ -61,6 +61,7 @@ class TestProcessCapabilities(CompatTestCase):
         else:
             raise AssertionError('Unsupported os.')
 
+    @conditionals.onAdminPrivileges(True)
     def test_create_home_folder(self):
         """
         When running under normal account, we can not create home folders
@@ -91,6 +92,7 @@ class TestProcessCapabilities(CompatTestCase):
         else:
             raise AssertionError('Unsupported os.')
 
+    @conditionals.onAdminPrivileges(True)
     def test_getCurrentPrivilegesDescription(self):
         """
         Check getCurrentPrivilegesDescription.
@@ -122,6 +124,7 @@ class TestProcessCapabilities(CompatTestCase):
             self.assertTrue(self.capabilities.pam)
 
 
+@conditionals.onAdminPrivileges(True)
 class TestNTProcessCapabilities(TestProcessCapabilities):
     """
     Capability tests executed only on Windows.

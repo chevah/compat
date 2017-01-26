@@ -247,7 +247,7 @@ class TestHTTPServerContext(EmpiricalTestCase):
             response_content='first-content-of-different-length'
             )
         with HTTPServerContext([response]) as self.httpd:
-            response.updateReponseContent('updated-content')
+            response.updateResponseContent('updated-content')
 
             result = self.getPage('/url', persistent=False)
 
@@ -301,26 +301,92 @@ class TestFactory(EmpiricalTestCase):
         self.assertNotEqual(mk.bytes(), mk.bytes())
         self.assertIsInstance(bytearray, mk.bytes())
 
-    def test_bytes_string_conversion(self):
+    def test_bytes_string_conversion_utf8_default(self):
         """
-        Conversion to unicode will fail for ASCII/UTF-8/UTF-16.
+        Conversion to unicode will fail for ASCII/UTF-8 for the default size.
         """
-        value = mk.bytes(size=32)
+        value = mk.bytes()
 
-        with self.assertRaises(UnicodeDecodeError):
+        self.assertEqual(len(value), 8)
+
+        with self.assertRaises(UnicodeDecodeError) as context:
             value.decode()
 
-        with self.assertRaises(UnicodeDecodeError):
+        self.assertEndsWith(
+            context.exception.reason, 'ordinal not in range(128)')
+
+        with self.assertRaises(UnicodeDecodeError) as context:
             value.decode(encoding='ascii')
 
-        with self.assertRaises(UnicodeDecodeError):
+        self.assertEndsWith(
+            context.exception.reason, 'ordinal not in range(128)')
+
+        with self.assertRaises(UnicodeDecodeError) as context:
             value.decode(encoding='utf-8')
 
-        if self.os_name != 'aix':
-            # FIXME:3816:
-            # Fix this on AIX.
-            with self.assertRaises(UnicodeDecodeError):
-                value.decode(encoding='utf-16')
+        self.assertEndsWith(
+            context.exception.reason, 'invalid start byte')
+
+    def test_bytes_string_conversion_utf8_arbitrary(self):
+        """
+        Conversion to unicode will fail for ASCII/UTF-8 for an array of an
+        arbitrary size.
+        """
+        value = mk.bytes(8)
+
+        self.assertEqual(len(value), 8)
+
+        with self.assertRaises(UnicodeDecodeError) as context:
+            value.decode()
+
+        self.assertEndsWith(
+            context.exception.reason, 'ordinal not in range(128)')
+
+        with self.assertRaises(UnicodeDecodeError) as context:
+            value.decode(encoding='ascii')
+
+        self.assertEndsWith(
+            context.exception.reason, 'ordinal not in range(128)')
+
+        with self.assertRaises(UnicodeDecodeError) as context:
+            value.decode(encoding='utf-8')
+
+        self.assertEndsWith(
+            context.exception.reason, 'invalid start byte')
+
+    def test_bytes_string_conversion_utf16_default(self):
+        """
+        Conversion to unicode will succeed for UTF-16 for the default size.
+        """
+        value = mk.bytes()
+
+        value.decode(encoding='utf-16')
+
+    def test_bytes_string_conversion_utf16_valid(self):
+        """
+        Conversion to unicode will succeed for UTF-16 when an array of valid
+        size is used.
+        """
+        value = mk.bytes(16)
+
+        self.assertEqual(len(value), 16)
+
+        value.decode(encoding='utf-16')
+
+    def test_bytes_string_conversion_utf16_invalid(self):
+        """
+        Conversion to unicode will fail for UTF-16 when an invalid size
+        is used.
+        """
+        value = mk.bytes(size=15)
+
+        self.assertEqual(len(value), 15)
+
+        with self.assertRaises(UnicodeDecodeError) as context:
+            value.decode(encoding='utf-16')
+
+        self.assertEndsWith(
+            context.exception.reason, 'truncated data')
 
     class OneFactory(ChevahCommonsFactory):
         """

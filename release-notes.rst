@@ -2,6 +2,14 @@ Release notes for chevah.compat
 ===============================
 
 
+0.38.0 - 24/01/2017
+-------------------
+
+* Add conditional for skipping tests depending on availability of
+  administrator privileges
+* Update empirical to the latest version
+
+
 0.37.0 - 23/01/2017
 -------------------
 
