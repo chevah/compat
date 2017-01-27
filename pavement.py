@@ -160,7 +160,6 @@ def deps():
     pave.pip(
         command='install',
         arguments=RUN_PACKAGES + TEST_PACKAGES + BUILD_PACKAGES,
-        silent=False,
         )
 
 
