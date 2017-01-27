@@ -7,6 +7,8 @@ Controller.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+import os
+
 from chevah.compat.testing.testcase import (
     ChevahTestCase,
     )
@@ -31,7 +33,8 @@ def runDomainTest():
     """
     # For now, elevated tests are executed only on the domain controller
     # buildslave.
-    if '-dc-' in ChevahTestCase.getHostname():
+    BUILDER_NAME = os.getenv('BUILDER_NAME', '')
+    if '-dc-' in BUILDER_NAME:
         return True
 
     return False
