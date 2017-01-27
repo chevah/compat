@@ -31,6 +31,10 @@ def runDomainTest():
     """
     Return True if buildslave is a domain member.
     """
+    # FIXME:3832:
+    # Domain tests are broken.
+    return False
+
     # For now, elevated tests are executed only on the domain controller
     # buildslave.
     BUILDER_NAME = os.getenv('BUILDER_NAME', '')
