@@ -12,7 +12,7 @@ from builtins import str
 from builtins import range
 from builtins import object
 from contextlib import contextmanager
-from io import StringIO
+from io import BytesIO
 import collections
 import inspect
 import threading
@@ -1358,8 +1358,8 @@ class CommandTestCase(ChevahTestCase):
             self.exit_code = exit_code
 
         self.exit_code = None
-        self.test_stdout = StringIO()
-        self.test_stderr = StringIO()
+        self.test_stdout = BytesIO()
+        self.test_stderr = BytesIO()
         self.sys_exit = sys.exit
         self.sys_argv = sys.argv
         sys.exit = _fake_exit
