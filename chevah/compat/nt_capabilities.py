@@ -56,10 +56,12 @@ class NTProcessCapabilities(BaseProcessCapabilities):
     def impersonate_local_account(self):
         """
         See `IProcessCapabilities`.
-
-        On Windows we can always impersonate local accounts.
         """
-        return True
+        privileges = self.getCurrentPrivilegesDescription()
+        if ('SeImpersonatePrivilege' in privileges):
+            return True
+
+        return False
 
     @property
     def pam(self):
