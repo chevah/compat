@@ -20,5 +20,5 @@ class TestFactory(ChevahTestCase):
         Check that avatar is created with unicode members.
         """
         avatar = mk.makeFilesystemApplicationAvatar()
-        self.assertTrue(type(avatar.name) is str)
-        self.assertTrue(type(avatar.home_folder_path) is str)
+        self.assertIsInstance(avatar.name, str)
+        self.assertIsInstance(avatar.home_folder_path, str)
