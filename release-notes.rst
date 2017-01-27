@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.39.0 - 27/01/2017
+-------------------
+
+* Impersonating local accounts is determined by the availability of
+  SeImpersonatePrivilege on Windows.
+
+
 0.38.0 - 24/01/2017
 -------------------
 
