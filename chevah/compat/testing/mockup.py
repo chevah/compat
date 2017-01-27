@@ -19,22 +19,27 @@ import os
 import random
 import socket
 import string
+import sys
 import threading
 import uuid
 
-from OpenSSL import SSL, crypto
+from unidecode import unidecode
 
 try:
-    from twisted.internet import address, defer
+    from twisted.internet import address
     from twisted.internet.protocol import Factory
     from twisted.internet.tcp import Port
-except ImportError:
+except ImportError:  # pragma: no cover
     # Twisted support is optional.
     pass
 
-from chevah.compat import DefaultAvatar
-from chevah.empirical.filesystem import LocalTestFilesystem
-from chevah.empirical.constants import (
+from chevah.compat import DefaultAvatar, process_capabilities, system_users
+from chevah.compat.avatar import (
+    FilesystemApplicationAvatar,
+    FilesystemOSAvatar,
+    )
+from chevah.compat.testing.filesystem import LocalTestFilesystem
+from chevah.compat.testing.constants import (
     TEST_NAME_MARKER,
     )
 
@@ -430,26 +435,170 @@ class ResponseDefinition(object):
         self.response_length = str(response_length)
 
 
-class TestSSLContextFactory(object):
-    '''An SSLContextFactory used in tests.'''
+# FIXME:2106:
+# Get rid of global functions and replace with OS specialized TestUSer
+# instances: TestUserAIX, TestUserWindows, TestUserUnix, etc.
+def _sanitize_name_legacy_unix(candidate):
+    """
+    Return valid user/group name for old Unix (AIX/HPUX) from `candidate`.
 
-    def __init__(self, factory, method=None, cipher_list=None,
-                 certificate_path=None, key_path=None):
-        self.method = method
-        self.cipher_list = cipher_list
-        self.certificate_path = certificate_path
-        self.key_path = key_path
-        self._context = None
+    By default password is limited to 8 characters without spaces.
+    """
+    return str(unidecode(candidate)).replace(' ', '_')[:8]
 
-    def getContext(self):
-        if self._context is None:
-            self._context = factory.makeSSLContext(
-                method=self.method,
-                cipher_list=self.cipher_list,
-                certificate_path=self.certificate_path,
-                key_path=self.key_path,
-                )
-        return self._context
+
+def _sanitize_name_windows(candidate):
+    """
+    Return valid user/group name for Windows OSs from `candidate.
+    """
+    # FIXME:927:
+    # On Windows, we can't delete home folders with unicode names.
+    return str(unidecode(candidate))
+
+
+class TestUser(object):
+    """
+    An object storing all user information.
+    """
+
+    @classmethod
+    def sanitizeName(cls, name):
+        """
+        Return name sanitized for current OS.
+        """
+        os_name = process_capabilities.os_name
+        if os_name in ['aix', 'hpux']:
+            return _sanitize_name_legacy_unix(name)
+        elif os_name == 'windows':
+            return _sanitize_name_windows(name)
+
+        return name
+
+    def __init__(
+        self, name, posix_uid=None, posix_gid=None, posix_home_path=None,
+        home_group=None, shell=None, shadow=None, password=None,
+        domain=None, pdc=None, primary_group_name=None,
+        create_local_profile=False, windows_required_rights=None,
+            ):
+        """
+        Convert user name to an OS valid value.
+        """
+        if posix_home_path is None:
+            posix_home_path = u'/tmp'
+
+        if shell is None:
+            shell = u'/bin/sh'
+
+        if shadow is None:
+            shadow = '!'
+
+        if posix_gid is None:
+            posix_gid = posix_uid
+
+        self._name = self.sanitizeName(name)
+        self.uid = posix_uid
+        self.gid = posix_gid
+        self.posix_home_path = posix_home_path
+        self.home_group = home_group
+        self.shell = shell
+        self.shadow = shadow
+        self.password = password
+        self.domain = domain
+        self.pdc = pdc
+        self.primary_group_name = primary_group_name
+
+        self.windows_sid = None
+        self.windows_create_local_profile = create_local_profile
+        self.windows_required_rights = windows_required_rights
+        self._windows_token = None
+
+    @property
+    def name(self):
+        """
+        Actual user name.
+        """
+        return self._name
+
+    @property
+    def token(self):
+        """
+        Windows token for user.
+        """
+        if os.name != 'nt':
+            return None
+
+        if not self._windows_token:
+            self._windows_token = self._getToken()
+
+        return self._windows_token
+
+    @property
+    def upn(self):
+        """
+        Returns User Principal Name: plain user name if no domain name defined
+        or Active Directory compatible full domain user name.
+        """
+        if not self.domain:
+            return self.name
+
+        return u'%s@%s' % (self.name, self.domain)
+
+    def _getToken(self):
+        """
+        Generate the Windows token for `user`.
+        """
+        result, token = system_users.authenticateWithUsernameAndPassword(
+            username=self.upn, password=self.password)
+
+        if not result:
+            message = u'Failed to get a valid token for "%s" with "%s".' % (
+                self.upn, self.password)
+            raise AssertionError(message.encode('utf-8'))
+
+        return token
+
+    def _invalidateToken(self):
+        """
+        Invalidates cache for Windows token value.
+        """
+        self._windows_token = None
+
+
+class TestGroup(object):
+    """
+    An object storing all group information.
+    """
+
+    @classmethod
+    def sanitizeName(cls, group):
+        """
+        Return name sanitized for current OS.
+        """
+        if sys.platform.startswith('aix'):
+            return _sanitize_name_legacy_unix(group)
+        elif sys.platform.startswith('win'):
+            return _sanitize_name_windows(group)
+
+        return group
+
+    def __init__(self, name, posix_gid=None, members=None, pdc=None):
+        """
+        Convert name to an OS valid value.
+        """
+        if members is None:
+            members = []
+
+        self._name = self.sanitizeName(name)
+        self.gid = posix_gid
+        self.members = members
+        self.pdc = pdc
+
+    @property
+    def name(self):
+        """
+        Actual group name.
+        """
+        return self._name
 
 
 # Singleton member used to generate unique integers across whole tests.
@@ -462,6 +611,9 @@ class ChevahCommonsFactory(object):
     """
     Generator of objects to help testing.
     """
+
+    # Class member used for generating unique user/group id(s).
+    _posix_id = random.randint(2000, 3000)
 
     @classmethod
     def getUniqueInteger(cls):
@@ -602,60 +754,96 @@ class ChevahCommonsFactory(object):
         ipv4 = address.IPv4Address(protocol, host, port)
         return ipv4
 
-    def makeSSLContext(
-        self, method=None, cipher_list=None,
-        certificate_path=None, key_path=None,
+    def makeFilesystemOSAvatar(
+        self, name=None, home_folder_path=None, root_folder_path=None,
+        lock_in_home_folder=False, token=None,
             ):
-        '''Create an SSL context.'''
-        if method is None:
-            method = SSL.SSLv23_METHOD
+        """
+        Creates a valid FilesystemOSAvatar.
+        """
+        if name is None:
+            name = self.username
 
-        if key_path is None:
-            key_path = certificate_path
+        if home_folder_path is None:
+            home_folder_path = self.fs.temp_path
 
-        ssl_context = SSL.Context(method)
+        return FilesystemOSAvatar(
+            name=name,
+            home_folder_path=home_folder_path,
+            root_folder_path=root_folder_path,
+            lock_in_home_folder=lock_in_home_folder,
+            token=token,
+            )
 
-        if certificate_path:
-            ssl_context.use_certificate_file(certificate_path)
-        if key_path:
-            ssl_context.use_privatekey_file(key_path)
+    def makeFilesystemApplicationAvatar(
+            self, name=None, home_folder_path=None, root_folder_path=None):
+        """
+        Creates a valid FilesystemApplicationAvatar.
+        """
+        if name is None:
+            name = self.getUniqueString()
 
-        if cipher_list:
-            ssl_context.set_cipher_list(cipher_list)
+        if home_folder_path is None:
+            home_folder_path = self.fs.temp_path
 
-        return ssl_context
+        # Application avatars are locked inside home folders.
+        if root_folder_path is None:
+            root_folder_path = home_folder_path
 
-    def makeSSLContextFactory(
-        self, method=None, cipher_list=None,
-        certificate_path=None, key_path=None,
-            ):
-        '''Return an instance of SSLContextFactory.'''
-        return TestSSLContextFactory(
-            self, method=method, cipher_list=cipher_list,
-            certificate_path=certificate_path, key_path=key_path)
+        return FilesystemApplicationAvatar(
+            name=name,
+            home_folder_path=home_folder_path,
+            root_folder_path=root_folder_path,
+            )
 
-    def makeSSLCertificate(self, path):
-        '''Return an SSL instance loaded from path.'''
-        certificate = None
-        cert_file = open(path, 'r')
+    @classmethod
+    def posixID(cls):
+        """
+        Return a valid Posix ID.
+        """
+        cls._posix_id += 1
+        return cls._posix_id
+
+    def getTestUser(self, name):
+        """
+        Return an existing test user instance for user with `name`.
+        Return `None` if user is undefined.
+        """
+        from chevah.compat.testing import TEST_USERS
         try:
-            certificate = crypto.load_certificate(
-                crypto.FILETYPE_PEM, cert_file.read())
-        finally:
-            cert_file.close()
-        return certificate
+            result = TEST_USERS[name]
+        except KeyError:
+            result = None
 
-    def makeDeferredSucceed(self, data=None):
-        """
-        Creates a deferred for which already succeeded.
-        """
-        return defer.succeed(data)
+        return result
 
-    def makeDeferredFail(self, failure=None):
+    def makeTestUser(self, name=None, password=None, posix_home_path=None,
+                     home_group=None
+                     ):
         """
-        Creates a deferred which already failed.
+        Return an instance of TestUser with specified name and password.
         """
-        return defer.fail(failure)
+        if name is None:
+            name = self.string()
+
+        if password is None:
+            password = self.string()
+
+        if posix_home_path is None:
+            if process_capabilities.os_name == 'solaris':
+                posix_home_path = u'/export/home/%s' % name
+            elif process_capabilities.os_name == 'osx':
+                posix_home_path = u'/Users/%s' % name
+            else:  # Linux and normal Unix
+                posix_home_path = u'/home/%s' % name
+
+        return TestUser(
+            name=name,
+            password=password,
+            posix_uid=self.posixID(),
+            posix_home_path=posix_home_path,
+            home_group=home_group,
+            )
 
 
-factory = ChevahCommonsFactory()
+mk = ChevahCommonsFactory()

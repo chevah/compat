@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.40.0 - 27/01/2017
+-------------------
+
+* Fix the mess created in 0.37.0 where compat as also installing
+  the chevah.empirical namespace and conflicting with the empirical package.
+
+
 0.39.0 - 27/01/2017
 -------------------
 

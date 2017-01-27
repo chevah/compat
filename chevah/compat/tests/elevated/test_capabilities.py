@@ -10,10 +10,8 @@ import os
 
 from chevah.compat import process_capabilities, system_users
 from chevah.compat.exceptions import AdjustPrivilegeException
-from chevah.compat.testing import (
-    FileSystemTestCase,
-    conditionals,
-    )
+from chevah.compat.testing import conditionals
+from chevah.compat.testing.testcase import FileSystemTestCase
 
 
 class TestProcessCapabilities(FileSystemTestCase):

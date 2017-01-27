@@ -36,16 +36,16 @@ def main():
         sys.exit(1)
 
     # Delay import after coverage is started.
-    from chevah.empirical.nose_memory_usage import MemoryUsage
-    from chevah.empirical.nose_test_timer import TestTimer
-    from chevah.empirical.nose_run_reporter import RunReporter
+    from chevah.compat.testing.nose_memory_usage import MemoryUsage
+    from chevah.compat.testing.nose_test_timer import TestTimer
+    from chevah.compat.testing.nose_run_reporter import RunReporter
 
-    from chevah.empirical import EmpiricalTestCase
+    from chevah.compat.testing import ChevahTestCase
 
 
     drop_user = sys.argv[1]
-    EmpiricalTestCase.initialize(drop_user=drop_user)
-    EmpiricalTestCase.dropPrivileges()
+    ChevahTestCase.initialize(drop_user=drop_user)
+    ChevahTestCase.dropPrivileges()
 
     new_argv = ['chevah-test-runner']
     new_argv.extend(sys.argv[2:])
@@ -62,7 +62,7 @@ def main():
             cov.stop()
             cov.save()
         import threading
-        print "Max RSS: %s" % EmpiricalTestCase.getPeakMemoryUsage()
+        print "Max RSS: %s" % ChevahTestCase.getPeakMemoryUsage()
         threads = threading.enumerate()
         if len(threads) < 2:
             # No running threads, other than main so we can exit as normal.

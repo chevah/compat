@@ -9,15 +9,15 @@ from __future__ import absolute_import
 from future.types import newstr
 import requests
 
-from chevah.empirical.mockup import (
+from chevah.compat.testing.mockup import (
     ChevahCommonsFactory,
     ResponseDefinition,
     HTTPServerContext,
     )
-from chevah.empirical import EmpiricalTestCase, mk
+from chevah.compat.testing import ChevahTestCase, mk
 
 
-class TestHTTPServerContext(EmpiricalTestCase):
+class TestHTTPServerContext(ChevahTestCase):
     """
     Tests for HTTPServerContext.
     """
@@ -256,7 +256,7 @@ class TestHTTPServerContext(EmpiricalTestCase):
         self.assertEqual('15', result.headers['content-length'])
 
 
-class TestFactory(EmpiricalTestCase):
+class TestFactory(ChevahTestCase):
     """
     Test for test objects factory.
     """
@@ -409,3 +409,32 @@ class TestFactory(EmpiricalTestCase):
             one.getUniqueInteger(),
             other.getUniqueInteger(),
             )
+
+    def test_getTestUser_not_found(self):
+        """
+        Returns `None` if user is not found.
+        """
+        result = mk.getTestUser(u'no-such-user-ever')
+
+        self.assertIsNone(result)
+
+    def test_makeIPv4Address_default(self):
+        """
+        Will return an TCP localhost address with a random port.
+        """
+        result = mk.makeIPv4Address()
+
+        self.assertEqual('TCP', result.type)
+        self.assertEqual('localhost', result.host)
+        self.assertGreater(result.port, 20000)
+        self.assertLess(result.port, 30000)
+
+    def test_makeIPv4Address_port(self):
+        """
+        Will return an TCP localhost address with the requested port.
+        """
+        result = mk.makeIPv4Address(port=1234)
+
+        self.assertEqual('TCP', result.type)
+        self.assertEqual('localhost', result.host)
+        self.assertEqual(result.port, 1234)
