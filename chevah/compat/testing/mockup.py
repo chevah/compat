@@ -434,8 +434,11 @@ class ResponseDefinition(object):
         """
         Will update the content returned to the server.
         """
+        if not isinstance(content, bytes):
+            content = codecs.encode(content, 'utf-8')
+
         self.test_response_content = content
-        response_length = len(content)
+        response_length = len(self.test_response_content)
         self.response_length = str(response_length)
 
 
