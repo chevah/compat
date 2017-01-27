@@ -7,7 +7,6 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from builtins import str
-import sys
 
 from chevah.compat import (
     DefaultAvatar,
@@ -35,13 +34,11 @@ class TestSystemUsers(CompatTestCase):
         """
         self.assertProvides(IOSUsers, system_users)
 
+    @conditionals.onOSFamily('posix')
     def test_getHomeFolder_linux(self):
         """
         Check getHomeFolder on Linux.
         """
-        if not sys.platform.startswith('linux'):
-            raise self.skipTest()
-
         home_folder = system_users.getHomeFolder(
             username=mk.username)
 
@@ -98,17 +95,6 @@ class TestSystemUsers(CompatTestCase):
 
         self.assertEqual(pdc, test_pdc)
         self.assertEqual(name, username)
-
-    @conditionals.onOSName('osx')
-    def test_getHomeFolder_osx(self):
-        """
-        Check getHomeFolder for OSX.
-        """
-        home_folder = system_users.getHomeFolder(
-            username=mk.username)
-
-        self.assertEqual(u'/Users/' + mk.username, home_folder)
-        self.assertIsInstance(str, home_folder)
 
     def test_shadow_support_unix(self):
         """
