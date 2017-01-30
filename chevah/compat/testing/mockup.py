@@ -8,9 +8,11 @@ from __future__ import absolute_import
 from builtins import str
 from builtins import range
 from builtins import object
+from future.utils import native
 
 from select import error as SelectError
 from threading import Thread
+import codecs
 import http.server
 import errno
 import hashlib
@@ -405,12 +407,14 @@ class ResponseDefinition(object):
         self.url = url
         self.method = method
         self.request = request
+        if not isinstance(response_content, bytes):
+            response_content = codecs.encode(response_content, 'utf-8')
         self.test_response_content = response_content
         self.response_code = response_code
         self.response_message = response_message
         self.content_type = content_type
         if response_length is None:
-            response_length = len(response_content)
+            response_length = len(self.test_response_content)
         self.response_length = str(response_length)
         self.persistent = persistent
         if response_persistent is None:
@@ -430,8 +434,11 @@ class ResponseDefinition(object):
         """
         Will update the content returned to the server.
         """
+        if not isinstance(content, bytes):
+            content = codecs.encode(content, 'utf-8')
+
         self.test_response_content = content
-        response_length = len(content)
+        response_length = len(self.test_response_content)
         self.response_length = str(response_length)
 
 
@@ -628,7 +635,8 @@ class ChevahCommonsFactory(object):
         """
         Return a unique (per session) ASCII string.
         """
-        return ('ascii_str' + str(self.getUniqueInteger())).encode('ascii')
+        return native(
+            ('ascii_str' + str(self.getUniqueInteger()).encode('utf-8')))
 
     def bytes(self, size=8):
         """
@@ -714,7 +722,7 @@ class ChevahCommonsFactory(object):
                     for ignore in range(extra_length)
                     )
 
-        return base + extra_text + TEST_NAME_MARKER
+        return native(base + extra_text + TEST_NAME_MARKER)
 
     def makeLocalTestFilesystem(self, avatar=None):
         if avatar is None:
@@ -742,7 +750,7 @@ class ChevahCommonsFactory(object):
     def makeFilename(self, length=32, prefix=u'', suffix=u''):
         '''Return a random valid filename.'''
         name = str(self.getUniqueInteger()) + TEST_NAME_MARKER
-        return prefix + name + ('a' * (length - len(name))) + suffix
+        return native(prefix + name + ('a' * (length - len(name))) + suffix)
 
     def makeIPv4Address(self, host='localhost', port=None, protocol='TCP'):
         """

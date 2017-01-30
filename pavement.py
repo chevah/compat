@@ -82,8 +82,6 @@ BUILD_PACKAGES = [
 
 
 TEST_PACKAGES = [
-    'chevah-empirical==0.38.1',
-
     'pyflakes==0.8.1',
     'pocketlint==1.4.4.c4',
 
@@ -249,7 +247,6 @@ def test_py3():
     sys.argv = sys.argv[:1]
     pave.python_command_normal.extend(['-3'])
 
-    warnings.filterwarnings('always', module='chevah.empirical')
     captured_warnings = []
 
     def capture_warning(
@@ -267,7 +264,7 @@ def test_py3():
 
     warnings.showwarning = capture_warning
 
-    sys.args = ['nose', 'chevah.empirical.tests.normal']
+    sys.args = ['nose', 'chevah.compat.tests.normal']
     runner = nose_main(exit=False)
     if not runner.success:
         print 'Test failed'

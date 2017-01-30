@@ -184,7 +184,7 @@ class TestHTTPServerContext(ChevahTestCase):
             persistent=False,
             response_code=242,
             response_message='All good.',
-            response_content='content',
+            response_content=b'content',
             )
         with HTTPServerContext([response]) as self.httpd:
             response = self.getPage(
@@ -193,6 +193,29 @@ class TestHTTPServerContext(ChevahTestCase):
             self.assertEqual(242, response.status_code)
             # Read content before closing the server.
             self.assertEqual(u'content', response.text)
+
+    def test_do_POST_unicode(self):
+        """
+        When a response is defined with an unicode content it is automatically
+        converted to UTF-8.
+        """
+        content = u'content'
+        response = ResponseDefinition(
+            method='POST',
+            url='/url',
+            request='request-body',
+            persistent=False,
+            response_code=242,
+            response_message='All good.',
+            response_content=content,
+            )
+        with HTTPServerContext([response]) as self.httpd:
+            response = self.getPage(
+                '/url', method='POST', data='request-body', persistent=False)
+
+            self.assertEqual(242, response.status_code)
+            # Read content before closing the server.
+            self.assertEqual(content, response.text)
 
     def test_do_POST_invalid_content(self):
         """
@@ -244,7 +267,7 @@ class TestHTTPServerContext(ChevahTestCase):
         response = ResponseDefinition(
             url='/url',
             persistent=False,
-            response_content='first-content-of-different-length'
+            response_content=b'first-content-of-different-length'
             )
         with HTTPServerContext([response]) as self.httpd:
             response.updateResponseContent('updated-content')
@@ -254,6 +277,26 @@ class TestHTTPServerContext(ChevahTestCase):
         self.assertEqual(200, result.status_code)
         self.assertEqual('updated-content', result.content)
         self.assertEqual('15', result.headers['content-length'])
+
+    def test_updateResponseContent_unicode(self):
+        """
+        The response content can be updated with unicode data which is auto
+        converted to UTF-8 bytes.
+        """
+        update_content = u'other-content-\N{snowman}'
+        response = ResponseDefinition(
+            url='/url',
+            persistent=False,
+            response_content=b'first-content'
+            )
+        with HTTPServerContext([response]) as self.httpd:
+            response.updateResponseContent(update_content)
+
+            result = self.getPage('/url', persistent=False)
+
+        self.assertEqual(200, result.status_code)
+        self.assertEqual(update_content.encode('utf-8'), result.content)
+        self.assertEqual('17', result.headers['content-length'])
 
 
 class TestFactory(ChevahTestCase):

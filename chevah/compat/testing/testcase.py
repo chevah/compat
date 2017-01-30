@@ -12,7 +12,6 @@ from builtins import str
 from builtins import range
 from builtins import object
 from contextlib import contextmanager
-from io import BytesIO
 import collections
 import inspect
 import threading
@@ -1341,39 +1340,6 @@ class ChevahTestCase(TwistedTestCase):
             interface.implementedBy(klass),
             u'Class %s does not implements interface %s.' % (
                 klass, interface))
-
-
-class CommandTestCase(ChevahTestCase):
-    '''A test case that catches sys.exit, sys.stdout and sys.stderr.
-
-    It is designed to be used for testing command line tools.
-    '''
-
-    def setUp(self):
-        '''Monkey patch the sys.stdout and sys.exit.'''
-        super(CommandTestCase, self).setUp()
-
-        def _fake_exit(exit_code):
-            '''Method for monkey patching sys.exit.'''
-            self.exit_code = exit_code
-
-        self.exit_code = None
-        self.test_stdout = BytesIO()
-        self.test_stderr = BytesIO()
-        self.sys_exit = sys.exit
-        self.sys_argv = sys.argv
-        sys.exit = _fake_exit
-        sys.stdout = self.test_stdout
-        sys.stderr = self.test_stderr
-
-    def tearDown(self):
-        self.callCleanup()
-        self.test_stdout.close()
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-        sys.exit = self.sys_exit
-        sys.argv = self.sys_argv
-        super(CommandTestCase, self).tearDown()
 
 
 class FileSystemTestCase(ChevahTestCase):
