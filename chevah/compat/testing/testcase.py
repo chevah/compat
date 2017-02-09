@@ -95,6 +95,9 @@ class TwistedTestCase(TestCase):
     tests.
     """
 
+    # Number of second to wait for a deferred to have a result.
+    DEFERRED_TIMEOUT = 1
+
     # List of names for delayed calls which should not be considered as
     # required to wait for them when running the reactor.
     EXCEPTED_DELAYED_CALLS = []
@@ -206,10 +209,13 @@ class TwistedTestCase(TestCase):
             'Reactor took more than %.2f seconds to execute.' % timeout)
         self._reactor_timeout_failure = failure
 
-    def _initiateTestReactor(self, timeout=1):
+    def _initiateTestReactor(self, timeout=None):
         """
         Do the steps required to initiate a reactor for testing.
         """
+        if timeout is None:
+            timeout = self.DEFERRED_TIMEOUT
+
         self._timeout_reached = False
 
         # Set up timeout.
@@ -340,7 +346,7 @@ class TwistedTestCase(TestCase):
                 raise_failure('delayed calls', delayed_str)
 
     def runDeferred(
-            self, deferred, timeout=1, debug=False, prevent_stop=False):
+            self, deferred, timeout=None, debug=False, prevent_stop=False):
         """
         Run the deferred in the reactor loop.
 
@@ -366,6 +372,9 @@ class TwistedTestCase(TestCase):
         """
         if not isinstance(deferred, Deferred):
             raise AssertionError('This is not a deferred.')
+
+        if timeout is None:
+            timeout = self.DEFERRED_TIMEOUT
 
         try:
             self._initiateTestReactor(timeout=timeout)
@@ -394,7 +403,7 @@ class TwistedTestCase(TestCase):
             self._runDeferred(result, timeout=timeout, debug=debug)
             result = deferred.result
 
-    def executeReactor(self, timeout=1, debug=False, run_once=False):
+    def executeReactor(self, timeout=None, debug=False, run_once=False):
         """
         Run reactor until no more delayed calls, readers or
         writers or threads are in the queues.
@@ -421,6 +430,9 @@ class TwistedTestCase(TestCase):
 
             self.assertStartsWith('211-Features:\n', result)
         """
+        if timeout is None:
+            timeout = self.DEFERRED_TIMEOUT
+
         self._initiateTestReactor(timeout=timeout)
 
         # Set it to True to enter the first loop.
@@ -504,7 +516,7 @@ class TwistedTestCase(TestCase):
         return raw_name.split(' ', 1)[0]
 
     def getDeferredFailure(
-            self, deferred, timeout=1, debug=False, prevent_stop=False):
+            self, deferred, timeout=None, debug=False, prevent_stop=False):
         """
         Run the deferred and return the failure.
 
@@ -652,7 +664,7 @@ class TwistedTestCase(TestCase):
                     deferred, result[0]))
 
     def getDeferredResult(
-            self, deferred, timeout=1, debug=False, prevent_stop=False):
+            self, deferred, timeout=None, debug=False, prevent_stop=False):
         """
         Run the deferred and return the result.
 

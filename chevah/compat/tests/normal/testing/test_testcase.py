@@ -347,6 +347,28 @@ class TestTwistedTestCase(ChevahTestCase):
         self.executeReactor()
 
 
+class TestTwistedTimeoutTestCase(ChevahTestCase):
+    """
+    Test for the default timeout.
+    """
+
+    DEFERRED_TIMEOUT = 2
+
+    def test_executeReactor_default_timeout(self):
+        """
+        It will use the default timeout value defined on the test case.
+        """
+        self.called = False
+
+        def last_call():
+            self.called = True
+        reactor.callLater(1, last_call)
+
+        self.executeReactor()
+
+        self.assertTrue(self.called)
+
+
 class TestChevahTestCase(ChevahTestCase):
     """
     General tests for ChevahTestCase.
