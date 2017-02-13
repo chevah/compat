@@ -209,13 +209,10 @@ class TwistedTestCase(TestCase):
             'Reactor took more than %.2f seconds to execute.' % timeout)
         self._reactor_timeout_failure = failure
 
-    def _initiateTestReactor(self, timeout=None):
+    def _initiateTestReactor(self, timeout):
         """
         Do the steps required to initiate a reactor for testing.
         """
-        if timeout is None:
-            timeout = self.DEFERRED_TIMEOUT
-
         self._timeout_reached = False
 
         # Set up timeout.
