@@ -479,7 +479,7 @@ class TwistedTestCase(TestCase):
                         '%s' % (self._reactorQueueToString()))
                 break
 
-            # Look at writters buffers:
+            # Look at writers buffers:
             if len(reactor.getWriters()) > 0:
                 have_callbacks = True
                 continue
