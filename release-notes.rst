@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.41.0 - 09/02/2017
+-------------------
+
+* The default timeout used to wait for a deferred is now defined by the test
+  class instance.
+
+
 0.40.0 - 27/01/2017
 -------------------
 
