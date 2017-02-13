@@ -66,9 +66,9 @@ class TestTwistedTestCase(ChevahTestCase):
         self.assertEqual(
             'This is not a deferred.', context.exception.args[0])
 
-    def test_runDeferred_timeout(self):
+    def test_runDeferred_timeout_custom(self):
         """
-        runDeferred will execute the reactor and raise a timeout
+        runDeferred will execute the reactor and raise an exception
         if deferred got no result after the timeout.
         """
         deferred = defer.Deferred()
@@ -81,7 +81,27 @@ class TestTwistedTestCase(ChevahTestCase):
             context.exception.args[0]
             )
 
-        # Restore order order messing with internal timeout state in
+        # Restore order messing with internal timeout state in
+        # previous state.
+        self._reactor_timeout_failure = None
+
+    def test_runDeferred_timeout_default(self):
+        """
+        It will execute the reactor and raise an exception if the
+        default timeout passes and the deferred is not completed.
+        """
+        self.DEFERRED_TIMEOUT = 0
+        deferred = defer.Deferred()
+
+        with self.assertRaises(AssertionError) as context:
+            self.runDeferred(deferred)
+
+        self.assertEqual(
+            'Deferred took more than 0 to execute.',
+            context.exception.args[0]
+            )
+
+        # Restore order messing with internal timeout state in
         # previous state.
         self._reactor_timeout_failure = None
 
@@ -100,7 +120,7 @@ class TestTwistedTestCase(ChevahTestCase):
     def test_runDeferred_callbacks_list(self):
         """
         runDeferred will execute the reactor and wait for deferred
-        to return a non-deferred result from the deferrers callbacks list.
+        to return a non-deferred result from the deferreds callbacks list.
         """
         # We use an uncalled deferred, to make sure that callbacks are not
         # executed when we call addCallback.
