@@ -380,6 +380,35 @@ class TestTwistedTestCase(ChevahTestCase):
         delayed_call.cancel()
         self.executeReactor()
 
+    def test_cleanReactor_delayed_calls_all_active(self):
+        """
+        It  will cancel any delayed calls in the reactor queue.
+        """
+        reactor.callLater(1, lambda: None)
+        reactor.callLater(2, lambda: None)
+        self.assertIsNotEmpty(reactor.getDelayedCalls())
+
+        self._cleanReactor()
+
+        self.assertIsEmpty(reactor.getDelayedCalls())
+
+    def test_cleanReactor_delayed_calls_some_called(self):
+        """
+        It  will not break if a call is already called and will continue
+        canceling the .
+        """
+        delayed_call_1 = reactor.callLater(1, lambda: None)
+        delayed_call_2 = reactor.callLater(2, lambda: None)
+        # Fake that deferred was called and make sure it is first in the list
+        # so that we can can check that the operation will continue.
+        delayed_call_1.called = True
+        self.assertEqual(
+            [delayed_call_1, delayed_call_2], reactor.getDelayedCalls())
+
+        self._cleanReactor()
+
+        self.assertTrue(delayed_call_2.cancelled)
+
 
 class TestTwistedTimeoutTestCase(ChevahTestCase):
     """

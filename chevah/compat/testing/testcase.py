@@ -137,7 +137,7 @@ class TwistedTestCase(TestCase):
                 self.assertIsNone(self._reactor_timeout_failure)
                 self.assertReactorIsClean()
         finally:
-            self.cleanReactor()
+            self._cleanReactor()
         super(TwistedTestCase, self).tearDown()
 
     def _reactorQueueToString(self):
@@ -181,9 +181,12 @@ class TwistedTestCase(TestCase):
             return reactor.threadpool.working
 
     @classmethod
-    def cleanReactor(cls):
+    def _cleanReactor(cls):
         """
         Remove all delayed calls, readers and writers from the reactor.
+
+        This is only for cleanup purpose and should not be used by normal
+        tests.
         """
         if not reactor:
             return
