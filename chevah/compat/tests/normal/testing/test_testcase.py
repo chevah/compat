@@ -408,6 +408,13 @@ class TestTwistedTestCase(ChevahTestCase):
         self._cleanReactor()
 
         self.assertTrue(delayed_call_2.cancelled)
+        # Since we are messing with the reactor, we are leaving it in an
+        # inconsistent state as no called delayed call should be part of the
+        # list... since when called, the delayed called is removed right
+        # away, yet we are not removing it but only faking its call.
+        delayed_call_1.called = False
+        self._cleanReactor()
+        self.assertIsEmpty(reactor.getDelayedCalls())
 
 
 class TestTwistedTimeoutTestCase(ChevahTestCase):
