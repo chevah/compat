@@ -191,14 +191,21 @@ class TwistedTestCase(TestCase):
             reactor.removeAll()
         except (RuntimeError, KeyError):
             # FIXME:863:
-            # When running threads the reactor is cleaned from multiple places
-            # and removeAll will fail since it detects that internal state
+            # When running threads tests the reactor touched from the test
+            # case itself which run in one tread and from the fixtures/cleanup
+            # code which is executed from another thread.
+            # removeAll might fail since it detects that internal state
             # is changed from other source.
             pass
+
         reactor.threadCallQueue = []
         for delayed_call in reactor.getDelayedCalls():
-            if delayed_call.active():
+            try:
                 delayed_call.cancel()
+            except ValueError:
+                # AlreadyCancelled and AlreadyCalled are ValueError.
+                # Might be canceled from the separate thread.
+                pass
 
     def _raiseReactorTimeoutError(self, timeout):
         """

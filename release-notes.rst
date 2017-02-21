@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.41.1 - 21/02/2017
+-------------------
+
+* Fix cleanup code to not fail if a delayed called was already canceled.
+
+
 0.41.0 - 09/02/2017
 -------------------
 
