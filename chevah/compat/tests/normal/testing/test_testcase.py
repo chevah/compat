@@ -382,7 +382,7 @@ class TestTwistedTestCase(ChevahTestCase):
 
     def test_cleanReactor_delayed_calls_all_active(self):
         """
-        It  will cancel any delayed calls in the reactor queue.
+        It will cancel any delayed calls in the reactor queue.
         """
         reactor.callLater(1, self.ignoreFailure)
         reactor.callLater(2, self.ignoreFailure)
@@ -394,7 +394,7 @@ class TestTwistedTestCase(ChevahTestCase):
 
     def test_cleanReactor_delayed_calls_some_called(self):
         """
-        It  will not break if a call is already called and will continue
+        It will not break if a call is already called and will continue
         canceling the .
         """
         delayed_call_1 = reactor.callLater(1, self.ignoreFailure)
