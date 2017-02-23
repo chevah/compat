@@ -380,6 +380,42 @@ class TestTwistedTestCase(ChevahTestCase):
         delayed_call.cancel()
         self.executeReactor()
 
+    def test_cleanReactor_delayed_calls_all_active(self):
+        """
+        It will cancel any delayed calls in the reactor queue.
+        """
+        reactor.callLater(1, self.ignoreFailure)
+        reactor.callLater(2, self.ignoreFailure)
+        self.assertIsNotEmpty(reactor.getDelayedCalls())
+
+        self._cleanReactor()
+
+        self.assertIsEmpty(reactor.getDelayedCalls())
+
+    def test_cleanReactor_delayed_calls_some_called(self):
+        """
+        It will not break if a call is already called and will continue
+        canceling the .
+        """
+        delayed_call_1 = reactor.callLater(1, self.ignoreFailure)
+        delayed_call_2 = reactor.callLater(2, self.ignoreFailure)
+        # Fake that deferred was called and make sure it is first in the list
+        # so that we can can check that the operation will continue.
+        delayed_call_1.called = True
+        self.assertEqual(
+            [delayed_call_1, delayed_call_2], reactor.getDelayedCalls())
+
+        self._cleanReactor()
+
+        self.assertTrue(delayed_call_2.cancelled)
+        # Since we are messing with the reactor, we are leaving it in an
+        # inconsistent state as no called delayed call should be part of the
+        # list... since when called, the delayed called is removed right
+        # away, yet we are not removing it but only faking its call.
+        delayed_call_1.called = False
+        self._cleanReactor()
+        self.assertIsEmpty(reactor.getDelayedCalls())
+
 
 class TestTwistedTimeoutTestCase(ChevahTestCase):
     """

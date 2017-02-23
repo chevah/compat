@@ -137,7 +137,7 @@ class TwistedTestCase(TestCase):
                 self.assertIsNone(self._reactor_timeout_failure)
                 self.assertReactorIsClean()
         finally:
-            self.cleanReactor()
+            self._cleanReactor()
         super(TwistedTestCase, self).tearDown()
 
     def _reactorQueueToString(self):
@@ -152,7 +152,7 @@ class TwistedTestCase(TestCase):
 
     def _threadPoolQueueSize(self):
         """
-        Return current size of thread Pool, or None when treadpool does not
+        Return current size of thread Pool, or None when threadpool does not
         exists.
         """
         if not reactor.threadpool:
@@ -162,7 +162,7 @@ class TwistedTestCase(TestCase):
 
     def _threadPoolThreads(self):
         """
-        Return current threads from pool, or None when treadpool does not
+        Return current threads from pool, or None when threadpool does not
         exists.
         """
         if not reactor.threadpool:
@@ -172,7 +172,7 @@ class TwistedTestCase(TestCase):
 
     def _threadPoolWorking(self):
         """
-        Return working thread from pool, or None when treadpool does not
+        Return working thread from pool, or None when threadpool does not
         exists.
         """
         if not reactor.threadpool:
@@ -181,9 +181,12 @@ class TwistedTestCase(TestCase):
             return reactor.threadpool.working
 
     @classmethod
-    def cleanReactor(cls):
+    def _cleanReactor(cls):
         """
         Remove all delayed calls, readers and writers from the reactor.
+
+        This is only for cleanup purpose and should not be used by normal
+        tests.
         """
         if not reactor:
             return
@@ -191,14 +194,21 @@ class TwistedTestCase(TestCase):
             reactor.removeAll()
         except (RuntimeError, KeyError):
             # FIXME:863:
-            # When running threads the reactor is cleaned from multiple places
-            # and removeAll will fail since it detects that internal state
+            # When running threads tests the reactor touched from the test
+            # case itself which run in one tread and from the fixtures/cleanup
+            # code which is executed from another thread.
+            # removeAll might fail since it detects that internal state
             # is changed from other source.
             pass
+
         reactor.threadCallQueue = []
         for delayed_call in reactor.getDelayedCalls():
-            if delayed_call.active():
+            try:
                 delayed_call.cancel()
+            except ValueError:
+                # AlreadyCancelled and AlreadyCalled are ValueError.
+                # Might be canceled from the separate thread.
+                pass
 
     def _raiseReactorTimeoutError(self, timeout):
         """

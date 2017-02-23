@@ -92,6 +92,7 @@ TEST_PACKAGES = [
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
     'nose==1.3.6',
+    'nose-randomly==1.2.5',
     'mock',
 
     'coverage==4.0.3',
@@ -137,6 +138,11 @@ SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
+SETUP['test']['nose_options'] = [
+    '--with-run-reporter',
+    '--with-timer',
+    '--with-randomly',
+    ]
 SETUP['buildbot']['server'] = 'buildbot.chevah.com'
 SETUP['buildbot']['web_url'] = 'https://buildbot.chevah.com:10443'
 SETUP['pypi']['index_url'] = 'http://pypi.chevah.com/simple'
