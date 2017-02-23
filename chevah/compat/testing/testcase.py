@@ -23,12 +23,12 @@ import time
 from bunch import Bunch
 from mock import patch, Mock
 from nose import SkipTest
-from twisted.internet.defer import Deferred
-from twisted.python.failure import Failure
 try:
+    from twisted.internet.defer import Deferred
     from twisted.internet.posixbase import (
         _SocketWaker, _UnixWaker, _SIGCHLDWaker
         )
+    from twisted.python.failure import Failure
 except ImportError:
     # Twisted support is optional.
     _SocketWaker = None
