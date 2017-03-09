@@ -73,9 +73,14 @@ class TestProcessCapabilitiesPosix(CompatTestCase):
 
     def test_pam(self):
         """
-        PAM is supported on Linux/Unix with the exception of HPUX.
+        PAM is supported on Linux/Unix.
         """
-        self.assertTrue(self.capabilities.pam)
+        if self.os_name == 'hpux':
+            # FIXME:2745:
+            # PAM is not yet supported on HPUX.
+            self.assertFalse(self.capabilities.pam)
+        else:
+            self.assertTrue(self.capabilities.pam)
 
     def test_symbolic_link(self):
         """

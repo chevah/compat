@@ -9,6 +9,7 @@ from __future__ import absolute_import
 from builtins import str
 import errno
 import os
+import platform
 import stat
 import tempfile
 import time
@@ -529,10 +530,15 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Parse target and print name for symlink reparse data.
         """
-        if self.os_name in ['aix', 'hpux']:
+        if (
+            self.os_name == 'hpux' or
+            platform.processor() in ['powerpc', 'sparc']
+                ):
             # FIXME:2027:
             # This test fails on AIX and HPUX with a strange encoding error,
             # most probably due to CPU bit order.
+            # It also fails on Solaris SPARC, but pass on Solaris x86.
+            # platform.processor() is empty on HPUX.
             raise self.skipTest()
 
         symbolic_link_data = self.filesystem._parseReparseData(
