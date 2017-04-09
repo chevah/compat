@@ -96,13 +96,15 @@ class AssertionMixin(object):
         Check that once fully iterated the `actual` iterator will return the
         `expected` list.
         """
-        expected_list = []
+        actual_list = []
         while True:
             try:
-                expected_list.append(next(expected))
+                actual_list.append(next(actual))
+            except TypeError:
+                raise AssertionError('Value is not iterable.')
             except StopIteration:
                 break
-        self.assertEqual(expected_list, actual)
+        self.assertEqual(expected, actual_list)
 
     def assertCompatError(self, expected_id, actual_error):
         """
@@ -135,20 +137,6 @@ class AssertionMixin(object):
         """
         if value is not True:
             raise AssertionError('%s is not True.' % str(value))
-
-    def assertIsInstance(self, expected_type, value, msg=None):
-        """
-        Raise an exception if `value` is not an instance of `expected_type`
-        """
-        # In Python 2.7 isInstance is already defined, but with swapped
-        # arguments.
-        if not inspect.isclass(expected_type):
-            expected_type, value = value, expected_type
-
-        if not isinstance(value, expected_type):
-            raise AssertionError(
-                "Expecting type %s, but got %s. %s" % (
-                    expected_type, type(value), msg))
 
     def assertIsListening(self, ip, port, debug=False, clear_log=False):
         '''Check if the port and address are in listening mode.'''

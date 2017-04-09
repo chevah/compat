@@ -1015,6 +1015,20 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         else:
             raise AssertionError('OS not supported.')
 
+    def assertIsInstance(self, expected_type, value, msg=None):
+        """
+        Raise an exception if `value` is not an instance of `expected_type`
+        """
+        # In Python 2.7 isInstance is already defined, but with swapped
+        # arguments.
+        if not inspect.isclass(expected_type):
+            expected_type, value = value, expected_type
+
+        if not isinstance(value, expected_type):
+            raise AssertionError(
+                "Expecting type %s, but got %s. %s" % (
+                    expected_type, type(value), msg))
+
     def assertRaises(self, exception_class, callback=None, *args, **kwargs):
         """
         Overwrites the stdlib call to allow non-context usage.

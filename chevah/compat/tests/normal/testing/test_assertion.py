@@ -139,3 +139,51 @@ class TestAssertionMixin(ChevahTestCase):
             'but 456.',
             exception.args[0],
             )
+
+    def test_assertIteratorEqual_no_iterable(self):
+        """
+        Raise an exception if the actual value is not iterable.
+        """
+        sut = [1, 3]
+
+        exception = self.assertRaises(
+            AssertionError,
+            self.assertIteratorEqual,
+            [],
+            sut,
+            )
+
+        self.assertEqual(
+            'Value is not iterable.',
+            exception.args[0],
+            )
+
+    def test_assertIteratorEqual_ok(self):
+        """
+        All file is iterator is equal.
+        """
+        value = [1, b'3', u'a', iter([2])]
+        sut = iter(value)
+
+        self.assertIteratorEqual(value, sut)
+
+    def test_assertIteratorEqual_less(self):
+        """
+        All file is iterator is equal.
+        """
+        value = [1, b'3', u'a']
+        sut = iter(value)
+
+        exception = self.assertRaises(
+            AssertionError,
+            self.assertIteratorEqual,
+            [1],
+            sut,
+            )
+
+        # The check here is more complicated since the message relies on the
+        # assertEqual implementation.
+        self.assertStartsWith(
+            "Lists differ: [1] != [1, '3', u'a']",
+            exception.args[0],
+            )
