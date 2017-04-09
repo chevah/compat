@@ -16,7 +16,6 @@ from twisted.internet.task import Clock
 from twisted.python.failure import Failure
 
 from chevah.compat import process_capabilities
-from chevah.compat.exceptions import CompatError
 from chevah.compat.testing import conditionals, ChevahTestCase, mk
 
 
@@ -416,6 +415,28 @@ class TestTwistedTestCase(ChevahTestCase):
         self._cleanReactor()
         self.assertIsEmpty(reactor.getDelayedCalls())
 
+    def test_assertFailureID_unicode_id(self):
+        """
+        Can be called with unicode failure id.
+        """
+        failure = Failure(ErrorWithID(u'100'))
+
+        self.assertFailureID(u'100', failure)
+
+    def test_assertFailureID_non_unicode_id(self):
+        """
+        It will raise an error if the failure ID is not unicode.
+        """
+        failure = Failure(ErrorWithID(100))
+
+        with self.assertRaises(AssertionError):
+            self.assertFailureID(100, failure)
+
+        failure = Failure(ErrorWithID(b"100"))
+
+        with self.assertRaises(AssertionError):
+            self.assertFailureID(b"100", failure)
+
 
 class TestTwistedTimeoutTestCase(ChevahTestCase):
     """
@@ -470,28 +491,6 @@ class TestChevahTestCase(ChevahTestCase):
         self.assertEqual(2, len(result))
         self.assertContains(file1[-1], result)
         self.assertContains(folder1[-1], result)
-
-    def test_assertTempIsClean_clean_temp(self):
-        """
-        No error is raised if temp folder is clean.
-        """
-        self.assertTempIsClean()
-
-    def test_assertTempIsClean_dirty(self):
-        """
-        If temp is not clean an error is raised and then temp folders
-        is cleaned.
-        """
-        temp_segments = mk.fs.createFileInTemp()
-
-        with self.assertRaises(AssertionError) as context:
-            self.assertTempIsClean()
-
-        message = context.exception.args[0].decode('utf-8')
-        self.assertStartsWith(u'Temporary folder is not clean.', message)
-        self.assertContains(temp_segments[-1], message)
-
-        self.assertFalse(mk.fs.exists(temp_segments))
 
     def test_patch(self):
         """
@@ -575,77 +574,6 @@ class TestChevahTestCase(ChevahTestCase):
         with self.listenPort(address, port):
 
             self.assertIsListening(address, port)
-
-    def check_assertWorkingFolderIsClean(self, content):
-        """
-        Common tests for assertWorkingFolderIsClean.
-        """
-
-        with self.assertRaises(AssertionError) as context:
-            self.assertWorkingFolderIsClean()
-
-        message = context.exception.args[0].decode('utf-8')
-        for member in content:
-            self.assertContains(member, message)
-
-        # Calling it again will not raise any error since the folder is clean.
-        self.assertWorkingFolderIsClean()
-
-    def test_assertWorkingFolderIsClean_with_folder(self):
-        """
-        An error is raised if current working folder contains a temporary
-        folder and folder is cleaned.
-        """
-        # Our compat filesystem API does not support creating files in
-        # current working directory so we use direct API call to OS.
-        name = mk.string()
-        os.mkdir(mk.fs.getEncodedPath(name))
-
-        self.check_assertWorkingFolderIsClean([name])
-
-    def test_assertWorkingFolderIsClean_with_file(self):
-        """
-        An error is raised if current working folder contains a temporary
-        file and file is cleaned.
-        """
-        name = mk.string()
-        open(mk.fs.getEncodedPath(name), 'a').close()
-
-        self.check_assertWorkingFolderIsClean([name])
-
-    def test_assertWorkingFolderIsClean_with_file_and_folder(self):
-        """
-        An error is raised if current working folder contains a temporary
-        folder and file, and folder and folder is cleaned.
-        """
-        file_name = mk.string()
-        folder_name = mk.string()
-        open(mk.fs.getEncodedPath(file_name), 'a').close()
-        os.mkdir(mk.fs.getEncodedPath(folder_name))
-
-        self.check_assertWorkingFolderIsClean([file_name, folder_name])
-
-    def test_assertFailureID_unicode_id(self):
-        """
-        Can be called with unicode failure id.
-        """
-        failure = Failure(ErrorWithID(u'100'))
-
-        self.assertFailureID(u'100', failure)
-
-    def test_assertFailureID_non_unicode_id(self):
-        """
-        It will raise an error if the failure id is not unicode.
-        """
-        failure = Failure(ErrorWithID(100))
-
-        with self.assertRaises(AssertionError):
-            self.assertFailureID(100, failure)
-
-        failure = Failure(ErrorWithID("100"))
-
-        with self.assertRaises(AssertionError):
-            self.assertFailureID("100", failure)
 
     @conditionals.skipOnCondition(lambda: False, 'Should not be skipped!!!')
     def test_skipOnCondition_call(self):
@@ -763,55 +691,6 @@ class TestChevahTestCase(ChevahTestCase):
         mk.fs.makeLink(
             target_segments=mk.fs.temp_segments,
             link_segments=self.test_segments,
-            )
-
-    def test_assertIsEmpty(self):
-        """
-        Raise an exception when not empty and otherwise does nothing.
-        """
-        self.assertIsEmpty(())
-        self.assertIsEmpty([])
-        self.assertIsEmpty('')
-        self.assertIsEmpty(set())
-
-        with self.assertRaises(AssertionError) as context:
-            self.assertIsEmpty((1, 2))
-
-        self.assertEqual(
-            'Iterable is not empty.\n(1, 2).', context.exception.args[0])
-
-    def test_assertCompatError_no_CompatError(self):
-        """
-        Will show the details if error is not an CompatError.
-        """
-        exception = self.assertRaises(
-            AssertionError,
-            self.assertCompatError,
-            u'123-id',
-            Exception('generic-error')
-            )
-
-        self.assertEqual(
-            "Error generic-error not CompatError but "
-            "<type 'exceptions.Exception'>",
-            exception.args[0],
-            )
-
-    def test_assertCompatError_bad_id(self):
-        """
-        Will show the details if error is not an CompatError.
-        """
-        exception = self.assertRaises(
-            AssertionError,
-            self.assertCompatError,
-            u'123-id',
-            CompatError(u'456', u'Some details.')
-            )
-
-        self.assertEqual(
-            'Error id for CompatError 456 - Some details. is not 123-id, '
-            'but 456.',
-            exception.args[0],
             )
 
 
