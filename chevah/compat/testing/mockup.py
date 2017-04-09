@@ -242,7 +242,7 @@ class ChevahCommonsFactory(object):
         result = bytearray(b'\xff')
         for _ in range(max(1, size - 1)):
             result.append(random.getrandbits(4))
-        return result
+        return bytes(result)
 
     def TCPPort(self, factory=None, address='', port=1234):
         """
