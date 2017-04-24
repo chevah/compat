@@ -20,9 +20,13 @@ import struct
 import sys
 import unicodedata
 
-# On some systems (AIX/Windows) the public scandir module will fail to
-# load the C based scandir function. We force it here by direct import.
-from _scandir import scandir
+try:
+    # On some systems (AIX/Windows) the public scandir module will fail to
+    # load the C based scandir function. We force it here by direct import.
+    from _scandir import scandir
+except ImportError:
+    from scandir import scandir_python as scandir
+
 from zope.interface import implements
 
 from chevah.compat.constants import (
@@ -39,12 +43,13 @@ from chevah.compat.helpers import _, NoOpContext
 
 
 class PosixFilesystemBase(object):
-    '''Base implementation if ILocalFilesystem for
+    """
+    Base implementation if ILocalFilesystem for
     local Posix filesystems.
 
     It handles `raw` access to the filesystem.
     Classed using this base should implement path and segment handling
-    '''
+    """
 
     OPEN_READ_ONLY = os.O_RDONLY
     OPEN_WRITE_ONLY = os.O_WRONLY

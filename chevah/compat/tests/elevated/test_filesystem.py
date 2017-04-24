@@ -292,6 +292,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         self.assertIsInstance(str, result[0])
         self.assertItemsEqual([folder_name, file_name], result)
 
+
 class TestUnixFilesystem(FileSystemTestCase):
     """
     Path independent Unix tests.

@@ -407,8 +407,9 @@ class NTFilesystem(PosixFilesystemBase):
             if error.errno == ERROR_DIRECTORY:
                 # When we don't list a directory, we get a specific
                 # error, but we convert here to the same error code produced by
-                # Unix.
-                error.errno = errno.ENOTDIR
+                # Python listdir() on Windows.
+                # On XP and 2003 we have a different scandir() implementation.
+                error.errno = errno.EINVAL
 
             elif error.errno == ERROR_PATH_NOT_FOUND:
                 # We convert the Windows specific code for path not found, to

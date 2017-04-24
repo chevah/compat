@@ -11,7 +11,6 @@ from builtins import next
 from builtins import object
 from builtins import str
 import collections
-import inspect
 import socket
 import time
 

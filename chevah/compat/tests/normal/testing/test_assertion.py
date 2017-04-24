@@ -12,7 +12,6 @@ from chevah.compat.exceptions import CompatError
 from chevah.compat.testing import ChevahTestCase, mk
 
 
-
 class TestAssertionMixin(ChevahTestCase):
     """
     Test for assertions.

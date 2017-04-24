@@ -923,7 +923,13 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         with self.assertRaises(OSError) as context:
             self.filesystem.iterateFolderContent(self.test_segments)
 
-        self.assertEqual(errno.ENOTDIR, context.exception.errno)
+        if self.os_family == 'nt':
+            # On Windows, we get a different error.
+            expected_error = errno.EINVAL
+        else:
+            expected_error = errno.ENOTDIR
+
+        self.assertEqual(expected_error, context.exception.errno)
 
     def test_iterateFolderContent_empty(self):
         """
