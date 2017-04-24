@@ -903,6 +903,59 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(isinstance(content[0], str))
         self.assertItemsEqual([folder_name, file_name], content)
 
+    def test_iterateFolderContent_not_found(self):
+        """
+        Raise OSError when trying to get folder for a non existent path.
+        """
+        segments = ['c', mk.string(), mk.string()]
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.iterateFolderContent(segments)
+
+        self.assertEqual(errno.ENOENT, context.exception.errno)
+
+    def test_iterateFolderContent_file(self):
+        """
+        Raise OSError when trying to get folder content for a file.
+        """
+        self.test_segments = mk.fs.createFileInTemp()
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.iterateFolderContent(self.test_segments)
+
+        self.assertEqual(errno.ENOTDIR, context.exception.errno)
+
+    def test_iterateFolderContent_empty(self):
+        """
+        Return empty iterator for empty folders.
+        """
+        self.test_segments = mk.fs.createFolderInTemp()
+
+        result = self.filesystem.iterateFolderContent(self.test_segments)
+
+        self.assertIteratorEqual([], result)
+
+    def test_iterateFolderContent_non_empty(self):
+        """
+        Return folder content as list of Unicode names.
+        """
+        self.test_segments = mk.fs.createFolderInTemp()
+        file_name = mk.makeFilename()
+        folder_name = mk.makeFilename()
+        file_segments = self.test_segments[:]
+        file_segments.append(file_name)
+        folder_segments = self.test_segments[:]
+        folder_segments.append(folder_name)
+        mk.fs.createFile(file_segments)
+        mk.fs.createFolder(folder_segments)
+
+        content = self.filesystem.iterateFolderContent(self.test_segments)
+
+        result = list(content)
+        self.assertIsNotEmpty(result)
+        self.assertIsInstance(str, result[0])
+        self.assertItemsEqual([folder_name, file_name], result)
+
     def test_openFile_folder(self):
         """
         Raise OSError when trying to open a folder as file.

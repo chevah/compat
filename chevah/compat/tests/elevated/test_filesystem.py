@@ -6,6 +6,8 @@ Tests for portable filesystem access.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from builtins import str
+import errno
 import os
 
 from chevah.compat import (
@@ -20,6 +22,7 @@ from chevah.compat.testing import (
     TEST_ACCOUNT_USERNAME,
     TEST_ACCOUNT_USERNAME_OTHER,
     TestUser,
+    TEST_USERS,
     )
 from chevah.compat.exceptions import (
     CompatError,
@@ -236,6 +239,58 @@ class TestPosixFilesystem(FileSystemTestCase):
 
         self.assertEqual(TEST_ACCOUNT_USERNAME_OTHER, current_owner)
 
+    # For now we don't have the API to set permissions on Windows so we
+    # don't have a test here.
+    @conditionals.onOSFamily('posix')
+    def test_iterateFolderContent_no_permission(self):
+        """
+        It will raise an error if user has no permissions to list folder.
+        """
+        avatar = mk.FilesystemOsAvatar(
+            user=TEST_USERS['normal'],
+            home_folder_path=mk.fs.temp_path,
+            )
+        user_fs = mk.makeLocalTestFilesystem(avatar)
+        user_fs.folder(user_fs.temp_segments, cleanup=self.addCleanup)
+
+        user_fs.setAttributes(user_fs.temp_segments, {'mode': 0o700})
+
+        error = self.assertRaises(
+            OSError,
+            mk.fs.iterateFolderContent, user_fs.temp_segments,
+            )
+        self.assertEqual(errno.EACCES, error.errno)
+
+    def test_iterateFolderContent_non_empty(self):
+        """
+        After the iterator is created the process context is returned to
+        the normal user.
+        """
+        avatar = mk.FilesystemOsAvatar(
+            user=TEST_USERS['normal'],
+            home_folder_path=mk.fs.temp_path,
+            )
+        user_fs = mk.makeLocalTestFilesystem(avatar)
+        user_fs.folder(user_fs.temp_segments, cleanup=self.addCleanup)
+
+        base_segments = user_fs.temp_segments
+        user_fs.setAttributes(base_segments, {'mode': 0o700})
+
+        file_name = mk.makeFilename(prefix='file-')
+        folder_name = mk.makeFilename(prefix='folder-')
+
+        file_segments = base_segments + [file_name]
+        folder_segments = base_segments + [folder_name]
+
+        user_fs.createFile(file_segments)
+        user_fs.createFolder(folder_segments)
+
+        content = user_fs.iterateFolderContent(base_segments)
+
+        result = list(content)
+        self.assertIsNotEmpty(result)
+        self.assertIsInstance(str, result[0])
+        self.assertItemsEqual([folder_name, file_name], result)
 
 class TestUnixFilesystem(FileSystemTestCase):
     """

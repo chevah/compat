@@ -36,7 +36,7 @@ class LocalTestFilesystem(LocalFilesystem):
         """
         Return the segments for the temporary folder.
         """
-        temp_segments = LocalFilesystem.temp_segments.fget(self)
+        temp_segments = LocalFilesystem.temp_segments.fget(self)[:]
         temp_segments.append(self._temp_uuid)
         return temp_segments
 
@@ -160,6 +160,23 @@ class LocalTestFilesystem(LocalFilesystem):
         path = os.path.join(self.temp_path, name)
         return (path, segments)
 
+    def folder(self, segments, cleanup):
+        """
+        Create a folder and remove it a cleanup.
+        """
+        cleanup(self.deleteFolder, segments, recursive=True)
+        self.createFolder(segments)
+
+    def folderInTemp(self, cleanup, *args, **kwargs):
+        """
+        Create a folder in the temp folder and add to be removed at cleanup.
+        """
+        segments = self.createFolderInTemp(*args, **kwargs)
+
+        cleanup(self.deleteFolder, segments, recursive=True)
+
+        return segments
+
     def createFolderInTemp(self, foldername=None, prefix=u'', suffix=u''):
         """
         Create a folder in the temporary folder.
@@ -170,9 +187,8 @@ class LocalTestFilesystem(LocalFilesystem):
             # We add an unicode to the temp filename.
             foldername = self._makeFilename(prefix=prefix, suffix=suffix)
 
-        temp_segments = self.temp_segments
+        temp_segments = self.temp_segments + [foldername]
 
-        temp_segments.append(foldername)
         self.createFolder(temp_segments)
 
         return temp_segments

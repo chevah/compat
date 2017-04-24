@@ -20,6 +20,9 @@ import struct
 import sys
 import unicodedata
 
+# On some systems (AIX/Windows) the public scandir module will fail to
+# load the C based scandir function. We force it here by direct import.
+from _scandir import scandir
 from zope.interface import implements
 
 from chevah.compat.constants import (
@@ -450,6 +453,39 @@ class PosixFilesystemBase(object):
             for entry in os.listdir(path_encoded):
                 result.append(self._decodeFilename(entry))
         return result
+
+    def iterateFolderContent(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
+        path = self.getRealPathFromSegments(segments)
+        path_encoded = self.getEncodedPath(path)
+
+        with self._impersonateUser():
+            folder_iterator = scandir(path_encoded)
+
+        # On Windows we need to iterate over the first element to get the
+        # errors.
+        # Otherwise just by opening the directory, we don't get any errors.
+        # This is why we try to extract the first element, and yield it
+        # later.
+        try:
+            first_member = next(folder_iterator)
+        except StopIteration:
+            # The list is empty so just return an empty iterator.
+            return iter([])
+
+        return self._iterateScandir(first_member, folder_iterator)
+
+    def _iterateScandir(self, first_member, folder_iterator):
+        """
+        This generator wrapper needs to be delegated to this method as
+        otherwise we get a GeneratorExit error.
+        """
+        yield self._decodeFilename(first_member.name)
+
+        for member in folder_iterator:
+            yield self._decodeFilename(member.name)
 
     def _decodeFilename(self, name):
         """

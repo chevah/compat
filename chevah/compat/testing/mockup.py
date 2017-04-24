@@ -358,6 +358,22 @@ class ChevahCommonsFactory(object):
         ipv4 = address.IPv4Address(protocol, host, port)
         return ipv4
 
+    def FilesystemOsAvatar(self, user, home_folder_path=None):
+        """
+        Create an avatar to by used with the test filesystem.
+
+        `user` is passed as a TestUser and all other
+        """
+        if home_folder_path is None:
+            home_folder_path = user.posix_home_path
+
+        return self.makeFilesystemOSAvatar(
+            name=user.name,
+            home_folder_path=home_folder_path,
+            lock_in_home_folder=False,
+            token=user.token,
+            )
+
     def makeFilesystemOSAvatar(
         self, name=None, home_folder_path=None, root_folder_path=None,
         lock_in_home_folder=False, token=None,

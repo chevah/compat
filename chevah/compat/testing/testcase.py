@@ -1096,7 +1096,7 @@ class FileSystemTestCase(ChevahTestCase):
 
 class OSAccountFileSystemTestCase(FileSystemTestCase):
     """
-    Test case for tests that need a local OS account present.
+    Test case for tests that need a dedicated local OS account present.
     """
 
     #: User will be created before running the test case and removed on
