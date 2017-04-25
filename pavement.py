@@ -43,6 +43,7 @@ if os.name == 'nt':
         pass
 
 # Keep run_packages in sync with setup.py.
+# These are the hard dependencies 
 RUN_PACKAGES = [
     'zope.interface==3.8.0',
     # Py3 compat.
@@ -66,8 +67,6 @@ BUILD_PACKAGES = [
     # Docutils is required for RST parsing and for Sphinx.
     'docutils==0.12.c1',
 
-    'twisted==15.5.0.chevah4',
-
     # Buildbot is used for try scheduler
     'buildbot==0.8.11.c7',
 
@@ -81,13 +80,16 @@ BUILD_PACKAGES = [
     ]
 
 
-TEST_PACKAGES = [
+LINT_PACKAGES = [
     'pyflakes==0.8.1',
     'pocketlint==1.4.4.c4',
 
     # Used for py3 porting and other checks.
     'pylint==1.4.3',
     'pep8 >= 1.6.2',
+    ]
+
+TEST_PACKAGES = [
 
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
@@ -97,6 +99,9 @@ TEST_PACKAGES = [
 
     'coverage==4.0.3',
     'codecov==2.0.3',
+
+    # Twisted is optionl, but we have it here for complete tests.
+    'twisted==15.5.0.chevah4',
 
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
