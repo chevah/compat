@@ -161,9 +161,17 @@ def deps():
     Install all dependencies.
     """
     print('Installing dependencies to %s...' % (pave.path.build,))
+    packages = RUN_PACKAGES + TEST_PACKAGES
+
+    env_ci = os.environ.get('CI', '').strip()
+    if env_ci.lower() != 'true':
+        packages += BUILD_PACKAGES
+    else:
+        print('Installing only test dependencies.')
+
     pave.pip(
         command='install',
-        arguments=RUN_PACKAGES + TEST_PACKAGES + BUILD_PACKAGES,
+        arguments=packages,
         )
 
 
@@ -210,6 +218,16 @@ def test_ci(args):
     """
     Run tests in continuous integration environment.
     """
+    # Show some info about the current environment.
+    from OpenSSL import SSL, __version__ as pyopenssl_version
+    from coverage.cmdline import main as coverage_main
+
+    print 'PYTHON %s' % (sys.version,)
+    print '%s (%s)' % (
+        SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER)
+    print 'pyOpenSSL %s' % (pyopenssl_version,)
+    coverage_main(argv=['--version'])
+
     env = os.environ.copy()
     args = env.get('TEST_ARGUMENTS', '')
     if not args:
