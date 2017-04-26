@@ -43,7 +43,7 @@ if os.name == 'nt':
         pass
 
 # Keep run_packages in sync with setup.py.
-# These are the hard dependencies 
+# These are the hard dependencies needed by the library itself.
 RUN_PACKAGES = [
     'zope.interface==3.8.0',
     # Py3 compat.
@@ -60,7 +60,7 @@ if os.name == 'posix':
         'arpy==1.1.1.c2',
         ])
 
-
+# Packages required to use the dev/build system.
 BUILD_PACKAGES = [
     'sphinx==1.2.2',
     'repoze.sphinx.autointerface==0.7.1.c4',
@@ -80,6 +80,7 @@ BUILD_PACKAGES = [
     ]
 
 
+# Packages required by the static analysis tests.
 LINT_PACKAGES = [
     'pyflakes==0.8.1',
     'pocketlint==1.4.4.c4',
@@ -89,8 +90,8 @@ LINT_PACKAGES = [
     'pep8 >= 1.6.2',
     ]
 
+# Packages required to run the test suite.
 TEST_PACKAGES = [
-
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
     'nose==1.3.6',
@@ -172,7 +173,12 @@ def deps():
     if env_ci.lower() != 'true':
         packages += BUILD_PACKAGES
     else:
-        print('Installing only test dependencies.')
+        builder = os.environ.get('BUILDER_NAME', '')
+        if 'os-independent' in builder:
+            packages += LINT_PACKAGES
+            print('Installing only lint and test dependencies.')
+        else:
+            print('Installing only test dependencies.')
 
     pave.pip(
         command='install',
