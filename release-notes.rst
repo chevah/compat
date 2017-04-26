@@ -6,6 +6,7 @@ Release notes for chevah.compat
 -------------------
 
 * Remove HTTP context test helper.
+* Add iterator for getting the members of a folder.
 
 
 0.41.1 - 21/02/2017

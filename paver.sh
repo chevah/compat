@@ -539,6 +539,16 @@ detect_os() {
 
         OS="solaris${os_version_chevah}"
 
+        # Solaris 10u8 (from 10/09) updated the libc version, so for older
+        # releases we build on 10u3, and use that up to 10u7 (from 5/09).
+        if [ "${OS}" = "solaris10" ]; then
+            # We extract the update number from the first line.
+            update=$(head -1 /etc/release | cut -d'_' -f2 | sed 's/[^0-9]*//g')
+            if [ "$update" -lt 8 ]; then
+                OS="solaris10u3"
+            fi
+        fi
+
     elif [ "${OS}" = "aix" ]; then
 
         ARCH="ppc$(getconf HARDWARE_BITMODE)"

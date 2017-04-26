@@ -62,11 +62,6 @@ if os.name == 'posix':
 
 # Packages required to use the dev/build system.
 BUILD_PACKAGES = [
-    'sphinx==1.2.2',
-    'repoze.sphinx.autointerface==0.7.1.c4',
-    # Docutils is required for RST parsing and for Sphinx.
-    'docutils==0.12.c1',
-
     # Buildbot is used for try scheduler
     'buildbot==0.8.11.c7',
 
@@ -84,10 +79,16 @@ BUILD_PACKAGES = [
 LINT_PACKAGES = [
     'pyflakes==0.8.1',
     'pocketlint==1.4.4.c4',
-
+    'pep8 >= 1.6.2',
     # Used for py3 porting and other checks.
     'pylint==1.4.3',
-    'pep8 >= 1.6.2',
+
+    # These are build packages, but are needed for testing the documentation.
+    'sphinx==1.2.2',
+    'repoze.sphinx.autointerface==0.7.1.c4',
+    # Docutils is required for RST parsing and for Sphinx.
+    'docutils==0.12.c1',
+
     ]
 
 # Packages required to run the test suite.
