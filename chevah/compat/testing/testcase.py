@@ -905,7 +905,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         '''Context manager for binding a port.'''
         test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         test_socket.bind((ip, port))
-        test_socket.listen(0)
+        # HP-UX needs a backlog of at least 1, as otherwise the connection is
+        # refused.
+        test_socket.listen(1)
         yield
         try:
             # We use shutdown to force closing the socket.

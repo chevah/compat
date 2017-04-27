@@ -552,7 +552,6 @@ class TestChevahTestCase(ChevahTestCase):
         port = 10000
 
         with self.listenPort(address, port):
-
             self.assertIsListening(address, port)
 
     def test_listenPort_on_loopback_alias(self):
