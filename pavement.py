@@ -175,7 +175,7 @@ def deps():
         packages += BUILD_PACKAGES
     else:
         builder = os.environ.get('BUILDER_NAME', '')
-        if 'os-independent' in builder:
+        if 'os-independent' in builder or '-py3' in builder:
             packages += LINT_PACKAGES
             print('Installing only lint and test dependencies.')
         else:

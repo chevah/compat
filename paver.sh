@@ -68,8 +68,6 @@ PYTHON_NAME='python2.7'
 BINARY_DIST_URI='https://binary.chevah.com/production'
 PIP_INDEX='http://pypi.chevah.com'
 PAVER_VERSION='1.2.1'
-PIP_VERSION="1.4.1.c4"
-SETUPTOOLS_VERSION="1.4.1"
 
 # Load repo specific configuration.
 source paver.conf
@@ -193,7 +191,9 @@ resolve_python_version() {
 
     PYTHON_PLATFORM="$OS-$ARCH"
 
-    for i in 1 2 3 4 5 6 7 8 9 10; do
+    # This is a stupid way to iterate, up to 16 times while being OS neutral.
+    # We only support a maximum of 16 different versions.
+    for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16; do
         candidate=`echo ${version_configuration} | cut -d: -f$i`
         if [ "$candidate" = "" ]; then
             break
@@ -225,32 +225,36 @@ write_default_values() {
 
 
 #
-# Install brink package.
+# Install base package.
 #
-install_brink() {
+install_base_deps() {
+    local base_packages
+    base_packages="paver==$PAVER_VERSION"
     if [ "$BRINK_VERSION" = "skip" ]; then
         echo "Skipping brink installation."
-        return
+    else
+        base_packages="$base_packages chevah-brink==$BRINK_VERSION"
     fi
 
-    echo "Installing version: chevah-brink==$BRINK_VERSION of brink..."
+    echo "Installing $base_packages."
 
-    pip install "chevah-brink==$BRINK_VERSION"
+    pip_install "$base_packages"
 }
 
 
 #
-# Wrapper for python pip command.
-# * $1 - command name
-# * $2 - package_name and optional version.
+# Wrapper for python `pip install` command.
+# * $1 - package_name and optional version.
 #
-pip() {
+pip_install() {
     set +e
     ${PYTHON_BIN} -m \
-        pip.__init__ $1 $2 \
+        pip.__init__ install $1 \
+            --trusted-host pypi.chevah.com \
             --index-url=$PIP_INDEX/simple \
-            --download-cache=${CACHE_FOLDER} \
-            --find-links=file://${CACHE_FOLDER} \
+            --build=${BUILD_FOLDER} \
+            --cache-dir=${CACHE_FOLDER} \
+            --use-wheel \
             --upgrade
 
     exit_code=$?
@@ -338,8 +342,6 @@ COPY_PYTHON_RECURSIONS=0
 copy_python() {
 
     local python_distributable="${CACHE_FOLDER}/${LOCAL_PYTHON_BINARY_DIST}"
-    local pip_package="pip-$PIP_VERSION"
-    local setuptools_package="setuptools-$SETUPTOOLS_VERSION"
     local python_installed_version
 
     COPY_PYTHON_RECURSIONS=`expr $COPY_PYTHON_RECURSIONS + 1`
@@ -366,33 +368,7 @@ copy_python() {
         echo "Copying Python distribution files... "
         cp -R ${python_distributable}/* ${BUILD_FOLDER}
 
-        if [ ! -d ${CACHE_FOLDER}/$pip_package ]; then
-            echo "No ${pip_package}. Start downloading it..."
-            get_binary_dist "$pip_package" "$PIP_INDEX/packages"
-        fi
-        rm -rf ${PYTHON_LIB}/site-packages/pip
-        cp -RL "${CACHE_FOLDER}/$pip_package/pip" ${PYTHON_LIB}/site-packages/
-
-        if [ ! -d ${CACHE_FOLDER}/$setuptools_package ]; then
-            echo "No ${setuptools_package}. Start downloading it..."
-            get_binary_dist "$setuptools_package" "$PIP_INDEX/packages"
-        fi
-        cp -RL "${CACHE_FOLDER}/$setuptools_package/setuptools" \
-            ${PYTHON_LIB}/site-packages/
-        cp -RL "${CACHE_FOLDER}/$setuptools_package/_markerlib" \
-            ${PYTHON_LIB}/site-packages/
-        cp -RL "${CACHE_FOLDER}/$setuptools_package/setuptools.egg-info" \
-            ${PYTHON_LIB}/site-packages/
-        cp "${CACHE_FOLDER}/$setuptools_package/pkg_resources.py" \
-            ${PYTHON_LIB}/site-packages/
-        cp -RL "${CACHE_FOLDER}/$setuptools_package/_markerlib" \
-            ${PYTHON_LIB}/site-packages/
-        cp "${CACHE_FOLDER}/$setuptools_package/easy_install.py" \
-            ${PYTHON_LIB}/site-package
-
-        # Once we have pip, we can use it.
-        pip install "paver==$PAVER_VERSION"
-
+        install_base_deps
         WAS_PYTHON_JUST_INSTALLED=1
     else
         # We have a Python, but we are not sure if is the right version.
@@ -438,8 +414,6 @@ install_dependencies(){
     if [ $WAS_PYTHON_JUST_INSTALLED -ne 1 ]; then
         return
     fi
-
-    install_brink
 
     set +e
     ${PYTHON_BIN} -c 'from paver.tasks import main; main()' deps
@@ -705,17 +679,10 @@ write_default_values
 copy_python
 install_dependencies
 
-# Update while we migrate to wheels.
-# Should be removed later after we roll all new
-# python packages.
-setuptools_package="setuptools-$SETUPTOOLS_VERSION"
-cp -RL "${CACHE_FOLDER}/$setuptools_package/_markerlib" \
-    ${PYTHON_LIB}/site-packages/
-
 # Always update brink when running buildbot tasks.
 for paver_task in "deps" "test_os_dependent" "test_os_independent"; do
     if [ "$COMMAND" == "$paver_task" ] ; then
-        install_brink
+        install_base_deps
     fi
 done
 
