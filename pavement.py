@@ -172,7 +172,7 @@ def deps():
 
     env_ci = os.environ.get('CI', '').strip()
     if env_ci.lower() != 'true':
-        packages += BUILD_PACKAGES
+        packages += BUILD_PACKAGES + LINT_PACKAGES
     else:
         builder = os.environ.get('BUILDER_NAME', '')
         if 'os-independent' in builder or '-py3' in builder:
