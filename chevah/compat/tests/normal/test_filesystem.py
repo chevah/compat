@@ -964,11 +964,17 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         It will not block on listing folders with many members.
         """
-        count = 30000
-        base_timeout = 0.1
+        # FIXME:4036:
+        # Enable full test once we have fast filesystem access.
+        if self.os_name == 'aix':
+            count = 3000
+            base_timeout = 0.02
+        else:
+            count = 30000
+            base_timeout = 0.1
         base_segments = self.folderInTemp()
 
-        for i in xrange(count):
+        for i in range(count):
             mk.fs.createFolder(base_segments + ['some-member-%s' % (i,)])
 
         # We check that doing a direct listing will take a long time.
@@ -985,7 +991,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         result = []
         try:
             while True:
-                with self.assertExecutionTime(base_timeout/2):
+                with self.assertExecutionTime(base_timeout / 1.5):
                     result.append(next(iterator))
         except StopIteration:
             """

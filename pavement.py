@@ -95,7 +95,7 @@ LINT_PACKAGES = [
 TEST_PACKAGES = [
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
-    'nose==1.3.6',
+    'nose==1.3.7',
     'nose-randomly==1.2.5',
     'mock',
 
@@ -226,6 +226,11 @@ def test_ci(args):
     """
     Run tests in continuous integration environment.
     """
+    default_args = [
+        '--with-run-reporter',
+        '--with-timer',
+        ]
+
     # Show some info about the current environment.
     from OpenSSL import SSL, __version__ as pyopenssl_version
     from coverage.cmdline import main as coverage_main
@@ -239,12 +244,9 @@ def test_ci(args):
     env = os.environ.copy()
     args = env.get('TEST_ARGUMENTS', '')
     if not args:
-        args = [
-            '--with-run-reporter',
-            '--with-timer',
-            ]
+        args = default_args
     else:
-        args = [args]
+        args = [args] + default_args
     test_type = env.get('TEST_TYPE', 'normal')
 
     if test_type == 'os-independent':
@@ -257,7 +259,8 @@ def test_ci(args):
 
 
 @task
-def test_py3():
+@consume_args
+def test_py3(args):
     """
     Run checks for py3 compatibility.
     """
@@ -299,7 +302,7 @@ def test_py3():
 
     warnings.showwarning = capture_warning
 
-    sys.args = ['nose', 'chevah.compat.tests.normal']
+    sys.args = ['nose', 'chevah.compat.tests.normal'] + args
     runner = nose_main(exit=False)
     if not runner.success:
         print 'Test failed'
