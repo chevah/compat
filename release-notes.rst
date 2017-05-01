@@ -2,7 +2,7 @@ Release notes for chevah.compat
 ===============================
 
 
-0.42.0 - Unreleased
+0.42.0 - 01/05/2017
 -------------------
 
 * Remove HTTP context test helper.
