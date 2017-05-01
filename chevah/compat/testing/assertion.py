@@ -297,14 +297,6 @@ class AssertionMixin(object):
         if len(target) == 0:
             raise AssertionError('Value is empty.\n%s.' % (target))
 
-    def assertIn(self, target, source):
-        """
-        Raise AssertionError if source is not in target.
-        """
-        if source not in target:
-            message = u'%s not in %s.' % (repr(source), repr(target))
-            raise AssertionError(message.encode('utf-8'))
-
     def assertContains(self, token, source):
         """
         Raise AssertionError if source does not contain `token`.

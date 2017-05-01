@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.42.1 - 01/05/2017
+-------------------
+
+* Fix assertion in chevah testcase.
+
+
 0.42.0 - 01/05/2017
 -------------------
 

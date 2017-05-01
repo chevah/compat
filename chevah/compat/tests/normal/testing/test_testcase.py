@@ -692,6 +692,35 @@ class TestChevahTestCase(ChevahTestCase):
             link_segments=self.test_segments,
             )
 
+    def test_assertIsInstance(self):
+        """
+        Is has the argument in the inverse order of stdlib version.
+        """
+        self.assertIsInstance(object, object())
+
+    def test_assertIn(self):
+        """
+        Is has the argument in the inverse order of stdlib version.
+        """
+        self.assertIn(set([1, 'a', 'b']), 'a')
+
+    def test_assertRaises(self):
+        """
+        It can be used as a simple call, not as context, directly returning
+        the exception.
+        """
+
+        def some_call(argument):
+            raise RuntimeError('error-marker-%s' % (argument,))
+
+        exception = self.assertRaises(
+            RuntimeError,
+            some_call,
+            'more'
+            )
+
+        self.assertEqual('error-marker-more', exception.args[0])
+
 
 @conditionals.onOSFamily('posiX')
 class TestClassConditionalsPosix(ChevahTestCase):

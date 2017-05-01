@@ -1030,6 +1030,14 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         kwargs['cleanup'] = self.addCleanup
         return mk.fs.fileInTemp(*args, **kwargs)
 
+    def assertIn(self, target, source):
+        """
+        Overwrite stdlib to swap the arguments.
+        """
+        if source not in target:
+            message = u'%s not in %s.' % (repr(source), repr(target))
+            raise AssertionError(message.encode('utf-8'))
+
     def assertIsInstance(self, expected_type, value, msg=None):
         """
         Raise an exception if `value` is not an instance of `expected_type`

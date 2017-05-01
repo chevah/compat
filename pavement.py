@@ -77,9 +77,9 @@ BUILD_PACKAGES = [
 
 # Packages required by the static analysis tests.
 LINT_PACKAGES = [
-    'pyflakes==0.8.1',
+    'pyflakes==1.5.0',
     'pocketlint==1.4.4.c4',
-    'pep8 >= 1.6.2',
+    'pep8 >= 1.7.0',
     # Used for py3 porting and other checks.
     'pylint==1.4.3',
     'astroid==1.3.6',
@@ -305,7 +305,7 @@ def test_py3(args):
             return
         captured_warnings.append(line)
 
-    warningsf.showwarning = capture_warning
+    warnings.showwarning = capture_warning
 
     sys.args = ['nose', 'chevah.compat.tests.normal'] + args
     runner = nose_main(exit=False)
