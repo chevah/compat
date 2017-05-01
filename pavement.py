@@ -82,6 +82,7 @@ LINT_PACKAGES = [
     'pep8 >= 1.6.2',
     # Used for py3 porting and other checks.
     'pylint==1.4.3',
+    'astroid==1.3.6',
 
     # These are build packages, but are needed for testing the documentation.
     'sphinx==1.2.2',
@@ -180,6 +181,10 @@ def deps():
     pave.pip(
         command='install',
         arguments=packages,
+        )
+    print('\n#\n# Installed packages\n#')
+    pave.pip(
+        command='freeze',
         )
 
 
@@ -300,7 +305,7 @@ def test_py3(args):
             return
         captured_warnings.append(line)
 
-    warnings.showwarning = capture_warning
+    warningsf.showwarning = capture_warning
 
     sys.args = ['nose', 'chevah.compat.tests.normal'] + args
     runner = nose_main(exit=False)
