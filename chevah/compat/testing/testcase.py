@@ -1016,6 +1016,20 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         else:
             raise AssertionError('OS not supported.')
 
+    def folderInTemp(self, *args, **kwargs):
+        """
+        Create a folder in the default temp folder and mark it for cleanup.
+        """
+        kwargs['cleanup'] = self.addCleanup
+        return mk.fs.folderInTemp(*args, **kwargs)
+
+    def fileInTemp(self, *args, **kwargs):
+        """
+        Create a file in the default temp folder and mark it for cleanup.
+        """
+        kwargs['cleanup'] = self.addCleanup
+        return mk.fs.fileInTemp(*args, **kwargs)
+
     def assertIsInstance(self, expected_type, value, msg=None):
         """
         Raise an exception if `value` is not an instance of `expected_type`

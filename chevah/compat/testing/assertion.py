@@ -9,6 +9,7 @@ from __future__ import absolute_import
 from builtins import next
 from builtins import object
 from builtins import str
+from contextlib import contextmanager
 import collections
 import socket
 import time
@@ -363,3 +364,15 @@ class AssertionMixin(object):
             interface.implementedBy(klass),
             u'Class %s does not implements interface %s.' % (
                 klass, interface))
+
+    @contextmanager
+    def assertExecutionTime(self, seconds):
+        """
+        Check that code executes in less than `seconds` as a context manager.
+        """
+        start = time.time()
+        yield
+        duration = time.time() - start
+        self.assertLess(
+            duration, seconds, 'Took %s. Expecting less than %s' % (
+                duration, seconds,))

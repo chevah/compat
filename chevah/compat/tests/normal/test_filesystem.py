@@ -918,10 +918,10 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Raise OSError when trying to get folder content for a file.
         """
-        self.test_segments = mk.fs.createFileInTemp()
+        segments = self.fileInTemp()
 
         with self.assertRaises(OSError) as context:
-            self.filesystem.iterateFolderContent(self.test_segments)
+            self.filesystem.iterateFolderContent(segments)
 
         if self.os_family == 'nt':
             # On Windows, we get a different error.
@@ -935,9 +935,9 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Return empty iterator for empty folders.
         """
-        self.test_segments = mk.fs.createFolderInTemp()
+        segments = self.folderInTemp()
 
-        result = self.filesystem.iterateFolderContent(self.test_segments)
+        result = self.filesystem.iterateFolderContent(segments)
 
         self.assertIteratorEqual([], result)
 
@@ -945,22 +945,53 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Return folder content as list of Unicode names.
         """
-        self.test_segments = mk.fs.createFolderInTemp()
+        base_segments = self.folderInTemp()
         file_name = mk.makeFilename()
         folder_name = mk.makeFilename()
-        file_segments = self.test_segments[:]
-        file_segments.append(file_name)
-        folder_segments = self.test_segments[:]
-        folder_segments.append(folder_name)
+        file_segments = base_segments + [file_name]
+        folder_segments = base_segments + [folder_name]
         mk.fs.createFile(file_segments)
         mk.fs.createFolder(folder_segments)
 
-        content = self.filesystem.iterateFolderContent(self.test_segments)
+        content = self.filesystem.iterateFolderContent(base_segments)
 
         result = list(content)
         self.assertIsNotEmpty(result)
         self.assertIsInstance(str, result[0])
         self.assertItemsEqual([folder_name, file_name], result)
+
+    def test_iterateFolderContent_big(self):
+        """
+        It will not block on listing folders with many members.
+        """
+        count = 30000
+        base_timeout = 0.1
+        base_segments = self.folderInTemp()
+
+        for i in xrange(count):
+            mk.fs.createFolder(base_segments + ['some-member-%s' % (i,)])
+
+        # We check that doing a direct listing will take a long time.
+        with self.assertRaises(AssertionError):
+            with self.assertExecutionTime(base_timeout):
+                result = self.filesystem.getFolderContent(base_segments)
+        self.assertEqual(count, len(result))
+
+        # Getting the iterator will not take long.
+        with self.assertExecutionTime(base_timeout):
+            iterator = self.filesystem.iterateFolderContent(base_segments)
+
+        # Iterating at any step will not take long.
+        result = []
+        try:
+            while True:
+                with self.assertExecutionTime(base_timeout/2):
+                    result.append(next(iterator))
+        except StopIteration:
+            """
+            We are at the end. All good.
+            """
+        self.assertEqual(count, len(result))
 
     def test_openFile_folder(self):
         """

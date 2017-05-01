@@ -145,11 +145,7 @@ SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
-SETUP['test']['nose_options'] = [
-    '--with-run-reporter',
-    '--with-timer',
-    '--with-randomly',
-    ]
+SETUP['test']['nose_options'] = ['--with-randomly']
 SETUP['buildbot']['server'] = 'buildbot.chevah.com'
 SETUP['buildbot']['web_url'] = 'https://buildbot.chevah.com:10443'
 SETUP['pypi']['index_url'] = 'http://pypi.chevah.com/simple'
@@ -243,7 +239,10 @@ def test_ci(args):
     env = os.environ.copy()
     args = env.get('TEST_ARGUMENTS', '')
     if not args:
-        args = []
+        args = [
+            '--with-run-reporter',
+            '--with-timer',
+            ]
     else:
         args = [args]
     test_type = env.get('TEST_TYPE', 'normal')

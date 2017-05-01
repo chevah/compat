@@ -175,6 +175,14 @@ class LocalTestFilesystem(LocalFilesystem):
         cleanup(self.deleteFolder, segments, recursive=True)
         return segments
 
+    def fileInTemp(self, cleanup, *args, **kwargs):
+        """
+        Create a file in the temp folder and add to be removed at cleanup.
+        """
+        segments = self.createFileInTemp(*args, **kwargs)
+        cleanup(self.deleteFile, segments)
+        return segments
+
     def createFolderInTemp(self, foldername=None, prefix=u'', suffix=u''):
         """
         Create a folder in the temporary folder.
