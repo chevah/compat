@@ -360,9 +360,9 @@ class ChevahCommonsFactory(object):
 
     def FilesystemOsAvatar(self, user, home_folder_path=None):
         """
-        Create an avatar to by used with the test filesystem.
+        Create an avatar to be used with the test filesystem.
 
-        `user` is passed as a TestUser and all other
+        `user` is passed as a TestUser.
         """
         if home_folder_path is None:
             home_folder_path = user.posix_home_path

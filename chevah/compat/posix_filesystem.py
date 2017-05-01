@@ -44,7 +44,7 @@ from chevah.compat.helpers import _, NoOpContext
 
 class PosixFilesystemBase(object):
     """
-    Base implementation if ILocalFilesystem for
+    Base implementation of ILocalFilesystem for
     local Posix filesystems.
 
     It handles `raw` access to the filesystem.
