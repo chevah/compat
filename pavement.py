@@ -180,6 +180,9 @@ def deps():
         if 'os-independent' in builder or '-py3' in builder:
             packages += LINT_PACKAGES
             print('Installing only lint and test dependencies.')
+        elif '-gk-merge' in builder:
+            packages += BUILD_PACKAGES
+            print('Installing only build and test dependencies.')
         else:
             print('Installing only test dependencies.')
 
