@@ -561,7 +561,14 @@ class TestChevahTestCase(ChevahTestCase):
 
         This is a system test, but socket operations are light.
         """
-        if self.os_name in ['aix', 'solaris', 'osx', 'hpux']:
+        if self.os_name in [
+            'aix',
+            'freebsd',
+            'hpux',
+            'openbsd',
+            'osx',
+            'solaris',
+                ]:
             # On AIX and probably on other Unixes we can only bind on
             # existing fixed IP addressed like 127.0.0.1.
             raise self.skipTest()

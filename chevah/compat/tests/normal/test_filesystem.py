@@ -969,8 +969,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         if self.os_name == 'aix':
             count = 3000
             base_timeout = 0.02
-        elif self.os_name == 'hpux':
-            # HP-UX does not allow more than 32765 members in a folder
+        elif self.os_name in ['hpux', 'freebsd', 'openbsd']:
+            # Some OS/FS does not allow more than 32765 members in a folder
             # and the slave is generally slow.
             count = 32000
             base_timeout = 0.1
