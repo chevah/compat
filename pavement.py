@@ -3,6 +3,11 @@
 """
 Build script for chevah-compat.
 """
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    )
 import os
 import sys
 import warnings
@@ -202,7 +207,7 @@ def build():
 
     build_target = pave.fs.join([pave.path.build, 'setup-build'])
     sys.argv = ['setup.py', '-q', 'build', '--build-base', build_target]
-    print "Building in " + build_target
+    print("Building in " + build_target)
     # Importing setup will trigger executing commands from sys.argv.
     import setup
     setup.distribution.run_command('install')
@@ -240,10 +245,10 @@ def test_ci(args):
     from OpenSSL import SSL, __version__ as pyopenssl_version
     from coverage.cmdline import main as coverage_main
 
-    print 'PYTHON %s' % (sys.version,)
-    print '%s (%s)' % (
-        SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER)
-    print 'pyOpenSSL %s' % (pyopenssl_version,)
+    print('PYTHON %s' % (sys.version,))
+    print('%s (%s)' % (
+        SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER))
+    print('pyOpenSSL %s' % (pyopenssl_version,))
     coverage_main(argv=['--version'])
 
     env = os.environ.copy()
@@ -279,13 +284,13 @@ def test_py3(args):
         stats['fatal'] + stats['convention'] + stats['warning']
         )
     if errors:
-        print 'Pylint failed'
+        print('Pylint failed')
         sys.exit(1)
 
-    print 'Compiling in Py3 ...',
+    print('Compiling in Py3 ...', end='')
     command = ['python3', '-m', 'compileall', '-q', 'chevah']
     pave.execute(command, output=sys.stdout)
-    print 'done'
+    print('done')
 
     sys.argv = sys.argv[:1]
     pave.python_command_normal.extend(['-3'])
@@ -310,12 +315,12 @@ def test_py3(args):
     sys.args = ['nose', 'chevah.compat.tests.normal'] + args
     runner = nose_main(exit=False)
     if not runner.success:
-        print 'Test failed'
+        print('Test failed')
         sys.exit(1)
     if not captured_warnings:
         sys.exit(0)
 
-    print '\nCaptured warnings\n'
+    print('\nCaptured warnings\n')
     for warning, filename, line in captured_warnings:
-        print '%s:%s %s' % (filename, line, warning)
+        print('%s:%s %s' % (filename, line, warning))
     sys.exit(1)
