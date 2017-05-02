@@ -501,6 +501,11 @@ class ILocalFilesystem(Interface):
         Return a list of files and folders contained by folder.
         """
 
+    def iterateFolderContent(segments):
+        """
+        Return an iterator for the name of each direct child of folder.
+        """
+
     def getStatus(segments):
         """
         Return a status structure for segments, resolving symbolic

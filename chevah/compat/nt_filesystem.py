@@ -62,6 +62,13 @@ FILE_STATUS_FLAGS = (
     win32file.FILE_FLAG_OPEN_REPARSE_POINT
     )
 
+# Windows System Error Codes
+#: https://msdn.microsoft.com/en-us/library/windows/desktop/ms681382.aspx
+#: The system cannot find the path specified.
+ERROR_PATH_NOT_FOUND = 3
+#: The directory name is invalid.
+ERROR_DIRECTORY = 267
+
 
 class NTFilesystem(PosixFilesystemBase):
     """
@@ -388,6 +395,28 @@ class NTFilesystem(PosixFilesystemBase):
         with self._windowsToOSError(segments):
             return super(NTFilesystem, self).setAttributes(
                 segments, attributes)
+
+    def iterateFolderContent(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
+        try:
+            return super(NTFilesystem, self).iterateFolderContent(segments)
+        except OSError as error:
+
+            if error.errno == ERROR_DIRECTORY:
+                # When we don't list a directory, we get a specific
+                # error, but we convert here to the same error code produced by
+                # Python listdir() on Windows.
+                # On XP and 2003 we have a different scandir() implementation.
+                error.errno = errno.EINVAL
+
+            elif error.errno == ERROR_PATH_NOT_FOUND:
+                # We convert the Windows specific code for path not found, to
+                # the same code raised by Unix.
+                error.errno = errno.ENOENT
+
+            raise error
 
     def getFolderContent(self, segments):
         """

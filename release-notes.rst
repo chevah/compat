@@ -2,10 +2,17 @@ Release notes for chevah.compat
 ===============================
 
 
-0.42.0 - Unreleased
+0.42.1 - 01/05/2017
+-------------------
+
+* Fix assertion in chevah testcase.
+
+
+0.42.0 - 01/05/2017
 -------------------
 
 * Remove HTTP context test helper.
+* Add iterator for getting the members of a folder.
 
 
 0.41.1 - 21/02/2017

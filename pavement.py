@@ -3,6 +3,11 @@
 """
 Build script for chevah-compat.
 """
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    )
 import os
 import sys
 import warnings
@@ -43,6 +48,7 @@ if os.name == 'nt':
         pass
 
 # Keep run_packages in sync with setup.py.
+# These are the hard dependencies needed by the library itself.
 RUN_PACKAGES = [
     'zope.interface==3.8.0',
     # Py3 compat.
@@ -59,15 +65,8 @@ if os.name == 'posix':
         'arpy==1.1.1.c2',
         ])
 
-
+# Packages required to use the dev/build system.
 BUILD_PACKAGES = [
-    'sphinx==1.2.2',
-    'repoze.sphinx.autointerface==0.7.1.c4',
-    # Docutils is required for RST parsing and for Sphinx.
-    'docutils==0.12.c1',
-
-    'twisted==15.5.0.chevah4',
-
     # Buildbot is used for try scheduler
     'buildbot==0.8.11.c7',
 
@@ -81,22 +80,36 @@ BUILD_PACKAGES = [
     ]
 
 
-TEST_PACKAGES = [
-    'pyflakes==0.8.1',
+# Packages required by the static analysis tests.
+LINT_PACKAGES = [
+    'pyflakes==1.5.0',
     'pocketlint==1.4.4.c4',
-
+    'pep8 >= 1.7.0',
     # Used for py3 porting and other checks.
     'pylint==1.4.3',
-    'pep8 >= 1.6.2',
+    'astroid==1.3.6',
 
+    # These are build packages, but are needed for testing the documentation.
+    'sphinx==1.2.2',
+    'repoze.sphinx.autointerface==0.7.1.c4',
+    # Docutils is required for RST parsing and for Sphinx.
+    'docutils==0.12.c1',
+
+    ]
+
+# Packages required to run the test suite.
+TEST_PACKAGES = [
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
-    'nose==1.3.6',
+    'nose==1.3.7',
     'nose-randomly==1.2.5',
     'mock',
 
     'coverage==4.0.3',
     'codecov==2.0.3',
+
+    # Twisted is optionl, but we have it here for complete tests.
+    'twisted==15.5.0.chevah4',
 
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
@@ -138,11 +151,7 @@ SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
 SETUP['pocket-lint']['exclude_files'] = []
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
-SETUP['test']['nose_options'] = [
-    '--with-run-reporter',
-    '--with-timer',
-    '--with-randomly',
-    ]
+SETUP['test']['nose_options'] = ['--with-randomly']
 SETUP['buildbot']['server'] = 'buildbot.chevah.com'
 SETUP['buildbot']['web_url'] = 'https://buildbot.chevah.com:10443'
 SETUP['pypi']['index_url'] = 'http://pypi.chevah.com/simple'
@@ -161,9 +170,29 @@ def deps():
     Install all dependencies.
     """
     print('Installing dependencies to %s...' % (pave.path.build,))
+    packages = RUN_PACKAGES + TEST_PACKAGES
+
+    env_ci = os.environ.get('CI', '').strip()
+    if env_ci.lower() != 'true':
+        packages += BUILD_PACKAGES + LINT_PACKAGES
+    else:
+        builder = os.environ.get('BUILDER_NAME', '')
+        if 'os-independent' in builder or '-py3' in builder:
+            packages += LINT_PACKAGES
+            print('Installing only lint and test dependencies.')
+        elif '-gk-merge' in builder:
+            packages += BUILD_PACKAGES
+            print('Installing only build and test dependencies.')
+        else:
+            print('Installing only test dependencies.')
+
     pave.pip(
         command='install',
-        arguments=RUN_PACKAGES + TEST_PACKAGES + BUILD_PACKAGES,
+        arguments=packages,
+        )
+    print('\n#\n# Installed packages\n#')
+    pave.pip(
+        command='freeze',
         )
 
 
@@ -181,7 +210,7 @@ def build():
 
     build_target = pave.fs.join([pave.path.build, 'setup-build'])
     sys.argv = ['setup.py', '-q', 'build', '--build-base', build_target]
-    print "Building in " + build_target
+    print("Building in " + build_target)
     # Importing setup will trigger executing commands from sys.argv.
     import setup
     setup.distribution.run_command('install')
@@ -210,12 +239,27 @@ def test_ci(args):
     """
     Run tests in continuous integration environment.
     """
+    default_args = [
+        '--with-run-reporter',
+        '--with-timer',
+        ]
+
+    # Show some info about the current environment.
+    from OpenSSL import SSL, __version__ as pyopenssl_version
+    from coverage.cmdline import main as coverage_main
+
+    print('PYTHON %s' % (sys.version,))
+    print('%s (%s)' % (
+        SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER))
+    print('pyOpenSSL %s' % (pyopenssl_version,))
+    coverage_main(argv=['--version'])
+
     env = os.environ.copy()
     args = env.get('TEST_ARGUMENTS', '')
     if not args:
-        args = []
+        args = default_args
     else:
-        args = [args]
+        args = [args] + default_args
     test_type = env.get('TEST_TYPE', 'normal')
 
     if test_type == 'os-independent':
@@ -228,7 +272,8 @@ def test_ci(args):
 
 
 @task
-def test_py3():
+@consume_args
+def test_py3(args):
     """
     Run checks for py3 compatibility.
     """
@@ -242,13 +287,13 @@ def test_py3():
         stats['fatal'] + stats['convention'] + stats['warning']
         )
     if errors:
-        print 'Pylint failed'
+        print('Pylint failed')
         sys.exit(1)
 
-    print 'Compiling in Py3 ...',
+    print('Compiling in Py3 ...', end='')
     command = ['python3', '-m', 'compileall', '-q', 'chevah']
     pave.execute(command, output=sys.stdout)
-    print 'done'
+    print('done')
 
     sys.argv = sys.argv[:1]
     pave.python_command_normal.extend(['-3'])
@@ -270,15 +315,15 @@ def test_py3():
 
     warnings.showwarning = capture_warning
 
-    sys.args = ['nose', 'chevah.compat.tests.normal']
+    sys.args = ['nose', 'chevah.compat.tests.normal'] + args
     runner = nose_main(exit=False)
     if not runner.success:
-        print 'Test failed'
+        print('Test failed')
         sys.exit(1)
     if not captured_warnings:
         sys.exit(0)
 
-    print '\nCaptured warnings\n'
+    print('\nCaptured warnings\n')
     for warning, filename, line in captured_warnings:
-        print '%s:%s %s' % (filename, line, warning)
+        print('%s:%s %s' % (filename, line, warning))
     sys.exit(1)

@@ -55,7 +55,7 @@ class TestFactory(ChevahTestCase):
         It will return different values with each call.
         """
         self.assertNotEqual(mk.bytes(), mk.bytes())
-        self.assertIsInstance(bytearray, mk.bytes())
+        self.assertIsInstance(bytes, mk.bytes())
 
     def test_bytes_string_conversion_utf8_default(self):
         """

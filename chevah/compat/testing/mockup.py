@@ -242,7 +242,7 @@ class ChevahCommonsFactory(object):
         result = bytearray(b'\xff')
         for _ in range(max(1, size - 1)):
             result.append(random.getrandbits(4))
-        return result
+        return bytes(result)
 
     def TCPPort(self, factory=None, address='', port=1234):
         """
@@ -357,6 +357,22 @@ class ChevahCommonsFactory(object):
 
         ipv4 = address.IPv4Address(protocol, host, port)
         return ipv4
+
+    def FilesystemOsAvatar(self, user, home_folder_path=None):
+        """
+        Create an avatar to be used with the test filesystem.
+
+        `user` is passed as a TestUser.
+        """
+        if home_folder_path is None:
+            home_folder_path = user.posix_home_path
+
+        return self.makeFilesystemOSAvatar(
+            name=user.name,
+            home_folder_path=home_folder_path,
+            lock_in_home_folder=False,
+            token=user.token,
+            )
 
     def makeFilesystemOSAvatar(
         self, name=None, home_folder_path=None, root_folder_path=None,
