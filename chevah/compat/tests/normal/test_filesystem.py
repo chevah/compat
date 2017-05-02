@@ -970,7 +970,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
             count = 3000
             base_timeout = 0.02
         else:
-            count = 30000
+            count = 35000
             base_timeout = 0.05
         base_segments = self.folderInTemp()
 
@@ -991,7 +991,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         result = []
         try:
             while True:
-                with self.assertExecutionTime(base_timeout / 1.5):
+                with self.assertExecutionTime(base_timeout):
                     result.append(next(iterator))
         except StopIteration:
             """
