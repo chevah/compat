@@ -973,10 +973,10 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
             # HP-UX does not allow more than 32765 members in a folder
             # and the slave is generally slow.
             count = 32000
-            base_timeout = 0.05
+            base_timeout = 0.1
         else:
             count = 35000
-            base_timeout = 0.05
+            base_timeout = 0.1
 
         base_segments = self.folderInTemp()
 
