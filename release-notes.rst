@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.43.0 - 04/05/2017
+-------------------
+
+* Fix assertIsNotEmpty with deep Unicode data.
+* Add minimal support for OpenBSD and FreeBSD.
+
+
 0.42.1 - 01/05/2017
 -------------------
 

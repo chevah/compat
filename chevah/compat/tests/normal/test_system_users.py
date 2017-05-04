@@ -104,7 +104,14 @@ class TestSystemUsers(CompatTestCase):
         # Windows don't support shadow.
         # FIXME:2717:
         # HP-UX shadow support is not enabled in our python build.
-        if self.os_name in ['aix', 'osx', 'windows', 'hpux']:
+        if self.os_name in [
+            'aix',
+            'freebsd',
+            'hpux',
+            'openbsd',
+            'osx',
+            'windows',
+                ]:
             raise self.skipTest()
 
         from chevah.compat.unix_users import HAS_SHADOW_SUPPORT

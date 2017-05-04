@@ -30,6 +30,7 @@ import random
 import socket
 import subprocess
 import sys
+import traceback
 
 from chevah.compat import (
     LocalFilesystem,
@@ -41,7 +42,7 @@ from chevah.compat.winerrors import ERROR_NONE_MAPPED
 
 
 def execute(
-    command, input_text=None, output=None, ignore_errors=True, verbose=False
+    command, input_text=None, output=None, ignore_errors=True, verbose=False,
         ):
     """
     Execute a command having stdout redirected and using 'input_text' as
@@ -61,6 +62,9 @@ def execute(
     if exit_code != 0:
         if verbose:
             print(u'Failed to execute %s\n%s' % (command, stderrdata))
+
+        print(''.join(traceback.format_stack(limit=5)))
+
         if not ignore_errors:
             sys.exit(exit_code)
 
@@ -156,6 +160,14 @@ class OSAdministrationUnix(object):
     def _addGroup_hpux(self, group):
         self._addGroup_unix(group)
 
+    def _addGroup_freebsd(self, group):
+        group_name = group.name.encode('utf-8')
+        execute([
+            'sudo', 'pw', 'groupadd',
+            '-g', str(group.gid),
+            '-n', group_name,
+            ])
+
     def addUsersToGroup(self, group, users=None):
         """
         Add the users to the specified group.
@@ -203,6 +215,16 @@ class OSAdministrationUnix(object):
 
     def _addUsersToGroup_hpux(self, group, users):
         self._addUsersToGroup_unix(group, users)
+
+    def _addUsersToGroup_freebsd(self, group, users):
+        if not len(users):
+            return
+
+        group_name = group.name.encode('utf-8')
+        members_list = ','.join(users)
+        execute([
+            'sudo', 'pw', 'groupmod', group_name,
+            '-M', members_list.encode('utf-8')])
 
     def addUser(self, user):
         """
@@ -342,6 +364,26 @@ class OSAdministrationUnix(object):
     def _addUser_hpux(self, user):
         self._addUser_unix(user)
 
+    def _addUser_freebsd(self, user):
+        user_name = user.name.encode('utf-8')
+        home_path = user.posix_home_path.encode('utf-8')
+        command = [
+            'sudo', 'pw', 'user', 'add', user_name,
+            '-u', str(user.uid),
+            '-d', home_path,
+            '-s', user.shell.encode('utf-8'),
+            '-m',
+            ]
+        # Only add gid if required.
+        if user.uid != user.gid:
+            command.extend(['-g', str(user.gid)])
+
+        execute(command)
+
+        if user.home_group:
+            execute([
+                'sudo', 'chgrp', user.home_group.encode('utf-8'), home_path])
+
     def setUserPassword(self, user):
         """
         Set a password for the user. The password is an attribute of the
@@ -447,6 +489,15 @@ class OSAdministrationUnix(object):
     def _setUserPassword_hpux(self, user):
         self._setUserPassword_unix(user)
 
+    def _setUserPassword_freebsd(self, user):
+        execute(
+            command=[
+                'sudo',
+                'pw', 'mod', 'user', user.name.encode('utf-8'), '-h', '0',
+                ],
+            input_text=user.password.encode('utf-8'),
+            )
+
     def deleteUser(self, user):
         """
         Delete user from the local operating system.
@@ -474,6 +525,9 @@ class OSAdministrationUnix(object):
         self._deleteHomeFolder_unix(user)
 
     def _deleteHomeFolder_aix(self, user):
+        self._deleteHomeFolder_unix(user)
+
+    def _deleteHomeFolder_freebsd(self, user):
         self._deleteHomeFolder_unix(user)
 
     def _deleteHomeFolder_unix(self, user):
@@ -514,6 +568,10 @@ class OSAdministrationUnix(object):
     def _deleteUser_hpux(self, user):
         self._deleteUser_unix(user)
 
+    def _deleteUser_freebsd(self, user):
+        execute(['sudo', 'pw', 'userdel', user.name.encode('utf-8')])
+        self.deleteHomeFolder(user)
+
     def deleteGroup(self, group):
         """
         Delete group from the local operating system.
@@ -542,6 +600,9 @@ class OSAdministrationUnix(object):
 
     def _deleteGroup_hpux(self, group):
         self._deleteGroup_unix(group)
+
+    def _deleteGroup_freebsd(self, group):
+        execute(['sudo', 'pw', 'group', 'del', group.name.encode('utf-8')])
 
     def _appendUnixEntry(self, segments, new_line):
         """
