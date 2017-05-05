@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.43.1 - 04/05/2017
+-------------------
+
+* Fix bad shadow change in previous release.
+
+
 0.43.0 - 04/05/2017
 -------------------
 

@@ -20,7 +20,6 @@ try:
     HAS_SHADOW_SUPPORT = True
 except ImportError:
     HAS_SHADOW_SUPPORT = False
-    spwd = None
 
 from zope.interface import implements
 
@@ -316,6 +315,35 @@ class UnixUsers(CompatUsers):
             return None
         username = username.encode('utf-8')
         password = password.encode('utf-8')
+
+        def get_crypted_password(password, salt):
+            '''Return the crypted password based on salt.
+
+            salt can be an salted password.
+            '''
+            crypt_value = crypt.crypt(password, salt)
+            if os.sys.platform == 'sunos5' and crypt_value.startswith('$6$'):
+                # There is a bug in Python 2.5 and crypt add some extra
+                # values for shadow passwords of type 6.
+                crypt_value = crypt_value[:12] + crypt_value[20:]
+            return crypt_value
+
+        try:
+            with self._executeAsAdministrator():
+                crypted_password = spwd.getspnam(username).sp_pwd
+
+            # Locked account
+            if crypted_password in ('LK',):
+                return False
+
+            # Allow other methods to take over if password is not
+            # stored in shadow file.
+            if crypted_password in self._NOT_HERE:
+                return None
+        except KeyError:
+            return None
+
+        return _verifyCrypt(password, crypted_password)
 
     def _getPAMAuthenticate(self):
         """

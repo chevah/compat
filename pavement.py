@@ -239,7 +239,8 @@ def test_ci(args):
     """
     Run tests in continuous integration environment.
     """
-    default_args = [
+    # When running in CI mode, we want to get more reports.
+    SETUP['test']['nose_options'] += [
         '--with-run-reporter',
         '--with-timer',
         ]
@@ -257,9 +258,9 @@ def test_ci(args):
     env = os.environ.copy()
     args = env.get('TEST_ARGUMENTS', '')
     if not args:
-        args = default_args
+        args = []
     else:
-        args = [args] + default_args
+        args = [args]
     test_type = env.get('TEST_TYPE', 'normal')
 
     if test_type == 'os-independent':
