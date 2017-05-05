@@ -79,6 +79,9 @@ class TestProcessCapabilitiesPosix(CompatTestCase):
             # FIXME:2745:
             # PAM is not yet supported on HPUX.
             self.assertFalse(self.capabilities.pam)
+        elif self.os_name == 'openbsd':
+            # OpenBSD does not has PAM by default.
+            self.assertFalse(self.capabilities.pam)
         else:
             self.assertTrue(self.capabilities.pam)
 

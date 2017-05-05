@@ -998,7 +998,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         result.append(next(iterator))
         try:
             while True:
-                with self.assertExecutionTime(base_timeout):
+                with self.assertExecutionTime(base_timeout * 2):
                     result.append(next(iterator))
         except StopIteration:
             """

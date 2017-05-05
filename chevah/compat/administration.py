@@ -41,13 +41,13 @@ from chevah.compat import (
 from chevah.compat.winerrors import ERROR_NONE_MAPPED
 
 
-def execute(
-    command, input_text=None, output=None, ignore_errors=True, verbose=False,
-        ):
+def execute(command, input_text=None, output=None, ignore_errors=True):
     """
     Execute a command having stdout redirected and using 'input_text' as
     input.
     """
+    verbose = False
+
     if verbose:
         print('Calling: %s' % command)
 
@@ -168,6 +168,14 @@ class OSAdministrationUnix(object):
             '-n', group_name,
             ])
 
+    def _addGroup_openbsd(self, group):
+        group_name = group.name.encode('utf-8')
+        execute([
+            'sudo', 'groupadd',
+            '-g', str(group.gid),
+            group_name,
+            ])
+
     def addUsersToGroup(self, group, users=None):
         """
         Add the users to the specified group.
@@ -225,6 +233,15 @@ class OSAdministrationUnix(object):
         execute([
             'sudo', 'pw', 'groupmod', group_name,
             '-M', members_list.encode('utf-8')])
+
+    def _addUsersToGroup_openbsd(self, group, users):
+        if not len(users):
+            return
+
+        group_name = group.name.encode('utf-8')
+        for user in users:
+            execute([
+                'sudo', 'usermod', '-G', group_name, user.encode('utf-8')])
 
     def addUser(self, user):
         """
@@ -384,6 +401,25 @@ class OSAdministrationUnix(object):
             execute([
                 'sudo', 'chgrp', user.home_group.encode('utf-8'), home_path])
 
+    def _addUser_openbsd(self, user):
+        user_name = user.name.encode('utf-8')
+        home_path = user.posix_home_path.encode('utf-8')
+        command = [
+            'sudo', 'useradd', user_name,
+            '-u', str(user.uid),
+            '-m', '-d', home_path,
+            '-s', user.shell.encode('utf-8'),
+            ]
+        # Only add gid if required.
+        if user.uid != user.gid:
+            command.extend(['-g', str(user.gid)])
+
+        execute(command)
+
+        if user.home_group:
+            execute([
+                'sudo', 'chgrp', user.home_group.encode('utf-8'), home_path])
+
     def setUserPassword(self, user):
         """
         Set a password for the user. The password is an attribute of the
@@ -498,6 +534,20 @@ class OSAdministrationUnix(object):
             input_text=user.password.encode('utf-8'),
             )
 
+    def _setUserPassword_openbsd(self, user):
+        password = user.password.encode('utf-8')
+        code, out = execute(
+            command=['encrypt'],
+            input_text=user.password.encode('utf-8'),
+            )
+
+        execute(
+            command=[
+                'sudo',
+                'usermod', '-p', out.strip(), user.name.encode('utf-8'),
+                ],
+            )
+
     def deleteUser(self, user):
         """
         Delete user from the local operating system.
@@ -528,6 +578,9 @@ class OSAdministrationUnix(object):
         self._deleteHomeFolder_unix(user)
 
     def _deleteHomeFolder_freebsd(self, user):
+        self._deleteHomeFolder_unix(user)
+
+    def _deleteHomeFolder_openbsd(self, user):
         self._deleteHomeFolder_unix(user)
 
     def _deleteHomeFolder_unix(self, user):
@@ -572,6 +625,10 @@ class OSAdministrationUnix(object):
         execute(['sudo', 'pw', 'userdel', user.name.encode('utf-8')])
         self.deleteHomeFolder(user)
 
+    def _deleteUser_openbsd(self, user):
+        execute(['sudo', 'userdel', user.name.encode('utf-8')])
+        self.deleteHomeFolder(user)
+
     def deleteGroup(self, group):
         """
         Delete group from the local operating system.
@@ -603,6 +660,9 @@ class OSAdministrationUnix(object):
 
     def _deleteGroup_freebsd(self, group):
         execute(['sudo', 'pw', 'group', 'del', group.name.encode('utf-8')])
+
+    def _deleteGroup_openbsd(self, group):
+        execute(['sudo', 'groupdel', group.name.encode('utf-8')])
 
     def _appendUnixEntry(self, segments, new_line):
         """
