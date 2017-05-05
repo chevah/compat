@@ -483,6 +483,5 @@ class TestSymbolicLinks(OSAccountFileSystemTestCase, SymbolicLinksMixin):
         password=mk.string(),
         home_group=TEST_ACCOUNT_GROUP,
         posix_uid=mk.posixID(),
-        posix_gid=mk.posixID(),
         windows_required_rights=rights,
         )

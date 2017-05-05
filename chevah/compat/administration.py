@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from builtins import str
 from builtins import range
 from builtins import object
+from future.utils import native
 from contextlib import contextmanager
 import os
 import codecs
@@ -30,7 +31,6 @@ import random
 import socket
 import subprocess
 import sys
-import traceback
 
 from chevah.compat import (
     LocalFilesystem,
@@ -46,13 +46,15 @@ def execute(command, input_text=None, output=None, ignore_errors=True):
     Execute a command having stdout redirected and using 'input_text' as
     input.
     """
-    verbose = True
+    verbose = False
 
     if verbose:
         print('Calling: %s' % command)
 
     if output is None:
         output = subprocess.PIPE
+
+    command = [native(part) for part in command]
 
     process = subprocess.Popen(
         command, stdin=subprocess.PIPE, stdout=output)
@@ -62,8 +64,6 @@ def execute(command, input_text=None, output=None, ignore_errors=True):
     if exit_code != 0:
         if verbose:
             print(u'Failed to execute %s\n%s' % (command, stderrdata))
-
-        print(''.join(traceback.format_stack(limit=5)))
 
         if not ignore_errors:
             sys.exit(exit_code)
@@ -402,17 +402,22 @@ class OSAdministrationUnix(object):
                 'sudo', 'chgrp', user.home_group.encode('utf-8'), home_path])
 
     def _addUser_openbsd(self, user):
-        user_name = user.name.encode('utf-8')
         home_path = user.posix_home_path.encode('utf-8')
         command = [
-            'sudo', 'useradd', user_name,
-            '-u', str(user.uid),
-            '-m', '-d', home_path,
+            'sudo', 'useradd',
+            '-u', str(user.uid).encode('utf-8'),
+            '-d', home_path,
             '-s', user.shell.encode('utf-8'),
             ]
+
+        if user.posix_home_path != '/tmp':
+            command.append('-m'),
+
         # Only add gid if required.
         if user.uid != user.gid:
             command.extend(['-g', str(user.gid)])
+
+        command.append(user.name.encode('utf-8'))
 
         execute(command)
 

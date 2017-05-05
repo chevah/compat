@@ -14,7 +14,6 @@ import hashlib
 import os
 import random
 import string
-import sys
 import uuid
 
 from unidecode import unidecode
@@ -59,10 +58,7 @@ def _sanitize_name_windows(candidate):
     return str(unidecode(candidate))
 
 
-class TestUser(object):
-    """
-    An object storing all user information.
-    """
+class SanitizeNameMixin(object):
 
     @classmethod
     def sanitizeName(cls, name):
@@ -76,6 +72,12 @@ class TestUser(object):
             return _sanitize_name_windows(name)
 
         return name
+
+
+class TestUser(SanitizeNameMixin):
+    """
+    An object storing all user information.
+    """
 
     def __init__(
         self, name, posix_uid=None, posix_gid=None, posix_home_path=None,
@@ -167,22 +169,10 @@ class TestUser(object):
         self._windows_token = None
 
 
-class TestGroup(object):
+class TestGroup(SanitizeNameMixin):
     """
     An object storing all group information.
     """
-
-    @classmethod
-    def sanitizeName(cls, group):
-        """
-        Return name sanitized for current OS.
-        """
-        if sys.platform.startswith('aix'):
-            return _sanitize_name_legacy_unix(group)
-        elif sys.platform.startswith('win'):
-            return _sanitize_name_windows(group)
-
-        return group
 
     def __init__(self, name, posix_gid=None, members=None, pdc=None):
         """

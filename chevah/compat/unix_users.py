@@ -190,6 +190,13 @@ class UnixUsers(CompatUsers):
             else:
                 return (False, None)
 
+        checked = self._checkShadowDBFile(username, password)
+        if checked is not None:
+            if checked is True:
+                return (True, None)
+            else:
+                return (False, None)
+
         return (None, None)
 
     def pamWithUsernameAndPassword(self, username, password, service='login'):
@@ -313,6 +320,7 @@ class UnixUsers(CompatUsers):
         '''
         if not HAS_SHADOW_SUPPORT:
             return None
+
         username = username.encode('utf-8')
         password = password.encode('utf-8')
 
@@ -330,6 +338,45 @@ class UnixUsers(CompatUsers):
                 return None
         except KeyError:
             return None
+
+        return _verifyCrypt(password, crypted_password)
+
+    def _checkShadowDBFile(self, username, password):
+        """
+        Authenticate against /etc/spwd.db BSD file.
+        """
+        from chevah.compat import process_capabilities
+        if process_capabilities.os_name not in ['freebsd', 'openbsd']:
+            return None
+
+        import bsddb185
+
+        username = username.encode('utf-8')
+        password = password.encode('utf-8')
+
+        entry = ''
+        db = None
+
+        # We try to keep the context switch as little as possible.
+        try:
+            with self._executeAsAdministrator():
+                db = bsddb185.open('/etc/spwd.db')
+
+            try:
+                entry = db['1' + username]
+            except KeyError:
+                return None
+
+        finally:
+            if db:
+                db.close()
+
+        parts = entry.split('\x00')
+
+        if len(parts) > 2:
+            crypted_password = parts[1]
+        else:
+            return False
 
         return _verifyCrypt(password, crypted_password)
 

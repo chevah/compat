@@ -236,7 +236,7 @@ class TestSystemUsers(SystemUsersTestCase):
             password=TEST_ACCOUNT_PASSWORD,
             )
 
-        if self.os_name == 'osx':
+        if self.os_name in ['osx']:
             self.assertIsNone(result)
         else:
             self.assertTrue(result)
