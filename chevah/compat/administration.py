@@ -535,7 +535,6 @@ class OSAdministrationUnix(object):
             )
 
     def _setUserPassword_openbsd(self, user):
-        password = user.password.encode('utf-8')
         code, out = execute(
             command=['encrypt'],
             input_text=user.password.encode('utf-8'),

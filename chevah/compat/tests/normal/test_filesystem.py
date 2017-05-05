@@ -978,6 +978,12 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
             count = 45000
             base_timeout = 0.1
 
+        if self.os_name == 'windows':
+            # On windows, some iteration operation might be very slow.
+            bias = 0.7
+        else:
+            bias = 0
+
         base_segments = self.folderInTemp()
 
         for i in range(count):
@@ -998,7 +1004,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         result.append(next(iterator))
         try:
             while True:
-                with self.assertExecutionTime(base_timeout * 2):
+                with self.assertExecutionTime(base_timeout + bias):
                     result.append(next(iterator))
         except StopIteration:
             """

@@ -19,5 +19,5 @@ flags:
       - tests/
 
 comment:
-  layout: "header, diff, uncovered"
+  layout: "header, diff, files"
   behavior: default
