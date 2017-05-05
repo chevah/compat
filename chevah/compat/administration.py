@@ -46,7 +46,7 @@ def execute(command, input_text=None, output=None, ignore_errors=True):
     Execute a command having stdout redirected and using 'input_text' as
     input.
     """
-    verbose = False
+    verbose = True
 
     if verbose:
         print('Calling: %s' % command)
