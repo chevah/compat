@@ -996,7 +996,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertEqual(count, len(result))
 
         # Getting the iterator will not take long.
-        with self.assertExecutionTime(base_timeout):
+        with self.assertExecutionTime(base_timeout + bias):
             iterator = self.filesystem.iterateFolderContent(base_segments)
 
         # Iterating at any step will not take long.

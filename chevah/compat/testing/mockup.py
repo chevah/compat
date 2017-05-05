@@ -70,7 +70,7 @@ class TestUser(object):
         Return name sanitized for current OS.
         """
         os_name = process_capabilities.os_name
-        if os_name in ['aix', 'hpux']:
+        if os_name in ['aix', 'hpux', 'freebsd', 'openbsd']:
             return _sanitize_name_legacy_unix(name)
         elif os_name == 'windows':
             return _sanitize_name_windows(name)
