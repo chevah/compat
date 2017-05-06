@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.43.2 - 05/05/2017
+-------------------
+
+* Fix OpenBSD/FreeBSD password authentication.
+
+
 0.43.1 - 04/05/2017
 -------------------
 

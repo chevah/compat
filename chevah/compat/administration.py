@@ -235,9 +235,6 @@ class OSAdministrationUnix(object):
             '-M', members_list.encode('utf-8')])
 
     def _addUsersToGroup_openbsd(self, group, users):
-        if not len(users):
-            return
-
         group_name = group.name.encode('utf-8')
         for user in users:
             execute([
