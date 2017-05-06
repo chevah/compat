@@ -973,7 +973,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
             # Some OS/FS does not allow more than 32765 members in a folder
             # and the slave is generally slow.
             count = 32000
-            base_timeout = 0.1
+            base_timeout = 0.15
         else:
             count = 45000
             base_timeout = 0.1
