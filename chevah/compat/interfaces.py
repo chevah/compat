@@ -600,7 +600,8 @@ class IFileAttributes(Interface):
     """
 
     name = Attribute('Name of this member.')
-    path = Attribute('Absolute path of this member.')
+    path = Attribute(
+        'Absolute path of this member, as seen for the chrooted fs.')
     size = Attribute('Size in bytes.')
     is_file = Attribute('True if member is a file.')
     is_folder = Attribute('True if member is a folder.')

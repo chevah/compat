@@ -77,7 +77,8 @@ class LocalTestFilesystem(LocalFilesystem):
         """
         Remove temporary folder.
         """
-        self.deleteFolder(self.temp_segments, recursive=True)
+        if self.exists(self.temp_segments):
+            self.deleteFolder(self.temp_segments, recursive=True)
 
     @property
     def home_path(self):

@@ -973,10 +973,16 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
             # Some OS/FS does not allow more than 32765 members in a folder
             # and the slave is generally slow.
             count = 32000
-            base_timeout = 0.1
+            base_timeout = 0.15
         else:
             count = 45000
             base_timeout = 0.1
+
+        if self.os_name == 'windows':
+            # On windows, some iteration operation might be very slow.
+            bias = 0.7
+        else:
+            bias = 0
 
         base_segments = self.folderInTemp()
 
@@ -990,7 +996,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertEqual(count, len(result))
 
         # Getting the iterator will not take long.
-        with self.assertExecutionTime(base_timeout):
+        with self.assertExecutionTime(base_timeout + bias):
             iterator = self.filesystem.iterateFolderContent(base_segments)
 
         # Iterating at any step will not take long.
@@ -998,7 +1004,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         result.append(next(iterator))
         try:
             while True:
-                with self.assertExecutionTime(base_timeout):
+                with self.assertExecutionTime(base_timeout + bias):
                     result.append(next(iterator))
         except StopIteration:
             """

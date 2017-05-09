@@ -43,7 +43,7 @@ def main():
     from chevah.compat.testing import ChevahTestCase
 
 
-    drop_user = sys.argv[1]
+    drop_user = sys.argv[1].encode('utf-8')
     ChevahTestCase.initialize(drop_user=drop_user)
     ChevahTestCase.dropPrivileges()
 

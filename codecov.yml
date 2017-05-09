@@ -6,7 +6,18 @@ coverage:
     patch:
       default:
         target: 100%
+    project:
+      default:
+        target: auto
+      tests:
+        target: 100%
+        flags: tests
+
+flags:
+  tests:
+    paths:
+      - tests/
 
 comment:
-  layout: "header, diff, uncovered"
+  layout: "header, diff, files"
   behavior: default

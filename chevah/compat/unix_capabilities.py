@@ -78,6 +78,9 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
         """
         See `IProcessCapabilities`.
         """
+        if self.os_name == 'openbsd':
+            return False
+
         if self.os_name == 'hpux':
             # FIXME:2745:
             # We don't yet support PAM on HPUX.
