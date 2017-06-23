@@ -95,7 +95,7 @@ class TestTimer(Plugin):
             def __getattr__(self, name):
                 try:
                     return self.__dict__[name]
-                except:
+                except Exception:
                     return getattr(self.__target, name)
 
         # Replace the original test with a wrapper which records its execution.

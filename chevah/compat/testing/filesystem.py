@@ -265,7 +265,7 @@ class LocalTestFilesystem(LocalFilesystem):
                     self.deleteFolder(member_segments, recursive=True)
                 else:
                     self.deleteFile(member_segments)
-            except:
+            except Exception:
                 # Ignore file permissions errors...
                 # Just let them live for now. Hope they will not
                 # bite us later.

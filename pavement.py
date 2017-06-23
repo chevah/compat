@@ -82,12 +82,12 @@ BUILD_PACKAGES = [
 
 # Packages required by the static analysis tests.
 LINT_PACKAGES = [
+    'scame==0.3.3',
     'pyflakes==1.5.0',
-    'pocketlint==1.4.4.c4',
-    'pep8 >= 1.7.0',
-    # Used for py3 porting and other checks.
-    'pylint==1.4.3',
-    'astroid==1.3.6',
+    'pycodestyle==2.3.1',
+    'bandit==1.4.0',
+    'pylint==1.7.1',
+    'astroid==1.5.3',
 
     # These are build packages, but are needed for testing the documentation.
     'sphinx==1.2.2',
@@ -142,13 +142,81 @@ test_review
 test_normal
 test_super
 
+try:
+    from scame.formatcheck import ScameOptions
+
+    class ServerScameOptions(ScameOptions):
+        """
+        Scame options for the this project.
+        """
+        test_options = {}
+
+        def get(self, option, path):
+            tests_path = os.path.join('chevah', 'compat', 'tests')
+            testing_path = os.path.join('chevah', 'compat', 'testing')
+            admin_path = os.path.join('chevah', 'compat', 'administration.py')
+            if (
+                tests_path in path or
+                testing_path in path or
+                admin_path in path or
+                path == 'pavement.py'
+                    ):
+                # We have a testing code.
+                test_value = self.test_options.get(option, None)
+                if test_value is not None:
+                    return test_value
+
+            return getattr(self, option)
+
+    options = ServerScameOptions()
+    options.max_line_length = 80
+
+    options.scope = {
+        'include': [
+            'pavement.py',
+            'README.rst',
+            'chevah/compat/',
+            ],
+        'exclude': [],
+        }
+
+    options.towncrier = {
+        'enabled': True,
+        'fragments_directory': None,
+        'excluded_fragments': 'readme.rst',
+        }
+
+    options.pyflakes['enabled'] = True
+
+    options.closure_linter['enabled'] = True
+    options.closure_linter['ignore'] = [1, 10, 11, 110, 220]
+
+    options.pycodestyle['enabled'] = True
+    options.pycodestyle['hang_closing'] = True
+
+    options.bandit['enabled'] = True
+    options.bandit['exclude'] = [
+        'B104',  # Bind to 0.0.0.0
+        ]
+
+    # For now pylint is disabled, as there are to many errors.
+    options.pylint['enabled'] = False
+    options.pylint['disable'] = ['C0103', 'C0330', 'R0902', 'W0212']
+
+    # For the testing and dev code we disable bandit.
+    options.test_options['bandit'] = options.bandit.copy()
+    options.test_options['bandit']['enabled'] = False
+
+except ImportError:
+    # This will fail before we run `paver deps`
+    options = None
+
+
 SETUP['product']['name'] = 'chevah-compat'
 SETUP['folders']['source'] = u'chevah/compat'
 SETUP['repository']['name'] = u'compat'
 SETUP['repository']['github'] = u'https://github.com/chevah/compat'
-SETUP['pocket-lint']['include_files'] = ['pavement.py', 'release-notes.rst']
-SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
-SETUP['pocket-lint']['exclude_files'] = []
+SETUP['scame'] = options
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = ['--with-randomly']

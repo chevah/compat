@@ -102,7 +102,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
             if major_version < 6:
                 return False
             return True
-        except:
+        except Exception:
             return False
 
     @contextmanager
@@ -134,7 +134,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
                 # user token.
                 process_token = win32security.OpenThreadToken(
                     win32api.GetCurrentThread(), mode, 0)
-            except:
+            except Exception:
                 process_token = win32security.OpenProcessToken(
                     win32process.GetCurrentProcess(), mode)
 

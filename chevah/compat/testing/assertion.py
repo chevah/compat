@@ -194,7 +194,7 @@ class AssertionMixin(object):
 
         try:
             actual_id = getattr(failure.value, 'id')
-        except:
+        except Exception:
             actual_id = getattr(failure.value, 'event_id')
 
         if not isinstance(actual_id, str):
@@ -218,7 +218,7 @@ class AssertionMixin(object):
         failure_data = failure.value.data
         try:
             failure_id = getattr(failure.value, 'id')
-        except:
+        except Exception:
             failure_id = getattr(failure.value, 'event_id')
 
         self._checkData(

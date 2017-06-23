@@ -309,7 +309,7 @@ class PosixFilesystemBase(object):
                         return os.unlink(path_encoded)
 
                     raise error
-            except:
+            except Exception:
                 if ignore_errors:
                     return
                 raise
@@ -526,7 +526,7 @@ class PosixFilesystemBase(object):
 
         try:
             name = segments[-1]
-        except:
+        except Exception:
             name = None
         path = self.getRealPathFromSegments(segments)
 

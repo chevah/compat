@@ -48,10 +48,3 @@ https://github.com/chevah/simple-pam/tree/chevah-pam-test
 
 The accepted credentials are: pam_user/test-pass.
 `pam_user` account should be auto-created by the test runner.
-
-
-TODO
-----
-
-* handler node permissions and attributes
-* handler node content - write, read, copy or move file data

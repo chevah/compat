@@ -57,11 +57,13 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
         try:
             pwnam = pwd.getpwnam(username_encoded)
         except KeyError:
-            raise ChangeUserException(_(u'User does not exists.'))
+            raise ChangeUserException(u'User does not exists.')
         euid = pwnam.pw_uid
         egid = pwnam.pw_gid
     else:
-        assert euid is not None
+        if euid is None:
+            raise ChangeUserException(
+                'You need to pass euid when username is not passed.')
         pwnam = pwd.getpwuid(euid)
         username_encoded = pwnam.pw_name
 

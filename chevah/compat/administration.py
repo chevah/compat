@@ -886,7 +886,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
             import win32net
             win32net.NetUserChangePassword(
                 pdc, user.name, user.password, user.password)
-        except:
+        except Exception:
             print('Failed to set password "%s" for user "%s" on pdc "%s".' % (
                 user.password, user.name, pdc))
             raise
