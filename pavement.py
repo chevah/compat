@@ -108,6 +108,9 @@ TEST_PACKAGES = [
     'coverage==4.0.3',
     'codecov==2.0.3',
 
+    # used for remote debugging.
+    'remote_pdb==1.2.0',
+
     # Twisted is optionl, but we have it here for complete tests.
     'twisted==15.5.0.chevah4',
 

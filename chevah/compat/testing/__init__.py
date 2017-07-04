@@ -12,6 +12,8 @@ from __future__ import absolute_import
 from builtins import str
 from future import standard_library
 
+from remote_pdb import RemotePdb
+
 from chevah.compat import process_capabilities
 from chevah.compat.administration import os_administration
 from chevah.compat.testing.mockup import (
@@ -45,11 +47,6 @@ TEST_ACCOUNT_PASSWORD_OTHER = str(u'altapara')
 TEST_ACCOUNT_UID_OTHER = 2001
 TEST_ACCOUNT_GID_OTHER = 2011
 TEST_ACCOUNT_GROUP_OTHER = str(u'g mițmotan')
-
-# Centrify testing account.
-TEST_ACCOUNT_CENTRIFY_USERNAME = str(u'centrify-user')
-TEST_ACCOUNT_CENTRIFY_PASSWORD = str(u'Parola01!')
-TEST_ACCOUNT_CENTRIFY_UID = 1363149908
 
 # Another test group to test an user belonging to multiple groups.
 TEST_ACCOUNT_GROUP_ANOTHER = u'g-another-test'
@@ -124,6 +121,13 @@ TEST_GROUPS = {
         members=[TEST_ACCOUNT_USERNAME],
         ),
     }
+
+
+def rt(port=9999, interface='0.0.0.0'):
+    """
+    Trigger a remote debugging breakpoint
+    """
+    RemotePdb(interface, port).set_trace()
 
 
 def setup_access_control(users, groups):

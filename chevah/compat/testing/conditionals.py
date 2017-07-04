@@ -94,13 +94,13 @@ def onAdminPrivileges(present):
     tests suite with a regular account.
     """
     hostname = gethostname()
-    is_running_as_admin = 'win-2003' in hostname or 'win-xp' in hostname
+    is_running_as_normal = 'win-2003' in hostname or 'win-xp' in hostname
 
     def check_administrator():
         if present:
-            return is_running_as_admin
+            return is_running_as_normal
 
-        return not is_running_as_admin
+        return not is_running_as_normal
 
     return skipOnCondition(
         check_administrator,

@@ -26,8 +26,6 @@ from chevah.compat.testing import (
     conditionals,
     mk,
     TestUser,
-    TEST_ACCOUNT_CENTRIFY_USERNAME,
-    TEST_ACCOUNT_CENTRIFY_PASSWORD,
     TEST_ACCOUNT_UID,
     TEST_ACCOUNT_GID,
     TEST_ACCOUNT_GID_ANOTHER,
@@ -341,26 +339,6 @@ class TestSystemUsers(SystemUsersTestCase):
             username=mk.string(), password=mk.string())
 
         self.assertFalse(result)
-        self.assertIsNone(token)
-
-    def test_authenticateWithUsernameAndPassword_centrify(self):
-        """
-        Test username and password authentication using Centrify.
-
-        Centrify client is only installed on SLES-11-x64.
-        """
-        # FIXME:1265:
-        # The Centrify server was accidentally removed. We wait for it
-        # to be reinstalled and re-enabled this test.
-        raise self.skipTest()
-        if 'sles-11-x64' not in self.getHostname():
-            raise self.skipTest()
-
-        result, token = system_users.authenticateWithUsernameAndPassword(
-            username=TEST_ACCOUNT_CENTRIFY_USERNAME,
-            password=TEST_ACCOUNT_CENTRIFY_PASSWORD,
-            )
-        self.assertIsTrue(result)
         self.assertIsNone(token)
 
     def test_executeAsUser_multiple_call_on_same_credentials(self):
