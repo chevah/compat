@@ -20,3 +20,6 @@ ignore_errors = True
 
 omit =
     setup.py
+
+[html]
+directory = coverage-report

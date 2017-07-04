@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from future.types import newstr
+import sys
 
 from chevah.compat.testing.mockup import ChevahCommonsFactory
 from chevah.compat.testing import ChevahTestCase, mk
@@ -57,6 +58,16 @@ class TestFactory(ChevahTestCase):
         self.assertNotEqual(mk.bytes(), mk.bytes())
         self.assertIsInstance(bytes, mk.bytes())
 
+    def assertUnicodeDecodeError(self, exception):
+        """
+        """
+        if sys.flags.py3k_warning:
+            expected = 'invalid start byte'
+        else:
+            expected = 'ordinal not in range(128)'
+
+        self.assertEndsWith(expected, exception.reason)
+
     def test_bytes_string_conversion_utf8_default(self):
         """
         Conversion to unicode will fail for ASCII/UTF-8 for the default size.
@@ -68,47 +79,43 @@ class TestFactory(ChevahTestCase):
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode()
 
-        self.assertEndsWith(
-            context.exception.reason, 'ordinal not in range(128)')
+        self.assertUnicodeDecodeError(context.exception)
 
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode(encoding='ascii')
 
         self.assertEndsWith(
-            context.exception.reason, 'ordinal not in range(128)')
+            'ordinal not in range(128)', context.exception.reason)
 
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode(encoding='utf-8')
 
-        self.assertEndsWith(
-            context.exception.reason, 'invalid start byte')
+        self.assertEndsWith('invalid start byte', context.exception.reason)
 
     def test_bytes_string_conversion_utf8_arbitrary(self):
         """
         Conversion to unicode will fail for ASCII/UTF-8 for an array of an
         arbitrary size.
         """
-        value = mk.bytes(8)
+        value = mk.bytes(10)
 
-        self.assertEqual(len(value), 8)
+        self.assertEqual(len(value), 10)
 
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode()
 
-        self.assertEndsWith(
-            context.exception.reason, 'ordinal not in range(128)')
+        self.assertUnicodeDecodeError(context.exception)
 
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode(encoding='ascii')
 
         self.assertEndsWith(
-            context.exception.reason, 'ordinal not in range(128)')
+            'ordinal not in range(128)', context.exception.reason)
 
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode(encoding='utf-8')
 
-        self.assertEndsWith(
-            context.exception.reason, 'invalid start byte')
+        self.assertEndsWith('invalid start byte', context.exception.reason)
 
     def test_bytes_string_conversion_utf16_default(self):
         """

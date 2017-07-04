@@ -903,6 +903,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(isinstance(content[0], str))
         self.assertItemsEqual([folder_name, file_name], content)
 
+    @conditionals.skipOnPY3()
     def test_iterateFolderContent_not_found(self):
         """
         Raise OSError when trying to get folder for a non existent path.
@@ -914,6 +915,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
 
+    @conditionals.skipOnPY3()
     def test_iterateFolderContent_file(self):
         """
         Raise OSError when trying to get folder content for a file.
@@ -931,6 +933,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         self.assertEqual(expected_error, context.exception.errno)
 
+    @conditionals.skipOnPY3()
     def test_iterateFolderContent_empty(self):
         """
         Return empty iterator for empty folders.
@@ -941,6 +944,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         self.assertIteratorEqual([], result)
 
+    @conditionals.skipOnPY3()
     def test_iterateFolderContent_non_empty(self):
         """
         Return folder content as list of Unicode names.
@@ -960,6 +964,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertIsInstance(str, result[0])
         self.assertItemsEqual([folder_name, file_name], result)
 
+    @conditionals.skipOnPY3()
     def test_iterateFolderContent_big(self):
         """
         It will not block on listing folders with many members.

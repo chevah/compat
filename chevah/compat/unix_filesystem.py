@@ -12,7 +12,8 @@ import errno
 import grp
 import os
 import pwd
-import stat
+# See: https://github.com/PyCQA/pylint/issues/1565
+import stat  # pylint: disable=bad-python3-import
 
 from zope.interface import implements
 

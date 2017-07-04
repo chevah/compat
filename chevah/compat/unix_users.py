@@ -351,7 +351,8 @@ class UnixUsers(CompatUsers):
         if process_capabilities.os_name not in ['freebsd', 'openbsd']:
             return None
 
-        import bsddb185
+        # For now we don't support py3.
+        import bsddb185  # pylint: disable=bad-python3-import
 
         username = username.encode('utf-8')
         password = password.encode('utf-8')
