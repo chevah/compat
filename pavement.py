@@ -118,6 +118,9 @@ TEST_PACKAGES = [
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
 
+    # Used to detect Linux distributions.
+    'ld==0.5.0',
+
     # Required for some unicode handling.
     'unidecode',
 
