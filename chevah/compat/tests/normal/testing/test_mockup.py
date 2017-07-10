@@ -60,6 +60,7 @@ class TestFactory(ChevahTestCase):
 
     def assertUnicodeDecodeError(self, exception):
         """
+        Check the error message on py2 and py3.
         """
         if sys.flags.py3k_warning:
             expected = 'invalid start byte'
