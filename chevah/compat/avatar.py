@@ -30,9 +30,11 @@ class FilesystemAvatar(HasImpersonatedAvatar):
         self._token = token
         self._lock_in_home_folder = lock_in_home_folder
 
-        assert isinstance(self._home_folder_path, str)
+        if not isinstance(self._home_folder_path, str):
+            raise RuntimeError('home_folder_path should be text.')
         if self._root_folder_path:
-            assert isinstance(self._root_folder_path, str)
+            if not isinstance(self._root_folder_path, str):
+                raise RuntimeError('root_folder_path should be text.')
 
     @property
     def token(self):

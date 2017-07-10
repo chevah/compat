@@ -14,6 +14,7 @@ from contextlib import contextmanager
 import inspect
 import threading
 import os
+import platform
 import socket
 import sys
 import time
@@ -717,6 +718,37 @@ class TwistedTestCase(TestCase):
                 'Deferred contains a failure: %s' % (error))
 
 
+def _get_os_version():
+    """
+    On non-Linux this is just the os_name.
+
+    On Linux is the distribution name, without the version.
+
+    On Windows it is the `nt` followed by the major and minor NT version.
+    IS not the marketing name.
+    We only support Windows NT family.
+    See: https://en.wikipedia.org/wiki/Windows_NT#Releases
+
+    On OSX it returns `osx` followed by the version.
+    Is not the Darwin version.
+    See: https://en.wikipedia.org/wiki/MacOS#Release_history
+    """
+    if os.name == 'nt':
+        parts = platform.version().split('.')
+        return 'nt-%s.%s' % (parts[0], parts[1])
+
+    if os.name == 'darwin':
+        parts = platform.mac_ver()[0].split('.')
+        return 'osx-%s.%s' % (parts[0], parts[1])
+
+    if os.uname()[0].lower() != 'linux':
+        return process_capabilities.os_name
+
+    # We delay the import as it will call lsb_release.
+    import ld
+    return ld.id()
+
+
 class ChevahTestCase(TwistedTestCase, AssertionMixin):
     """
     Test case for Chevah tests.
@@ -726,6 +758,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
 
     os_name = process_capabilities.os_name
     os_family = process_capabilities.os_family
+    os_version = _get_os_version()
 
     # We assume that hostname does not change during test and this
     # should save a few DNS queries.

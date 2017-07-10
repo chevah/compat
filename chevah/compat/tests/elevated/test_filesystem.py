@@ -475,7 +475,7 @@ class TestSymbolicLinks(OSAccountFileSystemTestCase, SymbolicLinksMixin):
     try:
         import win32security
         rights = (win32security.SE_CREATE_SYMBOLIC_LINK_NAME,)
-    except:
+    except Exception:
         rights = ()
 
     CREATE_TEST_USER = TestUser(

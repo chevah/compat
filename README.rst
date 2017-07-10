@@ -8,7 +8,6 @@ Chevah OS Compatibility Layer.
 
 Depends on:
 
-* chevah.empirical - for testing
 * pam - for pam authenticaiton
 * arpy - for loading libraries on AIX.
 
@@ -31,27 +30,3 @@ Unified interface for working with operating system file systems provides:
   available drives. '/c/' will list c:\\ content.
 * setting/getting filesystem node owner/groups.
 * open file in various modes: read-only, write-only, append,
-
-
-PAM
----
-
-PAM test requires the chevah-pam-test PAM module to be enabled.
-
-Create a file `/etc/pam.d/chevah-pam-test` with the following content::
-
-    auth sufficient /srv/buildslave/pam_chevah_test.so
-    account sufficient /srv/buildslave/pam_chevah_test.so
-
-Build the `pam_chevah_test.so` with the code from:
-https://github.com/chevah/simple-pam/tree/chevah-pam-test
-
-The accepted credentials are: pam_user/test-pass.
-`pam_user` account should be auto-created by the test runner.
-
-
-TODO
-----
-
-* handler node permissions and attributes
-* handler node content - write, read, copy or move file data

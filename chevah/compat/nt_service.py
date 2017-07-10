@@ -42,7 +42,7 @@ class ChevahNTService(win32serviceutil.ServiceFramework, object):
 
         try:
             self.initialize()
-        except:
+        except Exception:
             self.error(
                 u'Failed to initialize the service. '
                 u'Consult the other information events for more details, '
@@ -82,7 +82,7 @@ class ChevahNTService(win32serviceutil.ServiceFramework, object):
 
             # After start this thread execution will be blocked.
             self.start()
-        except:
+        except Exception:
             # For right now just log the error.
             self.error(
                 'Failed to start the service. For more information, start '

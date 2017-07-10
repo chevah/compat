@@ -67,7 +67,7 @@ PYTHON_PLATFORM='unknown-os-and-arch'
 PYTHON_NAME='python2.7'
 BINARY_DIST_URI='https://binary.chevah.com/production'
 PIP_INDEX='http://pypi.chevah.com'
-PAVER_VERSION='1.2.1'
+BASE_REQUIREMENTS=''
 
 # Load repo specific configuration.
 source paver.conf
@@ -191,31 +191,21 @@ resolve_python_version() {
 
     PYTHON_PLATFORM="$OS-$ARCH"
 
-    # This is a stupid way to iterate, up to 16 times while being OS neutral.
-    # We only support a maximum of 16 different versions.
-    for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16; do
-        candidate=`echo ${version_configuration} | cut -d: -f$i`
-        if [ "$candidate" = "" ]; then
-            break
-        fi
-        candidate_platform=`echo $candidate | cut -d@ -f1`
-        candidate_version=`echo $candidate | cut -d@ -f2`
-
-        if [ "$candidate_platform" == "default" ]; then
-            # Set the default version in case no specific platform is
-            # configured.
+    versions=$(echo "$version_configuration" | grep -c ":")
+    counter=0
+    while [ $counter -le $versions ]; do
+        # Number of delimiters is one less than the number of versions.
+        let counter=counter+1
+        candidate=$(echo "$version_configuration" | cut -d ":" -f $counter)
+        candidate_platform=$(echo "$candidate" | cut -d "@" -f 1)
+        candidate_version=$(echo "$candidate" | cut -d "@" -f 2)
+        if [ "$candidate_platform" = "default" ]; then
+            # On first pass, we set the default version.
+            PYTHON_VERSION=$candidate_version
+        elif [ "${PYTHON_PLATFORM%$candidate_platform*}" = "" ]; then
+            # If matching a specific platform, we overwrite the default version.
             PYTHON_VERSION=$candidate_version
         fi
-
-        case $PYTHON_PLATFORM in
-            $candidate_platform*)
-                # We have a match for a specific platform, so we return
-                # as we don't want to look further.
-                PYTHON_VERSION=$candidate_version
-                return 0
-                ;;
-        esac
-
     done
 }
 
@@ -228,17 +218,8 @@ write_default_values() {
 # Install base package.
 #
 install_base_deps() {
-    local base_packages
-    base_packages="paver==$PAVER_VERSION"
-    if [ "$BRINK_VERSION" = "skip" ]; then
-        echo "Skipping brink installation."
-    else
-        base_packages="$base_packages chevah-brink==$BRINK_VERSION"
-    fi
-
-    echo "Installing $base_packages."
-
-    pip_install "$base_packages"
+    echo "Installing base requirements: $BASE_REQUIREMENTS."
+    pip_install "$BASE_REQUIREMENTS"
 }
 
 
@@ -573,9 +554,7 @@ detect_os() {
                     grep ^'VERSION_ID=' /etc/os-release | cut -d'"' -f2)
                 check_os_version "Raspbian GNU/Linux" 7 \
                     "$os_version_raw" os_version_chevah
-                # For now, we only generate a Raspbian version 7.x package,
-                # and we should use that in newer Raspbian versions too.
-                OS="raspbian7"
+                OS="raspbian${os_version_chevah}"
             fi
         elif [ $(command -v lsb_release) ]; then
             lsb_release_id=$(lsb_release -is)
@@ -623,6 +602,15 @@ detect_os() {
         os_version_raw=$(uname -r)
         check_os_version "OpenBSD" 5.9 "$os_version_raw" os_version_chevah
         OS="openbsd${os_version_chevah}"
+
+    elif [ "${OS}" = "netbsd" ]; then
+        ARCH=$(uname -m)
+
+        os_version_raw=$(uname -r | cut -d'.' -f1)
+        check_os_version "NetBSD" 7 "$os_version_raw" os_version_chevah
+
+        # For now, no matter the actual NetBSD version returned, we use '7'.
+        OS="netbsd7"
 
     else
         echo 'Unsupported operating system:' $OS

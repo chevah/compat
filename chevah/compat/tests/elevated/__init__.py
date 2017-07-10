@@ -39,7 +39,7 @@ def setup_package():
 
     try:
         setup_access_control(users=TEST_USERS, groups=TEST_GROUPS)
-    except:
+    except Exception:
         import traceback
         print(traceback.format_exc())
         print("Failed to initialized the system accounts!")

@@ -97,7 +97,7 @@ class Daemon(object):
         pid_segments = local_filesystem.getSegmentsFromRealPath(pid_path)
         try:
             local_filesystem.deleteFile(pid_segments)
-        except:
+        except Exception:
             # We don't care if remove operation fail or success.
             # We are going to close the server anyway.
             # Just change the exit value to signal that something went

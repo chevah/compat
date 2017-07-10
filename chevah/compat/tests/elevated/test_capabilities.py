@@ -58,13 +58,13 @@ class TestProcessCapabilities(FileSystemTestCase):
         """
         Lists all available privileges and their state.
         """
+        self.maxDiff = None
         text = self.capabilities.getCurrentPrivilegesDescription()
         if os.name == 'posix':
             self.assertEqual(u'root capabilities enabled.', text)
         else:
-            # This assertion is fragile. Feel free to improve it.
-            self.assertEqual(
-                u'SeIncreaseQuotaPrivilege:0, SeSecurityPrivilege:0, '
+            expected_capabilities = (
+                'SeIncreaseQuotaPrivilege:0, SeSecurityPrivilege:0, '
                 'SeTakeOwnershipPrivilege:0, SeLoadDriverPrivilege:0, '
                 'SeSystemProfilePrivilege:0, SeSystemtimePrivilege:0, '
                 'SeProfileSingleProcessPrivilege:0, '
@@ -76,9 +76,15 @@ class TestProcessCapabilities(FileSystemTestCase):
                 'SeUndockPrivilege:0, SeManageVolumePrivilege:0, '
                 'SeImpersonatePrivilege:3, SeCreateGlobalPrivilege:3, '
                 'SeIncreaseWorkingSetPrivilege:0, SeTimeZonePrivilege:0, '
-                'SeCreateSymbolicLinkPrivilege:0',
-                text,
+                'SeCreateSymbolicLinkPrivilege:0'
                 )
+            if self.os_version == 'nt-10.0':
+                # On Win 2016 we have an extra capability by default.
+                expected_capabilities += (
+                    ', SeDelegateSessionUserImpersonatePrivilege:0'
+                    )
+            # This assertion is fragile. Feel free to improve it.
+            self.assertEqual(expected_capabilities, text)
 
     @conditionals.onOSFamily('posix')
     def test_getCurrentPrivilegesDescription_impersonated(self):

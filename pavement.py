@@ -27,7 +27,6 @@ from brink.pavement_commons import (
     pave,
     pqm,
     SETUP,
-    test_coverage,
     test_os_dependent,
     test_os_independent,
     test_python,
@@ -36,7 +35,7 @@ from brink.pavement_commons import (
     test_normal,
     test_super,
     )
-from paver.easy import call_task, consume_args, needs, task
+from paver.easy import call_task, consume_args, needs, pushd, task
 
 if os.name == 'nt':
     # Use shorter temp folder on Windows.
@@ -52,7 +51,7 @@ if os.name == 'nt':
 RUN_PACKAGES = [
     'zope.interface==3.8.0',
     # Py3 compat.
-    'future',
+    'future==0.16.0',
     ]
 
 if os.name == 'posix':
@@ -70,6 +69,8 @@ BUILD_PACKAGES = [
     # Buildbot is used for try scheduler
     'buildbot==0.8.11.c7',
 
+    'diff_cover==0.9.11',
+
     # For PQM
     'chevah-github-hooks-server==0.1.6',
     'smmap==0.8.2',
@@ -82,12 +83,12 @@ BUILD_PACKAGES = [
 
 # Packages required by the static analysis tests.
 LINT_PACKAGES = [
+    'scame==0.3.3',
     'pyflakes==1.5.0',
-    'pocketlint==1.4.4.c4',
-    'pep8 >= 1.7.0',
-    # Used for py3 porting and other checks.
-    'pylint==1.4.3',
-    'astroid==1.3.6',
+    'pycodestyle==2.3.1',
+    'bandit==1.4.0',
+    'pylint==1.7.1',
+    'astroid==1.5.3',
 
     # These are build packages, but are needed for testing the documentation.
     'sphinx==1.2.2',
@@ -108,11 +109,17 @@ TEST_PACKAGES = [
     'coverage==4.0.3',
     'codecov==2.0.3',
 
+    # used for remote debugging.
+    'remote_pdb==1.2.0',
+
     # Twisted is optionl, but we have it here for complete tests.
     'twisted==15.5.0.chevah4',
 
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
+
+    # Used to detect Linux distributions.
+    'ld==0.5.0',
 
     # Required for some unicode handling.
     'unidecode',
@@ -133,7 +140,6 @@ lint
 merge_init
 merge_commit
 pqm
-test_coverage
 test_os_dependent
 test_os_independent
 test_python
@@ -142,13 +148,81 @@ test_review
 test_normal
 test_super
 
+try:
+    from scame.formatcheck import ScameOptions
+
+    class ServerScameOptions(ScameOptions):
+        """
+        Scame options for the this project.
+        """
+        test_options = {}
+
+        def get(self, option, path):
+            tests_path = os.path.join('chevah', 'compat', 'tests')
+            testing_path = os.path.join('chevah', 'compat', 'testing')
+            admin_path = os.path.join('chevah', 'compat', 'administration.py')
+            if (
+                tests_path in path or
+                testing_path in path or
+                admin_path in path or
+                path == 'pavement.py'
+                    ):
+                # We have a testing code.
+                test_value = self.test_options.get(option, None)
+                if test_value is not None:
+                    return test_value
+
+            return getattr(self, option)
+
+    options = ServerScameOptions()
+    options.max_line_length = 80
+
+    options.scope = {
+        'include': [
+            'pavement.py',
+            'README.rst',
+            'chevah/compat/',
+            ],
+        'exclude': [],
+        }
+
+    options.towncrier = {
+        'enabled': True,
+        'fragments_directory': None,
+        'excluded_fragments': 'readme.rst',
+        }
+
+    options.pyflakes['enabled'] = True
+
+    options.closure_linter['enabled'] = True
+    options.closure_linter['ignore'] = [1, 10, 11, 110, 220]
+
+    options.pycodestyle['enabled'] = True
+    options.pycodestyle['hang_closing'] = True
+
+    options.bandit['enabled'] = True
+    options.bandit['exclude'] = [
+        'B104',  # Bind to 0.0.0.0
+        ]
+
+    # For now pylint is disabled, as there are to many errors.
+    options.pylint['enabled'] = False
+    options.pylint['disable'] = ['C0103', 'C0330', 'R0902', 'W0212']
+
+    # For the testing and dev code we disable bandit.
+    options.test_options['bandit'] = options.bandit.copy()
+    options.test_options['bandit']['enabled'] = False
+
+except ImportError:
+    # This will fail before we run `paver deps`
+    options = None
+
+
 SETUP['product']['name'] = 'chevah-compat'
 SETUP['folders']['source'] = u'chevah/compat'
 SETUP['repository']['name'] = u'compat'
 SETUP['repository']['github'] = u'https://github.com/chevah/compat'
-SETUP['pocket-lint']['include_files'] = ['pavement.py', 'release-notes.rst']
-SETUP['pocket-lint']['include_folders'] = ['chevah/compat']
-SETUP['pocket-lint']['exclude_files'] = []
+SETUP['scame'] = options
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = ['--with-randomly']
@@ -232,6 +306,40 @@ def test_documentation():
     """
 
 
+def _generate_coverate_reports():
+    """
+    Generate reports.
+    """
+    import coverage
+    from diff_cover.tool import main as diff_cover_main
+    with pushd(pave.path.build):
+        cov = coverage.Coverage(auto_data=True, config_file='.coveragerc')
+        cov.load()
+        cov.xml_report()
+        cov.html_report()
+        print(
+            'HTML report file://%s/coverage-report/index.html' % (
+                pave.path.build,))
+        print('--------')
+        diff_cover_main(argv=[
+            'diff-cover',
+            'coverage.xml',
+            '--fail-under', '100'
+            ])
+
+
+@task
+@consume_args
+def test_coverage(args):
+    """
+    Run tests with coverage.
+    """
+    # Trigger coverage creation.
+    os.environ['CODECOV_TOKEN'] = 'local'
+    call_task('test', args=args)
+    _generate_coverate_reports()
+
+
 @task
 # It needs consume_args to initialize the paver environment.
 @consume_args
@@ -280,7 +388,12 @@ def test_py3(args):
     """
     from pylint.lint import Run
     from nose.core import main as nose_main
-    arguments = ['--py3k', SETUP['folders']['source']]
+    arguments = [
+        '--py3k',
+        # See https://github.com/PyCQA/pylint/issues/1564
+        '-d exception-message-attribute',
+        SETUP['folders']['source'],
+        ]
     linter = Run(arguments, exit=False)
     stats = linter.linter.stats
     errors = (

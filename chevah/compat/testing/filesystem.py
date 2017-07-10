@@ -161,6 +161,22 @@ class LocalTestFilesystem(LocalFilesystem):
         path = os.path.join(self.temp_path, name)
         return (path, segments)
 
+    def pathInTemp(self, cleanup):
+        """
+        Return a path and segments pointing to a temp location, which will be
+        cleaned up.
+        """
+        def delete(segments):
+            if self.isFolder(segments):
+                self.deleteFolder(segments, recursive=True)
+            else:
+                self.deleteFile(segments)
+
+        path, segments = self.makePathInTemp()
+        if cleanup:
+            cleanup(delete, segments)
+        return path, segments
+
     def folder(self, segments, cleanup):
         """
         Create a folder and remove it a cleanup.
@@ -265,7 +281,7 @@ class LocalTestFilesystem(LocalFilesystem):
                     self.deleteFolder(member_segments, recursive=True)
                 else:
                     self.deleteFile(member_segments)
-            except:
+            except Exception:
                 # Ignore file permissions errors...
                 # Just let them live for now. Hope they will not
                 # bite us later.

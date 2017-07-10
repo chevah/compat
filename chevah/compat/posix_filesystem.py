@@ -309,7 +309,7 @@ class PosixFilesystemBase(object):
                         return os.unlink(path_encoded)
 
                     raise error
-            except:
+            except Exception:
                 if ignore_errors:
                     return
                 raise
@@ -526,7 +526,7 @@ class PosixFilesystemBase(object):
 
         try:
             name = segments[-1]
-        except:
+        except Exception:
             name = None
         path = self.getRealPathFromSegments(segments)
 
@@ -775,6 +775,24 @@ class FileAttributes(object):
         self.node_id = node_id
         self.owner = owner
         self.group = group
+
+    def __hash__(self):
+        return hash(
+            self.name,
+            self.path,
+            self.size,
+            self.is_folder,
+            self.is_file,
+            self.is_link,
+            self.modified,
+            self.mode,
+            self.hardlink,
+            self.uid,
+            self.gid,
+            self.node_id,
+            self.owner,
+            self.group,
+            )
 
     def __eq__(self, other):
         return (

@@ -57,11 +57,13 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
         try:
             pwnam = pwd.getpwnam(username_encoded)
         except KeyError:
-            raise ChangeUserException(_(u'User does not exists.'))
+            raise ChangeUserException(u'User does not exists.')
         euid = pwnam.pw_uid
         egid = pwnam.pw_gid
     else:
-        assert euid is not None
+        if euid is None:
+            raise ChangeUserException(
+                'You need to pass euid when username is not passed.')
         pwnam = pwd.getpwuid(euid)
         username_encoded = pwnam.pw_name
 
@@ -349,7 +351,8 @@ class UnixUsers(CompatUsers):
         if process_capabilities.os_name not in ['freebsd', 'openbsd']:
             return None
 
-        import bsddb185
+        # For now we don't support py3.
+        import bsddb185  # pylint: disable=bad-python3-import
 
         username = username.encode('utf-8')
         password = password.encode('utf-8')
