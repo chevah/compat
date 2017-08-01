@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.44.0 - 01/08/2017
+-------------------
+
+* Remove port listening helpers.
+* Update to latest Solaris on 32bit.
+
+
 0.43.3 - 08/05/2017
 -------------------
 

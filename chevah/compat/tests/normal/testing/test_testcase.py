@@ -13,7 +13,6 @@ import time
 
 from twisted.internet import defer, reactor, threads
 from twisted.internet.task import Clock
-from twisted.python.failure import Failure
 
 from chevah.compat import process_capabilities
 from chevah.compat.testing import conditionals, ChevahTestCase, mk
@@ -27,22 +26,6 @@ class Dummy(object):
 
     def method(self):
         return self._value
-
-
-class ErrorWithID(Exception):
-    """
-    An error that provides an id to help with testing.
-    """
-    def __init__(self, id):
-        super(ErrorWithID, self).__init__()
-        self._id = id
-
-    @property
-    def id(self):
-        """
-        Return error id.
-        """
-        return self._id
 
 
 class TestTwistedTestCase(ChevahTestCase):
@@ -414,28 +397,6 @@ class TestTwistedTestCase(ChevahTestCase):
         delayed_call_1.called = False
         self._cleanReactor()
         self.assertIsEmpty(reactor.getDelayedCalls())
-
-    def test_assertFailureID_unicode_id(self):
-        """
-        Can be called with unicode failure id.
-        """
-        failure = Failure(ErrorWithID(u'100'))
-
-        self.assertFailureID(u'100', failure)
-
-    def test_assertFailureID_non_unicode_id(self):
-        """
-        It will raise an error if the failure ID is not unicode.
-        """
-        failure = Failure(ErrorWithID(100))
-
-        with self.assertRaises(AssertionError):
-            self.assertFailureID(100, failure)
-
-        failure = Failure(ErrorWithID(b"100"))
-
-        with self.assertRaises(AssertionError):
-            self.assertFailureID(b"100", failure)
 
 
 class TestTwistedTimeoutTestCase(ChevahTestCase):
