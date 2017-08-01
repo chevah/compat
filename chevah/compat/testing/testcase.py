@@ -736,16 +736,41 @@ def _get_os_version():
         parts = platform.version().split('.')
         return 'nt-%s.%s' % (parts[0], parts[1])
 
-    if os.name == 'darwin':
+    # We are now in Unix zone.
+    os_name = os.uname()[0].lower()
+
+    if os_name == 'darwin':
         parts = platform.mac_ver()[0].split('.')
         return 'osx-%s.%s' % (parts[0], parts[1])
 
-    if os.uname()[0].lower() != 'linux':
+    if os_name != 'linux':
         return process_capabilities.os_name
 
     # We delay the import as it will call lsb_release.
     import ld
-    return ld.id()
+
+    distro_name = ld.id()
+    if distro_name == 'arch':
+        # Arch has no version.
+        return 'arch'
+
+    distro_version = ld.version().split('.', 1)[0]
+
+    return '%s-%s' % (distro_name, distro_version)
+
+
+def _get_cpu_type():
+    """
+    Return the CPU type as used in the paver.sh script.
+    """
+    base = platform.processor()
+    if base == 'aarch64':
+        return 'arm64'
+
+    if base == 'x86_64':
+        return 'x64'
+
+    return base
 
 
 class ChevahTestCase(TwistedTestCase, AssertionMixin):
@@ -758,6 +783,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     os_name = process_capabilities.os_name
     os_family = process_capabilities.os_family
     os_version = _get_os_version()
+    cpu_type = _get_cpu_type()
 
     # We assume that hostname does not change during test and this
     # should save a few DNS queries.

@@ -7,6 +7,8 @@ Release notes for chevah.compat
 
 * Remove port listening helpers.
 * Update to latest Solaris on 32bit.
+* Add support for OS detection in test case and no longer use hostname
+  to detect the OS.
 
 
 0.43.3 - 08/05/2017
