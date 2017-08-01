@@ -544,43 +544,6 @@ class TestChevahTestCase(ChevahTestCase):
         """
         raise self.skipTest()
 
-    def test_listenPort(self):
-        """
-        It can be used for listening a dummy connection on a port and address.
-        """
-        address = '127.0.0.1'
-        port = 10000
-
-        with self.listenPort(address, port):
-            self.assertIsListening(address, port)
-
-    def test_listenPort_on_loopback_alias(self):
-        """
-        Integration test to check that we can listen on loopback alias.
-
-        This is a system test, but socket operations are light.
-        """
-        if self.os_name in [
-            'aix',
-            'freebsd',
-            'hpux',
-            'openbsd',
-            'osx',
-            'solaris',
-                ]:
-            # On AIX and probably on other Unixes we can only bind on
-            # existing fixed IP addressed like 127.0.0.1.
-            raise self.skipTest()
-
-        # This is just a test to make sure that the server can listen to
-        # 127.0.0.10 as this IP is used in other tests.
-        address = '127.0.0.10'
-        port = 10070
-
-        with self.listenPort(address, port):
-
-            self.assertIsListening(address, port)
-
     @conditionals.skipOnCondition(lambda: False, 'Should not be skipped!!!')
     def test_skipOnCondition_call(self):
         """

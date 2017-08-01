@@ -9,7 +9,6 @@ from __future__ import division
 from __future__ import absolute_import
 from builtins import str
 from builtins import range
-from contextlib import contextmanager
 
 import inspect
 import threading
@@ -932,38 +931,6 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         if success_state is None:
             raise AssertionError('Failed to find "success" attribute.')
         return success_state
-
-    @contextmanager
-    def listenPort(self, ip, port):
-        '''Context manager for binding a port.'''
-        test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        test_socket.bind((ip, port))
-        # HP-UX needs a backlog of at least 1, as otherwise the connection is
-        # refused.
-        test_socket.listen(1)
-        yield
-        try:
-            # We use shutdown to force closing the socket.
-            test_socket.shutdown(socket.SHUT_RDWR)
-        except socket.error as error:
-            # When we force close the socket, we might get some errors
-            # that the socket is already closed... have no idea why.
-            if self.os_name == 'solaris' and error.args[0] == 134:
-                pass
-            elif self.os_name == 'aix' and error.args[0] == 76:
-                # Socket is closed with an Not connected error.
-                pass
-            elif self.os_name == 'osx' and error.args[0] == 57:
-                # Socket is closed with an Not connected error.
-                pass
-            elif self.os_name == 'windows' and error.args[0] == 10057:
-                # On Windows the error is:
-                # A request to send or receive data was disallowed because the
-                # socket is not connected and (when sending on a datagram
-                # socket using a sendto call) no address was supplied
-                pass
-            else:
-                raise
 
     @staticmethod
     def patch(*args, **kwargs):
