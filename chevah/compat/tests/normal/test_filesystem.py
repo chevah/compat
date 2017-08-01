@@ -1573,8 +1573,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         with self.assertRaises(IOError) as context:
             test_file.read()
 
-        exception = context.exception
-        self.assertEqual('File not open for reading', exception.message)
+        error_message = context.exception.args[0]
+        self.assertEqual('File not open for reading', error_message)
 
         # Even if we go for the low level FD, we can't read it.
         with self.assertRaises(OSError) as context:
@@ -1597,8 +1597,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         with self.assertRaises(IOError) as context:
             test_file.read()
 
-        exception = context.exception
-        self.assertEqual('File not open for reading', exception.message)
+        error_message = context.exception.args[0]
+        self.assertEqual('File not open for reading', error_message)
 
         # We can read it if we go to the low level API.
         # This is a known issue.

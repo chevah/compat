@@ -574,21 +574,17 @@ class TestChevahTestCase(ChevahTestCase):
         Run test only on machines that execute the tests with administrator
         privileges.
         """
-        if self.os_version == 'nt-5.2':
+        if self.os_version in ['nt-5.1', 'nt-5.2']:
             raise AssertionError(
-                'Windows 2003 BS does not run as administrator')
-        elif 'win-xp' in self.hostname:
-            raise AssertionError('Windows XP BS does not run as administrator')
+                'Windows XP and 2003 BS does not run as administrator')
 
     @conditionals.onAdminPrivileges(False)
     def test_onAdminPrivileges_missing(self):
         """
         Run test on build slaves that do not have administrator privileges.
         """
-        if self.os_version == 'nt-5.2':
-            # Not available on Windows 2003
-            return
-        elif 'win-xp' in self.hostname:
+        if self.os_version in ['nt-5.1', 'nt-5.2']:
+            # Not available on Windows XP and 2003
             return
 
         raise AssertionError(

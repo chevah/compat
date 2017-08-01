@@ -265,7 +265,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
 
         # Windows XP does not have SE_BACKUP/SE_RESTORE enabled when not
         # running with administrator privileges.
-        if 'win-xp' in self.hostname:
+        if self.os_version == 'nt-5.1':
             self.assertFalse(result)
         else:
             self.assertTrue(result)
@@ -282,7 +282,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
 
         # Windows XP has SE_CREATE_GLOBAL enabled even when not
         # running with administrator privileges.
-        if 'win-xp' in self.hostname:
+        if self.os_version == 'nt-5.1':
             self.assertContains('SeCreateGlobalPrivilege:3', text)
         else:
             self.assertNotContains('SeCreateGlobalPrivilege', text)

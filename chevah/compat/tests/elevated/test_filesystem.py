@@ -293,15 +293,11 @@ class TestPosixFilesystem(FileSystemTestCase):
         self.assertItemsEqual([folder_name, file_name], result)
 
 
+@conditionals.onOSFamily('posix')
 class TestUnixFilesystem(FileSystemTestCase):
     """
     Path independent Unix tests.
     """
-
-    @classmethod
-    @conditionals.onOSFamily('posix')
-    def setUpClass(cls):
-        super(TestUnixFilesystem, cls).setUpClass()
 
     def test_temp_segments_location(self):
         """
