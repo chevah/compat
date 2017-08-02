@@ -9,7 +9,6 @@ from __future__ import division
 from __future__ import absolute_import
 from builtins import str
 from builtins import range
-from contextlib import contextmanager
 
 import inspect
 import threading
@@ -737,16 +736,41 @@ def _get_os_version():
         parts = platform.version().split('.')
         return 'nt-%s.%s' % (parts[0], parts[1])
 
-    if os.name == 'darwin':
+    # We are now in Unix zone.
+    os_name = os.uname()[0].lower()
+
+    if os_name == 'darwin':
         parts = platform.mac_ver()[0].split('.')
         return 'osx-%s.%s' % (parts[0], parts[1])
 
-    if os.uname()[0].lower() != 'linux':
+    if os_name != 'linux':
         return process_capabilities.os_name
 
     # We delay the import as it will call lsb_release.
     import ld
-    return ld.id()
+
+    distro_name = ld.id()
+    if distro_name == 'arch':
+        # Arch has no version.
+        return 'arch'
+
+    distro_version = ld.version().split('.', 1)[0]
+
+    return '%s-%s' % (distro_name, distro_version)
+
+
+def _get_cpu_type():
+    """
+    Return the CPU type as used in the paver.sh script.
+    """
+    base = platform.processor()
+    if base == 'aarch64':
+        return 'arm64'
+
+    if base == 'x86_64':
+        return 'x64'
+
+    return base
 
 
 class ChevahTestCase(TwistedTestCase, AssertionMixin):
@@ -759,6 +783,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     os_name = process_capabilities.os_name
     os_family = process_capabilities.os_family
     os_version = _get_os_version()
+    cpu_type = _get_cpu_type()
 
     # We assume that hostname does not change during test and this
     # should save a few DNS queries.
@@ -932,38 +957,6 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         if success_state is None:
             raise AssertionError('Failed to find "success" attribute.')
         return success_state
-
-    @contextmanager
-    def listenPort(self, ip, port):
-        '''Context manager for binding a port.'''
-        test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        test_socket.bind((ip, port))
-        # HP-UX needs a backlog of at least 1, as otherwise the connection is
-        # refused.
-        test_socket.listen(1)
-        yield
-        try:
-            # We use shutdown to force closing the socket.
-            test_socket.shutdown(socket.SHUT_RDWR)
-        except socket.error as error:
-            # When we force close the socket, we might get some errors
-            # that the socket is already closed... have no idea why.
-            if self.os_name == 'solaris' and error.args[0] == 134:
-                pass
-            elif self.os_name == 'aix' and error.args[0] == 76:
-                # Socket is closed with an Not connected error.
-                pass
-            elif self.os_name == 'osx' and error.args[0] == 57:
-                # Socket is closed with an Not connected error.
-                pass
-            elif self.os_name == 'windows' and error.args[0] == 10057:
-                # On Windows the error is:
-                # A request to send or receive data was disallowed because the
-                # socket is not connected and (when sending on a datagram
-                # socket using a sendto call) no address was supplied
-                pass
-            else:
-                raise
 
     @staticmethod
     def patch(*args, **kwargs):

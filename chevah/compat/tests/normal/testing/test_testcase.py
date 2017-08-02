@@ -13,7 +13,6 @@ import time
 
 from twisted.internet import defer, reactor, threads
 from twisted.internet.task import Clock
-from twisted.python.failure import Failure
 
 from chevah.compat import process_capabilities
 from chevah.compat.testing import conditionals, ChevahTestCase, mk
@@ -27,22 +26,6 @@ class Dummy(object):
 
     def method(self):
         return self._value
-
-
-class ErrorWithID(Exception):
-    """
-    An error that provides an id to help with testing.
-    """
-    def __init__(self, id):
-        super(ErrorWithID, self).__init__()
-        self._id = id
-
-    @property
-    def id(self):
-        """
-        Return error id.
-        """
-        return self._id
 
 
 class TestTwistedTestCase(ChevahTestCase):
@@ -322,6 +305,8 @@ class TestTwistedTestCase(ChevahTestCase):
         deferred = threads.deferToThread(last_call)
 
         self.executeReactor()
+        # Allow the thread to settle and return.
+        time.sleep(0.01)
         self.assertTrue(self.called)
         self.assertTrue(deferred.called)
 
@@ -414,28 +399,6 @@ class TestTwistedTestCase(ChevahTestCase):
         delayed_call_1.called = False
         self._cleanReactor()
         self.assertIsEmpty(reactor.getDelayedCalls())
-
-    def test_assertFailureID_unicode_id(self):
-        """
-        Can be called with unicode failure id.
-        """
-        failure = Failure(ErrorWithID(u'100'))
-
-        self.assertFailureID(u'100', failure)
-
-    def test_assertFailureID_non_unicode_id(self):
-        """
-        It will raise an error if the failure ID is not unicode.
-        """
-        failure = Failure(ErrorWithID(100))
-
-        with self.assertRaises(AssertionError):
-            self.assertFailureID(100, failure)
-
-        failure = Failure(ErrorWithID(b"100"))
-
-        with self.assertRaises(AssertionError):
-            self.assertFailureID(b"100", failure)
 
 
 class TestTwistedTimeoutTestCase(ChevahTestCase):
@@ -544,43 +507,6 @@ class TestChevahTestCase(ChevahTestCase):
         """
         raise self.skipTest()
 
-    def test_listenPort(self):
-        """
-        It can be used for listening a dummy connection on a port and address.
-        """
-        address = '127.0.0.1'
-        port = 10000
-
-        with self.listenPort(address, port):
-            self.assertIsListening(address, port)
-
-    def test_listenPort_on_loopback_alias(self):
-        """
-        Integration test to check that we can listen on loopback alias.
-
-        This is a system test, but socket operations are light.
-        """
-        if self.os_name in [
-            'aix',
-            'freebsd',
-            'hpux',
-            'openbsd',
-            'osx',
-            'solaris',
-                ]:
-            # On AIX and probably on other Unixes we can only bind on
-            # existing fixed IP addressed like 127.0.0.1.
-            raise self.skipTest()
-
-        # This is just a test to make sure that the server can listen to
-        # 127.0.0.10 as this IP is used in other tests.
-        address = '127.0.0.10'
-        port = 10070
-
-        with self.listenPort(address, port):
-
-            self.assertIsListening(address, port)
-
     @conditionals.skipOnCondition(lambda: False, 'Should not be skipped!!!')
     def test_skipOnCondition_call(self):
         """
@@ -650,20 +576,17 @@ class TestChevahTestCase(ChevahTestCase):
         Run test only on machines that execute the tests with administrator
         privileges.
         """
-        if 'win-2003' in self.hostname:
+        if self.os_version in ['nt-5.1', 'nt-5.2']:
             raise AssertionError(
-                'Windows 2003 BS does not run as administrator')
-        elif 'win-xp' in self.hostname:
-            raise AssertionError('Windows XP BS does not run as administrator')
+                'Windows XP and 2003 BS does not run as administrator')
 
     @conditionals.onAdminPrivileges(False)
     def test_onAdminPrivileges_missing(self):
         """
         Run test on build slaves that do not have administrator privileges.
         """
-        if 'win-2003' in self.hostname:
-            return
-        elif 'win-xp' in self.hostname:
+        if self.os_version in ['nt-5.1', 'nt-5.2']:
+            # Not available on Windows XP and 2003
             return
 
         raise AssertionError(

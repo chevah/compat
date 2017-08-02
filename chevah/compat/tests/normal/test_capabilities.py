@@ -265,7 +265,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
 
         # Windows XP does not have SE_BACKUP/SE_RESTORE enabled when not
         # running with administrator privileges.
-        if 'win-xp' in self.hostname:
+        if self.os_version == 'nt-5.1':
             self.assertFalse(result)
         else:
             self.assertTrue(result)
@@ -280,12 +280,16 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         self.assertNotContains('SeCreateSymbolicLinkPrivilege', text)
         self.assertNotContains('SeImpersonatePrivilege', text)
 
-        # Windows XP has SE_CREATE_GLOBAL enabled even when not
-        # running with administrator privileges.
-        if 'win-xp' in self.hostname:
+        if self.os_version == 'nt-5.1':
+            # Windows XP has SE_CREATE_GLOBAL enabled even when
+            # running without administrator privileges.
             self.assertContains('SeCreateGlobalPrivilege:3', text)
         else:
+            # Windows 2003 is not admin
             self.assertNotContains('SeCreateGlobalPrivilege', text)
+            # But the slave should be set up with SE_BACKUP/SE_RESTORE
+            self.assertContains('SeBackupPrivilege:0', text)
+            self.assertContains('SeRestorePrivilege', text)
 
 
 @conditionals.onOSFamily('nt')

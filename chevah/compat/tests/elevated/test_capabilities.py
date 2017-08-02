@@ -58,7 +58,6 @@ class TestProcessCapabilities(FileSystemTestCase):
         """
         Lists all available privileges and their state.
         """
-        self.maxDiff = None
         text = self.capabilities.getCurrentPrivilegesDescription()
         if os.name == 'posix':
             self.assertEqual(u'root capabilities enabled.', text)

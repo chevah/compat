@@ -13,6 +13,7 @@ from unittest import TestCase
 import sys
 
 from chevah.compat import process_capabilities
+from chevah.compat.testing.testcase import ChevahTestCase
 
 
 def skipOnCondition(callback, message):
@@ -95,7 +96,7 @@ def onAdminPrivileges(present):
     tests suite with a regular account.
     """
     hostname = gethostname()
-    is_running_as_normal = 'win-2003' in hostname or 'win-xp' in hostname
+    is_running_as_normal = ChevahTestCase.os_version in ['nt-5.1', 'nt-5.2']
 
     def check_administrator():
         if present:

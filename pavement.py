@@ -356,8 +356,15 @@ def test_ci(args):
     # Show some info about the current environment.
     from OpenSSL import SSL, __version__ as pyopenssl_version
     from coverage.cmdline import main as coverage_main
+    from chevah.compat.testing.testcase import ChevahTestCase
 
-    print('PYTHON %s' % (sys.version,))
+    print('%s / %s / %s / %s' % (
+        ChevahTestCase.os_family,
+        ChevahTestCase.os_name,
+        ChevahTestCase.os_version,
+        ChevahTestCase.cpu_type,
+        ))
+    print('PYTHON %s on %s with %s' % (sys.version, pave.os_name, pave.cpu))
     print('%s (%s)' % (
         SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER))
     print('pyOpenSSL %s' % (pyopenssl_version,))
