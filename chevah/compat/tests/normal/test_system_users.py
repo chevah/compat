@@ -35,9 +35,9 @@ class TestSystemUsers(CompatTestCase):
         self.assertProvides(IOSUsers, system_users)
 
     @conditionals.onOSFamily('posix')
-    def test_getHomeFolder_linux(self):
+    def test_getHomeFolder_posix(self):
         """
-        Check getHomeFolder on Linux.
+        Check getHomeFolder on Linux and Unix.
         """
         home_folder = system_users.getHomeFolder(
             username=mk.username)
