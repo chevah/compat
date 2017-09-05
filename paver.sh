@@ -353,7 +353,7 @@ copy_python() {
             local cache_ver_file
             cache_ver_file=${python_distributable}/lib/PYTHON_PACKAGE_VERSION
             cache_version='UNVERSIONED'
-            if [ -f cache_ver_file ]; then
+            if [ -f $cache_ver_file ]; then
                 cache_version=`cat $cache_ver_file`
             fi
             if [ "$PYTHON_VERSION" != "$cache_version" ]; then
@@ -582,10 +582,19 @@ detect_os() {
                 check_os_version "SUSE Linux Enterprise Server" 10 \
                     "$os_version_raw" os_version_chevah
                 OS="sles${os_version_chevah}"
+                # On 11.x, check for OpenSSL 1.0.x (a.k.a. Security Module).
+                if [ ${os_version_chevah} -eq 11 -a -x /usr/bin/openssl1 ]; then
+                    OS="sles11sm"
+                fi
             fi
         elif [ -f /etc/arch-release ]; then
             # ArchLinux is a rolling distro, no version info available.
             OS="archlinux"
+        elif [ -f /etc/alpine-release ]; then
+            os_version_raw=$(cat /etc/alpine-release)
+            check_os_version "Alpine Linux" 3.6 \
+                "$os_version_raw" os_version_chevah
+            OS="alpine${os_version_chevah}"
         elif [ -f /etc/rpi-issue ]; then
             # Raspbian is a special case, a Debian unofficial derivative.
             if egrep -q ^'NAME="Raspbian GNU/Linux' /etc/os-release; then
@@ -632,8 +641,7 @@ detect_os() {
         os_version_raw=$(uname -r | cut -d'.' -f1)
         check_os_version "FreeBSD" 10 "$os_version_raw" os_version_chevah
 
-        # For now, no matter the actual FreeBSD version returned, we use '10'.
-        OS="freebsd10"
+        OS="freebsd${os_version_chevah}"
 
     elif [ "${OS}" = "openbsd" ]; then
         ARCH=$(uname -m)

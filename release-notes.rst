@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.44.1 - 05/08/2017
+-------------------
+
+* Better version reporting for AIX.
+* Update the build system for Alpine and to work better with `test_remote`.
+
+
 0.44.0 - 01/08/2017
 -------------------
 
