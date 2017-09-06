@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.44.2 - 06/08/2017
+-------------------
+
+* Bump version due to strange behaviour of buildslaves.
+
+
 0.44.1 - 06/08/2017
 -------------------
 

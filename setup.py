@@ -1,7 +1,7 @@
 from setuptools import Command, find_packages, setup
 import os
 
-VERSION = '0.44.1'
+VERSION = '0.44.2'
 
 
 class PublishCommand(Command):
@@ -23,7 +23,6 @@ class PublishCommand(Command):
     def run(self):
         assert os.getcwd() == self.cwd, (
             'Must be in package root: %s' % self.cwd)
-        self.run_command('sdist')
         self.run_command('bdist_wheel')
 
         upload_command = self.distribution.get_command_obj('upload')
