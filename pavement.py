@@ -268,10 +268,6 @@ def deps():
         command='install',
         arguments=packages,
         )
-    print('\n#\n# Installed packages\n#')
-    pave.pip(
-        command='freeze',
-        )
 
 
 @task
@@ -373,6 +369,11 @@ def test_ci(args):
         SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER))
     print('pyOpenSSL %s' % (pyopenssl_version,))
     coverage_main(argv=['--version'])
+
+    print('\n#\n# Installed packages\n#')
+    pave.pip(
+        command='freeze',
+        )
 
     env = os.environ.copy()
     args = [env.get('TEST_ARGUMENTS', '')]
