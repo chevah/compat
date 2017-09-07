@@ -307,6 +307,10 @@ class TestSystemUsers(SystemUsersTestCase):
             # PAM is broken on Solaris.
             raise self.skipTest()
 
+        if self.os_version.startswith('alpine'):
+            # On Alpine PAM fails with segfault.
+            raise self.skipTest()
+
         result = system_users.pamWithUsernameAndPassword(
             username=TEST_ACCOUNT_USERNAME,
             password=TEST_ACCOUNT_PASSWORD,
@@ -404,8 +408,13 @@ class TestSystemUsers(SystemUsersTestCase):
             if self.os_name != 'osx':
                 # FIXME:3808:
                 # Investigate why this no longer works/passes on OSX.
-                self.assertNotEqual(initial_groups, impersonated_groups)
                 # On OSX newer than 10.5 get/set groups are useless.
+                self.assertNotEqual(initial_groups, impersonated_groups)
+
+                # On Alpine, we get duplicate groups from the Python os.
+                if self.os_version.startswith('alpine'):
+                    impersonated_groups = list(set(impersonated_groups))
+
                 self.assertEqual(
                     sorted(self.getGroupsIDForTestAccount()),
                     sorted(impersonated_groups),

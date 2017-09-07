@@ -322,7 +322,7 @@ class LocalTestFilesystem(LocalFilesystem):
                 md5_sum.update(chunk)
         finally:
             input_file.close()
-        return md5_sum.digest()
+        return md5_sum.hexdigest()
 
     def getFileMD5SumInHome(self, segments):
         """

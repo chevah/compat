@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Adi Roiban.
 # See LICENSE for details.
-'''Unit tests for simple the simplest avatar.'''
+"""
+Unit tests for simple the simplest avatar.
+"""
 from __future__ import with_statement
 from __future__ import print_function
 from __future__ import division

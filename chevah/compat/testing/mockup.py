@@ -282,7 +282,7 @@ class ChevahCommonsFactory(object):
         """
         md5_sum = hashlib.md5()
         md5_sum.update(content)
-        return md5_sum.digest()
+        return md5_sum.hexdigest()
 
     def getUniqueString(self, length=None):
         """

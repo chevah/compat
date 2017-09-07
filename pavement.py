@@ -27,6 +27,8 @@ from brink.pavement_commons import (
     pave,
     pqm,
     SETUP,
+    test_coverage,
+    test_diff,
     test_os_dependent,
     test_os_independent,
     test_python,
@@ -35,7 +37,7 @@ from brink.pavement_commons import (
     test_normal,
     test_super,
     )
-from paver.easy import call_task, consume_args, needs, pushd, task
+from paver.easy import call_task, consume_args, environment, needs, pushd, task
 
 if os.name == 'nt':
     # Use shorter temp folder on Windows.
@@ -140,6 +142,8 @@ lint
 merge_init
 merge_commit
 pqm
+test_coverage
+test_diff
 test_os_dependent
 test_os_independent
 test_python
@@ -264,10 +268,6 @@ def deps():
         command='install',
         arguments=packages,
         )
-    print('\n#\n# Installed packages\n#')
-    pave.pip(
-        command='freeze',
-        )
 
 
 @task
@@ -370,7 +370,27 @@ def test_ci(args):
     print('pyOpenSSL %s' % (pyopenssl_version,))
     coverage_main(argv=['--version'])
 
+    print('\n#\n# Installed packages\n#')
+    pave.pip(
+        command='freeze',
+        )
+
     env = os.environ.copy()
+    args = [env.get('TEST_ARGUMENTS', '')]
+    environment.args = args
+
+    skip_coverage = False
+    if pave.os_name.startswith('alpine'):
+        # On alpine coverage reporting segfaults.
+        skip_coverage = True
+
+    if skip_coverage:
+        os.environ[b'CODECOV_TOKEN'] = ''
+    if os.environ.get(b'CODECOV_TOKEN', ''):
+        print('Running tests with coverage')
+    else:
+        print('Running tests WITHOUT coverage.')
+
     args = env.get('TEST_ARGUMENTS', '')
     if not args:
         args = []
