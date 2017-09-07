@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.44.3 - 06/08/2017
+-------------------
+
+* Update MD5 checsum to match the changes in getFileMD5Sum.
+
+
 0.44.2 - 06/08/2017
 -------------------
 
