@@ -55,7 +55,7 @@ def _sanitize_name_windows(candidate):
     """
     # FIXME:927:
     # On Windows, we can't delete home folders with unicode names.
-    return str(unidecode(candidate))
+    return unidecode(candidate)
 
 
 class SanitizeNameMixin(object):

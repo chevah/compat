@@ -35,8 +35,8 @@ def setup_package():
     # Don't run these tests if we can not access privileged OS part.
     if not runElevatedTest():
         raise CompatTestCase.skipTest()
-    # Initialize the testing OS.
 
+    # Initialize the testing OS.
     try:
         setup_access_control(users=TEST_USERS, groups=TEST_GROUPS)
     except Exception:

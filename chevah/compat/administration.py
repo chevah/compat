@@ -827,8 +827,13 @@ class OSAdministrationWindows(OSAdministrationUnix):
             members_info.append({
                 'domainandname': member
                 })
-        win32net.NetLocalGroupAddMembers(
-            group.pdc, group.name, 3, members_info)
+        try:
+            win32net.NetLocalGroupAddMembers(
+                group.pdc, group.name, 3, members_info)
+        except Exception as error:
+            raise AssertionError(
+                'Failed to add to group %s users %s. %s' % (
+                    group.name, users, error))
 
     def addUser(self, user):
         """
