@@ -809,7 +809,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         data = {'name': group.name}
         try:
             win32net.NetLocalGroupAdd(group.pdc, 0, data)
-        except Exception as error:
+        except Exception as error:  # pragma: no cover
             raise AssertionError(
                 'Failed to add group %s in domain %s. %s' % (
                     group.name, group.pdc, error))
@@ -830,7 +830,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         try:
             win32net.NetLocalGroupAddMembers(
                 group.pdc, group.name, 3, members_info)
-        except Exception as error:
+        except Exception as error:  # pragma: no cover
             raise AssertionError(
                 'Failed to add to group %s users %s. %s' % (
                     group.name, users, error))
@@ -861,7 +861,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
 
         win32net.NetUserAdd(user.pdc, 1, user_info)
         if user.windows_create_local_profile:
-            if not user.password:
+            if not user.password:  # pragma: no cover
                 raise AssertionError('You must provide a password.')
 
             system_users._createLocalProfile(
@@ -891,7 +891,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
             import win32net
             win32net.NetUserChangePassword(
                 pdc, user.name, user.password, user.password)
-        except Exception:
+        except Exception:  # pragma: no cover
             print('Failed to set password "%s" for user "%s" on pdc "%s".' % (
                 user.password, user.name, pdc))
             raise
@@ -907,7 +907,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         import win32net
         try:
             win32net.NetUserDel(user.pdc, user.name)
-        except win32net.error as error:
+        except win32net.error as error:  # pragma: no cover
             # Ignore user not found error.
             (number, context, message) = error
             # Ignore user not found error.
@@ -933,7 +933,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         # names.
         command = u'rmdir /S /Q "%s"' % profile_folder_path
         result = subprocess.call(command.encode('utf-8'), shell=True)
-        if result != 0:
+        if result != 0:  # pragma: no cover
             message = u'Unable to remove folder [%s]: %s\n%s.' % (
                 result, profile_folder_path, command)
             raise AssertionError(message.encode('utf-8'))
@@ -971,7 +971,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         try:
             result = win32security.LookupAccountName('', user.name)
             user_sid = result[0]
-        except win32security.error:
+        except win32security.error:  # pragma: no cover
             message = u'User %s could not be found.' % (user.name)
             raise AssertionError(message.encode('utf-8'))
 
