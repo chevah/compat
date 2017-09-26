@@ -715,16 +715,23 @@ class TestChevahTestCaseAddCleanup(ChevahTestCase):
     def tearDown(self):
         self.assertEqual(0, self.cleanup_call_count)
         super(TestChevahTestCaseAddCleanup, self).tearDown()
-        self.assertEqual(1, self.cleanup_call_count)
+        self.assertEqual(2, self.cleanup_call_count)
 
-    def cleanUp(self):
+    def cleanUpLast(self):
+        self.assertEqual(1, self.cleanup_call_count)
+        self.cleanup_call_count += 1
+
+    def cleanUpFirst(self):
+        self.assertEqual(0, self.cleanup_call_count)
         self.cleanup_call_count += 1
 
     def test_addCleanup(self):
         """
-        Will be called at tearDown.
+        Will call the cleanup method at tearDown in the revere order
+        in which they were added.
         """
-        self.addCleanup(self.cleanUp)
+        self.addCleanup(self.cleanUpLast)
+        self.addCleanup(self.cleanUpFirst)
 
         self.assertEqual(0, self.cleanup_call_count)
 

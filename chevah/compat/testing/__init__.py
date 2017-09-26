@@ -9,7 +9,7 @@ Here are a few import shortcuts.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import str
+from __future__ import unicode_literals
 from future import standard_library
 
 from remote_pdb import RemotePdb
@@ -32,21 +32,21 @@ CompatTestCase = ChevahTestCase
 mk
 
 # Test accounts and passwords.
-TEST_ACCOUNT_USERNAME = str(u'mâț mițișor')
-TEST_ACCOUNT_PASSWORD = str(u'Baroșanu42!')
-TEST_ACCOUNT_GROUP = str(u'g mâțmițișor')
+TEST_ACCOUNT_USERNAME = 'mâț mițișor'
+TEST_ACCOUNT_PASSWORD = 'Baroșanu42!'
+TEST_ACCOUNT_GROUP = 'g mâțmițișor'
 # FIXME:2106:
 # Replace hard-coded constant with posixID()
 TEST_ACCOUNT_UID = 2000
 TEST_ACCOUNT_GID = 2010
-TEST_ACCOUNT_GROUP_WIN = str(u'Users')
-TEST_ACCOUNT_USERNAME_OTHER = str(u'miț motan')
-TEST_ACCOUNT_PASSWORD_OTHER = str(u'altapara')
+TEST_ACCOUNT_GROUP_WIN = 'Users'
+TEST_ACCOUNT_USERNAME_OTHER = 'miț motan'
+TEST_ACCOUNT_PASSWORD_OTHER = 'altapara'
 # FIXME:2106:
 # Replace hard-coded constant with posixID()
 TEST_ACCOUNT_UID_OTHER = 2001
 TEST_ACCOUNT_GID_OTHER = 2011
-TEST_ACCOUNT_GROUP_OTHER = str(u'g mițmotan')
+TEST_ACCOUNT_GROUP_OTHER = 'g mițmotan'
 
 # Another test group to test an user belonging to multiple groups.
 TEST_ACCOUNT_GROUP_ANOTHER = u'g-another-test'
@@ -55,11 +55,11 @@ TEST_ACCOUNT_GROUP_ANOTHER = u'g-another-test'
 TEST_ACCOUNT_GID_ANOTHER = 2012
 
 # Domain controller helpers.
-TEST_PDC = str(u'\\\\CHEVAH-DC')
-TEST_DOMAIN = str(u'chevah')
-TEST_ACCOUNT_USERNAME_DOMAIN = str(u'domain test-user')
-TEST_ACCOUNT_PASSWORD_DOMAIN = str(u'qwe123QWE')
-TEST_ACCOUNT_GROUP_DOMAIN = str(u'domain test_group')
+TEST_PDC = '\\\\CHEVAH-DC'
+TEST_DOMAIN = 'chevah'
+TEST_ACCOUNT_USERNAME_DOMAIN = 'domain test-user'
+TEST_ACCOUNT_PASSWORD_DOMAIN = 'qwe123QWE'
+TEST_ACCOUNT_GROUP_DOMAIN = 'domain test_group'
 
 TEST_ACCOUNT_USERNAME = TestUser.sanitizeName(TEST_ACCOUNT_USERNAME)
 TEST_ACCOUNT_GROUP = TestGroup.sanitizeName(TEST_ACCOUNT_GROUP)
@@ -77,15 +77,15 @@ TEST_ACCOUNT_GROUP_DOMAIN = TestGroup.sanitizeName(
 
 
 if process_capabilities.os_name == 'solaris':
-    TEST_ACCOUNT_HOME_PATH = u'/export/home/' + TEST_ACCOUNT_USERNAME
+    TEST_ACCOUNT_HOME_PATH = '/export/home/' + TEST_ACCOUNT_USERNAME
     TEST_ACCOUNT_HOME_PATH_OTHER = (
-        u'/export/home/' + TEST_ACCOUNT_USERNAME_OTHER)
+        '/export/home/' + TEST_ACCOUNT_USERNAME_OTHER)
 else:
-    TEST_ACCOUNT_HOME_PATH = u'/home/' + TEST_ACCOUNT_USERNAME
-    TEST_ACCOUNT_HOME_PATH_OTHER = u'/home/' + TEST_ACCOUNT_USERNAME_OTHER
+    TEST_ACCOUNT_HOME_PATH = '/home/' + TEST_ACCOUNT_USERNAME
+    TEST_ACCOUNT_HOME_PATH_OTHER = '/home/' + TEST_ACCOUNT_USERNAME_OTHER
 
 TEST_USERS = {
-    u'normal': TestUser(
+    'normal': TestUser(
         name=TEST_ACCOUNT_USERNAME,
         posix_uid=TEST_ACCOUNT_UID,
         posix_gid=TEST_ACCOUNT_GID,
@@ -94,7 +94,7 @@ TEST_USERS = {
         home_group=TEST_ACCOUNT_GROUP,
         password=TEST_ACCOUNT_PASSWORD,
         ),
-    u'other': TestUser(
+    'other': TestUser(
         name=TEST_ACCOUNT_USERNAME_OTHER,
         posix_uid=TEST_ACCOUNT_UID_OTHER,
         posix_gid=TEST_ACCOUNT_GID_OTHER,
@@ -105,17 +105,17 @@ TEST_USERS = {
     }
 
 TEST_GROUPS = {
-    u'normal': TestGroup(
+    'normal': TestGroup(
         name=TEST_ACCOUNT_GROUP,
         posix_gid=TEST_ACCOUNT_GID,
         members=[TEST_ACCOUNT_USERNAME, TEST_ACCOUNT_USERNAME_OTHER],
         ),
-    u'other': TestGroup(
+    'other': TestGroup(
         name=TEST_ACCOUNT_GROUP_OTHER,
         posix_gid=TEST_ACCOUNT_GID_OTHER,
         members=[TEST_ACCOUNT_USERNAME_OTHER],
         ),
-    u'another': TestGroup(
+    'another': TestGroup(
         name=TEST_ACCOUNT_GROUP_ANOTHER,
         posix_gid=TEST_ACCOUNT_GID_ANOTHER,
         members=[TEST_ACCOUNT_USERNAME],

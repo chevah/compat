@@ -743,6 +743,10 @@ def _get_os_version():
         parts = platform.mac_ver()[0].split('.')
         return 'osx-%s.%s' % (parts[0], parts[1])
 
+    if os_name == 'sunos':
+        parts = platform.release().split('.')
+        return 'solaris-%s' % (parts[1],)
+
     if os_name == 'aix':
         return 'aix-%s.%s' % (platform.version(), platform.release())
 
@@ -840,7 +844,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         """
         Call all cleanup methods.
         """
-        for function, args, kwargs in self.__cleanup__:
+        for function, args, kwargs in reversed(self.__cleanup__):
             function(*args, **kwargs)
         self.__cleanup__ = []
 
