@@ -2,10 +2,16 @@ Release notes for chevah.compat
 ===============================
 
 
+0.44.4 - 24/09/2017
+-------------------
+
+* Fix cleanup to call the cleanups in reverse order which they were added.
+
+
 0.44.3 - 06/08/2017
 -------------------
 
-* Update MD5 checsum to match the changes in getFileMD5Sum.
+* Update MD5 checksum to match the changes in getFileMD5Sum.
 
 
 0.44.2 - 06/08/2017
