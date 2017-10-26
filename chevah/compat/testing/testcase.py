@@ -189,9 +189,10 @@ class TwistedTestCase(TestCase):
         for delayed_call in reactor.getDelayedCalls():
             try:
                 delayed_call.cancel()
-            except ValueError:
+            except (ValueError, AttributeError):
                 # AlreadyCancelled and AlreadyCalled are ValueError.
                 # Might be canceled from the separate thread.
+                # AttributeError can occur when we do multi-threading.
                 pass
 
     def _raiseReactorTimeoutError(self, timeout):

@@ -307,10 +307,6 @@ class TestSystemUsers(SystemUsersTestCase):
             # PAM is broken on Solaris.
             raise self.skipTest()
 
-        if self.os_version.startswith('alpine'):
-            # On Alpine PAM fails with segfault.
-            raise self.skipTest()
-
         result = system_users.pamWithUsernameAndPassword(
             username=TEST_ACCOUNT_USERNAME,
             password=TEST_ACCOUNT_PASSWORD,
