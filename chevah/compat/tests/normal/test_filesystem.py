@@ -969,6 +969,19 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         It will not block on listing folders with many members.
         """
+        for _ in range(3):
+            try:
+                self._iterateFolderContent_big()
+                # All good. Stop trying.
+                break
+            except AssertionError:
+                # Run cleanup and try again.
+                self.callCleanup()
+
+    def _iterateFolderContent_big(self):
+        """
+        Main code for running the test
+        """
         # FIXME:4036:
         # Enable full test once we have fast filesystem access.
         if self.os_name == 'aix':
