@@ -20,6 +20,7 @@ for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from six.moves import range
 from contextlib import contextmanager
 import os
 import codecs

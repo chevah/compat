@@ -7,7 +7,8 @@ TestCase used for Chevah project.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-
+from six import text_type
+from six.moves import range
 import inspect
 import threading
 import os
@@ -129,7 +130,7 @@ class TwistedTestCase(TestCase):
         """
         result = []
         for delayed in reactor.getDelayedCalls():
-            result.append(unicode(delayed.func))
+            result.append(text_type(delayed.func))
         return '\n'.join(result)
 
     def _threadPoolQueueSize(self):
@@ -317,7 +318,7 @@ class TwistedTestCase(TestCase):
             raise_failure('threadpoool threads', self._threadPoolThreads())
 
         if len(reactor.getWriters()) > 0:
-            raise_failure('writers', unicode(reactor.getWriters()))
+            raise_failure('writers', text_type(reactor.getWriters()))
 
         for reader in reactor.getReaders():
             excepted = False
@@ -326,7 +327,7 @@ class TwistedTestCase(TestCase):
                     excepted = True
                     break
             if not excepted:
-                raise_failure('readers', unicode(reactor.getReaders()))
+                raise_failure('readers', text_type(reactor.getReaders()))
 
         for delayed_call in reactor.getDelayedCalls():
             if delayed_call.active():
@@ -500,7 +501,7 @@ class TwistedTestCase(TestCase):
         """
         Return a string representation of the delayed call.
         """
-        raw_name = unicode(delayed_call.func)
+        raw_name = text_type(delayed_call.func)
         raw_name = raw_name.replace('<function ', '')
         raw_name = raw_name.replace('<bound method ', '')
         return raw_name.split(' ', 1)[0]
@@ -884,7 +885,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         bla.bla.tests. is removed.
         The format is customized for Chevah Nose runner.
         """
-        class_name = unicode(self.__class__)[8:-2]
+        class_name = text_type(self.__class__)[8:-2]
         class_name = class_name.replace('.Test', ':Test')
         tests_start = class_name.find('.tests.') + 7
         class_name = class_name[tests_start:]

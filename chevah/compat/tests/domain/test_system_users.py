@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 import os
+from six import text_type
 
 from chevah.compat import (
     system_users,
@@ -120,7 +121,7 @@ class TestSystemUsers(CompatTestCase):
             username=test_user.name, token=test_user.token)
 
         self.assertContains(test_user.name.lower(), home_folder.lower())
-        self.assertIsInstance(str, home_folder)
+        self.assertIsInstance(text_type, home_folder)
 
     def test_getHomeFolder_nt_no_previous_profile(self):
         """
@@ -153,7 +154,7 @@ class TestSystemUsers(CompatTestCase):
                 username=test_user.upn, token=token)
 
             self.assertContains(test_user.name.lower(), home_path.lower())
-            self.assertIsInstance(str, home_path)
+            self.assertIsInstance(text_type, home_path)
             self.assertTrue(mk.fs.isFolder(expected_home_segments))
         finally:
             os_administration.deleteUser(test_user)

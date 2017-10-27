@@ -6,6 +6,8 @@ Windows specific implementation of filesystem access.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from six import text_type
+from six.moves import range
 from contextlib import contextmanager
 from winioctlcon import FSCTL_GET_REPARSE_POINT
 import errno
@@ -106,12 +108,12 @@ class NTFilesystem(PosixFilesystemBase):
             return u'c:\\'
 
         if self._lock_in_home:
-            path = unicode(self._avatar.home_folder_path)
+            path = text_type(self._avatar.home_folder_path)
         else:
             if self._avatar.root_folder_path is None:
                 path = u'c:\\'
             else:
-                path = unicode(self._avatar.root_folder_path)
+                path = text_type(self._avatar.root_folder_path)
 
         # Fix folder separators.
         path = path.replace('/', '\\')
@@ -186,7 +188,7 @@ class NTFilesystem(PosixFilesystemBase):
                         result = result.replace('\\', ':\\', 1)
             self._validateDrivePath(result)
 
-        return unicode(result)
+        return text_type(result)
 
     # Windows allows only 26 drive letters and is case insensitive.
     _allowed_drive_letters = [
@@ -657,7 +659,7 @@ class NTFilesystem(PosixFilesystemBase):
                 if error.winerror == 1307:
                     self.raiseFailedToSetOwner(owner, path, u'Not permitted.')
                 else:
-                    self.raiseFailedToSetOwner(owner, path, unicode(error))
+                    self.raiseFailedToSetOwner(owner, path, text_type(error))
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''

@@ -6,6 +6,7 @@ Tests for the testing infrastructure.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from six import text_type
 import sys
 
 from chevah.compat.testing.mockup import ChevahCommonsFactory
@@ -27,7 +28,7 @@ class TestFactory(ChevahTestCase):
             mk.string(),
             mk.string(),
             )
-        self.assertIsInstance(unicode, mk.string())
+        self.assertIsInstance(text_type, mk.string())
 
     def test_number(self):
         """

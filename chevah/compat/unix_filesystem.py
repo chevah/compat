@@ -6,6 +6,7 @@ Module for hosting the Unix specific filesystem access.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from six import text_type
 import codecs
 import errno
 import grp
@@ -54,11 +55,11 @@ class UnixFilesystem(PosixFilesystemBase):
     def getRealPathFromSegments(self, segments):
         '''See `ILocalFilesystem`.'''
         if segments is None or len(segments) == 0:
-            return unicode(self._root_handler)
+            return text_type(self._root_handler)
         else:
             relative_path = u'/' + u'/'.join(segments)
             relative_path = os.path.abspath(relative_path).rstrip('/')
-            return unicode(self._root_handler.rstrip('/') + relative_path)
+            return text_type(self._root_handler.rstrip('/') + relative_path)
 
     def getSegmentsFromRealPath(self, path):
         """
@@ -78,7 +79,7 @@ class UnixFilesystem(PosixFilesystemBase):
         while tail and head != u'/':
             head, tail = os.path.split(tail)
             if tail != u'':
-                if not isinstance(tail, unicode):
+                if not isinstance(tail, text_type):
                     tail = tail.decode('utf-8')
                 segments.insert(0, tail)
             tail = head
@@ -118,7 +119,7 @@ class UnixFilesystem(PosixFilesystemBase):
             try:
                 return os.chown(path_encoded, uid, -1)
             except Exception as error:
-                self.raiseFailedToSetOwner(owner, path, unicode(error))
+                self.raiseFailedToSetOwner(owner, path, text_type(error))
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''

@@ -5,7 +5,8 @@ Module containing helpers for testing the Chevah project.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-
+from six import text_type
+from six.moves import range
 import hashlib
 import os
 import random
@@ -217,7 +218,7 @@ class ChevahCommonsFactory(object):
         """
         Return a unique (per session) ASCII string.
         """
-        return b'ascii_str' + str(self.number()).encode('utf-8')
+        return b'ascii_str' + text_type(self.number()).encode('utf-8')
 
     def bytes(self, size=8):
         """
@@ -267,7 +268,7 @@ class ChevahCommonsFactory(object):
         """
         The account under which this process is executed.
         """
-        return os.environ['USER']
+        return text_type(os.environ['USER'])
 
     def md5(self, content):
         """
@@ -283,7 +284,7 @@ class ChevahCommonsFactory(object):
         """
         A string unique for this session.
         """
-        base = u'str' + str(self.number())
+        base = u'str' + text_type(self.number())
 
         # The minimum length so that we don't truncate the unique string.
         min_length = len(base) + len(TEST_NAME_MARKER)
