@@ -6,9 +6,6 @@ Assertion helpers for compat testing.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import next
-from builtins import object
-from builtins import str
 from contextlib import contextmanager
 import collections
 import time
@@ -73,17 +70,17 @@ class AssertionMixin(object):
             super(AssertionMixin, self).assertEqual(first, second, msg)
         except AssertionError as error:
             message = error.message
-            if isinstance(message, str):
+            if isinstance(message, unicode):
                 message = message.encode('utf-8')
             raise AssertionError(message)
 
-        if (isinstance(first, str) and not isinstance(second, str)):
+        if (isinstance(first, unicode) and not isinstance(second, unicode)):
             if not msg:
                 msg = u'Type of "%s" is unicode while for "%s" is str.' % (
                     first, second)
             raise AssertionError(msg.encode('utf-8'))
 
-        if (not isinstance(first, str) and isinstance(second, str)):
+        if (not isinstance(first, unicode) and isinstance(second, unicode)):
             if not msg:
                 msg = u'Type of "%s" is str while for "%s" is unicode.' % (
                     first, second)
@@ -118,7 +115,7 @@ class AssertionMixin(object):
 
         actual_id = getattr(actual_error, 'event_id', None)
         if expected_id != actual_id:
-            values = (actual_error, str(expected_id), str(actual_id))
+            values = (actual_error, unicode(expected_id), unicode(actual_id))
             message = u'Error id for %s is not %s, but %s.' % values
             raise AssertionError(message.encode('utf-8'))
 
@@ -127,14 +124,14 @@ class AssertionMixin(object):
         Raise an exception if value is not 'False'.
         """
         if value is not False:
-            raise AssertionError('%s is not False.' % str(value))
+            raise AssertionError('%s is not False.' % unicode(value))
 
     def assertIsTrue(self, value):
         """
         Raise an exception if value is not 'True'.
         """
         if value is not True:
-            raise AssertionError('%s is not True.' % str(value))
+            raise AssertionError('%s is not True.' % unicode(value))
 
     def assertFailureType(self, failure_class, failure_or_deferred):
         '''Raise assertion error if failure is not of required type.'''
@@ -146,7 +143,7 @@ class AssertionMixin(object):
 
         if failure.type is not failure_class:
             message = u'Failure %s is not of type %s' % (
-                str(failure), failure_class)
+                unicode(failure), failure_class)
             raise AssertionError(message.encode('utf-8'))
 
     def _checkData(self, kind, kind_id, expected_data, current_data):
@@ -162,7 +159,7 @@ class AssertionMixin(object):
                         message = (
                             u'%s %s, for data "%s" does not contains "%s", '
                             u'but is "%s"') % (
-                            kind, str(kind_id), key, value.value,
+                            kind, unicode(kind_id), key, value.value,
                             current_value)
                         raise AssertionError(message.encode('utf-8'))
                 else:
@@ -170,7 +167,7 @@ class AssertionMixin(object):
                         message = (
                             u'%s %s, for data "%s" is not "%s", but "%s"') % (
                             kind,
-                            str(kind_id),
+                            unicode(kind_id),
                             key,
                             repr(value),
                             repr(current_value),
@@ -178,7 +175,7 @@ class AssertionMixin(object):
                         raise AssertionError(message.encode('utf-8'))
             except KeyError:
                 values = (
-                    kind, str(kind_id), repr(key), repr(current_data))
+                    kind, unicode(kind_id), repr(key), repr(current_data))
                 message = u'%s %s, has no data "%s". Data is:\n%s' % values
                 raise AssertionError(message.encode('utf-8'))
 

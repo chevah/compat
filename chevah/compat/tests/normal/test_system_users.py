@@ -6,7 +6,6 @@ Test system users portable code.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import str
 
 from chevah.compat import (
     DefaultAvatar,
@@ -48,7 +47,7 @@ class TestSystemUsers(CompatTestCase):
         else:
             self.assertEqual(u'/home/' + mk.username, home_folder)
 
-        self.assertIsInstance(str, home_folder)
+        self.assertIsInstance(unicode, home_folder)
 
     @conditionals.onOSFamily('nt')
     @conditionals.onCapability('get_home_folder', True)

@@ -6,7 +6,6 @@ Tests for portable filesystem access.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import str
 import errno
 import os
 
@@ -289,7 +288,7 @@ class TestPosixFilesystem(FileSystemTestCase):
 
         result = list(content)
         self.assertIsNotEmpty(result)
-        self.assertIsInstance(str, result[0])
+        self.assertIsInstance(unicode, result[0])
         self.assertItemsEqual([folder_name, file_name], result)
 
 

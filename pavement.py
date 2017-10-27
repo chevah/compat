@@ -52,8 +52,6 @@ if os.name == 'nt':
 # These are the hard dependencies needed by the library itself.
 RUN_PACKAGES = [
     'zope.interface==3.8.0',
-    # Py3 compat.
-    'future==0.16.0',
     ]
 
 if os.name == 'posix':
@@ -297,6 +295,15 @@ def test(args):
     """
     Run all Python tests.
     """
+
+
+@task
+@consume_args
+def remote(args):
+    """
+    Run tests on remote and wait for results.
+    """
+    call_task('test_remote', args=args + ['--wait'])
 
 
 @task

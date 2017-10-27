@@ -20,10 +20,6 @@ for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import str
-from builtins import range
-from builtins import object
-from future.utils import native
 from contextlib import contextmanager
 import os
 import codecs
@@ -54,7 +50,7 @@ def execute(command, input_text=None, output=None, ignore_errors=True):
     if output is None:
         output = subprocess.PIPE
 
-    command = [native(part) for part in command]
+    command = [part for part in command]
 
     process = subprocess.Popen(
         command, stdin=subprocess.PIPE, stdout=output)

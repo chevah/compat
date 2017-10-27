@@ -6,7 +6,6 @@ Filesystem helpers for tests.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import str
 import hashlib
 import os
 import re
@@ -219,7 +218,7 @@ class LocalTestFilesystem(LocalFilesystem):
     def createFileInHome(self, segments=None, **args):
         '''Create a file in home folder.'''
         if segments is None:
-            segments = [str(uuid.uuid1()) + TEST_NAME_MARKER]
+            segments = [unicode(uuid.uuid1()) + TEST_NAME_MARKER]
 
         file_segments = self.home_segments[:]
         file_segments.extend(segments)

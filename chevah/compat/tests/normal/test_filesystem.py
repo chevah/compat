@@ -6,7 +6,6 @@ Tests for portable filesystem access.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import str
 import errno
 import os
 import platform
@@ -900,7 +899,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         content = self.filesystem.getFolderContent(self.test_segments)
 
         self.assertIsNotEmpty(content)
-        self.assertTrue(isinstance(content[0], str))
+        self.assertTrue(isinstance(content[0], unicode))
         self.assertItemsEqual([folder_name, file_name], content)
 
     @conditionals.skipOnPY3()
@@ -961,7 +960,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         result = list(content)
         self.assertIsNotEmpty(result)
-        self.assertIsInstance(str, result[0])
+        self.assertIsInstance(unicode, result[0])
         self.assertItemsEqual([folder_name, file_name], result)
 
     @conditionals.skipOnPY3()
@@ -1847,7 +1846,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         content = self.unlocked_filesystem.getFolderContent(['c'])
         self.assertTrue(len(content) > 0)
         self.assertTrue(u'Program Files' in content)
-        self.assertTrue(isinstance(content[0], str))
+        self.assertTrue(isinstance(content[0], unicode))
 
     def test_getSegmentsFromRealPath_none(self):
         """
@@ -2044,7 +2043,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         Test conversion of segments to a real path.
         """
         def _p(*path):
-            return str(
+            return unicode(
                 os.path.join(self.locked_avatar.root_folder_path, *path))
 
         path = self.locked_filesystem.getRealPathFromSegments([])
