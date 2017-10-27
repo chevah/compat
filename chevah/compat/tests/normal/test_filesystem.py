@@ -970,14 +970,17 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         It will not block on listing folders with many members.
         """
-        for _ in range(3):
+        for _ in range(3):  # pragma: no branch
             try:
                 self._iterateFolderContent_big()
                 # All good. Stop trying.
-                break
-            except AssertionError:
+                return
+            except AssertionError as error:
                 # Run cleanup and try again.
                 self.callCleanup()
+
+        # We tried 3 times and still got a failure.
+        raise error  # noqa:cover
 
     def _iterateFolderContent_big(self):
         """

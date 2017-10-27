@@ -69,7 +69,7 @@ class AssertionMixin(object):
         '''Extra checks for assert equal.'''
         try:
             super(AssertionMixin, self).assertEqual(first, second, msg)
-        except AssertionError as error:
+        except AssertionError as error:  # noqa:cover
             message = error.message
             if isinstance(message, text_type):
                 message = message.encode('utf-8')
@@ -78,7 +78,7 @@ class AssertionMixin(object):
         if (
             isinstance(first, text_type) and
             not isinstance(second, text_type)
-                ):
+                ):  # noqa:cover
             if not msg:
                 msg = u'Type of "%s" is unicode while for "%s" is str.' % (
                     first, second)
@@ -87,7 +87,7 @@ class AssertionMixin(object):
         if (
             not isinstance(first, text_type) and
             isinstance(second, text_type)
-                ):
+                ):  # noqa:cover
             if not msg:
                 msg = u'Type of "%s" is str while for "%s" is unicode.' % (
                     first, second)
@@ -149,7 +149,7 @@ class AssertionMixin(object):
             self.assertIsFailure(failure_or_deferred)
             failure = failure_or_deferred.result
 
-        if failure.type is not failure_class:
+        if failure.type is not failure_class:  # noqa:cover
             message = u'Failure %s is not of type %s' % (
                 text_type(failure), failure_class)
             raise AssertionError(message.encode('utf-8'))
@@ -181,7 +181,7 @@ class AssertionMixin(object):
                             repr(current_value),
                             )
                         raise AssertionError(message.encode('utf-8'))
-            except KeyError:
+            except KeyError:  # noqa:cover
                 values = (
                     kind, text_type(kind_id), repr(key), repr(current_data))
                 message = u'%s %s, has no data "%s". Data is:\n%s' % values

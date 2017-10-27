@@ -129,7 +129,7 @@ class TwistedTestCase(TestCase):
         queue.
         """
         result = []
-        for delayed in reactor.getDelayedCalls():
+        for delayed in reactor.getDelayedCalls():  # noqa:cover
             result.append(text_type(delayed.func))
         return '\n'.join(result)
 
@@ -317,7 +317,7 @@ class TwistedTestCase(TestCase):
         if self._threadPoolThreads() > 0:
             raise_failure('threadpoool threads', self._threadPoolThreads())
 
-        if len(reactor.getWriters()) > 0:
+        if len(reactor.getWriters()) > 0:  # noqa:cover
             raise_failure('writers', text_type(reactor.getWriters()))
 
         for reader in reactor.getReaders():
@@ -326,7 +326,7 @@ class TwistedTestCase(TestCase):
                 if isinstance(reader, reader_type):
                     excepted = True
                     break
-            if not excepted:
+            if not excepted:  # noqa:cover
                 raise_failure('readers', text_type(reactor.getReaders()))
 
         for delayed_call in reactor.getDelayedCalls():
@@ -878,12 +878,14 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
                 'There are temporary files or folders left over.\n %s' % (
                     '\n'.join(errors)))
 
-    def shortDescription(self):
+    def shortDescription(self):  # noqa:cover
         """
         The short description for the test.
 
         bla.bla.tests. is removed.
         The format is customized for Chevah Nose runner.
+
+        This is only called when we run with -v or we show the error.
         """
         class_name = text_type(self.__class__)[8:-2]
         class_name = class_name.replace('.Test', ':Test')

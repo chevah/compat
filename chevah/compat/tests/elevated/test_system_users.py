@@ -99,7 +99,7 @@ class TestSystemUsers(SystemUsersTestCase):
 
         self.assertEqual(1014, context.exception.event_id)
 
-    @conditionals.onOSFamily('osx')
+    @conditionals.onOSName('osx')
     def test_getHomeFolder_osx(self):
         """
         Check getHomeFolder for OSX.

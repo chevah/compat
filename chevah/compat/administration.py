@@ -28,6 +28,7 @@ import random
 import socket
 import subprocess
 import sys
+import time
 
 from chevah.compat import (
     LocalFilesystem,
@@ -103,7 +104,6 @@ class OSAdministrationUnix(object):
         Get unix group entry, retrying if group is not available yet.
         """
         import grp
-        import time
         name_encoded = codecs.encode(name, 'utf-8')
 
         # Try to get the group in list of all groups.
@@ -297,7 +297,6 @@ class OSAdministrationUnix(object):
         Get Unix user entry, retrying if user is not available yet.
         """
         import pwd
-        import time
         name_encoded = name.encode('utf-8')
         for iterator in range(1000):
             try:
@@ -414,6 +413,9 @@ class OSAdministrationUnix(object):
         command.append(user.name.encode('utf-8'))
 
         execute(command)
+
+        # Wait a bit for the user to be created.
+        time.sleep(0.2)
 
         if user.home_group:
             execute([

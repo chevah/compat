@@ -8,6 +8,8 @@ show_missing = False
 exclude_lines =
     # Have to re-enable the standard pragma
     pragma: no cover
+    pragma: no branch
+    noqa:cover
 
     # Don't complain if tests don't hit defensive assertion code:
     raise AssertionError
@@ -20,6 +22,8 @@ ignore_errors = True
 
 omit =
     setup.py
+    # Domain tests are broken.
+    chevah.compat.tests.domain.*
 
 [html]
 directory = coverage-report
