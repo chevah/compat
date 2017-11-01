@@ -75,6 +75,7 @@ BUILD_PACKAGES = [
 
     # For PQM
     'chevah-github-hooks-server==0.1.6',
+    'chevah-coverage==0.1.bgola6',
     'smmap==0.8.2',
     'async==0.6.1',
     'gitdb==0.6.4',
