@@ -487,6 +487,12 @@ check_os_version() {
     local version_raw_array
     local version_good_array
 
+    if [[ $version_raw =~ [^[:digit:]\.] ]]; then
+        echo "Unparsed OS version should only have numbers and periods, but:"
+        echo "    \$version_raw=$version_raw"
+        exit 12
+    fi
+
     # Using '.' as a delimiter, populate the version_raw_* arrays.
     IFS=. read -a version_raw_array <<< "$version_raw"
     IFS=. read -a version_good_array <<< "$version_good"
@@ -588,36 +594,41 @@ detect_os() {
                 fi
             fi
         elif [ -f /etc/arch-release ]; then
-            # ArchLinux is a rolling distro, no version info available.
+            # Arch Linux is a rolling distro, no version info available.
+            # Beware that there's no version to get from /etc/os-release either!
             OS="archlinux"
-        elif [ -f /etc/alpine-release ]; then
-            os_version_raw=$(cat /etc/alpine-release)
-            check_os_version "Alpine Linux" 3.6 \
-                "$os_version_raw" os_version_chevah
-            OS="alpine${os_version_chevah}"
-        elif [ -f /etc/rpi-issue ]; then
-            # Raspbian is a special case, a Debian unofficial derivative.
-            if egrep -q ^'NAME="Raspbian GNU/Linux' /etc/os-release; then
-                os_version_raw=$(\
-                    grep ^'VERSION_ID=' /etc/os-release | cut -d'"' -f2)
-                check_os_version "Raspbian GNU/Linux" 7 \
-                    "$os_version_raw" os_version_chevah
-                OS="raspbian${os_version_chevah}"
-            fi
-        elif [ $(command -v lsb_release) ]; then
-            lsb_release_id=$(lsb_release -is)
-            os_version_raw=$(lsb_release -rs)
-            if [ $lsb_release_id = Ubuntu ]; then
-                check_os_version "Ubuntu Long-term Support" 10.04 \
-                    "$os_version_raw" os_version_chevah
-                # Only Long-term Support versions are officially endorsed, thus
-                # $os_version_chevah should end in 04, and the first two digits
-                # should represent an even year.
-                if [ ${os_version_chevah%%04} != ${os_version_chevah} -a \
-                    $(( ${os_version_chevah%%04} % 2 )) -eq 0 ]; then
-                    OS="ubuntu${os_version_chevah}"
-                fi
-            fi
+        elif [ -f /etc/os-release ]; then
+            source /etc/os-release
+            linux_distro="$ID"
+            distro_fancy_name="$NAME"
+            case "$linux_distro" in
+                "ubuntu")
+                    os_version_raw="$VERSION_ID"
+                    check_os_version "$distro_fancy_name" 14.04 \
+                        "$os_version_raw" os_version_chevah
+                    # Only Long-term Support versions are supported,
+                    # thus $os_version_chevah should end in 04,
+                    # and the first two digits should represent an even year.
+                    if [ ${os_version_chevah%%04} != ${os_version_chevah} -a \
+                        $(( ${os_version_chevah%%04} % 2 )) -eq 0 ]; then
+                        OS="ubuntu${os_version_chevah}"
+                    else
+                        echo "Unsupported Ubuntu, using generic Linux binaries!"
+                    fi
+                    ;;
+                "raspbian")
+                    os_version_raw="$VERSION_ID"
+                    check_os_version "$distro_fancy_name" 7 \
+                        "$os_version_raw" os_version_chevah
+                    OS="raspbian${os_version_chevah}"
+                    ;;
+                "alpine")
+                    os_version_raw="$VERSION_ID"
+                    check_os_version "$distro_fancy_name" 3.6 \
+                        "$os_version_raw" os_version_chevah
+                    OS="alpine${os_version_chevah}"
+                    ;;
+            esac
         fi
     elif [ "${OS}" = "darwin" ]; then
         ARCH=$(uname -m)
