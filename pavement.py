@@ -9,14 +9,16 @@ from __future__ import (
     print_function,
     )
 import os
+import re
 import sys
 import warnings
 
+from brink.execute import execute
 from brink.pavement_commons import (
     buildbot_list,
     buildbot_try,
     coverage_prepare,
-    coverage_publish,
+    # coverage_publish,
     default,
     github,
     harness,
@@ -71,8 +73,6 @@ BUILD_PACKAGES = [
     # Buildbot is used for try scheduler
     'buildbot==0.8.11.c7',
 
-    'diff_cover==0.9.11',
-
     # For PQM
     'chevah-github-hooks-server==0.1.6',
     'smmap==0.8.2',
@@ -108,8 +108,7 @@ TEST_PACKAGES = [
     'nose-randomly==1.2.5',
     'mock',
 
-    'coverage==4.0.3',
-    'codecov==2.0.3',
+    'coverage==4.4.1',
 
     # used for remote debugging.
     'remote_pdb==1.2.0',
@@ -133,7 +132,7 @@ TEST_PACKAGES = [
 buildbot_list
 buildbot_try
 coverage_prepare
-coverage_publish
+# coverage_publish
 default
 github
 harness
@@ -304,6 +303,46 @@ def test_documentation():
     """
     Does nothing.
     """
+
+
+@task
+def coverage_publish():
+    """
+    Send the coverage report.
+
+    It expects that the GITHUB_PULL_ID environment variable is set and
+    that the repository origin points to the GitHub URL.
+    """
+    from chevah.coverage.client import upload_coverage
+
+    # This should be pave.git.origin
+    command = [pave.git.git, 'config', '--get', 'remote.origin.url']
+    _, output = execute(command)
+    origin = output.strip()
+
+    # Get the path of the repository, assumes it is on github
+    repository = re.split(r'github.com[/:]', origin)[1]
+
+    builder_name = os.environ.get('BUILDER_NAME', pave.getHostname())
+    github_pull_id = os.environ.get('GITHUB_PULL_ID', '')
+    branch_name = os.environ.get('BRANCH', '')
+    # pave.git.revision returns the tree hash, not the revision
+    command = [pave.git.git, 'show', '-s', '--pretty=format:%h']
+    _, output = execute(command)
+    revision = output.strip()
+
+    with pushd(pave.path.build):
+        args = ['.coverage', repository, builder_name, revision]
+
+        if branch_name:
+            # We know the branch name from the env.
+            args.append(branch_name)
+
+        if github_pull_id:
+            # We are publishing for a PR.
+            args.append(github_pull_id)
+
+        upload_coverage(*args)
 
 
 def _generate_coverate_reports():
