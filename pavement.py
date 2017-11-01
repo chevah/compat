@@ -103,7 +103,7 @@ LINT_PACKAGES = [
 TEST_PACKAGES = [
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
-    'nose==1.3.7',
+    'nose==1.3.0.chevah10',
     'nose-randomly==1.2.5',
     'mock',
 
