@@ -341,6 +341,20 @@ def build():
     pave.fs.deleteFolder([
         pave.path.build, pave.getPythonLibPath(), 'chevah', 'compat',
         ])
+
+    # On AIX pip (setuptools) fails to re-install, so we do some custom
+    # cleaning as a workaround.
+    pkg_info_name = None
+    members = pave.fs.listFolder(pave.fs.join([
+        pave.path.build, pave.getPythonLibPath()]))
+    for member in members:
+        # We are looking for folder like chevah_compat-0.45.1-py2.7.egg-info.
+        if member.startswith('chevah_compat-') and member.endswith('-info'):
+            pave.fs.deleteFolder([
+                pave.path.build, pave.getPythonLibPath(), member,
+                ])
+            break
+
     pave.fs.deleteFolder([pave.path.build, 'setup-build'])
 
     build_target = pave.fs.join([pave.path.build, 'setup-build'])
