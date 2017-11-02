@@ -969,6 +969,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
     def test_iterateFolderContent_big(self):
         """
         It will not block on listing folders with many members.
+
+        On some systems, this test takes more than 1 minute.
         """
         for _ in range(3):  # pragma: no branch
             try:
@@ -1010,6 +1012,10 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         for i in range(count):
             mk.fs.createFolder(base_segments + ['some-member-%s' % (i,)])
+            if i % 1000 == 0:
+                # Show some progress as this is a long tests, and we want to
+                # inform CI that we are still alive.
+                print('+')
 
         # We check that doing a direct listing will take a long time.
         with self.assertRaises(AssertionError):
