@@ -343,7 +343,7 @@ def coverage_publish():
             # We are publishing for a PR.
             args.append(github_pull_id)
 
-        upload_coverage(*args)
+        upload_coverage(*args, url='http://172.20.245.1:8080')
 
 
 def _generate_coverate_reports():
