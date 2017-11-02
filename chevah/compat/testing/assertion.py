@@ -6,9 +6,7 @@ Assertion helpers for compat testing.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import next
-from builtins import object
-from builtins import str
+from six import next, text_type
 from contextlib import contextmanager
 import collections
 import time
@@ -71,19 +69,25 @@ class AssertionMixin(object):
         '''Extra checks for assert equal.'''
         try:
             super(AssertionMixin, self).assertEqual(first, second, msg)
-        except AssertionError as error:
+        except AssertionError as error:  # noqa:cover
             message = error.message
-            if isinstance(message, str):
+            if isinstance(message, text_type):
                 message = message.encode('utf-8')
             raise AssertionError(message)
 
-        if (isinstance(first, str) and not isinstance(second, str)):
+        if (
+            isinstance(first, text_type) and
+            not isinstance(second, text_type)
+                ):  # noqa:cover
             if not msg:
                 msg = u'Type of "%s" is unicode while for "%s" is str.' % (
                     first, second)
             raise AssertionError(msg.encode('utf-8'))
 
-        if (not isinstance(first, str) and isinstance(second, str)):
+        if (
+            not isinstance(first, text_type) and
+            isinstance(second, text_type)
+                ):  # noqa:cover
             if not msg:
                 msg = u'Type of "%s" is str while for "%s" is unicode.' % (
                     first, second)
@@ -118,7 +122,8 @@ class AssertionMixin(object):
 
         actual_id = getattr(actual_error, 'event_id', None)
         if expected_id != actual_id:
-            values = (actual_error, str(expected_id), str(actual_id))
+            values = (
+                actual_error, text_type(expected_id), text_type(actual_id))
             message = u'Error id for %s is not %s, but %s.' % values
             raise AssertionError(message.encode('utf-8'))
 
@@ -127,14 +132,14 @@ class AssertionMixin(object):
         Raise an exception if value is not 'False'.
         """
         if value is not False:
-            raise AssertionError('%s is not False.' % str(value))
+            raise AssertionError('%s is not False.' % text_type(value))
 
     def assertIsTrue(self, value):
         """
         Raise an exception if value is not 'True'.
         """
         if value is not True:
-            raise AssertionError('%s is not True.' % str(value))
+            raise AssertionError('%s is not True.' % text_type(value))
 
     def assertFailureType(self, failure_class, failure_or_deferred):
         '''Raise assertion error if failure is not of required type.'''
@@ -144,9 +149,9 @@ class AssertionMixin(object):
             self.assertIsFailure(failure_or_deferred)
             failure = failure_or_deferred.result
 
-        if failure.type is not failure_class:
+        if failure.type is not failure_class:  # noqa:cover
             message = u'Failure %s is not of type %s' % (
-                str(failure), failure_class)
+                text_type(failure), failure_class)
             raise AssertionError(message.encode('utf-8'))
 
     def _checkData(self, kind, kind_id, expected_data, current_data):
@@ -162,7 +167,7 @@ class AssertionMixin(object):
                         message = (
                             u'%s %s, for data "%s" does not contains "%s", '
                             u'but is "%s"') % (
-                            kind, str(kind_id), key, value.value,
+                            kind, text_type(kind_id), key, value.value,
                             current_value)
                         raise AssertionError(message.encode('utf-8'))
                 else:
@@ -170,15 +175,15 @@ class AssertionMixin(object):
                         message = (
                             u'%s %s, for data "%s" is not "%s", but "%s"') % (
                             kind,
-                            str(kind_id),
+                            text_type(kind_id),
                             key,
                             repr(value),
                             repr(current_value),
                             )
                         raise AssertionError(message.encode('utf-8'))
-            except KeyError:
+            except KeyError:  # noqa:cover
                 values = (
-                    kind, str(kind_id), repr(key), repr(current_data))
+                    kind, text_type(kind_id), repr(key), repr(current_data))
                 message = u'%s %s, has no data "%s". Data is:\n%s' % values
                 raise AssertionError(message.encode('utf-8'))
 

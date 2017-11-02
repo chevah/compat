@@ -22,6 +22,26 @@ class TestAvatarBase(ChevahTestCase):
         with self.assertRaises(TypeError):
             FilesystemAvatar()
 
+    def test_init_home_folder_path_no_text(self):
+        """
+        An error is raised if initialized with a home_folder_path which is
+        not text.
+        """
+        with self.assertRaises(RuntimeError):
+            FilesystemAvatar(name='something', home_folder_path=b'data')
+
+    def test_init_root_folder_path_no_text(self):
+        """
+        An error is raised if initialized with a root_folder_path which is
+        not text.
+        """
+        with self.assertRaises(RuntimeError):
+            FilesystemAvatar(
+                name=u'something',
+                home_folder_path=u'good-path',
+                root_folder_path=b'data',
+                )
+
     def test_init(self):
         """
         Avatar can be initialized with credentials and home_folder_path.

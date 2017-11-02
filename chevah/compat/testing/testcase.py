@@ -7,9 +7,8 @@ TestCase used for Chevah project.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import str
-from builtins import range
-
+from six import text_type
+from six.moves import range
 import inspect
 import threading
 import os
@@ -130,8 +129,8 @@ class TwistedTestCase(TestCase):
         queue.
         """
         result = []
-        for delayed in reactor.getDelayedCalls():
-            result.append(str(delayed.func))
+        for delayed in reactor.getDelayedCalls():  # noqa:cover
+            result.append(text_type(delayed.func))
         return '\n'.join(result)
 
     def _threadPoolQueueSize(self):
@@ -189,9 +188,10 @@ class TwistedTestCase(TestCase):
         for delayed_call in reactor.getDelayedCalls():
             try:
                 delayed_call.cancel()
-            except ValueError:
+            except (ValueError, AttributeError):
                 # AlreadyCancelled and AlreadyCalled are ValueError.
                 # Might be canceled from the separate thread.
+                # AttributeError can occur when we do multi-threading.
                 pass
 
     def _raiseReactorTimeoutError(self, timeout):
@@ -317,8 +317,8 @@ class TwistedTestCase(TestCase):
         if self._threadPoolThreads() > 0:
             raise_failure('threadpoool threads', self._threadPoolThreads())
 
-        if len(reactor.getWriters()) > 0:
-            raise_failure('writers', str(reactor.getWriters()))
+        if len(reactor.getWriters()) > 0:  # noqa:cover
+            raise_failure('writers', text_type(reactor.getWriters()))
 
         for reader in reactor.getReaders():
             excepted = False
@@ -326,8 +326,8 @@ class TwistedTestCase(TestCase):
                 if isinstance(reader, reader_type):
                     excepted = True
                     break
-            if not excepted:
-                raise_failure('readers', str(reactor.getReaders()))
+            if not excepted:  # noqa:cover
+                raise_failure('readers', text_type(reactor.getReaders()))
 
         for delayed_call in reactor.getDelayedCalls():
             if delayed_call.active():
@@ -501,7 +501,7 @@ class TwistedTestCase(TestCase):
         """
         Return a string representation of the delayed call.
         """
-        raw_name = str(delayed_call.func)
+        raw_name = text_type(delayed_call.func)
         raw_name = raw_name.replace('<function ', '')
         raw_name = raw_name.replace('<bound method ', '')
         return raw_name.split(' ', 1)[0]
@@ -878,14 +878,16 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
                 'There are temporary files or folders left over.\n %s' % (
                     '\n'.join(errors)))
 
-    def shortDescription(self):
+    def shortDescription(self):  # noqa:cover
         """
         The short description for the test.
 
         bla.bla.tests. is removed.
         The format is customized for Chevah Nose runner.
+
+        This is only called when we run with -v or we show the error.
         """
-        class_name = str(self.__class__)[8:-2]
+        class_name = text_type(self.__class__)[8:-2]
         class_name = class_name.replace('.Test', ':Test')
         tests_start = class_name.find('.tests.') + 7
         class_name = class_name[tests_start:]

@@ -6,7 +6,7 @@ Exceptions used in chevah.compat package.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import str
+from six import text_type
 
 
 class CompatException(Exception):
@@ -44,7 +44,7 @@ class CompatError(Exception):
 
     def __repr__(self):
         result = u'CompatError %s - %s' % (
-            str(self.event_id), self.message)
+            text_type(self.event_id), self.message)
         return result.encode('utf-8')
 
     def __str__(self):

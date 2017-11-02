@@ -5,11 +5,8 @@ Module containing helpers for testing the Chevah project.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import str
-from builtins import range
-from builtins import object
-from future.utils import native
-
+from six import text_type
+from six.moves import range
 import hashlib
 import os
 import random
@@ -46,7 +43,7 @@ def _sanitize_name_legacy_unix(candidate):
 
     By default password is limited to 8 characters without spaces.
     """
-    return str(unidecode(candidate)).replace(' ', '_')[:8]
+    return unidecode(candidate).replace(' ', '_')[:8]
 
 
 def _sanitize_name_windows(candidate):
@@ -221,8 +218,7 @@ class ChevahCommonsFactory(object):
         """
         Return a unique (per session) ASCII string.
         """
-        return native(
-            ('ascii_str' + str(self.getUniqueInteger()).encode('utf-8')))
+        return b'ascii_str' + text_type(self.number()).encode('utf-8')
 
     def bytes(self, size=8):
         """
@@ -272,7 +268,7 @@ class ChevahCommonsFactory(object):
         """
         The account under which this process is executed.
         """
-        return str(os.environ['USER'])
+        return text_type(os.environ['USER'])
 
     def md5(self, content):
         """
@@ -288,7 +284,7 @@ class ChevahCommonsFactory(object):
         """
         A string unique for this session.
         """
-        base = u'str' + str(self.getUniqueInteger())
+        base = u'str' + text_type(self.number())
 
         # The minimum length so that we don't truncate the unique string.
         min_length = len(base) + len(TEST_NAME_MARKER)
@@ -308,7 +304,7 @@ class ChevahCommonsFactory(object):
                     for ignore in range(extra_length)
                     )
 
-        return native(base + extra_text + TEST_NAME_MARKER)
+        return base + extra_text + TEST_NAME_MARKER
 
     def makeLocalTestFilesystem(self, avatar=None):
         if avatar is None:
@@ -335,8 +331,8 @@ class ChevahCommonsFactory(object):
 
     def makeFilename(self, length=32, prefix=u'', suffix=u''):
         '''Return a random valid filename.'''
-        name = str(self.getUniqueInteger()) + TEST_NAME_MARKER
-        return native(prefix + name + ('a' * (length - len(name))) + suffix)
+        name = str(self.number()) + TEST_NAME_MARKER
+        return prefix + name + ('a' * (length - len(name))) + suffix
 
     def makeIPv4Address(self, host='localhost', port=None, protocol='TCP'):
         """
