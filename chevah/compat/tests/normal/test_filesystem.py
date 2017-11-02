@@ -6,11 +6,13 @@ Tests for portable filesystem access.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import str
+from six import text_type
+
 import errno
 import os
 import platform
 import stat
+import sys
 import tempfile
 import time
 
@@ -900,7 +902,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         content = self.filesystem.getFolderContent(self.test_segments)
 
         self.assertIsNotEmpty(content)
-        self.assertTrue(isinstance(content[0], str))
+        self.assertTrue(isinstance(content[0], text_type))
         self.assertItemsEqual([folder_name, file_name], content)
 
     @conditionals.skipOnPY3()
@@ -961,13 +963,31 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         result = list(content)
         self.assertIsNotEmpty(result)
-        self.assertIsInstance(str, result[0])
+        self.assertIsInstance(text_type, result[0])
         self.assertItemsEqual([folder_name, file_name], result)
 
     @conditionals.skipOnPY3()
     def test_iterateFolderContent_big(self):
         """
         It will not block on listing folders with many members.
+
+        On some systems, this test takes more than 1 minute.
+        """
+        for _ in range(3):  # pragma: no branch
+            try:
+                self._iterateFolderContent_big()
+                # All good. Stop trying.
+                return
+            except AssertionError as error:
+                # Run cleanup and try again.
+                self.callCleanup()
+
+        # We tried 3 times and still got a failure.
+        raise error  # noqa:cover
+
+    def _iterateFolderContent_big(self):
+        """
+        Main code for running the test
         """
         # FIXME:4036:
         # Enable full test once we have fast filesystem access.
@@ -993,12 +1013,21 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         for i in range(count):
             mk.fs.createFolder(base_segments + ['some-member-%s' % (i,)])
+            if i % 1500 == 0:
+                # This is slow, so keep the CI informed that we are doing
+                # stuff.
+                sys.stdout.write('+')
+                sys.stdout.flush()
 
         # We check that doing a direct listing will take a long time.
         with self.assertRaises(AssertionError):
             with self.assertExecutionTime(base_timeout):
                 result = self.filesystem.getFolderContent(base_segments)
         self.assertEqual(count, len(result))
+
+        # Show progress.
+        sys.stdout.write('+')
+        sys.stdout.flush()
 
         # Getting the iterator will not take long.
         with self.assertExecutionTime(base_timeout + bias):
@@ -1008,9 +1037,16 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         result = []
         result.append(next(iterator))
         try:
+            i = 0
             while True:
                 with self.assertExecutionTime(base_timeout + bias):
                     result.append(next(iterator))
+                i += 1
+                if i % 1500 == 0:
+                    # This is slow, so keep the CI informed that we are doing
+                    # stuff.
+                    sys.stdout.write('+')
+                    sys.stdout.flush()
         except StopIteration:
             """
             We are at the end. All good.
@@ -1834,7 +1870,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         content = self.unlocked_filesystem.getFolderContent(['c'])
         self.assertTrue(len(content) > 0)
         self.assertTrue(u'Program Files' in content)
-        self.assertTrue(isinstance(content[0], str))
+        self.assertTrue(isinstance(content[0], text_type))
 
     def test_getSegmentsFromRealPath_none(self):
         """
@@ -2031,7 +2067,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         Test conversion of segments to a real path.
         """
         def _p(*path):
-            return str(
+            return text_type(
                 os.path.join(self.locked_avatar.root_folder_path, *path))
 
         path = self.locked_filesystem.getRealPathFromSegments([])

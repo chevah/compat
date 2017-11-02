@@ -8,7 +8,11 @@ from __future__ import (
     division,
     print_function,
     )
+import compileall
+import imp
 import os
+import py_compile
+import struct
 import sys
 import warnings
 
@@ -52,8 +56,7 @@ if os.name == 'nt':
 # These are the hard dependencies needed by the library itself.
 RUN_PACKAGES = [
     'zope.interface==3.8.0',
-    # Py3 compat.
-    'future==0.16.0',
+    'six==1.11.0',
     ]
 
 if os.name == 'posix':
@@ -104,7 +107,7 @@ LINT_PACKAGES = [
 TEST_PACKAGES = [
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
-    'nose==1.3.7',
+    'nose==1.3.0.chevah10',
     'nose-randomly==1.2.5',
     'mock',
 
@@ -235,6 +238,64 @@ SETUP['buildbot']['web_url'] = 'https://buildbot.chevah.com:10443'
 SETUP['pypi']['index_url'] = 'http://pypi.chevah.com/simple'
 
 
+def compile_file(fullname, ddir=None, force=0, rx=None, quiet=0):
+    """
+    <Byte-compile one file.
+
+    Arguments (only fullname is required):
+
+    fullname:  the file to byte-compile
+    ddir:      if given, the directory name compiled in to the
+               byte-code file.
+    force:     if 1, force compilation, even if timestamps are up-to-date
+    quiet:     if 1, be quiet during compilation
+    """
+    success = 1
+    name = os.path.basename(fullname)
+    if ddir is not None:
+        dfile = os.path.join(ddir, name)
+    else:
+        dfile = None
+    if rx is not None:
+        mo = rx.search(fullname)
+        if mo:
+            return success
+    if os.path.isfile(fullname):
+        tail = name[-3:]
+        if tail == '.py':
+            if not force:
+                try:
+                    mtime = int(os.stat(fullname).st_mtime)
+                    expect = struct.pack('<4sl', imp.get_magic(), mtime)
+                    cfile = fullname + (__debug__ and 'c' or 'o')
+                    with open(cfile, 'rb') as chandle:
+                        actual = chandle.read(8)
+                    if expect == actual:
+                        return success
+                except IOError:
+                    pass
+            if not quiet:
+                print ('Compiling', fullname.encode('utf-8'), '...')
+            try:
+                ok = py_compile.compile(fullname, None, dfile, True)
+            except py_compile.PyCompileError as err:
+                if quiet:
+                    print('Compiling', fullname.encode('utf-8'), '...')
+                print(err.msg.encode('utf-8'))
+                success = 0
+            except IOError, e:
+                print('Sorry', e)
+                success = 0
+            else:
+                if ok == 0:
+                    success = 0
+    return success
+
+
+# Path the upstream code.
+compileall.compile_file = compile_file
+
+
 @task
 def update_setup():
     """
@@ -280,6 +341,19 @@ def build():
     pave.fs.deleteFolder([
         pave.path.build, pave.getPythonLibPath(), 'chevah', 'compat',
         ])
+
+    # On AIX pip (setuptools) fails to re-install, so we do some custom
+    # cleaning as a workaround.
+    members = pave.fs.listFolder(pave.fs.join([
+        pave.path.build, pave.getPythonLibPath()]))
+    for member in members:
+        # We are looking for folder like chevah_compat-0.45.1-py2.7.egg-info.
+        if member.startswith('chevah_compat-') and member.endswith('-info'):
+            pave.fs.deleteFolder([
+                pave.path.build, pave.getPythonLibPath(), member,
+                ])
+            break
+
     pave.fs.deleteFolder([pave.path.build, 'setup-build'])
 
     build_target = pave.fs.join([pave.path.build, 'setup-build'])
@@ -297,6 +371,15 @@ def test(args):
     """
     Run all Python tests.
     """
+
+
+@task
+@consume_args
+def remote(args):
+    """
+    Run tests on remote and wait for results.
+    """
+    call_task('test_remote', args=args + ['--wait'])
 
 
 @task
@@ -343,6 +426,7 @@ def test_coverage(args):
 @task
 # It needs consume_args to initialize the paver environment.
 @consume_args
+@needs('build')
 def test_ci(args):
     """
     Run tests in continuous integration environment.

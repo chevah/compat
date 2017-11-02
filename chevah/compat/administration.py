@@ -20,10 +20,7 @@ for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import str
-from builtins import range
-from builtins import object
-from future.utils import native
+from six.moves import range
 from contextlib import contextmanager
 import os
 import codecs
@@ -31,6 +28,7 @@ import random
 import socket
 import subprocess
 import sys
+import time
 
 from chevah.compat import (
     LocalFilesystem,
@@ -54,7 +52,7 @@ def execute(command, input_text=None, output=None, ignore_errors=True):
     if output is None:
         output = subprocess.PIPE
 
-    command = [native(part) for part in command]
+    command = [part for part in command]
 
     process = subprocess.Popen(
         command, stdin=subprocess.PIPE, stdout=output)
@@ -106,7 +104,6 @@ class OSAdministrationUnix(object):
         Get unix group entry, retrying if group is not available yet.
         """
         import grp
-        import time
         name_encoded = codecs.encode(name, 'utf-8')
 
         # Try to get the group in list of all groups.
@@ -300,7 +297,6 @@ class OSAdministrationUnix(object):
         Get Unix user entry, retrying if user is not available yet.
         """
         import pwd
-        import time
         name_encoded = name.encode('utf-8')
         for iterator in range(1000):
             try:
@@ -417,6 +413,9 @@ class OSAdministrationUnix(object):
         command.append(user.name.encode('utf-8'))
 
         execute(command)
+
+        # Wait a bit for the user to be created.
+        time.sleep(0.2)
 
         if user.home_group:
             execute([

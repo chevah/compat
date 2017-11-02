@@ -10,7 +10,6 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from __future__ import unicode_literals
-from future import standard_library
 
 from remote_pdb import RemotePdb
 
@@ -23,8 +22,6 @@ from chevah.compat.testing.mockup import (
     )
 from chevah.compat.testing.testcase import ChevahTestCase
 
-# Update Py3 modules.
-standard_library.install_aliases()
 # Keep this alias for backward compatibility.
 CompatTestCase = ChevahTestCase
 
