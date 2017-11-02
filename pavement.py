@@ -109,6 +109,8 @@ TEST_PACKAGES = [
     'mock',
 
     'coverage==4.4.1',
+
+    # chevah-coverage is going to be a brink dependency
     'chevah-coverage==0.1.bgola7',
 
     # used for remote debugging.
