@@ -12,6 +12,7 @@ import errno
 import os
 import platform
 import stat
+import sys
 import tempfile
 import time
 
@@ -1015,7 +1016,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
             if i % 1500 == 0:
                 # This is slow, so keep the CI informed that we are doing
                 # stuff.
-                print('+')
+                sys.stdout.write('+')
+                sys.stdout.flush()
 
         # We check that doing a direct listing will take a long time.
         with self.assertRaises(AssertionError):
@@ -1024,7 +1026,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertEqual(count, len(result))
 
         # Show progress.
-        print('+')
+        sys.stdout.write('+')
+        sys.stdout.flush()
 
         # Getting the iterator will not take long.
         with self.assertExecutionTime(base_timeout + bias):
@@ -1042,7 +1045,8 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
                 if i % 1500 == 0:
                     # This is slow, so keep the CI informed that we are doing
                     # stuff.
-                    print('-')
+                    sys.stdout.write('+')
+                    sys.stdout.flush()
         except StopIteration:
             """
             We are at the end. All good.
