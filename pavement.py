@@ -11,8 +11,8 @@ from __future__ import (
 import compileall
 import imp
 import os
-import re
 import py_compile
+import re
 import struct
 import sys
 import warnings
@@ -346,7 +346,10 @@ def build():
 
     # On AIX pip (setuptools) fails to re-install, so we do some custom
     # cleaning as a workaround.
+<<<<<<< HEAD
     pkg_info_name = None
+=======
+>>>>>>> master
     members = pave.fs.listFolder(pave.fs.join([
         pave.path.build, pave.getPythonLibPath()]))
     for member in members:

@@ -12,6 +12,7 @@ import errno
 import os
 import platform
 import stat
+import sys
 import tempfile
 import time
 
@@ -1012,12 +1013,21 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         for i in range(count):
             mk.fs.createFolder(base_segments + ['some-member-%s' % (i,)])
+            if i % 1500 == 0:
+                # This is slow, so keep the CI informed that we are doing
+                # stuff.
+                sys.stdout.write('+')
+                sys.stdout.flush()
 
         # We check that doing a direct listing will take a long time.
         with self.assertRaises(AssertionError):
             with self.assertExecutionTime(base_timeout):
                 result = self.filesystem.getFolderContent(base_segments)
         self.assertEqual(count, len(result))
+
+        # Show progress.
+        sys.stdout.write('+')
+        sys.stdout.flush()
 
         # Getting the iterator will not take long.
         with self.assertExecutionTime(base_timeout + bias):
@@ -1027,9 +1037,16 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         result = []
         result.append(next(iterator))
         try:
+            i = 0
             while True:
                 with self.assertExecutionTime(base_timeout + bias):
                     result.append(next(iterator))
+                i += 1
+                if i % 1500 == 0:
+                    # This is slow, so keep the CI informed that we are doing
+                    # stuff.
+                    sys.stdout.write('+')
+                    sys.stdout.flush()
         except StopIteration:
             """
             We are at the end. All good.
