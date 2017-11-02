@@ -75,7 +75,6 @@ BUILD_PACKAGES = [
 
     # For PQM
     'chevah-github-hooks-server==0.1.6',
-    'chevah-coverage==0.1.bgola6',
     'smmap==0.8.2',
     'async==0.6.1',
     'gitdb==0.6.4',
@@ -110,6 +109,7 @@ TEST_PACKAGES = [
     'mock',
 
     'coverage==4.4.1',
+    'chevah-coverage==0.1.bgola6',
 
     # used for remote debugging.
     'remote_pdb==1.2.0',
