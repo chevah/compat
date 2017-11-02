@@ -1012,10 +1012,6 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         for i in range(count):
             mk.fs.createFolder(base_segments + ['some-member-%s' % (i,)])
-            if i % 1000 == 0:
-                # Show some progress as this is a long tests, and we want to
-                # inform CI that we are still alive.
-                print('+')
 
         # We check that doing a direct listing will take a long time.
         with self.assertRaises(AssertionError):
