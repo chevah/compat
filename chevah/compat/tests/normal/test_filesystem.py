@@ -1012,12 +1012,19 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         for i in range(count):
             mk.fs.createFolder(base_segments + ['some-member-%s' % (i,)])
+            if i % 1500 == 0:
+                # This is slow, so keep the CI informed that we are doing
+                # stuff.
+                print('+')
 
         # We check that doing a direct listing will take a long time.
         with self.assertRaises(AssertionError):
             with self.assertExecutionTime(base_timeout):
                 result = self.filesystem.getFolderContent(base_segments)
         self.assertEqual(count, len(result))
+
+        # Show progress.
+        print('+')
 
         # Getting the iterator will not take long.
         with self.assertExecutionTime(base_timeout + bias):
@@ -1027,9 +1034,15 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         result = []
         result.append(next(iterator))
         try:
+            i = 0
             while True:
                 with self.assertExecutionTime(base_timeout + bias):
                     result.append(next(iterator))
+                i += 1
+                if i % 1500 == 0:
+                    # This is slow, so keep the CI informed that we are doing
+                    # stuff.
+                    print('-')
         except StopIteration:
             """
             We are at the end. All good.

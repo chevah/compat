@@ -344,7 +344,6 @@ def build():
 
     # On AIX pip (setuptools) fails to re-install, so we do some custom
     # cleaning as a workaround.
-    pkg_info_name = None
     members = pave.fs.listFolder(pave.fs.join([
         pave.path.build, pave.getPythonLibPath()]))
     for member in members:
