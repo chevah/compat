@@ -351,6 +351,7 @@ def test_coverage(args):
 @task
 # It needs consume_args to initialize the paver environment.
 @consume_args
+@needs('build')
 def test_ci(args):
     """
     Run tests in continuous integration environment.
