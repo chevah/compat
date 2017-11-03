@@ -1013,7 +1013,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         for i in range(count):
             mk.fs.createFolder(base_segments + ['some-member-%s' % (i,)])
-            if i % 1500 == 0:
+            if i % 1000 == 0:
                 # This is slow, so keep the CI informed that we are doing
                 # stuff.
                 sys.stdout.write('+')
@@ -1042,7 +1042,7 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
                 with self.assertExecutionTime(base_timeout + bias):
                     result.append(next(iterator))
                 i += 1
-                if i % 1500 == 0:
+                if i % 1000 == 0:
                     # This is slow, so keep the CI informed that we are doing
                     # stuff.
                     sys.stdout.write('+')
