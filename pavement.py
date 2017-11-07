@@ -12,17 +12,15 @@ import compileall
 import imp
 import os
 import py_compile
-import re
 import struct
 import sys
 import warnings
 
-from brink.execute import execute
 from brink.pavement_commons import (
     buildbot_list,
     buildbot_try,
     coverage_prepare,
-    # coverage_publish,
+    coverage_publish,
     default,
     github,
     harness,
@@ -138,7 +136,7 @@ TEST_PACKAGES = [
 buildbot_list
 buildbot_try
 coverage_prepare
-# coverage_publish
+coverage_publish
 default
 github
 harness
@@ -235,6 +233,7 @@ SETUP['scame'] = options
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = ['--with-randomly']
+SETUP['test']['coverator_url'] = 'http://172.20.245.1:8080'
 SETUP['buildbot']['server'] = 'buildbot.chevah.com'
 SETUP['buildbot']['web_url'] = 'https://buildbot.chevah.com:10443'
 SETUP['pypi']['index_url'] = 'http://pypi.chevah.com/simple'
@@ -391,46 +390,6 @@ def test_documentation():
     """
 
 
-@task
-def coverage_publish():
-    """
-    Send the coverage report.
-
-    It expects that the GITHUB_PULL_ID environment variable is set and
-    that the repository origin points to the GitHub URL.
-    """
-    from chevah.coverage.client import upload_coverage
-
-    # This should be pave.git.origin
-    command = [pave.git.git, 'config', '--get', 'remote.origin.url']
-    _, output = execute(command)
-    origin = output.strip()
-
-    # Get the path of the repository, assumes it is on github
-    repository = re.split(r'github.com[/:]', origin)[1]
-
-    builder_name = os.environ.get('BUILDER_NAME', pave.getHostname())
-    github_pull_id = os.environ.get('GITHUB_PULL_ID', '')
-    branch_name = os.environ.get('BRANCH', '')
-    # pave.git.revision returns the tree hash, not the revision
-    command = [pave.git.git, 'show', '-s', '--pretty=format:%h']
-    _, output = execute(command)
-    revision = output.strip()
-
-    with pushd(pave.path.build):
-        args = ['.coverage', repository, builder_name, revision]
-
-        if branch_name:
-            # We know the branch name from the env.
-            args.append(branch_name)
-
-        if github_pull_id:
-            # We are publishing for a PR.
-            args.append(github_pull_id)
-
-        upload_coverage(*args, url='http://172.20.245.1:8080')
-
-
 def _generate_coverate_reports():
     """
     Generate reports.
@@ -524,13 +483,21 @@ def test_ci(args):
         args = [args]
     test_type = env.get('TEST_TYPE', 'normal')
 
+    if test_type == 'py3' or test_type == 'os-independent':
+        skip_coverage = True
+
     if test_type == 'os-independent':
         return call_task('test_os_independent')
 
     if test_type == 'py3':
         return call_task('test_py3', args=args)
 
-    return call_task('test_os_dependent', args=args)
+    exit_code = call_task('test_os_dependent', args=args)
+
+    if os.environ.get(b'CODECOV_TOKEN', '') and SETUP['test']['coverator_url']:
+        call_task('coverage_publish')
+
+    return exit_code
 
 
 @task
