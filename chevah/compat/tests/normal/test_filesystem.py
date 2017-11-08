@@ -761,6 +761,32 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(attributes.is_link)
         self.assertTrue(attributes.is_folder)
 
+    @conditionals.onCapability('symbolic_link', True)
+    def test_getAttributes_link_not_found(self):
+        """
+        Raise an OSError not found when target does not exists.
+        """
+        path, link_segments = mk.fs.makePathInTemp()
+        target_segments = ['c', 'no-such-parent', 'no-child', 'target']
+        mk.fs.makeLink(
+            target_segments=target_segments,
+            link_segments=link_segments,
+            )
+        self.addCleanup(mk.fs.deleteFile, link_segments)
+
+        error = self.assertRaises(
+            OSError,
+            self.filesystem.getAttributes, link_segments,
+            )
+
+        if self.os_family == 'nt':
+            expected_path = path
+        else:
+            expected_path = path.encode('utf-8')
+        self.assertEqual(errno.ENOENT, error.errno)
+        self.assertEqual(expected_path, error.filename)
+        self.assertEqual('No such file or directory', error.strerror)
+
     def test_getStatus_file(self):
         """
         Will return the os.stat result for a file.
