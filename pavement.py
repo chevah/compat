@@ -20,7 +20,7 @@ from brink.pavement_commons import (
     buildbot_list,
     buildbot_try,
     coverage_prepare,
-    coverage_publish,
+    coverator_publish,
     default,
     github,
     harness,
@@ -110,7 +110,7 @@ TEST_PACKAGES = [
     'mock',
 
     'coverage==4.0.3',
-    'coverator==0.1',
+    'coverator==0.1.0',
 
     # used for remote debugging.
     'remote_pdb==1.2.0',
@@ -134,7 +134,7 @@ TEST_PACKAGES = [
 buildbot_list
 buildbot_try
 coverage_prepare
-coverage_publish
+coverator_publish
 default
 github
 harness
@@ -481,9 +481,6 @@ def test_ci(args):
         args = [args]
     test_type = env.get('TEST_TYPE', 'normal')
 
-    if test_type == 'py3' or test_type == 'os-independent':
-        skip_coverage = True
-
     if test_type == 'os-independent':
         return call_task('test_os_independent')
 
@@ -492,8 +489,8 @@ def test_ci(args):
 
     exit_code = call_task('test_os_dependent', args=args)
 
-    if os.environ.get(b'CODECOV_TOKEN', '') and SETUP['test']['coverator_url']:
-        call_task('coverage_publish')
+    if os.environ.get(b'CODECOV_TOKEN', ''):
+        call_task('coverator_publish')
 
     return exit_code
 
