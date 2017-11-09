@@ -98,7 +98,6 @@ LINT_PACKAGES = [
     'repoze.sphinx.autointerface==0.7.1.c4',
     # Docutils is required for RST parsing and for Sphinx.
     'docutils==0.12.c1',
-
     ]
 
 # Packages required to run the test suite.
