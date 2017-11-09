@@ -74,6 +74,8 @@ BUILD_PACKAGES = [
     # Buildbot is used for try scheduler
     'buildbot==0.8.11.c7',
 
+    'coverator==0.1.0',
+
     # For PQM
     'chevah-github-hooks-server==0.1.6',
     'smmap==0.8.2',
@@ -110,7 +112,6 @@ TEST_PACKAGES = [
     'mock',
 
     'coverage==4.0.3',
-    'coverator==0.1.0',
 
     # used for remote debugging.
     'remote_pdb==1.2.0',
