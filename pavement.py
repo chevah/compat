@@ -20,7 +20,7 @@ from brink.pavement_commons import (
     buildbot_list,
     buildbot_try,
     coverage_prepare,
-    coverator_publish,
+    coverage_publish,
     default,
     github,
     harness,
@@ -73,8 +73,6 @@ if os.name == 'posix':
 BUILD_PACKAGES = [
     # Buildbot is used for try scheduler
     'buildbot==0.8.11.c7',
-
-    'coverator==0.1.0',
 
     # For PQM
     'chevah-github-hooks-server==0.1.6',
@@ -135,7 +133,7 @@ TEST_PACKAGES = [
 buildbot_list
 buildbot_try
 coverage_prepare
-coverator_publish
+coverage_publish
 default
 github
 harness
@@ -491,7 +489,7 @@ def test_ci(args):
     exit_code = call_task('test_os_dependent', args=args)
 
     if os.environ.get(b'CODECOV_TOKEN', ''):
-        call_task('coverator_publish')
+        call_task('coverage_publish')
 
     return exit_code
 
