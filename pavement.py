@@ -108,7 +108,7 @@ TEST_PACKAGES = [
     'nose-randomly==1.2.5',
     'mock',
 
-    'coverage==4.0.3',
+    'coverage==4.4.1',
 
     # used for remote debugging.
     'remote_pdb==1.2.0',
