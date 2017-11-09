@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.45.2 - 08/11/2017
+-------------------
+
+* Fix getAttributes for broken link on Windows to return file not found.
+
+
 0.45.1 - 27/10/2017
 -------------------
 

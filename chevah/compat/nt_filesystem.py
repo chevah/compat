@@ -386,7 +386,18 @@ class NTFilesystem(PosixFilesystemBase):
         return type(stats)(stats_list)
 
     def getAttributes(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
+        if not self.exists(segments):
+            # On Windows, it will return the attributes, even if the target
+            # does not exists.
+            raise OSError(
+                errno.ENOENT,
+                'No such file or directory',
+                self.getRealPathFromSegments(segments),
+                )
+
         with self._windowsToOSError(segments):
             return super(NTFilesystem, self).getAttributes(segments)
 
