@@ -109,6 +109,7 @@ TEST_PACKAGES = [
     'mock',
 
     'coverage==4.4.1',
+    'coverator==0.1.0',
 
     # used for remote debugging.
     'remote_pdb==1.2.0',
