@@ -20,7 +20,7 @@ from brink.pavement_commons import (
     buildbot_list,
     buildbot_try,
     coverage_prepare,
-    coverage_publish,
+    coverator_publish,
     default,
     github,
     harness,
@@ -74,8 +74,6 @@ BUILD_PACKAGES = [
     # Buildbot is used for try scheduler
     'buildbot==0.8.11.c7',
 
-    'diff_cover==0.9.11',
-
     # For PQM
     'chevah-github-hooks-server==0.1.6',
     'smmap==0.8.2',
@@ -100,7 +98,6 @@ LINT_PACKAGES = [
     'repoze.sphinx.autointerface==0.7.1.c4',
     # Docutils is required for RST parsing and for Sphinx.
     'docutils==0.12.c1',
-
     ]
 
 # Packages required to run the test suite.
@@ -111,8 +108,8 @@ TEST_PACKAGES = [
     'nose-randomly==1.2.5',
     'mock',
 
-    'coverage==4.0.3',
-    'codecov==2.0.3',
+    'coverage==4.4.1',
+    'coverator==0.1.0',
 
     # used for remote debugging.
     'remote_pdb==1.2.0',
@@ -136,7 +133,7 @@ TEST_PACKAGES = [
 buildbot_list
 buildbot_try
 coverage_prepare
-coverage_publish
+coverator_publish
 default
 github
 harness
@@ -233,6 +230,7 @@ SETUP['scame'] = options
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = ['--with-randomly']
+SETUP['test']['coverator_url'] = 'http://172.20.245.1:8080'
 SETUP['buildbot']['server'] = 'buildbot.chevah.com'
 SETUP['buildbot']['web_url'] = 'https://buildbot.chevah.com:10443'
 SETUP['pypi']['index_url'] = 'http://pypi.chevah.com/simple'
@@ -488,7 +486,12 @@ def test_ci(args):
     if test_type == 'py3':
         return call_task('test_py3', args=args)
 
-    return call_task('test_os_dependent', args=args)
+    exit_code = call_task('test_os_dependent', args=args)
+
+    if os.environ.get(b'CODECOV_TOKEN', ''):
+        call_task('coverator_publish')
+
+    return exit_code
 
 
 @task

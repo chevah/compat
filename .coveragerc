@@ -27,3 +27,9 @@ omit =
 
 [html]
 directory = coverage-report
+
+[paths]
+source =
+    chevah/compat
+    */chevah/compat
+    *\chevah\compat

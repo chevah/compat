@@ -1,4 +1,9 @@
 # Changes are disabled.
+codecov:
+  notify:
+    after_n_builds: 1
+    require_ci_to_pass: no
+
 coverage:
   precision: 2
   round: down
