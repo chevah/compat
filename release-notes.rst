@@ -1,6 +1,11 @@
 Release notes for chevah.compat
 ===============================
 
+0.46.0 - 19/12/2017
+-------------------
+
+* Add option to ignore thread names during the tearDown of ChevahTestCase.
+
 
 0.45.2 - 08/11/2017
 -------------------

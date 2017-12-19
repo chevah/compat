@@ -792,6 +792,12 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     os_version = _get_os_version()
     cpu_type = _get_cpu_type()
 
+    excepted_threads = [
+        'MainThread',
+        'threaded_reactor',
+        'PoolThread-twisted.internet.reactor',
+        ]
+
     # We assume that hostname does not change during test and this
     # should save a few DNS queries.
     hostname = _get_hostname()
@@ -819,12 +825,11 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             # an exception here.
             for thread in threads:
                 thread_name = thread.getName()
-                if thread_name == 'MainThread':
+                if thread_name in self.excepted_threads:
                     continue
-                if thread_name == 'threaded_reactor':
-                    continue
-                if thread_name.startswith(
-                        'PoolThread-twisted.internet.reactor'):
+                if ('PoolThread-twisted.internet.reactor' in
+                        self.excepted_threads and thread_name.startswith(
+                        'PoolThread-twisted.internet.reactor')):
                     continue
 
                 raise AssertionError(
