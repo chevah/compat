@@ -36,7 +36,7 @@ class Contains(object):
     def __eq__(self, other):
         return self.value in other
 
-    def __hash__(self):
+    def __hash__(self):  # noqa:cover
         return hash(self.value)
 
 
