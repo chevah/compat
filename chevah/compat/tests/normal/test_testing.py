@@ -10,8 +10,7 @@ from six import text_type
 from threading import Thread, Event
 
 from chevah.compat.testing import ChevahTestCase, mk
-
-import time
+from chevah.compat.testing.assertion import Contains
 
 
 class TestFactory(ChevahTestCase):
@@ -37,7 +36,6 @@ class TestFactory(ChevahTestCase):
             def run(self):
                 event.wait()
 
-        old_excepted_threads = self.excepted_threads[:]
         self.excepted_threads = self.excepted_threads + ['TestThread']
 
         thread = TestThread(name="TestThread")
@@ -49,10 +47,8 @@ class TestFactory(ChevahTestCase):
         event.set()
 
         # Wait for the thread to stop.
-        time.sleep(0.1)
+        thread.join()
         self.assertFalse(thread.is_alive())
-
-        self.excepted_threads = old_excepted_threads[:]
 
     def test_tearDown_not_excepted_threads(self):
         """
@@ -75,4 +71,28 @@ class TestFactory(ChevahTestCase):
 
         # Stop the thread.
         event.set()
-        time.sleep(0.1)
+        thread.join()
+
+    def test_tearDown_excepted_threads_contains(self):
+        """
+        Will not fail if part of the thread name is in excepted_threads.
+        """
+        event = Event()
+
+        class TestThread(Thread):
+            def run(self):
+                event.wait()
+
+        self.excepted_threads = self.excepted_threads + [Contains('TestTh')]
+
+        thread = TestThread(name="TestThread")
+        thread.start()
+
+        self.tearDown()
+
+        self.assertTrue(thread.is_alive())
+        event.set()
+
+        # Wait for the thread to stop.
+        thread.join()
+        self.assertFalse(thread.is_alive())
