@@ -40,7 +40,7 @@ from chevah.compat import (
     SuperAvatar,
     )
 from chevah.compat.administration import os_administration
-from chevah.compat.testing.assertion import AssertionMixin
+from chevah.compat.testing.assertion import AssertionMixin, Contains
 from chevah.compat.testing.mockup import mk
 from chevah.compat.testing.constants import (
     TEST_NAME_MARKER,
@@ -792,6 +792,13 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     os_version = _get_os_version()
     cpu_type = _get_cpu_type()
 
+    # List of thread names to ignore during the tearDown.
+    excepted_threads = [
+        'MainThread',
+        'threaded_reactor',
+        Contains('PoolThread-twisted.internet.reactor'),
+        ]
+
     # We assume that hostname does not change during test and this
     # should save a few DNS queries.
     hostname = _get_hostname()
@@ -819,12 +826,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             # an exception here.
             for thread in threads:
                 thread_name = thread.getName()
-                if thread_name == 'MainThread':
-                    continue
-                if thread_name == 'threaded_reactor':
-                    continue
-                if thread_name.startswith(
-                        'PoolThread-twisted.internet.reactor'):
+                if thread_name in self.excepted_threads:
                     continue
 
                 raise AssertionError(
