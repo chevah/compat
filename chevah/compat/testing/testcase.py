@@ -498,10 +498,12 @@ class TwistedTestCase(TestCase):
 
         self._shutdownTestReactor()
 
-
     def executeDelayedCalls(self, timeout=None, debug=False):
         """
         Run the reactor until no more delayed calls are scheduled.
+
+        This will wait for delayed calls to be executed and will not stop
+        the reactor.
         """
         if timeout is None:
             timeout = self.DEFERRED_TIMEOUT

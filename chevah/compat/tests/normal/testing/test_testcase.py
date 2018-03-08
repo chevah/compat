@@ -298,7 +298,7 @@ class TestTwistedTestCase(ChevahTestCase):
         self.called = False
 
         def last_call():
-            time.sleep(0.5)
+            time.sleep(0.2)
             self.called = True
 
         deferred = threads.deferToThread(last_call)
@@ -306,6 +306,7 @@ class TestTwistedTestCase(ChevahTestCase):
         self.executeReactor()
         # Allow the thread to settle and return.
         time.sleep(0.01)
+        time.sleep(0.04)
         self.assertTrue(self.called)
         self.assertTrue(deferred.called)
 
@@ -398,6 +399,113 @@ class TestTwistedTestCase(ChevahTestCase):
         delayed_call_1.called = False
         self._cleanReactor()
         self.assertIsEmpty(reactor.getDelayedCalls())
+
+    def test_executeDelayedCalls(self):
+        """
+        It will wait for delayed calls to be executed and then  leave the
+        reactor opened.
+        """
+        results = []
+        reactor.callLater(0.1, lambda x: results.append(x), True)
+        # Make sure reactor is stopped at the end of the test.
+        self.addCleanup(self.executeReactor)
+
+        self.executeDelayedCalls()
+
+        self.assertEqual([True], results)
+        self.assertTrue(reactor._started)
+
+    def test_executeReactorUntil(self):
+        """
+        It will execute the reactor and leave it open.
+        """
+        results = []
+        reactor.callLater(0.1, lambda x: results.append(x), True)
+        call_2 = reactor.callLater(0.2, lambda x: results.append(x), False)
+        # Make sure call is not already called.
+        self.assertEqual([], results)
+
+        # Wait until first callback is called.
+        self.executeReactorUntil(
+            lambda _: results == [True],
+            prevent_stop=False,
+            )
+
+        self.assertEqual([True], results)
+        # The second call is not called and we need to cancel it, otherwise
+        # the reactor will not be clean.
+        call_2.cancel()
+
+    def test_executeReactorUntil_timeout(self):
+        """
+        It will execute the reactor and leave it open.
+        """
+        results = []
+        reactor.callLater(0.1, lambda x: results.append(x), True)
+        # Make sure call is not already called.
+        self.assertEqual([], results)
+
+        # Wait until first callback is called.
+        self.executeReactorUntil(
+            lambda _: False,
+            prevent_stop=False,
+            timeout=0.2,
+            )
+
+        # The reactor was spin.
+        self.assertEqual([True], results)
+        self.assertEqual(
+            'Reactor took more than 0.20 seconds to execute.',
+            self._reactor_timeout_failure.args[0],
+            )
+        # Ignore this error so that it will not be triggered in tearDown.
+        self._reactor_timeout_failure = None
+
+    def test_iterateReactor(self):
+        """
+        It will execute the reactor and leave it open.
+        """
+        results = []
+        reactor.callLater(0, lambda x: results.append(x), True)
+        # Make sure reactor is stopped at the end of the test.
+        self.addCleanup(self.executeReactor)
+        # Make sure call is not already called.
+        self.assertEqual([], results)
+
+        self.iterateReactor()
+
+        self.assertEqual([True], results)
+        self.assertTrue(reactor._started)
+
+    def test_iterateReactorWithStop(self):
+        """
+        It will execute the reactor and stop it.
+        """
+        results = []
+        reactor.callLater(0, lambda x: results.append(x), True)
+        # Make sure call is not already called.
+        self.assertEqual([], results)
+
+        self.iterateReactorWithStop()
+
+        self.assertEqual([True], results)
+        self.assertFalse(reactor._started)
+
+    def test_iterateReactorForSeconds(self):
+        """
+        It will execute the reactor for x seconds and leave it open.
+        """
+        results = []
+        reactor.callLater(0.1, lambda x: results.append(x), True)
+        # Make sure call is not already called.
+        self.assertEqual([], results)
+        # Make sure reactor is stopped at the end of the test.
+        self.addCleanup(self.executeReactor)
+
+        self.iterateReactorForSeconds(0.2)
+
+        self.assertEqual([True], results)
+        self.assertFalse(reactor._started)
 
 
 class TestTwistedTimeoutTestCase(ChevahTestCase):

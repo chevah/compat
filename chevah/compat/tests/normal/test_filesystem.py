@@ -407,24 +407,24 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         Can be used for linking a file.
         """
         content = mk.string()
-        self.test_segments = mk.fs.createFileInTemp(content=content)
-        link_segments = self.test_segments[:]
-        link_segments[-1] = '%s-link' % self.test_segments[-1]
+        _, segments = self.tempFile(content=content.encode('utf-8'))
+        link_segments = segments[:]
+        link_segments[-1] = '%s-link' % segments[-1]
 
         mk.fs.makeLink(
-            target_segments=self.test_segments,
+            target_segments=segments,
             link_segments=link_segments,
             )
 
         self.assertTrue(mk.fs.exists(link_segments))
         self.assertTrue(mk.fs.isLink(link_segments))
         # Will point to the same content.
-        link_content = mk.fs.getFileContent(self.test_segments)
+        link_content = mk.fs.getFileContent(segments)
         self.assertEqual(content, link_content)
         # Can be removed as a simple file and target file is not removed.
         mk.fs.deleteFile(link_segments)
         self.assertFalse(mk.fs.exists(link_segments))
-        self.assertTrue(mk.fs.exists(self.test_segments))
+        self.assertTrue(mk.fs.exists(segments))
 
     @conditionals.onCapability('symbolic_link', True)
     def test_makeLink_folder(self):
@@ -619,10 +619,10 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Check isFile.
         """
-        self.test_segments = mk.fs.createFileInTemp()
+        _, segments = self.tempFile()
         _, non_existent_segments = mk.fs.makePathInTemp()
 
-        self.assertTrue(self.filesystem.isFile(self.test_segments))
+        self.assertTrue(self.filesystem.isFile(segments))
         # Non existent paths are not files.
         self.assertFalse(self.filesystem.isFile(non_existent_segments))
         # Folders are not files.
@@ -715,9 +715,9 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         Check attributes for a folder.
         """
-        self.test_segments = mk.fs.createFolderInTemp()
+        _, segments = self.tempFolder()
 
-        attributes = self.filesystem.getAttributes(self.test_segments)
+        attributes = self.filesystem.getAttributes(segments)
 
         self.assertTrue(attributes.is_folder)
         self.assertFalse(attributes.is_file)
