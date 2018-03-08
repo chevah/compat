@@ -84,19 +84,13 @@ clean_build() {
     echo "Cleaning project temporary files..."
     rm -f DEFAULT_VALUES
     echo "Cleaning pyc files ..."
-    if [ $OS = "rhel4" ]; then
-        # RHEL 4 don't support + option in -exec
-        # We use -print0 and xargs to no fork for each file.
-        # find will fail if no file is found.
-        touch ./dummy_file_for_RHEL4.pyc
-        find ./ -name '*.pyc' -print0 | xargs -0 rm
-    else
-        # AIX's find complains if there are no matching files when using +.
-        [ $(uname) == AIX ] && touch ./dummy_file_for_AIX.pyc
-        # Faster than '-exec rm {} \;' and supported in most OS'es,
-        # details at http://www.in-ulm.de/~mascheck/various/find/#xargs
-        find ./ -name '*.pyc' -exec rm {} +
-    fi
+
+    # AIX's find complains if there are no matching files when using +.
+    [ $(uname) == AIX ] && touch ./dummy_file_for_AIX.pyc
+    # Faster than '-exec rm {} \;' and supported in most OS'es,
+    # details at http://www.in-ulm.de/~mascheck/various/find/#xargs
+    find ./ -name '*.pyc' -exec rm {} +
+
     # In some case pip hangs with a build folder in temp and
     # will not continue until it is manually removed.
     # On the OSX build server tmp is in $TMPDIR
@@ -578,6 +572,18 @@ detect_os() {
                     cat /etc/redhat-release | sed s/.*release// | cut -d' ' -f2)
                 check_os_version "Red Hat Enterprise Linux" 4 \
                     "$os_version_raw" os_version_chevah
+
+                # RHEL 7.4 and newer have OpenSSL 1.0.2, while 7.3 and older
+                # have version 1.0.1. Thus for the older RHEL 7 versions we use
+                # a separate OS signature, to make use of a dedicated Python
+                # package.
+                if [ "$os_version_chevah" -eq 7 ]; then
+                    if openssl version | grep -F -q "1.0.1"; then
+                        # We are on 1.0.1 which is pre RHEL 7.4
+                        os_version_chevah=7openssl101
+                    fi
+                fi
+
                 OS="rhel${os_version_chevah}"
             fi
         elif [ -f /etc/SuSE-release ]; then
