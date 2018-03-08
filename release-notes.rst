@@ -1,6 +1,16 @@
 Release notes for chevah.compat
 ===============================
 
+0.47.0 - 08/03/2018
+-------------------
+
+* Iterate the reactor with a timeout and not with None.
+  When iterating with None we have observed that not all tasks are executed
+  by the reactor, especially closing the connections.
+* Add helper functions to create temporary file and folders with auto cleanup.
+* Add helpers for spinning the reactor in various conditions.
+
+
 0.46.0 - 19/12/2017
 -------------------
 
