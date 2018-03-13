@@ -396,7 +396,7 @@ copy_python() {
                 # Remove it and try to install it again.
                 echo "Updating Python from" \
                     $python_installed_version to $PYTHON_VERSION
-                rm -rf ${BUILD_FOLDER}
+                rm -rf ${BUILD_FOLDER}/*
                 rm -rf ${python_distributable}
                 copy_python
             fi
@@ -410,7 +410,7 @@ copy_python() {
                 echo "Updating Python from UNVERSIONED to $PYTHON_VERSION"
                 # We have a different python installed.
                 # Remove it and try to install it again.
-                rm -rf ${BUILD_FOLDER}
+                rm -rf ${BUILD_FOLDER}/*
                 rm -rf ${python_distributable}
                 copy_python
             else
@@ -570,9 +570,8 @@ detect_os() {
             if egrep -q 'Red\ Hat|CentOS|Scientific' /etc/redhat-release; then
                 os_version_raw=$(\
                     cat /etc/redhat-release | sed s/.*release// | cut -d' ' -f2)
-                check_os_version "Red Hat Enterprise Linux" 4 \
+                check_os_version "Red Hat Enterprise Linux" 5 \
                     "$os_version_raw" os_version_chevah
-
                 # RHEL 7.4 and newer have OpenSSL 1.0.2, while 7.3 and older
                 # have version 1.0.1. Thus for the older RHEL 7 versions we use
                 # a separate OS signature, to make use of a dedicated Python
@@ -583,7 +582,6 @@ detect_os() {
                         os_version_chevah=7openssl101
                     fi
                 fi
-
                 OS="rhel${os_version_chevah}"
             fi
         elif [ -f /etc/SuSE-release ]; then
@@ -599,10 +597,6 @@ detect_os() {
                     OS="sles11sm"
                 fi
             fi
-        elif [ -f /etc/arch-release ]; then
-            # Arch Linux is a rolling distro, no version info available.
-            # Beware that there's no version to get from /etc/os-release either!
-            OS="archlinux"
         elif [ -f /etc/os-release ]; then
             source /etc/os-release
             linux_distro="$ID"
@@ -633,6 +627,10 @@ detect_os() {
                     check_os_version "$distro_fancy_name" 3.6 \
                         "$os_version_raw" os_version_chevah
                     OS="alpine${os_version_chevah}"
+                    ;;
+                "arch")
+                    # Arch Linux is a rolling distro, no version info available.
+                    OS="archlinux"
                     ;;
             esac
         fi
