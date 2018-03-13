@@ -303,6 +303,8 @@ class TwistedTestCase(TestCase):
                 'Reactor is not clean. %s: %s' % (location, reason))
 
         if reactor._started:
+            # Reactor was not stopped, so stop it before raising the error.
+            self._shutdownTestReactor()
             raise AssertionError('Reactor was not stopped.')
 
         # Look at threads queue.
@@ -520,6 +522,12 @@ class TwistedTestCase(TestCase):
             if not delayed_calls:
                 break
         self._shutdownTestReactor(prevent_stop=True)
+        if self._reactor_timeout_failure is not None:
+            self._reactor_timeout_failure = None
+            # We stop the reactor on failures.
+            self._shutdownTestReactor()
+            raise AssertionError(
+                'executeDelayedCalls took more than %s' % (timeout,))
 
     def executeReactorUntil(
             self, callable, timeout=None, debug=False, prevent_stop=True):

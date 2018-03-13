@@ -402,7 +402,7 @@ class TestTwistedTestCase(ChevahTestCase):
 
     def test_executeDelayedCalls(self):
         """
-        It will wait for delayed calls to be executed and then  leave the
+        It will wait for delayed calls to be executed and then leave the
         reactor opened.
         """
         results = []
@@ -415,13 +415,34 @@ class TestTwistedTestCase(ChevahTestCase):
         self.assertEqual([True], results)
         self.assertTrue(reactor._started)
 
+    def test_executeDelayedCalls_with_timeout(self):
+        """
+        When the delayed calls are not ready after timeout, it will fail.
+        """
+        results = []
+        reactor.callLater(0.2, lambda x: results.append(x), True)
+        # Make sure reactor is stopped at the end of the test.
+        self.addCleanup(self.executeReactor)
+
+        with self.assertRaises(AssertionError) as context:
+            self.executeDelayedCalls(timeout=0.1)
+
+        self.assertEqual(
+            'executeDelayedCalls took more than 0.1',
+            context.exception.args[0],
+            )
+        # Delayed call not called and reactor is stopped.
+        self.assertEqual([], results)
+        self.assertFalse(reactor._started)
+
     def test_executeReactorUntil(self):
         """
         It will execute the reactor and leave it open.
         """
         results = []
         reactor.callLater(0.1, lambda x: results.append(x), True)
-        call_2 = reactor.callLater(0.2, lambda x: results.append(x), False)
+        call_2 = reactor.callLater(  # noqa:cover
+            0.2, lambda x: results.append(x), False)
         # Make sure call is not already called.
         self.assertEqual([], results)
 
