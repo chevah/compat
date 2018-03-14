@@ -228,7 +228,7 @@ class TwistedTestCase(TestCase):
         Iterate the reactor.
         """
         reactor.runUntilCurrent()
-        if debug:
+        if debug:  # noqa:cover
             # When debug is enabled with iterate using a small delay in steps,
             # to have a much better debug output.
             # Otherwise the debug messages will flood the output.
@@ -258,7 +258,8 @@ class TwistedTestCase(TestCase):
             t = reactor.running and t2
             reactor.doIteration(t)
         else:
-            reactor.doIteration(False)
+            # To not slow down all the tests, we run with a very small value.
+            reactor.doIteration(0.000001)
 
     def _shutdownTestReactor(self, prevent_stop=False):
         """
@@ -301,7 +302,9 @@ class TwistedTestCase(TestCase):
             raise AssertionError(
                 'Reactor is not clean. %s: %s' % (location, reason))
 
-        if reactor._started:
+        if reactor._started:  # noqa:cover
+            # Reactor was not stopped, so stop it before raising the error.
+            self._shutdownTestReactor()
             raise AssertionError('Reactor was not stopped.')
 
         # Look at threads queue.
@@ -496,6 +499,87 @@ class TwistedTestCase(TestCase):
                 continue
 
         self._shutdownTestReactor()
+
+    def executeDelayedCalls(self, timeout=None, debug=False):
+        """
+        Run the reactor until no more delayed calls are scheduled.
+
+        This will wait for delayed calls to be executed and will not stop
+        the reactor.
+        """
+        if timeout is None:
+            timeout = self.DEFERRED_TIMEOUT
+
+        self._initiateTestReactor(timeout=timeout)
+        while not self._timeout_reached:
+            self._iterateTestReactor(debug=debug)
+            delayed_calls = reactor.getDelayedCalls()
+            try:
+                delayed_calls.remove(self._reactor_timeout_call)
+            except ValueError:  # noqa:cover
+                # Timeout might be no longer be there.
+                pass
+            if not delayed_calls:
+                break
+        self._shutdownTestReactor(prevent_stop=True)
+        if self._reactor_timeout_failure is not None:
+            self._reactor_timeout_failure = None
+            # We stop the reactor on failures.
+            self._shutdownTestReactor()
+            raise AssertionError(
+                'executeDelayedCalls took more than %s' % (timeout,))
+
+    def executeReactorUntil(
+            self, callable, timeout=None, debug=False, prevent_stop=True):
+        """
+        Run the reactor until callable returns `True`.
+        """
+        if timeout is None:
+            timeout = self.DEFERRED_TIMEOUT
+
+        self._initiateTestReactor(timeout=timeout)
+
+        while not self._timeout_reached:
+            self._iterateTestReactor(debug=debug)
+            if callable(reactor):
+                break
+
+        self._shutdownTestReactor(prevent_stop=prevent_stop)
+
+    def iterateReactor(self, count=1, timeout=None, debug=False):
+        """
+        Iterate the reactor without stopping it.
+        """
+        iterations = [False] * (count - 1)
+        iterations.append(True)
+        self.executeReactorUntil(
+            lambda _: iterations.pop(0), timeout=timeout, debug=debug)
+
+    def iterateReactorWithStop(self, count=1, timeout=None, debug=False):
+        """
+        Iterate the reactor and stop it at the end.
+        """
+        iterations = [False] * (count - 1)
+        iterations.append(True)
+        self.executeReactorUntil(
+            lambda _: iterations.pop(0),
+            timeout=timeout,
+            debug=debug,
+            prevent_stop=False,
+            )
+
+    def iterateReactorForSeconds(self, duration=1, debug=False):
+        """
+        Iterate the reactor for `duration` seconds..
+        """
+        start = time.time()
+
+        self.executeReactorUntil(
+            lambda _: time.time() - start > duration,
+            timeout=duration + 0.1,
+            debug=debug,
+            prevent_stop=False,
+            )
 
     def _getDelayedCallName(self, delayed_call):
         """
@@ -1101,6 +1185,35 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             callback(*args, **kwargs)
 
         return context.exception
+
+    def tempFile(self, content='', prefix='', suffix=''):
+        """
+        Return (path, segments) for a new file created in temp which is
+        auto cleaned.
+        """
+        segments = mk.fs.createFileInTemp(prefix=prefix, suffix=suffix)
+        path = mk.fs.getRealPathFromSegments(segments)
+
+        self.addCleanup(mk.fs.deleteFile, segments)
+
+        try:
+            opened_file = mk.fs.openFileForWriting(segments, utf8=False)
+            opened_file.write(content)
+        finally:
+            opened_file.close()
+
+        return (path, segments)
+
+    def tempFolder(self, name=None, prefix='', suffix=''):
+        """
+        Create a new temp folder and return its path and segments, which is
+        auto cleaned.
+        """
+        segments = mk.fs.createFolderInTemp(
+            foldername=name, prefix=prefix, suffix=suffix)
+        path = mk.fs.getRealPathFromSegments(segments)
+        self.addCleanup(mk.fs.deleteFolder, segments)
+        return (path, segments)
 
 
 class FileSystemTestCase(ChevahTestCase):
