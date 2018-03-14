@@ -302,7 +302,7 @@ class TwistedTestCase(TestCase):
             raise AssertionError(
                 'Reactor is not clean. %s: %s' % (location, reason))
 
-        if reactor._started:
+        if reactor._started:  # noqa:cover
             # Reactor was not stopped, so stop it before raising the error.
             self._shutdownTestReactor()
             raise AssertionError('Reactor was not stopped.')
