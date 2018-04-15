@@ -404,6 +404,9 @@ class NTFilesystem(PosixFilesystemBase):
     def setAttributes(self, segments, attributes):
         '''See `ILocalFilesystem`.'''
         with self._windowsToOSError(segments):
+            if 'uid' in attributes or 'gid' in attributes:
+                raise OSError(errno.EPERM, 'Operation not supported')
+
             return super(NTFilesystem, self).setAttributes(
                 segments, attributes)
 
