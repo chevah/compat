@@ -1578,6 +1578,20 @@ class TestLocalFilesystem(DefaulFilesystemTestCase):
 
         self.assertEqual(errno.EPERM, error.errno)
 
+    def test_setAttributes_time(self):
+        """
+        It will set the time of the file.
+        """
+        _, segments = self.tempFile()
+        initial = self.filesystem.getAttributes(segments)
+
+        self.filesystem.setAttributes(segments, {'atime': 1, 'mtime': 2})
+
+        after = self.filesystem.getAttributes(segments)
+
+        self.assertNotEqual(initial.modified, after.modified)
+        self.assertEqual(2, after.modified)
+
 
 @conditionals.onOSFamily('nt')
 class TestLocalFilesystemNT(DefaulFilesystemTestCase):
