@@ -1570,6 +1570,12 @@ class TestLocalFilesystem(DefaulFilesystemTestCase):
         """
         _, segments = self.tempFile()
 
+        if self.os_name == 'hpux':
+            # On HP-UX you can change the ownership of a file which is owned
+            # by you.
+            # But you can't reset it later, as it no longer belongs to you.
+            self.filesystem.setAttributes(segments, {'uid': 2, 'gid': 4})
+
         error = self.assertRaises(
             OSError,
             self.filesystem.setAttributes,

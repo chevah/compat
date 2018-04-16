@@ -22,6 +22,11 @@ def runElevatedTest():
     """
     Return true if we can access privileged OS operations.
     """
+    if CompatTestCase.os_name == 'openbsd':
+        # On OpenBSD the automatic creation of users and groups fails,
+        # and since is not a supported OS we skip the tests.
+        return False
+
     if not process_capabilities.impersonate_local_account:
         return False
 
