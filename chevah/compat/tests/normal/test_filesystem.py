@@ -101,13 +101,13 @@ class FilesystemTestMixin(object):
         self.assertEqual(u'/c', path)
 
 
-class DefaulFilesystemTestCase(CompatTestCase, FilesystemTestMixin):
+class DefaultFilesystemTestCase(CompatTestCase, FilesystemTestMixin):
     """
     Test with the default filesystem.
     """
     @classmethod
     def setUpClass(cls):
-        super(DefaulFilesystemTestCase, cls).setUpClass()
+        super(DefaultFilesystemTestCase, cls).setUpClass()
         cls.filesystem = LocalFilesystem(avatar=DefaultAvatar())
 
     def createFolderWithChild(self):
@@ -123,7 +123,7 @@ class DefaulFilesystemTestCase(CompatTestCase, FilesystemTestMixin):
         return (segments, child_name)
 
 
-class TestLocalFilesystem(DefaulFilesystemTestCase):
+class TestLocalFilesystem(DefaultFilesystemTestCase):
     """
     Test for default local filesystem which does not depend on attached
     avatar or operating system.
@@ -1600,7 +1600,7 @@ class TestLocalFilesystem(DefaulFilesystemTestCase):
 
 
 @conditionals.onOSFamily('nt')
-class TestLocalFilesystemNT(DefaulFilesystemTestCase):
+class TestLocalFilesystemNT(DefaultFilesystemTestCase):
     """
     Test for default local filesystem with special behavior for Windows.
     """
@@ -1734,7 +1734,7 @@ class TestLocalFilesystemNT(DefaulFilesystemTestCase):
 
 
 @conditionals.onOSFamily('posix')
-class TestLocalFilesystemUnix(DefaulFilesystemTestCase):
+class TestLocalFilesystemUnix(DefaultFilesystemTestCase):
     """
     Test for default local filesystem with special behavior for Linux and Unix.
     """
