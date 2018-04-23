@@ -101,15 +101,13 @@ class FilesystemTestMixin(object):
         self.assertEqual(u'/c', path)
 
 
-class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
+class DefaultFilesystemTestCase(CompatTestCase, FilesystemTestMixin):
     """
-    Test for default local filesystem which does not depend on attached
-    avatar or operating system.
+    Test with the default filesystem.
     """
-
     @classmethod
     def setUpClass(cls):
-        super(TestLocalFilesystem, cls).setUpClass()
+        super(DefaultFilesystemTestCase, cls).setUpClass()
         cls.filesystem = LocalFilesystem(avatar=DefaultAvatar())
 
     def createFolderWithChild(self):
@@ -123,6 +121,13 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         child_segments.append(child_name)
         mk.fs.createFolder(child_segments)
         return (segments, child_name)
+
+
+class TestLocalFilesystem(DefaultFilesystemTestCase):
+    """
+    Test for default local filesystem which does not depend on attached
+    avatar or operating system.
+    """
 
     def test_interface_implementation(self):
         """
@@ -143,18 +148,6 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         segments = self.filesystem.temp_segments
         self.assertTrue(self.filesystem.isFolder(segments))
-
-    @conditionals.onOSFamily('posix')
-    def test_temp_segments_location_unix(self):
-        """
-        On unix the temporary folders are located inside the temp folder.
-        """
-        if self.os_name == 'osx':
-            expected = self.filesystem.getSegmentsFromRealPath(
-                tempfile.gettempdir())
-        else:
-            expected = [u'tmp']
-        self.assertEqual(expected, self.filesystem.temp_segments)
 
     def test_temp_segments_location_nt(self):
         """
@@ -258,21 +251,6 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(self.filesystem.exists(self.test_segments))
         self.assertFalse(self.filesystem.exists(link_segments))
 
-    @conditionals.onOSFamily('nt')
-    def test_deleteFile_read_only(self):
-        """
-        On Windows, it will delete the file even if it has the read only
-        attribute.
-        """
-        segments = mk.fs.createFileInTemp()
-        path = self.filesystem.getRealPathFromSegments(segments)
-        os.chmod(path, stat.S_IREAD)
-        self.assertTrue(self.filesystem.exists(segments))
-
-        self.filesystem.deleteFile(segments)
-
-        self.assertFalse(self.filesystem.exists(segments))
-
     def test_deleteFolder_file_non_recursive(self):
         """
         Raise an OS error when trying to delete a file using folder API.
@@ -344,23 +322,6 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         """
         segments, child_name = self.createFolderWithChild()
         self.assertTrue(self.filesystem.exists(segments))
-
-        self.filesystem.deleteFolder(segments, recursive=True)
-
-        self.assertFalse(self.filesystem.exists(segments))
-
-    @conditionals.onOSFamily('nt')
-    def test_deleteFolder_recursive_read_only_members(self):
-        """
-        On Windows, it will also delete the folders, even if it contains
-        files with read only attributes.
-        """
-        segments, child_name = self.createFolderWithChild()
-        # Create and make sure we have a read only child.
-        child_segments = segments[:]
-        child_segments.append(child_name)
-        path = self.filesystem.getRealPathFromSegments(child_segments)
-        os.chmod(path, stat.S_IREAD)
 
         self.filesystem.deleteFolder(segments, recursive=True)
 
@@ -480,25 +441,6 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(self.filesystem.isLink(self.test_segments))
         # Path does not exists, since it will check for target.
         self.assertFalse(self.filesystem.exists(self.test_segments))
-
-    @conditionals.onCapability('symbolic_link', True)
-    @conditionals.onOSFamily('nt')
-    def test_makeLink_bad_root_target(self):
-        """
-        For unlocked accounts, will not create a valid link to a target
-        which does not have a valid drive letter.
-
-        This is a API inconsistency in Windows where CreateSymbolicLink will
-        consider bad:\\path as a relative path named `bad:` and not 'bad:'
-        as drive letter.
-        """
-        with self.assertRaises(OSError):
-            target_segments = ['bad', 'no-such', 'target']
-            _, test_segments = mk.fs.makePathInTemp()
-            self.filesystem.makeLink(
-                target_segments=target_segments,
-                link_segments=test_segments,
-                )
 
     # Raw data returned from reparse point.
     # print_name and target_name is  u'c:\\temp\\str1593-cp\u021b'
@@ -643,21 +585,6 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         # Files are not folders.
         self.assertFalse(
             self.filesystem.isFolder(self.test_segments))
-
-    @conditionals.onOSFamily('nt')
-    def test_getFileData(self):
-        """
-        Return a dict with file data.
-        """
-        content = mk.string()
-        self.test_segments = mk.fs.createFileInTemp(content=content)
-        name = self.test_segments[-1]
-
-        result = self.filesystem._getFileData(self.test_segments)
-
-        self.assertEqual(len(content.encode('utf-8')), result['size'])
-        self.assertEqual(name, result['name'])
-        self.assertEqual(0, result['tag'])
 
     @conditionals.onCapability('symbolic_link', True)
     def test_isLink(self):
@@ -825,59 +752,6 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
 
         with self.assertRaises(OSError):
             self.filesystem.getStatus(segments)
-
-    @conditionals.onOSFamily('nt')
-    def test_getStatus_already_opened(self):
-        """
-        It will get status for file even if it's opened for writing.
-        """
-        self.test_segments = mk.fs.createFileInTemp()
-        handle = self.filesystem.openFileForWriting(self.test_segments)
-        handle.write(mk.ascii())
-        handle.flush()
-        self.addCleanup(lambda: handle.close())
-
-        status = self.filesystem.getStatus(self.test_segments)
-
-        self.assertTrue(stat.S_ISREG(status.st_mode))
-        self.assertFalse(stat.S_ISDIR(status.st_mode))
-        self.assertFalse(stat.S_ISLNK(status.st_mode))
-        self.assertNotEqual(0, status.st_ino)
-
-    @conditionals.onOSFamily('posix')
-    def test_checkChildPath_unix(self):
-        """
-        Will raise an error if child is outside of root, or do nothing if
-        child is is root.
-        """
-        self.filesystem._checkChildPath(u'/root/path', '/root/path')
-        self.filesystem._checkChildPath(u'/root/path/', '/root/path')
-        self.filesystem._checkChildPath(u'/root/path', '/root/path/')
-        self.filesystem._checkChildPath(u'/root/path', '/root/path/../path/')
-
-        with self.assertRaises(CompatError):
-            self.filesystem._checkChildPath(u'/root/path', '/')
-
-        with self.assertRaises(CompatError):
-            self.filesystem._checkChildPath(u'/root/path', '/root/path/..')
-
-    @conditionals.onOSFamily('nt')
-    def test_checkChildPath_nt(self):
-        """
-        See: test_checkChildPath_unix
-        """
-        self.filesystem._checkChildPath(u'c:\\root\\path', 'c:\\root\\path')
-        self.filesystem._checkChildPath(u'c:\\root\\path\\', 'c:\\root\\path')
-        self.filesystem._checkChildPath(u'c:\\root\\path', 'c:\\root\\path\\')
-        self.filesystem._checkChildPath(
-            u'c:\\root\\path', 'c:\\root\\path\\..\\path')
-
-        with self.assertRaises(CompatError):
-            self.filesystem._checkChildPath(u'c:\\root\\path', 'c:\\')
-
-        with self.assertRaises(CompatError):
-            self.filesystem._checkChildPath(
-                u'c:\\root\\path', 'c:\\root\\path\\..')
 
     def test_getFolderContent_not_found(self):
         """
@@ -1343,25 +1217,6 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         self.assertFalse(self.filesystem.exists(initial_segments))
         self.assertTrue(self.filesystem.exists(self.test_segments))
 
-    @conditionals.onOSFamily('nt')
-    def test_rename_file_read_only(self):
-        """
-        On Windows, it will rename the file even if it has the read only
-        attribute.
-        """
-        _, initial_segments = mk.fs.makePathInTemp()
-        _, self.test_segments = mk.fs.makePathInTemp()
-        self.assertFalse(self.filesystem.exists(initial_segments))
-        self.assertFalse(self.filesystem.exists(self.test_segments))
-        self.filesystem.touch(initial_segments)
-        path = self.filesystem.getRealPathFromSegments(initial_segments)
-        os.chmod(path, stat.S_IREAD)
-
-        self.filesystem.rename(initial_segments, self.test_segments)
-
-        self.assertFalse(self.filesystem.exists(initial_segments))
-        self.assertTrue(self.filesystem.exists(self.test_segments))
-
     def test_rename_folder(self):
         """
         System test for folder renaming.
@@ -1708,6 +1563,221 @@ class TestLocalFilesystem(CompatTestCase, FilesystemTestMixin):
         finally:
             if a_file:
                 a_file.close()
+
+    def test_setAttributes_owner_and_group(self):
+        """
+        It will raise OSError when trying to set ownership as normal user.
+        """
+        _, segments = self.tempFile()
+
+        if self.os_name == 'hpux':
+            # On HP-UX you can change the ownership of a file which is owned
+            # by you.
+            # But you can't reset it later, as it no longer belongs to you.
+            self.filesystem.setAttributes(segments, {'uid': 2, 'gid': 4})
+
+        error = self.assertRaises(
+            OSError,
+            self.filesystem.setAttributes,
+            segments, {'uid': 1, 'gid': 1},
+            )
+
+        self.assertEqual(errno.EPERM, error.errno)
+
+    def test_setAttributes_time(self):
+        """
+        It will set the time of the file.
+        """
+        _, segments = self.tempFile()
+        initial = self.filesystem.getAttributes(segments)
+
+        self.filesystem.setAttributes(segments, {'atime': 1, 'mtime': 2})
+
+        after = self.filesystem.getAttributes(segments)
+
+        self.assertNotEqual(initial.modified, after.modified)
+        self.assertEqual(2, after.modified)
+
+
+@conditionals.onOSFamily('nt')
+class TestLocalFilesystemNT(DefaultFilesystemTestCase):
+    """
+    Test for default local filesystem with special behavior for Windows.
+    """
+
+    def test_rename_file_read_only(self):
+        """
+        On Windows, it will rename the file even if it has the read only
+        attribute.
+        """
+        _, initial_segments = mk.fs.makePathInTemp()
+        _, self.test_segments = mk.fs.makePathInTemp()
+        self.assertFalse(self.filesystem.exists(initial_segments))
+        self.assertFalse(self.filesystem.exists(self.test_segments))
+        self.filesystem.touch(initial_segments)
+        path = self.filesystem.getRealPathFromSegments(initial_segments)
+        os.chmod(path, stat.S_IREAD)
+
+        self.filesystem.rename(initial_segments, self.test_segments)
+
+        self.assertFalse(self.filesystem.exists(initial_segments))
+        self.assertTrue(self.filesystem.exists(self.test_segments))
+
+    def test_getStatus_already_opened(self):
+        """
+        It will get status for file even if it's opened for writing.
+        """
+        self.test_segments = mk.fs.createFileInTemp()
+        handle = self.filesystem.openFileForWriting(self.test_segments)
+        handle.write(mk.ascii())
+        handle.flush()
+        self.addCleanup(lambda: handle.close())
+
+        status = self.filesystem.getStatus(self.test_segments)
+
+        self.assertTrue(stat.S_ISREG(status.st_mode))
+        self.assertFalse(stat.S_ISDIR(status.st_mode))
+        self.assertFalse(stat.S_ISLNK(status.st_mode))
+        self.assertNotEqual(0, status.st_ino)
+
+    def test_checkChildPath_nt(self):
+        """
+        See: test_checkChildPath_unix
+        """
+        self.filesystem._checkChildPath(u'c:\\root\\path', 'c:\\root\\path')
+        self.filesystem._checkChildPath(u'c:\\root\\path\\', 'c:\\root\\path')
+        self.filesystem._checkChildPath(u'c:\\root\\path', 'c:\\root\\path\\')
+        self.filesystem._checkChildPath(
+            u'c:\\root\\path', 'c:\\root\\path\\..\\path')
+
+        with self.assertRaises(CompatError):
+            self.filesystem._checkChildPath(u'c:\\root\\path', 'c:\\')
+
+        with self.assertRaises(CompatError):
+            self.filesystem._checkChildPath(
+                u'c:\\root\\path', 'c:\\root\\path\\..')
+
+    def test_getFileData(self):
+        """
+        Return a dict with file data.
+        """
+        content = mk.string()
+        self.test_segments = mk.fs.createFileInTemp(content=content)
+        name = self.test_segments[-1]
+
+        result = self.filesystem._getFileData(self.test_segments)
+
+        self.assertEqual(len(content.encode('utf-8')), result['size'])
+        self.assertEqual(name, result['name'])
+        self.assertEqual(0, result['tag'])
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_makeLink_bad_root_target(self):
+        """
+        For unlocked accounts, will not create a valid link to a target
+        which does not have a valid drive letter.
+
+        This is a API inconsistency in Windows where CreateSymbolicLink will
+        consider bad:\\path as a relative path named `bad:` and not 'bad:'
+        as drive letter.
+        """
+        with self.assertRaises(OSError):
+            target_segments = ['bad', 'no-such', 'target']
+            _, test_segments = mk.fs.makePathInTemp()
+            self.filesystem.makeLink(
+                target_segments=target_segments,
+                link_segments=test_segments,
+                )
+
+    def test_deleteFolder_recursive_read_only_members(self):
+        """
+        On Windows, it will also delete the folders, even if it contains
+        files with read only attributes.
+        """
+        segments, child_name = self.createFolderWithChild()
+        # Create and make sure we have a read only child.
+        child_segments = segments[:]
+        child_segments.append(child_name)
+        path = self.filesystem.getRealPathFromSegments(child_segments)
+        os.chmod(path, stat.S_IREAD)
+
+        self.filesystem.deleteFolder(segments, recursive=True)
+
+        self.assertFalse(self.filesystem.exists(segments))
+
+    def test_deleteFile_read_only(self):
+        """
+        On Windows, it will delete the file even if it has the read only
+        attribute.
+        """
+        segments = mk.fs.createFileInTemp()
+        path = self.filesystem.getRealPathFromSegments(segments)
+        os.chmod(path, stat.S_IREAD)
+        self.assertTrue(self.filesystem.exists(segments))
+
+        self.filesystem.deleteFile(segments)
+
+        self.assertFalse(self.filesystem.exists(segments))
+
+    def test_setAttributes_mode(self):
+        """
+        It will ignore the mode of the file as is not implemented in Windows.
+        """
+        _, segments = self.tempFile()
+        initial = self.filesystem.getAttributes(segments)
+
+        self.filesystem.setAttributes(segments, {'mode': 0o777})
+
+        after = self.filesystem.getAttributes(segments)
+
+        self.assertEqual(initial.mode, after.mode)
+
+
+@conditionals.onOSFamily('posix')
+class TestLocalFilesystemUnix(DefaultFilesystemTestCase):
+    """
+    Test for default local filesystem with special behavior for Linux and Unix.
+    """
+
+    def test_checkChildPath_unix(self):
+        """
+        Will raise an error if child is outside of root, or do nothing if
+        child is is root.
+        """
+        self.filesystem._checkChildPath(u'/root/path', '/root/path')
+        self.filesystem._checkChildPath(u'/root/path/', '/root/path')
+        self.filesystem._checkChildPath(u'/root/path', '/root/path/')
+        self.filesystem._checkChildPath(u'/root/path', '/root/path/../path/')
+
+        with self.assertRaises(CompatError):
+            self.filesystem._checkChildPath(u'/root/path', '/')
+
+        with self.assertRaises(CompatError):
+            self.filesystem._checkChildPath(u'/root/path', '/root/path/..')
+
+    def test_temp_segments_location_unix(self):
+        """
+        On unix the temporary folders are located inside the temp folder.
+        """
+        if self.os_name == 'osx':
+            expected = self.filesystem.getSegmentsFromRealPath(
+                tempfile.gettempdir())
+        else:
+            expected = [u'tmp']
+        self.assertEqual(expected, self.filesystem.temp_segments)
+
+    def test_setAttributes_mode(self):
+        """
+        It will set the mode of the file.
+        """
+        _, segments = self.tempFile()
+        initial = self.filesystem.getAttributes(segments)
+
+        self.filesystem.setAttributes(segments, {'mode': 0o777})
+
+        after = self.filesystem.getAttributes(segments)
+
+        self.assertNotEqual(initial.mode, after.mode)
 
 
 class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):

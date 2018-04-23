@@ -1,6 +1,14 @@
 Release notes for chevah.compat
 ===============================
 
+0.48.0 - 15/04/2018
+-------------------
+
+* Raise OSError when trying to set permissions on Windows,
+  instead of AttributeError.
+  This should have a behaviour closer to Unix.
+
+
 0.47.0 - 08/03/2018
 -------------------
 
