@@ -335,7 +335,8 @@ class NTFilesystem(PosixFilesystemBase):
         target_path = self.getRealPathFromSegments(target_segments)
         link_path = self.getRealPathFromSegments(link_segments)
 
-        if self.isFolder(target_segments):
+        if self.isFolder(target_segments) or target_path.startswith('//UNC//'):
+            # We have folder or a Windows share as target.
             flags = win32file.SYMBOLIC_LINK_FLAG_DIRECTORY
         else:
             flags = 0
@@ -797,6 +798,12 @@ class NTFilesystem(PosixFilesystemBase):
         if self.isLink(segments):
             try:
                 target_segments = self.readLink(segments)
+                if target_segments and target_segments[0] == 'UNC':
+                    # For network links, we can't check if they exist without
+                    # actual access.
+                    # So for the purpose of the `exists` function as long as
+                    # it is a link, it exists.
+                    return True
                 return self.exists(target_segments)
             except CompatError:
                 return False

@@ -3,9 +3,7 @@
 """
 Tests for portable filesystem access.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
+from __future__ import absolute_import, division, unicode_literals
 from six import text_type
 
 import errno
@@ -442,14 +440,57 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         # Path does not exists, since it will check for target.
         self.assertFalse(self.filesystem.exists(self.test_segments))
 
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('symbolic_link', True)
+    def test_makeLink_windows_share(self):
+        """
+        It can create links to a Windows share.
+        """
+        path, segments = self.makePathInTemp()
+        # We assume all slaves have the c:\temp folder.
+        share_name = 'share name-' + mk.string()
+        self.makeWindowsShare(path='c:\\temp', name=share_name)
+        self.unlocked_filesystem.makeLink(
+            target_segments=['UNC', '127.0.0.1', share_name],
+            link_segments=segments,
+            )
+
+        self.assertTrue(os.path.exists(path))
+        self.assertEqual(
+            ['UNC', '127.0.0.1', share_name],
+            self.unlocked_filesystem.readLink(segments))
+        result = self.exists(segments)
+        self.assertTrue(result)
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('symbolic_link', True)
+    def test_makeLink_windows_share_invalid(self):
+        """
+        It can create links to a non-existent Windows share.
+        """
+        path, segments = self.makePathInTemp()
+        # We assume all slaves have the c:\temp folder.
+        share_name = 'share name-' + mk.string()
+        self.unlocked_filesystem.makeLink(
+            target_segments=['UNC', '127.0.0.1', share_name],
+            link_segments=segments,
+            )
+
+        self.assertTrue(os.path.exists(path))
+        self.assertEqual(
+            ['UNC', '127.0.0.1', share_name],
+            self.unlocked_filesystem.readLink(segments))
+        result = self.exists(segments)
+        self.assertTrue(result)
+
     # Raw data returned from reparse point.
     # print_name and target_name is  u'c:\\temp\\str1593-cp\u021b'
     raw_reparse_buffer = (
-        '\x0c\x00\x00\xa0`\x00\x00\x00&\x00.\x00\x00\x00&\x00\x00\x00\x00'
-        '\x00c\x00:\x00\\\x00t\x00e\x00m\x00p\x00\\\x00s\x00t\x00r\x001\x005'
-        '\x009\x003\x00-\x00c\x00p\x00\x1b\x02\\\x00?\x00?\x00\\\x00c\x00:'
-        '\x00\\\x00t\x00e\x00m\x00p\x00\\\x00s\x00t\x00r\x001\x005\x009\x003'
-        '\x00-\x00c\x00p\x00\x1b\x02'
+        b'\x0c\x00\x00\xa0`\x00\x00\x00&\x00.\x00\x00\x00&\x00\x00\x00\x00'
+        b'\x00c\x00:\x00\\\x00t\x00e\x00m\x00p\x00\\\x00s\x00t\x00r\x001\x005'
+        b'\x009\x003\x00-\x00c\x00p\x00\x1b\x02\\\x00?\x00?\x00\\\x00c\x00:'
+        b'\x00\\\x00t\x00e\x00m\x00p\x00\\\x00s\x00t\x00r\x001\x005\x009\x003'
+        b'\x00-\x00c\x00p\x00\x1b\x02'
         )
 
     def test_parseReparseData(self):
@@ -1911,6 +1952,10 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         path = self.unlocked_filesystem.getRealPathFromSegments(segments)
         self.assertEqual(u't:\\dad', path)
 
+        segments = ['UNC', 'server', 'some parent', 'Path']
+        path = self.unlocked_filesystem.getRealPathFromSegments(segments)
+        self.assertEqual(u'\\UNC\\server\\some parent\\Path', path)
+
     @conditionals.onOSFamily('nt')
     def test_getRealPathFromSegments_nt_invalid_drive(self):
         """
@@ -2037,6 +2082,11 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([u'c', u'Temp', u'Other path'], segments)
 
+        path = 'UNC\\server-name\\Path on-server'
+        segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
+        self.assertEqual(
+            ['UNC', 'server-name', 'Path on', 'server'], segments)
+
     def test_getRealPathFromSegments_fix_bad_path_nt(self):
         """
         When Unix folder separators are used for Windows path, the
@@ -2073,6 +2123,65 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         self.assertFalse(self.unlocked_filesystem.exists(self.test_segments))
         # Link still exists.
         self.assertTrue(self.unlocked_filesystem.isLink(self.test_segments))
+
+    def makeWindowsShare(self, path, name):
+        """
+        Export that `path` on local server as a Windows share without password
+        and with full access.
+
+        Will remote the share at the end of the test.
+        """
+        import win32net
+        import win32netcon
+
+        # See: https://msdn.microsoft.com/
+        #   en-us/library/windows/desktop/bb525408.aspx
+        share_info_2 = {
+            'netname': name,
+            'type': win32netcon.STYPE_DISKTREE,
+            'remark': 'created by chevah.compat tests',
+            'permissions': 0,  # Ignored as Windows run in user-permissions.
+            'max_uses': -1,  # No limits.
+            'current_uses': 0,  # Ignored here.
+            'path': path,
+            'password': '',  # Ignored as Win has no share-level permissions.
+            }
+        win32net.NetShareAdd(None, 2, share_info_2)
+        self.addCallback(win32net.NetShareDel, None, name)
+
+    @conditionals.onOSFamily('nt')
+    def test_exists_share_link(self):
+        """
+        Will return True when we have a UNC / network link.
+        """
+        path, segments = self.makePathInTemp()
+        # We assume all slaves have the c:\temp folder.
+        share_name = 'share name-' + mk.string()
+        self.makeWindowsShare(path='c:\\temp', name=share_name)
+        self.unlocked_filesystem.makeLink(
+            target_segments=['UNC', '127.0.0.1', share_name],
+            link_segments=segments,
+            )
+
+        result = self.exists(segments)
+
+        self.assertTrue(result)
+
+    @conditionals.onOSFamily('nt')
+    def test_exists_broken_share_link(self):
+        """
+        Will return True when we have a UNC / network link, even when it
+        links to a broken share.
+        """
+        _, segments = self.makePathInTemp()
+        self.unlocked_filesystem.makeLink(
+            target_segments=['UNC', 'localhost', 'no-such-share'],
+            link_segments=segments,
+            )
+
+        result = self.exists(segments)
+
+        self.assertTrue(result)
 
     @conditionals.onCapability('symbolic_link', True)
     def test_exists_link_broken_link(self):
@@ -2152,10 +2261,10 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         self.assertEqual([u'b'], segments)
 
         # Non unicode text will be converted to unicode
-        segments = self.locked_filesystem.getSegments('/cAca')
+        segments = self.locked_filesystem.getSegments(b'/cAca')
         self.assertEqual([u'cAca'], segments)
 
-        segments = self.locked_filesystem.getSegments('m\xc8\x9b')
+        segments = self.locked_filesystem.getSegments(b'm\xc8\x9b')
         self.assertEqual([u'm\u021b'], segments)
 
     def test_getRealPathFromSegments(self):

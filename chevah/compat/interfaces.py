@@ -426,6 +426,9 @@ class ILocalFilesystem(Interface):
     def exists(segments):
         """
         Return True if segments points to an existing path.
+
+        This should check that a file exists without reading the file or folder
+        in order to not trigger errors due to permissions errors.
         """
 
     def createFolder(segments, recursive):
