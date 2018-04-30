@@ -39,6 +39,31 @@ class FilesystemTestMixin(object):
             self.addCleanup(mk.fs.deleteFile, link_segments)
         return link_segments
 
+    def makeWindowsShare(self, path, name):
+        """
+        Export that `path` on local server as a Windows share without password
+        and with full access.
+
+        Will remote the share at the end of the test.
+        """
+        import win32net
+        import win32netcon
+
+        # See: https://msdn.microsoft.com/
+        #   en-us/library/windows/desktop/bb525408.aspx
+        share_info_2 = {
+            'netname': name,
+            'type': win32netcon.STYPE_DISKTREE,
+            'remark': 'created by chevah.compat tests',
+            'permissions': 0,  # Ignored as Windows run in user-permissions.
+            'max_uses': -1,  # No limits.
+            'current_uses': 0,  # Ignored here.
+            'path': path,
+            'password': '',  # Ignored as Win has no share-level permissions.
+            }
+        win32net.NetShareAdd(None, 2, share_info_2)
+        self.addCleanup(win32net.NetShareDel, None, name)
+
     def test_getSegments_upper_paths(self):
         """
         It will properly remove parent folder (..) and root folder (.) in
@@ -446,20 +471,21 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         It can create links to a Windows share.
         """
-        path, segments = self.makePathInTemp()
+        path, segments = mk.fs.makePathInTemp()
         # We assume all slaves have the c:\temp folder.
         share_name = 'share name-' + mk.string()
         self.makeWindowsShare(path='c:\\temp', name=share_name)
-        self.unlocked_filesystem.makeLink(
+        self.filesystem.makeLink(
             target_segments=['UNC', '127.0.0.1', share_name],
             link_segments=segments,
             )
+        self.addCleanup(self.filesystem.deleteFile, segments)
 
         self.assertTrue(os.path.exists(path))
         self.assertEqual(
             ['UNC', '127.0.0.1', share_name],
-            self.unlocked_filesystem.readLink(segments))
-        result = self.exists(segments)
+            self.filesystem.readLink(segments))
+        result = self.filesystem.exists(segments)
         self.assertTrue(result)
 
     @conditionals.onOSFamily('nt')
@@ -468,19 +494,20 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         It can create links to a non-existent Windows share.
         """
-        path, segments = self.makePathInTemp()
+        path, segments = self.tempPath()
         # We assume all slaves have the c:\temp folder.
         share_name = 'share name-' + mk.string()
-        self.unlocked_filesystem.makeLink(
+        self.filesystem.makeLink(
             target_segments=['UNC', '127.0.0.1', share_name],
             link_segments=segments,
             )
+        self.addCleanup(self.filesystem.deleteFile, segments)
 
         self.assertTrue(os.path.exists(path))
         self.assertEqual(
             ['UNC', '127.0.0.1', share_name],
-            self.unlocked_filesystem.readLink(segments))
-        result = self.exists(segments)
+            self.filesystem.readLink(segments))
+        result = self.filesystem.exists(segments)
         self.assertTrue(result)
 
     # Raw data returned from reparse point.
@@ -2056,12 +2083,11 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([u'some', u'thing'], segments)
 
+    @conditionals.onOSFamily('nt')
     def test_getSegmentsFromRealPath_nt(self):
         """
         Check getting real OS path for Windows.
         """
-        if os.name != 'nt':
-            raise self.skipTest()
         path = u''
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([], segments)
@@ -2082,19 +2108,27 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([u'c', u'Temp', u'Other path'], segments)
 
-        path = 'UNC\\server-name\\Path on-server'
+        path = '\\UNC\\server-name\\Path on\\server'
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual(
             ['UNC', 'server-name', 'Path on', 'server'], segments)
 
+        path = '\\UNC\\server-name\\Path on\\skip\\..\\other'
+        segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
+        self.assertEqual(
+            ['UNC', 'server-name', 'Path on', 'other'], segments)
+
+        path = '\\\\?\\UNC\\server-name\\Path on\\server'
+        segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
+        self.assertEqual(
+            ['UNC', 'server-name', 'Path on', 'server'], segments)
+
+    @conditionals.onOSFamily('nt')
     def test_getRealPathFromSegments_fix_bad_path_nt(self):
         """
         When Unix folder separators are used for Windows path, the
         filesystem will convert them without any errors or warnings.
         """
-        if os.name != 'nt':
-            raise self.skipTest()
-
         avatar = DefaultAvatar()
         avatar.home_folder_path = 'c:/Temp/some/path'
         avatar.root_folder_path = None
@@ -2124,37 +2158,12 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         # Link still exists.
         self.assertTrue(self.unlocked_filesystem.isLink(self.test_segments))
 
-    def makeWindowsShare(self, path, name):
-        """
-        Export that `path` on local server as a Windows share without password
-        and with full access.
-
-        Will remote the share at the end of the test.
-        """
-        import win32net
-        import win32netcon
-
-        # See: https://msdn.microsoft.com/
-        #   en-us/library/windows/desktop/bb525408.aspx
-        share_info_2 = {
-            'netname': name,
-            'type': win32netcon.STYPE_DISKTREE,
-            'remark': 'created by chevah.compat tests',
-            'permissions': 0,  # Ignored as Windows run in user-permissions.
-            'max_uses': -1,  # No limits.
-            'current_uses': 0,  # Ignored here.
-            'path': path,
-            'password': '',  # Ignored as Win has no share-level permissions.
-            }
-        win32net.NetShareAdd(None, 2, share_info_2)
-        self.addCallback(win32net.NetShareDel, None, name)
-
     @conditionals.onOSFamily('nt')
     def test_exists_share_link(self):
         """
         Will return True when we have a UNC / network link.
         """
-        path, segments = self.makePathInTemp()
+        path, segments = mk.fs.makePathInTemp()
         # We assume all slaves have the c:\temp folder.
         share_name = 'share name-' + mk.string()
         self.makeWindowsShare(path='c:\\temp', name=share_name)
@@ -2162,8 +2171,9 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
             target_segments=['UNC', '127.0.0.1', share_name],
             link_segments=segments,
             )
+        self.addCleanup(self.unlocked_filesystem.deleteFile, segments)
 
-        result = self.exists(segments)
+        result = self.unlocked_filesystem.exists(segments)
 
         self.assertTrue(result)
 
@@ -2173,13 +2183,14 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         Will return True when we have a UNC / network link, even when it
         links to a broken share.
         """
-        _, segments = self.makePathInTemp()
+        _, segments = self.tempPath()
+        self.addCleanup(self.unlocked_filesystem.deleteFile, segments)
         self.unlocked_filesystem.makeLink(
             target_segments=['UNC', 'localhost', 'no-such-share'],
             link_segments=segments,
             )
 
-        result = self.exists(segments)
+        result = self.unlocked_filesystem.exists(segments)
 
         self.assertTrue(result)
 
@@ -2375,6 +2386,10 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         """
         with self.assertRaises(CompatError):
             self.locked_filesystem.getSegmentsFromRealPath('c:\\outside\\home')
+
+        with self.assertRaises(CompatError):
+            self.locked_filesystem.getSegmentsFromRealPath(
+                '\\UNC\\server\\share\\path')
 
         with self.assertRaises(CompatError):
             self.locked_filesystem.getSegmentsFromRealPath('..\\..\\outside')

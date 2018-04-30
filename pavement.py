@@ -86,7 +86,7 @@ BUILD_PACKAGES = [
 
 # Packages required by the static analysis tests.
 LINT_PACKAGES = [
-    'scame==0.3.3',
+    'scame==0.4.2',
     'pyflakes==1.5.0',
     'pycodestyle==2.3.1',
     'bandit==1.4.0',
@@ -109,7 +109,6 @@ TEST_PACKAGES = [
     'mock',
 
     'coverage==4.4.1',
-    'coverator==0.1.0',
 
     # used for remote debugging.
     'remote_pdb==1.2.0',

@@ -151,11 +151,11 @@ class LocalTestFilesystem(LocalFilesystem):
         from chevah.compat.testing import mk
         return mk.makeFilename(prefix=prefix, suffix=suffix)
 
-    def makePathInTemp(self):
+    def makePathInTemp(self, prefix=u'', suffix=u''):
         """
         Return a (path, segments) that can be created in the temporary folder.
         """
-        name = self._makeFilename()
+        name = self._makeFilename(prefix=prefix, suffix=suffix)
         segments = self.temp_segments
         segments.append(name)
         path = os.path.join(self.temp_path, name)

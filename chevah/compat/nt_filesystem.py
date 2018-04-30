@@ -167,21 +167,30 @@ class NTFilesystem(PosixFilesystemBase):
         * unlock
           * [path1] -> path1:\
           * [path1, path2] -> path1 :\ path2
+          * [UNC, server1, path1, path2] -> \\UNC\server1\path1\path2
         '''
         if segments is None or len(segments) == 0:
             result = self._root_path
         elif self._lock_in_home:
             result = self._getLockedPathFromSegments(segments)
         else:
-            drive = u'%s:\\' % segments[0]
-            path_segments = segments[1:]
+            if segments[0] == 'UNC':
+                drive = u'\\UNC\\'
+                path_segments = segments[1:]
+            else:
+                drive = u'%s:\\' % segments[0]
+                path_segments = segments[1:]
+
             if len(path_segments) == 0:
                 result = drive
             else:
                 result = os.path.normpath(
                     drive + os.path.join(*path_segments))
                 # os.path.normpath can result in an 'out of drive' path.
-                if result.find(':\\') == -1:
+                if (
+                    result.find(':\\') == -1 and
+                    not result.startswith('\\UNC\\')
+                        ):
                     if result.find('\\') == -1:
                         result = result + ':\\'
                     else:
@@ -201,6 +210,9 @@ class NTFilesystem(PosixFilesystemBase):
         """
         Raise an error if path does not have valid driver.
         """
+        if path.startswith('\\UNC\\'):
+            return
+
         path_encoded = self.getEncodedPath(path)
         letter, _ = os.path.splitdrive(path_encoded)
         if letter.strip(':').lower() not in self._allowed_drive_letters:
@@ -218,6 +230,8 @@ class NTFilesystem(PosixFilesystemBase):
             return segments
 
         head = True
+
+        original_path = path
         path = os.path.abspath(path)
 
         if self._avatar.lock_in_home_folder:
@@ -226,13 +240,22 @@ class NTFilesystem(PosixFilesystemBase):
             tail = path[len(self._getRootPath()):]
             drive = ''
         else:
-            # For unlocked filesystem, we use 'c' as default drive.
-            drive, root_tail = os.path.splitdrive(path)
-            if not drive:
-                drive = u'c'
+            if original_path.startswith('\\UNC\\'):
+                # We have a network path.
+                drive = u'UNC'
+                tail = os.path.abspath(original_path[4:])
+            elif original_path.startswith('\\\\?\\UNC\\'):
+                # We have a long UNC.
+                drive = u'UNC'
+                tail = os.path.abspath(original_path[7:])
             else:
-                drive = drive.strip(u':')
-            tail = root_tail
+                # For unlocked filesystem, we use 'c' as default drive.
+                drive, root_tail = os.path.splitdrive(path)
+                if not drive:
+                    drive = u'c'
+                else:
+                    drive = drive.strip(u':')
+                tail = root_tail
 
         while head not in [u'\\', u'']:
             head, tail = os.path.split(tail)

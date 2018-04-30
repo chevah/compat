@@ -1186,6 +1186,12 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
 
         return context.exception
 
+    def tempPath(self, prefix='', suffix=''):
+        """
+        Return (path, segments) for a path which is not created yet.
+        """
+        return mk.fs.makePathInTemp(prefix=prefix, suffix=suffix)
+
     def tempFile(self, content='', prefix='', suffix=''):
         """
         Return (path, segments) for a new file created in temp which is
