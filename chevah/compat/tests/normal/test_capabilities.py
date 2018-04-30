@@ -281,8 +281,8 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         self.assertNotContains('SeImpersonatePrivilege', text)
 
         # Slave which don't run as admin have no SE_BACKUP/SE_RESTORE
-        self.assertContains('SeBackupPrivilege:0', text)
-        self.assertContains('SeRestorePrivilege', text)
+        self.assertNotContains('SeBackupPrivilege:0', text)
+        self.assertNotContains('SeRestorePrivilege', text)
 
         if self.os_version in 'nt-5.1':
             # Windows XP has SE_CREATE_GLOBAL enabled even when
