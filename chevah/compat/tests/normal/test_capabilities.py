@@ -263,9 +263,9 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         """
         result = self.capabilities.create_home_folder
 
-        # Windows XP does not have SE_BACKUP/SE_RESTORE enabled when not
-        # running with administrator privileges.
-        if self.os_version == 'nt-5.1':
+        # Windows XP and 2003 slaves are setup without "Backup Operators"
+        # group (SE_BACKUP/SE_RESTORE) enabled.
+        if self.os_version in ['nt-5.1', 'nt-5.2']:
             self.assertFalse(result)
         else:
             self.assertTrue(result)
