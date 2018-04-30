@@ -154,7 +154,7 @@ test_super
 try:
     from scame.formatcheck import ScameOptions
 
-    class ServerScameOptions(ScameOptions):
+    class CompatScameOptions(ScameOptions):
         """
         Scame options for the this project.
         """
@@ -177,8 +177,9 @@ try:
 
             return getattr(self, option)
 
-    options = ServerScameOptions()
+    options = CompatScameOptions()
     options.max_line_length = 80
+    options.progress = True
 
     options.scope = {
         'include': [

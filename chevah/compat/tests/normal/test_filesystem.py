@@ -2159,6 +2159,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(self.unlocked_filesystem.isLink(self.test_segments))
 
     @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('symbolic_link', True)
     def test_exists_share_link(self):
         """
         Will return True when we have a UNC / network link.
@@ -2178,6 +2179,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(result)
 
     @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('symbolic_link', True)
     def test_exists_broken_share_link(self):
         """
         Will return True when we have a UNC / network link, even when it
