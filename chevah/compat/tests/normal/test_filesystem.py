@@ -20,9 +20,9 @@ from chevah.compat.interfaces import IFileAttributes, ILocalFilesystem
 from chevah.compat.testing import CompatTestCase, conditionals, mk
 
 
-class FilesystemTestMixin(object):
+class FilesystemTestingHelpers(object):
     """
-    Common code for filesystem tests.
+    Common code for running filesystem tests.
     """
 
     def makeLink(self, segments, cleanup=True):
@@ -63,6 +63,12 @@ class FilesystemTestMixin(object):
             }
         win32net.NetShareAdd(None, 2, share_info_2)
         self.addCleanup(win32net.NetShareDel, None, name)
+
+
+class FilesystemTestMixin(FilesystemTestingHelpers):
+    """
+    Common tests for filesystem.
+    """
 
     def test_getSegments_upper_paths(self):
         """

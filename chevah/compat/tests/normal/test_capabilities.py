@@ -289,7 +289,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
             # running without administrator privileges.
             self.assertContains('SeCreateGlobalPrivilege:3', text)
         else:
-            # Windows 2003 is not admin
+            # Windows 2003 is not admin.
             self.assertNotContains('SeCreateGlobalPrivilege', text)
 
 
