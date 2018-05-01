@@ -477,22 +477,21 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         It can create links to a Windows share.
         """
+        # We assume all slaves have the c:\users\buildslave\music folder.
+        share_name = 'share-name ' + mk.string()
+        self.makeWindowsShare(
+            path='c:\\users\\buildslave\\music', name=share_name)
         path, segments = mk.fs.makePathInTemp()
-        # We assume all slaves have the c:\temp folder.
-        share_name = 'share name-' + mk.string()
-        self.makeWindowsShare(path='c:\\temp', name=share_name)
+        self.addCleanup(self.filesystem.deleteFolder, segments)
+
         self.filesystem.makeLink(
             target_segments=['UNC', '127.0.0.1', share_name],
             link_segments=segments,
             )
-        self.addCleanup(self.filesystem.deleteFile, segments)
 
-        self.assertTrue(os.path.exists(path))
-        self.assertEqual(
-            ['UNC', '127.0.0.1', share_name],
-            self.filesystem.readLink(segments))
-        result = self.filesystem.exists(segments)
-        self.assertTrue(result)
+        # We can list the folder of the linked folder.
+        result = self.filesystem.getFolderContent(segments)
+        self.assertEqual(['desktop.ini'], result)
 
     @conditionals.onOSFamily('nt')
     @conditionals.onCapability('symbolic_link', True)
@@ -578,6 +577,25 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         result = self.filesystem.readLink(link_segments)
 
         self.assertEqual(self.test_segments, result)
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('symbolic_link', True)
+    def test_readLink_ok_created_outside(self):
+        """
+        Can be used for reading target for a link created with mklink /D
+        command.
+        """
+        # We need to use ascii for os.system.
+        name = mk.ascii()
+        segments = ['c', 'temp', name]
+        path = 'c:\\temp\\' + name
+        os.system('mklink /d %s \\\\127.0.0.1\\no-such-share' % (
+            path,))
+        self.addCleanup(mk.fs.deleteFolder, segments)
+
+        result = self.filesystem.readLink(segments)
+
+        self.assertEqual(['UNC', '127.0.0.1', 'no-such-share'], result)
 
     @conditionals.onCapability('symbolic_link', True)
     def test_readLink_link_to_link(self):
@@ -1913,13 +1931,11 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
             u'../../../../../../B')
         self.assertEqual([u'B'], segments)
 
+    @conditionals.onOSFamily('posix')
     def test_getRealPathFromSegments_unix(self):
         """
         Check getting real path for Unix.
         """
-        if os.name != 'posix':
-            raise self.skipTest()
-
         path = self.unlocked_filesystem.getRealPathFromSegments([])
         self.assertEqual(u'/', path)
 
@@ -1987,7 +2003,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
 
         segments = ['UNC', 'server', 'some parent', 'Path']
         path = self.unlocked_filesystem.getRealPathFromSegments(segments)
-        self.assertEqual(u'\\UNC\\server\\some parent\\Path', path)
+        self.assertEqual(u'\\\\server\\some parent\\Path', path)
 
     @conditionals.onOSFamily('nt')
     def test_getRealPathFromSegments_nt_invalid_drive(self):
@@ -2114,12 +2130,12 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([u'c', u'Temp', u'Other path'], segments)
 
-        path = '\\UNC\\server-name\\Path on\\server'
+        path = 'UNC\\server-name\\Path on\\server'
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual(
             ['UNC', 'server-name', 'Path on', 'server'], segments)
 
-        path = '\\UNC\\server-name\\Path on\\skip\\..\\other'
+        path = 'UNC\\server-name\\Path on\\skip\\..\\other'
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual(
             ['UNC', 'server-name', 'Path on', 'other'], segments)
@@ -2171,6 +2187,9 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         Will return True when we have a UNC / network link.
         """
         path, segments = mk.fs.makePathInTemp()
+        # Make sure path does not exists.
+        result = self.unlocked_filesystem.exists(segments)
+        self.assertFalse(result)
         # We assume all slaves have the c:\temp folder.
         share_name = 'share name-' + mk.string()
         self.makeWindowsShare(path='c:\\temp', name=share_name)
@@ -2178,7 +2197,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
             target_segments=['UNC', '127.0.0.1', share_name],
             link_segments=segments,
             )
-        self.addCleanup(self.unlocked_filesystem.deleteFile, segments)
+        self.addCleanup(self.unlocked_filesystem.deleteFolder, segments)
 
         result = self.unlocked_filesystem.exists(segments)
 
@@ -2397,7 +2416,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
 
         with self.assertRaises(CompatError):
             self.locked_filesystem.getSegmentsFromRealPath(
-                '\\UNC\\server\\share\\path')
+                'UNC\\server\\share\\path')
 
         with self.assertRaises(CompatError):
             self.locked_filesystem.getSegmentsFromRealPath('..\\..\\outside')

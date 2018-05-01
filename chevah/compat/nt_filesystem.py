@@ -167,35 +167,32 @@ class NTFilesystem(PosixFilesystemBase):
         * unlock
           * [path1] -> path1:\
           * [path1, path2] -> path1 :\ path2
-          * [UNC, server1, path1, path2] -> \\UNC\server1\path1\path2
+          * [UNC, server1, path1, path2] -> \\server1\path1\path2
         '''
         if segments is None or len(segments) == 0:
             result = self._root_path
         elif self._lock_in_home:
             result = self._getLockedPathFromSegments(segments)
         else:
-            if segments[0] == 'UNC':
-                drive = u'\\UNC\\'
-                path_segments = segments[1:]
-            else:
-                drive = u'%s:\\' % segments[0]
-                path_segments = segments[1:]
+            drive = u'%s:\\' % segments[0]
+            path_segments = segments[1:]
 
             if len(path_segments) == 0:
                 result = drive
             else:
-                result = os.path.normpath(
-                    drive + os.path.join(*path_segments))
-                # os.path.normpath can result in an 'out of drive' path.
-                if (
-                    result.find(':\\') == -1 and
-                    not result.startswith('\\UNC\\')
-                        ):
-                    if result.find('\\') == -1:
-                        result = result + ':\\'
-                    else:
-                        result = result.replace('\\', ':\\', 1)
-            self._validateDrivePath(result)
+                if drive == u'UNC:\\':
+                    result = '\\' + os.path.normpath(
+                        '\\' + os.path.join(*path_segments))
+                else:
+                    result = os.path.normpath(
+                        drive + os.path.join(*path_segments))
+                    # os.path.normpath can result in an 'out of drive' path.
+                    if result.find(':\\') == -1:
+                        if result.find('\\') == -1:
+                            result = result + ':\\'
+                        else:
+                            result = result.replace('\\', ':\\', 1)
+        self._validateDrivePath(result)
 
         return text_type(result)
 
@@ -210,7 +207,9 @@ class NTFilesystem(PosixFilesystemBase):
         """
         Raise an error if path does not have valid driver.
         """
-        if path.startswith('\\UNC\\'):
+        if path.startswith('\\\\'):
+            # We have a network path and we don't check the server's
+            # availability.
             return
 
         path_encoded = self.getEncodedPath(path)
@@ -240,10 +239,10 @@ class NTFilesystem(PosixFilesystemBase):
             tail = path[len(self._getRootPath()):]
             drive = ''
         else:
-            if original_path.startswith('\\UNC\\'):
+            if original_path.startswith('UNC\\'):
                 # We have a network path.
                 drive = u'UNC'
-                tail = os.path.abspath(original_path[4:])
+                tail = os.path.abspath(original_path[3:])
             elif original_path.startswith('\\\\?\\UNC\\'):
                 # We have a long UNC.
                 drive = u'UNC'
@@ -353,12 +352,12 @@ class NTFilesystem(PosixFilesystemBase):
         # FIXME:2025:
         # Add support for junctions.
         if not self.process_capabilities.symbolic_link:
-            raise NotImplementedError
+            raise NotImplementedError('makeLink not implemented on this OS.')
 
         target_path = self.getRealPathFromSegments(target_segments)
         link_path = self.getRealPathFromSegments(link_segments)
 
-        if self.isFolder(target_segments) or target_path.startswith('//UNC//'):
+        if self.isFolder(target_segments) or target_path.startswith('\\UNC\\'):
             # We have folder or a Windows share as target.
             flags = win32file.SYMBOLIC_LINK_FLAG_DIRECTORY
         else:
