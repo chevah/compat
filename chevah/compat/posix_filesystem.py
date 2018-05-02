@@ -230,7 +230,7 @@ class PosixFilesystemBase(object):
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
-            return os.path.exists(path_encoded)
+            return os.path.lexists(path_encoded)
 
     def createFolder(self, segments, recursive=False):
         '''See `ILocalFilesystem`.'''
