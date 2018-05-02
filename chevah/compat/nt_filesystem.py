@@ -300,7 +300,13 @@ class NTFilesystem(PosixFilesystemBase):
         Tries to mimic behaviour of Unix readlink command.
         """
         path = self.getRealPathFromSegments(segments)
+        result = self._readLink(path)
+        return self.getSegmentsFromRealPath(result['target'])
 
+    def _readLink(self, path):
+        """
+        Return a dict with the link target.
+        """
         try:
             handle = win32file.CreateFileW(
                 path,
@@ -338,7 +344,7 @@ class NTFilesystem(PosixFilesystemBase):
             message = u'%s %s' % (error.message, path)
             raise OSError(errno.EINVAL, message.encode('utf-8'))
 
-        return self.getSegmentsFromRealPath(result['target'])
+        return result
 
     def makeLink(self, target_segments, link_segments):
         """
@@ -408,22 +414,6 @@ class NTFilesystem(PosixFilesystemBase):
         stats_list[1] = volume_id << 64 | index_high << 32 | index_low
         return type(stats)(stats_list)
 
-    def getAttributes(self, segments):
-        """
-        See `ILocalFilesystem`.
-        """
-        if not self.exists(segments):
-            # On Windows, it will return the attributes, even if the target
-            # does not exists.
-            raise OSError(
-                errno.ENOENT,
-                'No such file or directory',
-                self.getRealPathFromSegments(segments),
-                )
-
-        with self._windowsToOSError(segments):
-            return super(NTFilesystem, self).getAttributes(segments)
-
     def setAttributes(self, segments, attributes):
         '''See `ILocalFilesystem`.'''
         with self._windowsToOSError(segments):
@@ -491,7 +481,7 @@ class NTFilesystem(PosixFilesystemBase):
             return super(NTFilesystem, self).createFolder(
                 segments, recursive)
 
-    def _getFileData(self, segments):
+    def _getFileData(self, path):
         """
         Return a dict with resolved WIN32_FIND_DATA structure for segments.
 
@@ -501,8 +491,6 @@ class NTFilesystem(PosixFilesystemBase):
         http://msdn.microsoft.com/en-us/library/windows/
             desktop/gg258117(v=vs.85).aspx
         """
-        path = self.getEncodedPath(self.getRealPathFromSegments(segments))
-
         try:
             with self._impersonateUser():
                 search = win32file.FindFilesW(path)
@@ -557,13 +545,20 @@ class NTFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         try:
-            data = self._getFileData(segments)
-            is_reparse_point = bool(
-                data['attributes'] & FILE_ATTRIBUTE_REPARSE_POINT)
-            has_symlink_tag = (data['tag'] == self.IO_REPARSE_TAG_SYMLINK)
-            return is_reparse_point and has_symlink_tag
+            path = self.getRealPathFromSegments(segments)
+            return self._isLink(path)
         except OSError:
             return False
+
+    def _isLink(self, path):
+        """
+        Return True if path is a symlink.
+        """
+        data = self._getFileData(self.getEncodedPath(path))
+        is_reparse_point = bool(
+            data['attributes'] & FILE_ATTRIBUTE_REPARSE_POINT)
+        has_symlink_tag = (data['tag'] == self.IO_REPARSE_TAG_SYMLINK)
+        return is_reparse_point and has_symlink_tag
 
     def deleteFile(self, segments, ignore_errors=False):
         """
@@ -812,22 +807,3 @@ class NTFilesystem(PosixFilesystemBase):
                 if group_sid == sid:
                     return True
         return False
-
-    def exists(self, segments):
-        """
-        See `ILocalFilesystem`.
-        """
-        if self.isLink(segments):
-            try:
-                target_segments = self.readLink(segments)
-                if target_segments and target_segments[0] == 'UNC':
-                    # For network links, we can't check if they exist without
-                    # actual access.
-                    # So for the purpose of the `exists` function as long as
-                    # it is a link, it exists.
-                    return True
-                return self.exists(target_segments)
-            except CompatError:
-                return False
-        else:
-            return super(NTFilesystem, self).exists(segments)

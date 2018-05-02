@@ -1,6 +1,13 @@
 Release notes for chevah.compat
 ===============================
 
+
+0.49.1 - 02/04/2018
+-------------------
+
+* ILocalFilesystem.exist no longer follows links.
+
+
 0.49.0 - 30/04/2018
 -------------------
 

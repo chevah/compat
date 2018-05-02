@@ -10,6 +10,7 @@ import errno
 import os
 import platform
 import stat
+import subprocess
 import sys
 import tempfile
 import time
@@ -467,9 +468,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             link_segments=self.test_segments,
             )
 
+        self.assertTrue(self.filesystem.exists(self.test_segments))
         self.assertTrue(self.filesystem.isLink(self.test_segments))
-        # Path does not exists, since it will check for target.
-        self.assertFalse(self.filesystem.exists(self.test_segments))
 
     @conditionals.onOSFamily('nt')
     @conditionals.onCapability('symbolic_link', True)
@@ -489,9 +489,16 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             link_segments=segments,
             )
 
-        # We can list the folder of the linked folder.
+        # We can list the folder of the linked folder and do file operations
+        # on its content.
         result = self.filesystem.getFolderContent(segments)
         self.assertEqual(['desktop.ini'], result)
+        self.assertTrue(self.filesystem.exists(segments))
+        self.assertTrue(self.filesystem.isFolder(segments))
+        result = self.filesystem.getFileSize(segments)
+        self.assertEqual(0, result)
+        result = self.filesystem.getFileSize(segments + ['desktop.ini'])
+        self.assertEqual(504, result)
 
     @conditionals.onOSFamily('nt')
     @conditionals.onCapability('symbolic_link', True)
@@ -589,8 +596,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         name = mk.ascii()
         segments = ['c', 'temp', name]
         path = 'c:\\temp\\' + name
-        os.system('mklink /d %s \\\\127.0.0.1\\no-such-share' % (
-            path,))
+        subprocess.call('mklink /d %s \\\\127.0.0.1\\no-such-share' % (
+            path,), shell=True)
         self.addCleanup(mk.fs.deleteFolder, segments)
 
         result = self.filesystem.readLink(segments)
@@ -753,7 +760,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         A link to a file is recognized as both a link and a file.
         """
-        self.test_segments = mk.fs.createFileInTemp()
+        self.test_segments = mk.fs.createFileInTemp(content=b'blala')
         link_segments = self.makeLink(self.test_segments)
 
         attributes = self.filesystem.getAttributes(link_segments)
@@ -761,6 +768,11 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertTrue(attributes.is_file)
         self.assertTrue(attributes.is_link)
         self.assertFalse(attributes.is_folder)
+        if self.os_family == 'nt':
+            # On Windows, the links are not traversed.
+            self.assertEqual(0, attributes.size)
+        else:
+            self.assertEqual(5, attributes.size)
 
     @conditionals.onCapability('symbolic_link', True)
     def test_getAttributes_link_folder(self):
@@ -1754,10 +1766,10 @@ class TestLocalFilesystemNT(DefaultFilesystemTestCase):
         Return a dict with file data.
         """
         content = mk.string()
-        self.test_segments = mk.fs.createFileInTemp(content=content)
-        name = self.test_segments[-1]
+        path, segments = self.tempFile(content=content.encode('utf-8'))
+        name = segments[-1]
 
-        result = self.filesystem._getFileData(self.test_segments)
+        result = self.filesystem._getFileData(path)
 
         self.assertEqual(len(content.encode('utf-8')), result['size'])
         self.assertEqual(name, result['name'])
@@ -2165,21 +2177,6 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         self.assertEqual(
             [u'c', u'Temp', u'some', u'path'], filesystem.home_segments)
 
-    @conditionals.onCapability('symbolic_link', True)
-    def test_exists_broken_link(self):
-        """
-        Will return false when link target does not exists.
-        """
-        _, self.test_segments = mk.fs.makePathInTemp()
-        self.unlocked_filesystem.makeLink(
-            target_segments=['z', 'no-such', 'target'],
-            link_segments=self.test_segments,
-            )
-
-        self.assertFalse(self.unlocked_filesystem.exists(self.test_segments))
-        # Link still exists.
-        self.assertTrue(self.unlocked_filesystem.isLink(self.test_segments))
-
     @conditionals.onOSFamily('nt')
     @conditionals.onCapability('symbolic_link', True)
     def test_exists_share_link(self):
@@ -2199,43 +2196,22 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
             )
         self.addCleanup(self.unlocked_filesystem.deleteFolder, segments)
 
-        result = self.unlocked_filesystem.exists(segments)
-
-        self.assertTrue(result)
-
-    @conditionals.onOSFamily('nt')
-    @conditionals.onCapability('symbolic_link', True)
-    def test_exists_broken_share_link(self):
-        """
-        Will return True when we have a UNC / network link, even when it
-        links to a broken share.
-        """
-        _, segments = self.tempPath()
-        self.addCleanup(self.unlocked_filesystem.deleteFile, segments)
-        self.unlocked_filesystem.makeLink(
-            target_segments=['UNC', 'localhost', 'no-such-share'],
-            link_segments=segments,
-            )
-
-        result = self.unlocked_filesystem.exists(segments)
-
-        self.assertTrue(result)
+        self.assertTrue(self.unlocked_filesystem.exists(segments))
+        self.assertTrue(self.unlocked_filesystem.isLink(segments))
 
     @conditionals.onCapability('symbolic_link', True)
-    def test_exists_link_broken_link(self):
+    def test_exists_broken_link(self):
         """
-        Resolve recursive links to links.
+        Will check the existence of the link file and not the target.
         """
         _, self.test_segments = mk.fs.makePathInTemp()
         self.unlocked_filesystem.makeLink(
             target_segments=['z', 'no-such', 'target'],
             link_segments=self.test_segments,
             )
-        link_to_broken_link = self.makeLink(self.test_segments)
 
-        self.assertFalse(self.unlocked_filesystem.exists(link_to_broken_link))
-        # Link still exists.
-        self.assertTrue(self.unlocked_filesystem.isLink(link_to_broken_link))
+        self.assertTrue(self.unlocked_filesystem.exists(self.test_segments))
+        self.assertTrue(self.unlocked_filesystem.isLink(self.test_segments))
 
 
 class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
@@ -2424,7 +2400,8 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
     @conditionals.onCapability('symbolic_link', True)
     def test_exists_outside_link(self):
         """
-        Will return false when link target is outside of home folder.
+        Will return True when link target is outside of home folder as we
+        only check that link file itself exists.
         """
         _, self.test_segments = mk.fs.makePathInTemp()
         link_segments = [self.test_segments[-1]]
@@ -2435,12 +2412,13 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         # Make sure link was created.
         self.assertTrue(self.locked_filesystem.isLink(link_segments))
 
-        self.assertFalse(self.locked_filesystem.exists(link_segments))
+        self.assertTrue(self.locked_filesystem.exists(link_segments))
 
     @conditionals.onCapability('symbolic_link', True)
     def test_readLink_outside_home(self):
         """
-        Raise an error when target is outside of locked folder.
+        Raise an error when target is outside of locked folder to not
+        disclose the actual path.
         """
         _, self.test_segments = mk.fs.makePathInTemp()
         link_segments = [self.test_segments[-1]]
@@ -2453,6 +2431,36 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
 
         with self.assertRaises(CompatError):
             self.locked_filesystem.readLink(link_segments)
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_getAttributes_link_file_outside(self):
+        """
+        Will return the attribute of the file, even when the target is
+        outside of the home folder.
+        """
+        path, segments = self.tempPath()
+        name = segments[-1]
+        # We use a target which we know that exists on all system and which
+        # is outside of the locked filesystem.
+        if self.os_family == 'nt':
+            target = ['c', 'windows', 'notepad.exe']
+        else:
+            target = ['bin', 'sh']
+        mk.fs.makeLink(
+            target_segments=target,
+            link_segments=segments,
+            )
+        self.addCleanup(mk.fs.deleteFile, segments)
+
+        # We use the segments as visible to the locked filesystem.
+        attributes = self.locked_filesystem.getAttributes([name])
+
+        # The attributes are for the link, and the target is not revealed.
+        self.assertEqual(name, attributes.name)
+        self.assertEqual(path, attributes.path)
+        self.assertTrue(attributes.is_file)
+        self.assertTrue(attributes.is_link)
+        self.assertFalse(attributes.is_folder)
 
 
 class TestFileAttributes(CompatTestCase):
