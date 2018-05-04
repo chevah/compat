@@ -460,7 +460,7 @@ class NTFilesystem(PosixFilesystemBase):
                     raise error
 
                 result.size = stats.st_size
-                result.modified =stats.st_mtime
+                result.modified = stats.st_mtime
                 result.mode = stats.st_mode
 
             return result

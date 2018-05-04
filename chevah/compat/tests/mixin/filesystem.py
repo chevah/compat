@@ -52,7 +52,8 @@ class SymbolicLinksMixin(object):
 
         self.addCleanup(self.filesystem.deleteFile, segments)
         self.assertTrue(self.filesystem.isLink(segments))
-        self.assertFalse(self.filesystem.exists(segments))
+        # Exists will check for the existence of the file itself.
+        self.assertTrue(self.filesystem.exists(segments))
 
     @conditionals.onCapability('symbolic_link', True)
     def test_makeLink_invalid_link(self):
