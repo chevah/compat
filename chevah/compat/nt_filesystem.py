@@ -222,6 +222,11 @@ class NTFilesystem(PosixFilesystemBase):
     def getSegmentsFromRealPath(self, path):
         """
         See `ILocalFilesystem`.
+
+        It supports
+        * local file system LFS: C:\File
+        * uniform naming convention UNC: \\Server\Volume\File
+        * long UNC: \\?\C:\File or \\?\ UNC\Server\Volume\File
         """
         segments = []
 
@@ -230,24 +235,28 @@ class NTFilesystem(PosixFilesystemBase):
 
         head = True
 
-        original_path = path
-        path = os.path.abspath(path)
-
         if self._avatar.lock_in_home_folder:
+            path = os.path.abspath(path)
             self._checkChildPath(self._getRootPath(), path)
             # Locked filesystems have no drive.
             tail = path[len(self._getRootPath()):]
             drive = ''
         else:
-            if original_path.startswith('UNC\\'):
-                # We have a network path.
+
+            if path.startswith('\\\\?\\'):
+                # We have a long UNC and we normalize.
+                path = path[4:]
+
+            if path.startswith('\\\\'):
+                # We have a network share.
                 drive = u'UNC'
-                tail = os.path.abspath(original_path[3:])
-            elif original_path.startswith('\\\\?\\UNC\\'):
-                # We have a long UNC.
+                tail = os.path.abspath(path[1:])
+            elif path.startswith('UNC\\'):
+                # We have a network share cropped from a long UNC.
                 drive = u'UNC'
-                tail = os.path.abspath(original_path[7:])
+                tail = os.path.abspath(path[3:])
             else:
+                path = os.path.abspath(path)
                 # For unlocked filesystem, we use 'c' as default drive.
                 drive, root_tail = os.path.splitdrive(path)
                 if not drive:
@@ -363,7 +372,7 @@ class NTFilesystem(PosixFilesystemBase):
         target_path = self.getRealPathFromSegments(target_segments)
         link_path = self.getRealPathFromSegments(link_segments)
 
-        if self.isFolder(target_segments) or target_path.startswith('\\UNC\\'):
+        if self.isFolder(target_segments) or target_path.startswith('\\'):
             # We have folder or a Windows share as target.
             flags = win32file.SYMBOLIC_LINK_FLAG_DIRECTORY
         else:
@@ -383,6 +392,12 @@ class NTFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         path = self.getRealPathFromSegments(segments)
+        return self._getStatus(path, segments)
+
+    def _getStatus(self, path, segments):
+        """
+        Get the os.stat for `path`.
+        """
         path_encoded = self.getEncodedPath(path)
         with self._windowsToOSError(segments):
             with self._impersonateUser():
@@ -414,8 +429,46 @@ class NTFilesystem(PosixFilesystemBase):
         stats_list[1] = volume_id << 64 | index_high << 32 | index_low
         return type(stats)(stats_list)
 
+    def getAttributes(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
+        with self._windowsToOSError(segments):
+            result = super(NTFilesystem, self).getAttributes(segments)
+            if not result.is_link:
+                return result
+
+            # The link might be outside of the home folder.
+            base_path = self.getRealPathFromSegments(segments)
+
+            path = base_path
+            while True:
+                try:
+                    path = self._readLink(path)['target']
+                except OSError:
+                    # We no longer have a link.
+                    return result
+
+                # Update the attributes with the key attributes of the target.
+                try:
+                    stats = self._getStatus(path, segments)
+                except OSError as error:
+                    # We want to raise the error for the original file in
+                    # order to not disclose the target, and have it behave
+                    # like Unix.
+                    error.filename = base_path
+                    raise error
+
+                result.size = stats.st_size
+                result.modified =stats.st_mtime
+                result.mode = stats.st_mode
+
+            return result
+
     def setAttributes(self, segments, attributes):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         with self._windowsToOSError(segments):
             if 'uid' in attributes or 'gid' in attributes:
                 raise OSError(errno.EPERM, 'Operation not supported')

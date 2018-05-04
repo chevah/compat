@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.49.2 - 02/04/2018
+-------------------
+
+* ILocalFilesystem.getAttributes on Windows raise an error for broken links
+  and return the size and modified date of the linked file.
+
+
 0.49.1 - 02/04/2018
 -------------------
 

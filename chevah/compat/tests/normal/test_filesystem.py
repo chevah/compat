@@ -15,6 +15,8 @@ import sys
 import tempfile
 import time
 
+from nose.plugins.attrib import attr
+
 from chevah.compat import DefaultAvatar, FileAttributes, LocalFilesystem
 from chevah.compat.exceptions import CompatError
 from chevah.compat.interfaces import IFileAttributes, ILocalFilesystem
@@ -477,12 +479,15 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         It can create links to a Windows share.
         """
-        # We assume all slaves have the c:\users\buildslave\music folder.
+        # We assume all slaves have the c:\temp folder.
         share_name = 'share-name ' + mk.string()
-        self.makeWindowsShare(
-            path='c:\\users\\buildslave\\music', name=share_name)
+        self.makeWindowsShare(path='c:\\temp', name=share_name)
         path, segments = mk.fs.makePathInTemp()
         self.addCleanup(self.filesystem.deleteFolder, segments)
+        filename = mk.makeFilename()
+        file_segments = ['c', 'temp', filename]
+        data = mk.string() * 100
+        mk.fs.writeFileContent(file_segments, content=data)
 
         self.filesystem.makeLink(
             target_segments=['UNC', '127.0.0.1', share_name],
@@ -492,23 +497,24 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         # We can list the folder of the linked folder and do file operations
         # on its content.
         result = self.filesystem.getFolderContent(segments)
-        self.assertEqual(['desktop.ini'], result)
+        self.assertContains(filename, result)
         self.assertTrue(self.filesystem.exists(segments))
         self.assertTrue(self.filesystem.isFolder(segments))
         result = self.filesystem.getFileSize(segments)
         self.assertEqual(0, result)
-        result = self.filesystem.getFileSize(segments + ['desktop.ini'])
-        self.assertEqual(504, result)
+        result = self.filesystem.getFileSize(file_segments)
+        self.assertEqual(len(data.encode('utf-8')), result)
+        self.filesystem.deleteFile(file_segments)
 
     @conditionals.onOSFamily('nt')
     @conditionals.onCapability('symbolic_link', True)
-    def test_makeLink_windows_share_invalid(self):
+    def ttest_makeLink_windows_share_invalid(self):
         """
         It can create links to a non-existent Windows share.
         """
         path, segments = self.tempPath()
         # We assume all slaves have the c:\temp folder.
-        share_name = 'share name-' + mk.string()
+        share_name = 'no such share name-' + mk.string()
         self.filesystem.makeLink(
             target_segments=['UNC', '127.0.0.1', share_name],
             link_segments=segments,
@@ -553,6 +559,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
     def test_parseSymbolicLinkReparse(self):
         """
         Parse target and print name for symlink reparse data.
+
+        Target is always returned in Long UNC.
         """
         if (
             self.os_name == 'hpux' or
@@ -571,7 +579,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         result = self.filesystem._parseSymbolicLinkReparse(symbolic_link_data)
 
         self.assertEqual(u'c:\\temp\\str1593-cp\u021b', result['name'])
-        self.assertEqual(u'c:\\temp\\str1593-cp\u021b', result['target'])
+        self.assertEqual(
+            u'\\\\?\\c:\\temp\\str1593-cp\u021b', result['target'])
 
     @conditionals.onCapability('symbolic_link', True)
     def test_readLink_ok(self):
@@ -768,11 +777,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertTrue(attributes.is_file)
         self.assertTrue(attributes.is_link)
         self.assertFalse(attributes.is_folder)
-        if self.os_family == 'nt':
-            # On Windows, the links are not traversed.
-            self.assertEqual(0, attributes.size)
-        else:
-            self.assertEqual(5, attributes.size)
+        self.assertEqual(5, attributes.size)
 
     @conditionals.onCapability('symbolic_link', True)
     def test_getAttributes_link_folder(self):
@@ -812,11 +817,13 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         if self.os_family == 'nt':
             expected_path = path
+            expected_message = 'The system cannot find the path specified'
         else:
             expected_path = path.encode('utf-8')
+            expected_message = 'No such file or directory'
         self.assertEqual(errno.ENOENT, error.errno)
         self.assertEqual(expected_path, error.filename)
-        self.assertEqual('No such file or directory', error.strerror)
+        self.assertEqual(expected_message, error.strerror)
 
     def test_getStatus_file(self):
         """
@@ -970,6 +977,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertIsInstance(text_type, result[0])
         self.assertItemsEqual([folder_name, file_name], result)
 
+    @attr('slow')
     @conditionals.skipOnPY3()
     def test_iterateFolderContent_big(self):
         """
@@ -2126,6 +2134,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([], segments)
 
+        # A drive path.
         path = u'c:\\'
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([u'c'], segments)
@@ -2138,24 +2147,33 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([u'c', u'Temp'], segments)
 
+        # Local path with space.
         path = u'c:\\Temp\\Other path'
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([u'c', u'Temp', u'Other path'], segments)
 
-        path = 'UNC\\server-name\\Path on\\server'
+        # UNC.
+        path = '\\\\server-name\\Path on\\server'
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual(
             ['UNC', 'server-name', 'Path on', 'server'], segments)
 
-        path = 'UNC\\server-name\\Path on\\skip\\..\\other'
+        # UNC with relative path segments.
+        path = '\\\\server-name\\Path on\\skip\\..\\other'
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual(
             ['UNC', 'server-name', 'Path on', 'other'], segments)
 
+        # Long UNC for remote server.
         path = '\\\\?\\UNC\\server-name\\Path on\\server'
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual(
             ['UNC', 'server-name', 'Path on', 'server'], segments)
+
+        # Long UNC for local files.
+        path = '\\\\?\\c:\\Temp\\Other path'
+        segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
+        self.assertEqual([u'c', u'Temp', u'Other path'], segments)
 
     @conditionals.onOSFamily('nt')
     def test_getRealPathFromSegments_fix_bad_path_nt(self):
@@ -2443,9 +2461,9 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         # We use a target which we know that exists on all system and which
         # is outside of the locked filesystem.
         if self.os_family == 'nt':
-            target = ['c', 'windows', 'notepad.exe']
+            target = ['c', 'windows', 'explorer.exe']
         else:
-            target = ['bin', 'sh']
+            target = ['bin', 'cp']
         mk.fs.makeLink(
             target_segments=target,
             link_segments=segments,
@@ -2461,6 +2479,8 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(attributes.is_file)
         self.assertTrue(attributes.is_link)
         self.assertFalse(attributes.is_folder)
+        # Make sure we get the attributes of the file, and not of the link.
+        self.assertLess(5000, attributes.size)
 
 
 class TestFileAttributes(CompatTestCase):

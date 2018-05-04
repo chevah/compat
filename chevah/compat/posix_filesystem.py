@@ -737,9 +737,11 @@ class PosixFilesystemBase(object):
         ending = offset + symbolic_link_data['substitute_name_length']
         target_path = (
             symbolic_link_data['data'][offset:ending].decode('utf-16'))
-        # Have no idea why we get this magic marker.
+
+        # Have no idea why we get this marker, but we convert it to
+        # long UNC.
         if target_path.startswith('\\??\\'):
-            target_path = target_path[4:]
+            target_path = '\\\\?' + target_path[3:]
         result['target'] = target_path
 
         return result
