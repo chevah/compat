@@ -508,7 +508,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
     @conditionals.onOSFamily('nt')
     @conditionals.onCapability('symbolic_link', True)
-    def ttest_makeLink_windows_share_invalid(self):
+    def test_makeLink_windows_share_invalid(self):
         """
         It can create links to a non-existent Windows share.
         """
@@ -519,7 +519,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             target_segments=['UNC', '127.0.0.1', share_name],
             link_segments=segments,
             )
-        self.addCleanup(self.filesystem.deleteFile, segments)
+        self.addCleanup(self.filesystem.deleteFolder, segments)
 
         self.assertTrue(os.path.exists(path))
         self.assertEqual(
