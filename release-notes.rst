@@ -2,14 +2,23 @@ Release notes for chevah.compat
 ===============================
 
 
-0.49.2 - 02/04/2018
+0.49.3 - 08/05/2018
+-------------------
+
+* Fix ILocalFilesystem.getSegmentsFromRealPath on Windows when dealing with
+  long UNC paths for locked filesystems.
+  In previous releases a long UNC was erroneously considered outside of the
+  base path.
+
+
+0.49.2 - 02/05/2018
 -------------------
 
 * ILocalFilesystem.getAttributes on Windows raise an error for broken links
   and return the size and modified date of the linked file.
 
 
-0.49.1 - 02/04/2018
+0.49.1 - 02/05/2018
 -------------------
 
 * ILocalFilesystem.exist no longer follows links.

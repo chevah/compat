@@ -548,7 +548,7 @@ class ILocalFilesystem(Interface):
 
     def readLink(segments):
         """
-        Return the value of link at `segments'.
+        Return the value in segments of link at `segments'.
         """
 
     def makeLink(target_segments, link_segments):

@@ -235,6 +235,10 @@ class NTFilesystem(PosixFilesystemBase):
 
         head = True
 
+        if path.startswith('\\\\?\\'):
+            # We have a long UNC and we normalize.
+            path = path[4:]
+
         if self._avatar.lock_in_home_folder:
             path = os.path.abspath(path)
             self._checkChildPath(self._getRootPath(), path)
@@ -242,10 +246,6 @@ class NTFilesystem(PosixFilesystemBase):
             tail = path[len(self._getRootPath()):]
             drive = ''
         else:
-
-            if path.startswith('\\\\?\\'):
-                # We have a long UNC and we normalize.
-                path = path[4:]
 
             if path.startswith('\\\\'):
                 # We have a network share.

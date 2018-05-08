@@ -2433,6 +2433,23 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(self.locked_filesystem.exists(link_segments))
 
     @conditionals.onCapability('symbolic_link', True)
+    def test_readLink_inside_home(self):
+        """
+        It return the virtual link of the target.
+        """
+        path, target_segments = self.tempFile()
+        link_segments = ['%s-link' % target_segments[-1]]
+        mk.fs.makeLink(
+            target_segments=target_segments,
+            link_segments=target_segments[:-1] + link_segments,
+            )
+        self.addCleanup(self.locked_filesystem.deleteFile, link_segments)
+
+        result = self.locked_filesystem.readLink(link_segments)
+
+        self.assertEqual(target_segments[-1:], result)
+
+    @conditionals.onCapability('symbolic_link', True)
     def test_readLink_outside_home(self):
         """
         Raise an error when target is outside of locked folder to not
