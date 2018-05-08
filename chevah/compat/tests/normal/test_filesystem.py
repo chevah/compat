@@ -42,12 +42,11 @@ class FilesystemTestingHelpers(object):
             self.addCleanup(mk.fs.deleteFile, link_segments)
         return link_segments
 
-    def makeWindowsShare(self, path, name):
+    @classmethod
+    def addWindowsShare(cls, path, name):
         """
         Export that `path` on local server as a Windows share without password
         and with full access.
-
-        Will remote the share at the end of the test.
         """
         import win32net
         import win32netcon
@@ -65,7 +64,24 @@ class FilesystemTestingHelpers(object):
             'password': '',  # Ignored as Win has no share-level permissions.
             }
         win32net.NetShareAdd(None, 2, share_info_2)
-        self.addCleanup(win32net.NetShareDel, None, name)
+
+    @classmethod
+    def removeWindowsShare(cls, name):
+        """
+        Stop export the Windows share with `name` from local system.
+        """
+        import win32net
+        win32net.NetShareDel(None, name)
+
+    def makeWindowsShare(self, path, name):
+        """
+        Export that `path` on local server as a Windows share without password
+        and with full access.
+
+        Will remote the share at the end of the test.
+        """
+        self.addWindowsShare(path, name)
+        self.addCleanup(self.removeWindowsShare, name)
 
 
 class FilesystemTestMixin(FilesystemTestingHelpers):
@@ -2498,6 +2514,49 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         self.assertFalse(attributes.is_folder)
         # Make sure we get the attributes of the file, and not of the link.
         self.assertLess(5000, attributes.size)
+
+
+@conditionals.onOSFamily('nt')
+class TestLocalFilesystemLockedUNC(CompatTestCase, FilesystemTestMixin):
+    """
+    Tests for locked filesystem with UNC path.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.locked_avatar = DefaultAvatar()
+        cls._share_name = 'TestLocalFilesystemLockedUNC ' + mk.string()
+        cls.addWindowsShare('c:\\temp', cls._share_name)
+        unc = '\\\\127.0.0.1\%s' % (cls._share_name)
+        cls.locked_avatar.root_folder_path = unc
+        cls.locked_avatar.home_folder_path = unc
+        cls.locked_avatar.lock_in_home_folder = True
+        cls.locked_filesystem = LocalFilesystem(avatar=cls.locked_avatar)
+        cls.filesystem = cls.locked_filesystem
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.removeWindowsShare(cls._share_name)
+        super(TestLocalFilesystemLockedUNC, cls).tearDownClass()
+
+    def test_openFileForWriting(self):
+        """
+        Can write to files over UNC.
+        """
+        name = mk.string()
+        content = mk.getUniqueString()
+        outside_segments = ['c', 'temp', name]
+        a_file = None
+        try:
+            a_file = self.filesystem.openFileForWriting([name], utf8=False)
+            self.addCleanup(mk.fs.deleteFile, outside_segments)
+            a_file.write(content.encode('utf-8'))
+        finally:
+            if a_file:
+                a_file.close()
+
+        result = mk.fs.getFileContent(outside_segments)
+        self.assertEqual(content, result)
 
 
 class TestFileAttributes(CompatTestCase):
