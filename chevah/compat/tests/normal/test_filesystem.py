@@ -2524,6 +2524,9 @@ class TestLocalFilesystemLockedUNC(CompatTestCase, FilesystemTestMixin):
 
     @classmethod
     def setUpClass(cls):
+        if cls.__unittest_skip__:
+            raise cls.skipTest()
+
         cls.locked_avatar = DefaultAvatar()
         cls._share_name = 'TestLocalFilesystemLockedUNC ' + mk.string()
         cls.addWindowsShare('c:\\temp', cls._share_name)
