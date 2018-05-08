@@ -426,6 +426,11 @@ class ILocalFilesystem(Interface):
     def exists(segments):
         """
         Return True if segments points to an existing path.
+
+        It will return True for broken links.
+
+        This should check that a file exists without reading the file or folder
+        in order to not trigger errors due to permissions errors.
         """
 
     def createFolder(segments, recursive):
@@ -522,6 +527,10 @@ class ILocalFilesystem(Interface):
     def getAttributes(segments):
         """
         Return a list of IFileAttributes for segment.
+
+        If the path is a link, it will return the attributes for the link.
+
+        Return file not found when the link is broken.
         """
 
     def setAttributes(segments, attributes):
@@ -539,7 +548,7 @@ class ILocalFilesystem(Interface):
 
     def readLink(segments):
         """
-        Return the value of link at `segments'.
+        Return the value in segments of link at `segments'.
         """
 
     def makeLink(target_segments, link_segments):

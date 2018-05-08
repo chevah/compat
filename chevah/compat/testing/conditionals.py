@@ -41,6 +41,8 @@ def skipOnCondition(callback, message):
         if callback():
             result.__unittest_skip__ = True
             result.__unittest_skip_why__ = message
+        else:
+            result.__unittest_skip__ = True
 
         return result
 

@@ -167,6 +167,7 @@ class NTFilesystem(PosixFilesystemBase):
         * unlock
           * [path1] -> path1:\
           * [path1, path2] -> path1 :\ path2
+          * [UNC, server1, path1, path2] -> \\server1\path1\path2
         '''
         if segments is None or len(segments) == 0:
             result = self._root_path
@@ -175,18 +176,23 @@ class NTFilesystem(PosixFilesystemBase):
         else:
             drive = u'%s:\\' % segments[0]
             path_segments = segments[1:]
+
             if len(path_segments) == 0:
                 result = drive
             else:
-                result = os.path.normpath(
-                    drive + os.path.join(*path_segments))
-                # os.path.normpath can result in an 'out of drive' path.
-                if result.find(':\\') == -1:
-                    if result.find('\\') == -1:
-                        result = result + ':\\'
-                    else:
-                        result = result.replace('\\', ':\\', 1)
-            self._validateDrivePath(result)
+                if drive == u'UNC:\\':
+                    result = '\\' + os.path.normpath(
+                        '\\' + os.path.join(*path_segments))
+                else:
+                    result = os.path.normpath(
+                        drive + os.path.join(*path_segments))
+                    # os.path.normpath can result in an 'out of drive' path.
+                    if result.find(':\\') == -1:
+                        if result.find('\\') == -1:
+                            result = result + ':\\'
+                        else:
+                            result = result.replace('\\', ':\\', 1)
+        self._validateDrivePath(result)
 
         return text_type(result)
 
@@ -201,6 +207,11 @@ class NTFilesystem(PosixFilesystemBase):
         """
         Raise an error if path does not have valid driver.
         """
+        if path.startswith('\\\\'):
+            # We have a network path and we don't check the server's
+            # availability.
+            return
+
         path_encoded = self.getEncodedPath(path)
         letter, _ = os.path.splitdrive(path_encoded)
         if letter.strip(':').lower() not in self._allowed_drive_letters:
@@ -211,6 +222,11 @@ class NTFilesystem(PosixFilesystemBase):
     def getSegmentsFromRealPath(self, path):
         """
         See `ILocalFilesystem`.
+
+        It supports
+        * local file system LFS: C:\File
+        * uniform naming convention UNC: \\Server\Volume\File
+        * long UNC: \\?\C:\File or \\?\ UNC\Server\Volume\File
         """
         segments = []
 
@@ -218,21 +234,36 @@ class NTFilesystem(PosixFilesystemBase):
             return segments
 
         head = True
-        path = os.path.abspath(path)
+
+        if path.startswith('\\\\?\\'):
+            # We have a long UNC and we normalize.
+            path = path[4:]
 
         if self._avatar.lock_in_home_folder:
+            path = os.path.abspath(path)
             self._checkChildPath(self._getRootPath(), path)
             # Locked filesystems have no drive.
             tail = path[len(self._getRootPath()):]
             drive = ''
         else:
-            # For unlocked filesystem, we use 'c' as default drive.
-            drive, root_tail = os.path.splitdrive(path)
-            if not drive:
-                drive = u'c'
+
+            if path.startswith('\\\\'):
+                # We have a network share.
+                drive = u'UNC'
+                tail = os.path.abspath(path[1:])
+            elif path.startswith('UNC\\'):
+                # We have a network share cropped from a long UNC.
+                drive = u'UNC'
+                tail = os.path.abspath(path[3:])
             else:
-                drive = drive.strip(u':')
-            tail = root_tail
+                path = os.path.abspath(path)
+                # For unlocked filesystem, we use 'c' as default drive.
+                drive, root_tail = os.path.splitdrive(path)
+                if not drive:
+                    drive = u'c'
+                else:
+                    drive = drive.strip(u':')
+                tail = root_tail
 
         while head not in [u'\\', u'']:
             head, tail = os.path.split(tail)
@@ -278,7 +309,13 @@ class NTFilesystem(PosixFilesystemBase):
         Tries to mimic behaviour of Unix readlink command.
         """
         path = self.getRealPathFromSegments(segments)
+        result = self._readLink(path)
+        return self.getSegmentsFromRealPath(result['target'])
 
+    def _readLink(self, path):
+        """
+        Return a dict with the link target.
+        """
         try:
             handle = win32file.CreateFileW(
                 path,
@@ -316,7 +353,7 @@ class NTFilesystem(PosixFilesystemBase):
             message = u'%s %s' % (error.message, path)
             raise OSError(errno.EINVAL, message.encode('utf-8'))
 
-        return self.getSegmentsFromRealPath(result['target'])
+        return result
 
     def makeLink(self, target_segments, link_segments):
         """
@@ -330,12 +367,13 @@ class NTFilesystem(PosixFilesystemBase):
         # FIXME:2025:
         # Add support for junctions.
         if not self.process_capabilities.symbolic_link:
-            raise NotImplementedError
+            raise NotImplementedError('makeLink not implemented on this OS.')
 
         target_path = self.getRealPathFromSegments(target_segments)
         link_path = self.getRealPathFromSegments(link_segments)
 
-        if self.isFolder(target_segments):
+        if self.isFolder(target_segments) or target_path.startswith('\\'):
+            # We have folder or a Windows share as target.
             flags = win32file.SYMBOLIC_LINK_FLAG_DIRECTORY
         else:
             flags = 0
@@ -354,6 +392,12 @@ class NTFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         path = self.getRealPathFromSegments(segments)
+        return self._getStatus(path, segments)
+
+    def _getStatus(self, path, segments):
+        """
+        Get the os.stat for `path`.
+        """
         path_encoded = self.getEncodedPath(path)
         with self._windowsToOSError(segments):
             with self._impersonateUser():
@@ -389,20 +433,42 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
-        if not self.exists(segments):
-            # On Windows, it will return the attributes, even if the target
-            # does not exists.
-            raise OSError(
-                errno.ENOENT,
-                'No such file or directory',
-                self.getRealPathFromSegments(segments),
-                )
-
         with self._windowsToOSError(segments):
-            return super(NTFilesystem, self).getAttributes(segments)
+            result = super(NTFilesystem, self).getAttributes(segments)
+            if not result.is_link:
+                return result
+
+            # The link might be outside of the home folder.
+            base_path = self.getRealPathFromSegments(segments)
+
+            path = base_path
+            while True:
+                try:
+                    path = self._readLink(path)['target']
+                except OSError:
+                    # We no longer have a link.
+                    return result
+
+                # Update the attributes with the key attributes of the target.
+                try:
+                    stats = self._getStatus(path, segments)
+                except OSError as error:
+                    # We want to raise the error for the original file in
+                    # order to not disclose the target, and have it behave
+                    # like Unix.
+                    error.filename = base_path
+                    raise error
+
+                result.size = stats.st_size
+                result.modified = stats.st_mtime
+                result.mode = stats.st_mode
+
+            return result
 
     def setAttributes(self, segments, attributes):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         with self._windowsToOSError(segments):
             if 'uid' in attributes or 'gid' in attributes:
                 raise OSError(errno.EPERM, 'Operation not supported')
@@ -468,7 +534,7 @@ class NTFilesystem(PosixFilesystemBase):
             return super(NTFilesystem, self).createFolder(
                 segments, recursive)
 
-    def _getFileData(self, segments):
+    def _getFileData(self, path):
         """
         Return a dict with resolved WIN32_FIND_DATA structure for segments.
 
@@ -478,8 +544,6 @@ class NTFilesystem(PosixFilesystemBase):
         http://msdn.microsoft.com/en-us/library/windows/
             desktop/gg258117(v=vs.85).aspx
         """
-        path = self.getEncodedPath(self.getRealPathFromSegments(segments))
-
         try:
             with self._impersonateUser():
                 search = win32file.FindFilesW(path)
@@ -534,13 +598,20 @@ class NTFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         try:
-            data = self._getFileData(segments)
-            is_reparse_point = bool(
-                data['attributes'] & FILE_ATTRIBUTE_REPARSE_POINT)
-            has_symlink_tag = (data['tag'] == self.IO_REPARSE_TAG_SYMLINK)
-            return is_reparse_point and has_symlink_tag
+            path = self.getRealPathFromSegments(segments)
+            return self._isLink(path)
         except OSError:
             return False
+
+    def _isLink(self, path):
+        """
+        Return True if path is a symlink.
+        """
+        data = self._getFileData(self.getEncodedPath(path))
+        is_reparse_point = bool(
+            data['attributes'] & FILE_ATTRIBUTE_REPARSE_POINT)
+        has_symlink_tag = (data['tag'] == self.IO_REPARSE_TAG_SYMLINK)
+        return is_reparse_point and has_symlink_tag
 
     def deleteFile(self, segments, ignore_errors=False):
         """
@@ -789,16 +860,3 @@ class NTFilesystem(PosixFilesystemBase):
                 if group_sid == sid:
                     return True
         return False
-
-    def exists(self, segments):
-        """
-        See `ILocalFilesystem`.
-        """
-        if self.isLink(segments):
-            try:
-                target_segments = self.readLink(segments)
-                return self.exists(target_segments)
-            except CompatError:
-                return False
-        else:
-            return super(NTFilesystem, self).exists(segments)
