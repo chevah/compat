@@ -156,7 +156,7 @@ class NTFilesystem(PosixFilesystemBase):
         else:
             return self._root_path
 
-    def getRealPathFromSegments(self, segments):
+    def getRealPathFromSegments(self, segments, no_virtual_root=False):
         '''See `ILocalFilesystem`.
         * []
           * lock : root_path

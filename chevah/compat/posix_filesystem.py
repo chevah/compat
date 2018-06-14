@@ -186,7 +186,7 @@ class PosixFilesystemBase(object):
         temporary_folder = tempfile.gettempdir()
         return self._pathSplitRecursive(temporary_folder)
 
-    def getRealPathFromSegments(self, segments):
+    def getRealPathFromSegments(self, segments, no_virtual_root=False):
         '''See `ILocalFilesystem`.'''
         raise NotImplementedError('You must implement this method.')
 
@@ -316,9 +316,16 @@ class PosixFilesystemBase(object):
 
     def rename(self, from_segments, to_segments):
         '''See `ILocalFilesystem`.'''
-        from_path = self.getRealPathFromSegments(from_segments)
+        from_path = self.getRealPathFromSegments(
+            from_segments, no_virtual_root=True)
+        to_path = self.getRealPathFromSegments(
+            to_segments, no_virtual_root=True)
+
+        if from_path is None or to_path is None:
+            raise CompatError(
+                1012, 'Renaming a virtual root folder is not allowed.')
+
         from_path_encoded = self.getEncodedPath(from_path)
-        to_path = self.getRealPathFromSegments(to_segments)
         to_path_encoded = self.getEncodedPath(to_path)
         with self._impersonateUser():
             return os.rename(from_path_encoded, to_path_encoded)
@@ -547,7 +554,13 @@ class PosixFilesystemBase(object):
 
     def setAttributes(self, segments, attributes):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, no_virtual_root=True)
+
+        if path is None:
+            raise CompatError(
+                1005,
+                'Setting attributes for a virtual root folder is not allowed.')
+
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
             if 'uid' in attributes and 'gid' in attributes:

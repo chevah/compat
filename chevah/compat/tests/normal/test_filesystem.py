@@ -18,6 +18,7 @@ import time
 from nose.plugins.attrib import attr
 
 from chevah.compat import DefaultAvatar, FileAttributes, LocalFilesystem
+from chevah.compat.avatar import FilesystemApplicationAvatar
 from chevah.compat.exceptions import CompatError
 from chevah.compat.interfaces import IFileAttributes, ILocalFilesystem
 from chevah.compat.testing import CompatTestCase, conditionals, mk
@@ -2560,6 +2561,311 @@ class TestLocalFilesystemLockedUNC(CompatTestCase, FilesystemTestMixin):
 
         result = mk.fs.getFileContent(outside_segments)
         self.assertEqual(content, result)
+
+
+class TestLocalFilesystemVirtualFolders(CompatTestCase):
+    """
+    Test with the default filesystem using virtual folders.
+    """
+    def getFilesystem(self, virtual_folders=()):
+        avatar = FilesystemApplicationAvatar(
+            name=mk.string(),
+            home_folder_path=mk.fs.temp_path,
+            virtual_folders=virtual_folders,
+            )
+        return LocalFilesystem(avatar=avatar)
+
+    def test_getRealPathFromSegments_no_match(self):
+        """
+        Returns the non-virtual real path when the is no match for the
+        segments.
+        """
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], '/some/path'),
+            (['base'], '/other/path'),
+            ])
+
+        result = sut.getRealPathFromSegments(['other', 'path'])
+
+        self.assertEqual(
+            os.path.join(mk.fs.temp_path, 'other', 'path'), result)
+
+    def test_getRealPathFromSegments_sub_match(self):
+        """
+        Returns the non-virtual real path when the is no full match for the
+        segments.
+        """
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], '/some/path'),
+            (['base'], '/other/path'),
+            ])
+
+        result = sut.getRealPathFromSegments(['some', 'path'])
+
+        self.assertEqual(
+            os.path.join(mk.fs.temp_path, 'some', 'path'), result)
+
+    def test_getRealPathFromSegments_match(self):
+        """
+        Returns the non-virtual real path when the is no full match for the
+        segments.
+        """
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], '/some/path'),
+            (['base'], '/other/path'),
+            ])
+
+        result = sut.getRealPathFromSegments(['base'])
+
+        self.assertEqual('/other/path', result)
+
+    def test_getRealPathFromSegments_match_no_root(self):
+        """
+        Returns the non-virtual real path when the is no full match for the
+        segments.
+        """
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], '/some/path'),
+            (['base'], '/other/path'),
+            ])
+
+        result = sut.getRealPathFromSegments(['base'], no_virtual_root=True)
+
+        self.assertIsNone(result)
+
+        result = sut.getRealPathFromSegments(
+            ['some', 'base'], no_virtual_root=True)
+
+        self.assertIsNone(result)
+
+    def test_getRealPathFromSegments_child_match(self):
+        """
+        Returns the non-virtual real path when the is no full match for the
+        segments.
+        """
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], '/some/path'),
+            (['base'], '/other/path'),
+            ])
+
+        result = sut.getRealPathFromSegments(['base', 'child'])
+
+        self.assertEqual('/other/path/child', result)
+
+    def test_getSegmentsFromRealPath_no_match(self):
+        """
+        Returns the non-virtual real path when the is no full match for the
+        segments.
+        """
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], '/some/path'),
+            (['base'], '/other/path'),
+            ])
+
+        result = sut.getSegmentsFromRealPath(mk.fs.temp_path)
+
+        self.assertEqual([], result)
+
+        result = sut.getSegmentsFromRealPath(
+            os.path.join(mk.fs.temp_path, 'child path'))
+        self.assertEqual(['child path'], result)
+
+        # It will not allow getting out of the root.
+        with self.assertRaises(CompatError) as context:
+            sut.getSegmentsFromRealPath('/some/path/../other')
+        self.assertEqual(1018, context.exception.event_id)
+
+    def test_getSegmentsFromRealPath_match(self):
+        """
+        Returns the virtual segments when the path matches a virtual one.
+        Trailing path separators are ignored and relative paths are resolved.
+        """
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], '/virtual/path/'),
+            (['base'], '/other/path'),
+            ])
+
+        result = sut.getSegmentsFromRealPath('/virtual/path')
+        self.assertEqual(['some', 'base'], result)
+
+        result = sut.getSegmentsFromRealPath('/virtual/path/')
+        self.assertEqual(['some', 'base'], result)
+
+        result = sut.getSegmentsFromRealPath('/virtual/path//')
+        self.assertEqual(['some', 'base'], result)
+
+        result = sut.getSegmentsFromRealPath('/other/../virtual/path//')
+        self.assertEqual(['some', 'base'], result)
+
+        result = sut.getSegmentsFromRealPath('/other/path')
+        self.assertEqual(['base'], result)
+
+        result = sut.getSegmentsFromRealPath('/other/path/')
+        self.assertEqual(['base'], result)
+
+    def test_getSegmentsFromRealPath_child_match(self):
+        """
+        Returns the virtual segments when the path matches a virtual one.
+        """
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], '/virtual/path'),
+            (['base'], '/other/path'),
+            ])
+
+        result = sut.getSegmentsFromRealPath('/other/path/child')
+        self.assertEqual(['base', 'child'], result)
+
+        result = sut.getSegmentsFromRealPath('/other/path/child/')
+        self.assertEqual(['base', 'child'], result)
+
+        result = sut.getSegmentsFromRealPath('/other/path/child/../other-dir')
+        self.assertEqual(['base', 'other-dir'], result)
+
+    def test_deleteFolder_virtual(self):
+        """
+        It can delete folders which are ancestors of a virtual path but will
+        fail to delete the virtual root itself.
+        """
+        virtual_path, virtual_segments = self.tempFolder('virtual')
+        mk.fs.createFolder(virtual_segments + ['child-folder'])
+
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], virtual_path)
+            ])
+
+        sut.deleteFolder(['some', 'base', 'child-folder'])
+
+        # It will not allow delete the virtual root.
+        with self.assertRaises(CompatError) as context:
+            sut.deleteFolder(['some', 'base'])
+
+        self.assertEqual(1010, context.exception.event_id)
+
+    def test_setOwner_virtual(self):
+        """
+        It can set owner for folders which are ancestors of a virtual path but
+        will fail to change the virtual root itself.
+        """
+        virtual_path, virtual_segments = self.tempFolder('virtual')
+        mk.fs.createFolder(virtual_segments + ['child-folder'])
+
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], virtual_path)
+            ])
+
+        # It will try to set the owner.
+        with self.assertRaises(CompatError) as context:
+            sut.setOwner(['some', 'base', 'child-folder'], 'no-such-owner')
+        # Owner not found error while trying to perform the operation.
+        self.assertEqual(1016, context.exception.event_id)
+
+        # It will not allow set owner for the virtual root.
+        with self.assertRaises(CompatError) as context:
+            sut.setOwner(['some', 'base'], 'no-such-owner')
+        # Operation denied.
+        self.assertEqual(1007, context.exception.event_id)
+
+    def test_addGroup_virtual(self):
+        """
+        It can add group for folders which are ancestors of a virtual path but
+        will fail to change the virtual root itself.
+        """
+        virtual_path, virtual_segments = self.tempFolder('virtual')
+        mk.fs.createFolder(virtual_segments + ['child-folder'])
+
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], virtual_path)
+            ])
+
+        # It will try to set the owner.
+        with self.assertRaises(CompatError) as context:
+            sut.addGroup(['some', 'base', 'child-folder'], 'no-such-group')
+        # Group not found error.. while trying to perform the operation.
+        self.assertEqual(1017, context.exception.event_id)
+
+        # It will not allow add group for the virtual root.
+        with self.assertRaises(CompatError) as context:
+            sut.addGroup(['some', 'base'], 'no-such-group')
+        # Operation denied.
+        self.assertEqual(1011, context.exception.event_id)
+
+    def test_rename_virtual(self):
+        """
+        It can rename to and from folders which are ancestors of a virtual path
+        but will fail to rename to and from virtual root itself.
+        """
+        virtual_path, virtual_segments = self.tempFolder('virtual')
+        mk.fs.createFolder(virtual_segments + ['child-folder'])
+
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], virtual_path)
+            ])
+
+        sut.rename(['some', 'base', 'child-folder'], ['outside-folder'])
+        self.assertFalse(mk.fs.exists(virtual_segments + ['child-folder']))
+        self.assertTrue(mk.fs.exists(mk.fs.temp_segments + ['outside-folder']))
+
+        sut.rename(['outside-folder'], ['some', 'base', 'child-folder'])
+        self.assertTrue(mk.fs.exists(virtual_segments + ['child-folder']))
+        self.assertFalse(
+            mk.fs.exists(mk.fs.temp_segments + ['outside-folder']))
+
+        # It will not allow to rename the virtual root.
+        with self.assertRaises(CompatError) as context:
+            sut.rename(['some', 'base'], ['outside-root'])
+        # Operation denied.
+        self.assertEqual(1012, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
+            sut.rename(['outside-folder'], ['some', 'base'])
+        # Operation denied.
+        self.assertEqual(1012, context.exception.event_id)
+
+    def test_setAttributes_virtual(self):
+        """
+        It can setAttributes for folders which is ancestor of a virtual path
+        but will fail to change the virtual root itself.
+        """
+        virtual_path, virtual_segments = self.tempFolder('virtual')
+        mk.fs.createFolder(virtual_segments + ['child-folder'])
+
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], virtual_path)
+            ])
+
+        sut.setAttributes(
+            ['some', 'base', 'child-folder'],
+            {'atime': 1111, 'mtime': 1111},
+            )
+
+        with self.assertRaises(CompatError) as context:
+            sut.setAttributes(
+                ['some', 'base'],
+                {'atime': 1111, 'mtime': 1111},
+                )
+        # Operation denied.
+        self.assertEqual(1005, context.exception.event_id)
+
+    def test_removeGroup_virtual(self):
+        """
+        It can removeGroup for folders which are ancestors of a virtual path
+        but will fail to change the virtual root itself.
+        """
+        virtual_path, virtual_segments = self.tempFolder('virtual')
+        mk.fs.createFolder(virtual_segments + ['child-folder'])
+
+        sut = self.getFilesystem(virtual_folders=[
+            (['some', 'base'], virtual_path)
+            ])
+
+        # It can remove group.
+        sut.removeGroup(['some', 'base', 'child-folder'], 'no-such-group')
+
+        # It will not allow to remove the group for the virtual root.
+        with self.assertRaises(CompatError) as context:
+            sut.removeGroup(['some', 'base'], 'no-such-group')
+        # Operation denied.
+        self.assertEqual(1004, context.exception.event_id)
 
 
 class TestFileAttributes(CompatTestCase):

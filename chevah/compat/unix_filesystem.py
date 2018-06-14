@@ -52,14 +52,33 @@ class UnixFilesystem(PosixFilesystemBase):
         else:
             return self._avatar.root_folder_path
 
-    def getRealPathFromSegments(self, segments):
-        '''See `ILocalFilesystem`.'''
+    def getRealPathFromSegments(self, segments, no_virtual_root=False):
+        """
+        See `ILocalFilesystem`.
+        """
         if segments is None or len(segments) == 0:
             return text_type(self._root_handler)
-        else:
-            relative_path = u'/' + u'/'.join(segments)
-            relative_path = os.path.abspath(relative_path).rstrip('/')
-            return text_type(self._root_handler.rstrip('/') + relative_path)
+
+        segments_lenghts = len(segments)
+        for virtual_segments, real_path in self._avatar.virtual_folders:
+            if segments_lenghts < len(virtual_segments):
+                # Not the virtual folder of a descender of it.
+                continue
+            base_segments = segments[:len(virtual_segments)]
+            if base_segments != virtual_segments:
+                # Base does not match
+                continue
+
+            tail_segments = segments[len(virtual_segments):]
+
+            if no_virtual_root and not tail_segments:
+                return None
+
+            return os.path.join(real_path, *tail_segments)
+
+        relative_path = u'/' + u'/'.join(segments)
+        relative_path = os.path.abspath(relative_path).rstrip('/')
+        return text_type(self._root_handler.rstrip('/') + relative_path)
 
     def getSegmentsFromRealPath(self, path):
         """
@@ -71,6 +90,16 @@ class UnixFilesystem(PosixFilesystemBase):
 
         head = True
         tail = os.path.abspath(path)
+
+        for virtual_segments, real_path in self._avatar.virtual_folders:
+            virtual_root = os.path.abspath(real_path)
+            if not tail.startswith(virtual_root):
+                # Not a virtual folder.
+                continue
+
+            ancenstors = tail[len(real_path):].split('/')
+            ancenstors = [a for a in ancenstors if a]
+            return virtual_segments + ancenstors
 
         if self._avatar.lock_in_home_folder:
             self._checkChildPath(self._root_handler, tail)
@@ -107,8 +136,12 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def setOwner(self, segments, owner):
         '''See `ILocalFilesystem`.'''
+        path = self.getRealPathFromSegments(segments, no_virtual_root=True)
+        if path is None:
+            raise CompatError(
+                1007, 'Setting owner for virtual root folder is not allowed.')
+
         encoded_owner = owner.encode('utf-8')
-        path = self.getRealPathFromSegments(segments)
         path_encoded = path.encode('utf-8')
         try:
             uid = pwd.getpwnam(encoded_owner).pw_uid
@@ -129,8 +162,12 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def addGroup(self, segments, group, permissions=None):
         '''See `ILocalFilesystem`.'''
+        path = self.getRealPathFromSegments(segments, no_virtual_root=True)
+        if path is None:
+            raise CompatError(
+                1011, 'Adding a group for virtual root folder is not allowed.')
+
         encoded_group = codecs.encode(group, 'utf-8')
-        path = self.getRealPathFromSegments(segments)
         path_encoded = path.encode('utf-8')
         try:
             gid = grp.getgrnam(encoded_group).gr_gid
@@ -147,6 +184,11 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def removeGroup(self, segments, group):
         '''See `ILocalFilesystem`.'''
+        path = self.getRealPathFromSegments(segments, no_virtual_root=True)
+        if path is None:
+            raise CompatError(
+                1004,
+                'Removing a group for virtual root folder is not allowed.')
         return
 
     def hasGroup(self, segments, group):
@@ -187,11 +229,19 @@ class UnixFilesystem(PosixFilesystemBase):
                 return False
 
     def deleteFolder(self, segments, recursive=True):
-        '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
+        """
+        See `ILocalFilesystem`.
+        """
+        path = self.getRealPathFromSegments(segments, no_virtual_root=True)
+
+        if path is None:
+            raise CompatError(
+                1010, 'Deleting a virtual root folder is not allowed.')
+
         if path == u'/':
             raise CompatError(
                 1009, 'Deleting Unix root folder is not allowed.')
+
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
             if self.isLink(segments):

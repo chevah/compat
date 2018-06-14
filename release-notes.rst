@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.50.0 - 14/06/2018
+-------------------
+
+* Add support for virtual directories as a way to allow explicit access to
+  selected folders outside of the locked root.
+
+
 0.49.3 - 08/05/2018
 -------------------
 

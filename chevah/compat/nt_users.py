@@ -373,6 +373,7 @@ class NTDefaultAvatar(NTHasImpersonatedAvatar):
     lock_in_home_folder = False
     token = None
     peer = None
+    virtual_folders = ()
 
     @property
     def use_impersonation(self):
