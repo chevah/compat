@@ -59,22 +59,9 @@ class UnixFilesystem(PosixFilesystemBase):
         if segments is None or len(segments) == 0:
             return text_type(self._root_handler)
 
-        segments_lenghts = len(segments)
-        for virtual_segments, real_path in self._avatar.virtual_folders:
-            if segments_lenghts < len(virtual_segments):
-                # Not the virtual folder of a descender of it.
-                continue
-            base_segments = segments[:len(virtual_segments)]
-            if base_segments != virtual_segments:
-                # Base does not match
-                continue
-
-            tail_segments = segments[len(virtual_segments):]
-
-            if no_virtual_root and not tail_segments:
-                return None
-
-            return os.path.join(real_path, *tail_segments)
+        result = self._getVirtualPathFromSegments(segments, no_virtual_root)
+        if result is not None:
+            return result
 
         relative_path = u'/' + u'/'.join(segments)
         relative_path = os.path.abspath(relative_path).rstrip('/')
@@ -136,11 +123,7 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def setOwner(self, segments, owner):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments, no_virtual_root=True)
-        if path is None:
-            raise CompatError(
-                1007, 'Setting owner for virtual root folder is not allowed.')
-
+        path = self._getPathToSetOwner(segments)
         encoded_owner = owner.encode('utf-8')
         path_encoded = path.encode('utf-8')
         try:
@@ -162,11 +145,7 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def addGroup(self, segments, group, permissions=None):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments, no_virtual_root=True)
-        if path is None:
-            raise CompatError(
-                1011, 'Adding a group for virtual root folder is not allowed.')
-
+        path = self._getPathToAddGroup(segments)
         encoded_group = codecs.encode(group, 'utf-8')
         path_encoded = path.encode('utf-8')
         try:
@@ -183,12 +162,13 @@ class UnixFilesystem(PosixFilesystemBase):
                     self.raiseFailedToAddGroup(group, path, u'Not permitted.')
 
     def removeGroup(self, segments, group):
-        '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments, no_virtual_root=True)
-        if path is None:
-            raise CompatError(
-                1004,
-                'Removing a group for virtual root folder is not allowed.')
+        '''
+        See `ILocalFilesystem`.
+
+        This has no effect on Unix/Linux but raises an error if we are
+        touching a virtual root.
+        '''
+        self._getPathToRemoveGroup(segments)
         return
 
     def hasGroup(self, segments, group):
@@ -232,12 +212,7 @@ class UnixFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
-        path = self.getRealPathFromSegments(segments, no_virtual_root=True)
-
-        if path is None:
-            raise CompatError(
-                1010, 'Deleting a virtual root folder is not allowed.')
-
+        path = self._getPathToDeleteFolder(segments)
         if path == u'/':
             raise CompatError(
                 1009, 'Deleting Unix root folder is not allowed.')

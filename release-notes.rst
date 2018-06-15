@@ -7,6 +7,7 @@ Release notes for chevah.compat
 
 * Add support for virtual directories as a way to allow explicit access to
   selected folders outside of the locked root.
+* Fix skipOnCondition to run the tests when condition is meet.
 
 
 0.49.3 - 08/05/2018

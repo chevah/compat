@@ -69,6 +69,9 @@ class PosixFilesystemBase(object):
     #   desktop/aa365511(v=vs.85).aspx
     IO_REPARSE_TAG_SYMLINK = 0xA000000C
 
+    # Token to signal that segments for the exact virtual root.
+    _VIRTUAL_ROOT = object()
+
     @property
     def avatar(self):
         return self._avatar
@@ -190,6 +193,35 @@ class PosixFilesystemBase(object):
         '''See `ILocalFilesystem`.'''
         raise NotImplementedError('You must implement this method.')
 
+    def _getVirtualPathFromSegments(self, segments, no_virtual_root):
+        """
+        Return the virtual path associated with `segments`
+
+        Return None if not found.
+        Return _VIRTUAL_ROOT if the segments are for exact virtual root and
+            `no_virtual_root` was True.
+
+        """
+        segments_length = len(segments)
+        for virtual_segments, real_path in self._avatar.virtual_folders:
+            if segments_length < len(virtual_segments):
+                # Not the virtual folder of a descender of it.
+                continue
+            base_segments = segments[:len(virtual_segments)]
+            if base_segments != virtual_segments:
+                # Base does not match
+                continue
+
+            tail_segments = segments[len(virtual_segments):]
+
+            if no_virtual_root and not tail_segments:
+                return self._VIRTUAL_ROOT
+
+            return os.path.join(real_path, *tail_segments)
+
+        # No virtual path found for segments.
+        return None
+
     def getSegmentsFromRealPath(self, path):
         '''See `ILocalFilesystem`.'''
         raise NotImplementedError('You must implement this method.')
@@ -247,6 +279,18 @@ class PosixFilesystemBase(object):
         See `ILocalFilesystem`.
         """
         raise NotImplementedError('deleteFolder not implemented.')
+
+    def _getPathToDeleteFolder(self, segments):
+        """
+        Return the path for segments for the delete operation.
+
+        Raise an error if we are trying to delete a virtual root.
+        """
+        path = self.getRealPathFromSegments(segments, no_virtual_root=True)
+        if path is self._VIRTUAL_ROOT:
+            raise CompatError(
+                1010, 'Deleting a virtual root folder is not allowed.')
+        return path
 
     def _rmtree(self, path):
         """
@@ -321,7 +365,7 @@ class PosixFilesystemBase(object):
         to_path = self.getRealPathFromSegments(
             to_segments, no_virtual_root=True)
 
-        if from_path is None or to_path is None:
+        if from_path is self._VIRTUAL_ROOT or to_path is self._VIRTUAL_ROOT:
             raise CompatError(
                 1012, 'Renaming a virtual root folder is not allowed.')
 
@@ -454,6 +498,25 @@ class PosixFilesystemBase(object):
         with self._impersonateUser():
             return os.path.getsize(path_encoded)
 
+    def _getVirtualMembers(self, segments):
+        """
+        Return a list with virtual folders which are children of `segments`.
+        """
+        result = []
+        segments_length = len(segments)
+        for virtual_segments, real_path in self._avatar.virtual_folders:
+            if segments_length >= len(virtual_segments):
+                # Not something that might look like the parent of a
+                # virtual folder.
+                continue
+
+            if virtual_segments[:segments_length] != segments:
+                continue
+
+            child_segments = virtual_segments[segments_length:]
+            result.append(child_segments[0])
+        return result
+
     def getFolderContent(self, segments):
         """
         See `ILocalFilesystem`.
@@ -464,6 +527,9 @@ class PosixFilesystemBase(object):
         with self._impersonateUser():
             for entry in os.listdir(path_encoded):
                 result.append(self._decodeFilename(entry))
+
+        result.extend(self._getVirtualMembers(segments))
+
         return result
 
     def iterateFolderContent(self, segments):
@@ -487,14 +553,18 @@ class PosixFilesystemBase(object):
             # The list is empty so just return an empty iterator.
             return iter([])
 
-        return self._iterateScandir(first_member, folder_iterator)
+        firsts = [first_member.name]
+        firsts.extend(self._getVirtualMembers(segments))
 
-    def _iterateScandir(self, first_member, folder_iterator):
+        return self._iterateScandir(firsts, folder_iterator)
+
+    def _iterateScandir(self, firsts, folder_iterator):
         """
         This generator wrapper needs to be delegated to this method as
         otherwise we get a GeneratorExit error.
         """
-        yield self._decodeFilename(first_member.name)
+        for name in firsts:
+            yield self._decodeFilename(name)
 
         for member in folder_iterator:
             yield self._decodeFilename(member.name)
@@ -556,7 +626,7 @@ class PosixFilesystemBase(object):
         '''See `ILocalFilesystem`.'''
         path = self.getRealPathFromSegments(segments, no_virtual_root=True)
 
-        if path is None:
+        if path is self._VIRTUAL_ROOT:
             raise CompatError(
                 1005,
                 'Setting attributes for a virtual root folder is not allowed.')
@@ -613,6 +683,43 @@ class PosixFilesystemBase(object):
             _(u'Failed to add group "%s" for "%s". %s' % (
                 group, path, message)),
             )
+
+    def _getPathToAddGroup(self, segments):
+        """
+        Return the path for adding a group.
+
+        Raise an exception if trying to add a group to a virtual root.
+        """
+        path = self.getRealPathFromSegments(segments, no_virtual_root=True)
+        if path is self._VIRTUAL_ROOT:
+            raise CompatError(
+                1011, 'Adding a group for virtual root folder is not allowed.')
+        return path
+
+    def _getPathToRemoveGroup(self, segments):
+        """
+        Return the path for removing a group.
+
+        Raise an exception if trying to remove a group from a virtual root.
+        """
+        path = self.getRealPathFromSegments(segments, no_virtual_root=True)
+        if path is self._VIRTUAL_ROOT:
+            raise CompatError(
+                1004,
+                'Removing a group for virtual root folder is not allowed.')
+        return path
+
+    def _getPathToSetOwner(self, segments):
+        """
+        Return the path for setting the owner.
+
+        Raise an exception if trying to set the owner from a virtual root.
+        """
+        path = self.getRealPathFromSegments(segments, no_virtual_root=True)
+        if path is self._VIRTUAL_ROOT:
+            raise CompatError(
+                1007, 'Setting owner for virtual root folder is not allowed.')
+        return path
 
     def raiseFailedToSetOwner(self, owner, path, message=u''):
         """
