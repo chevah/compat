@@ -2518,6 +2518,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
 
 
 @conditionals.onOSFamily('nt')
+@conditionals.onCapability('symbolic_link', True)
 class TestLocalFilesystemLockedUNC(CompatTestCase, FilesystemTestMixin):
     """
     Tests for locked filesystem with UNC path.
@@ -2993,6 +2994,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         self.assertItemsEqual(['child-folder', 'child-file'], result)
 
+    @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_member(self):
         """
         It can list a virtual folder as member of a parent folder.

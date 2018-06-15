@@ -170,9 +170,6 @@ class NTFilesystem(PosixFilesystemBase):
           * [UNC, server1, path1, path2] -> \\server1\path1\path2
         '''
         def get_path(segments):
-            if segments is None or len(segments) == 0:
-                return self._root_path
-
             if self._lock_in_home:
                 return self._getLockedPathFromSegments(segments)
 
@@ -196,9 +193,14 @@ class NTFilesystem(PosixFilesystemBase):
                             result = result.replace('\\', ':\\', 1)
             return result
 
+        if segments is None or len(segments) == 0:
+            # We have the root path for sure.
+            return self._root_path
+
         virtual_path = self._getVirtualPathFromSegments(
             segments, no_virtual_root)
         if virtual_path is self._VIRTUAL_ROOT:
+            # We have the marker for a virtual root.
             return virtual_path
 
         if virtual_path is not None:
