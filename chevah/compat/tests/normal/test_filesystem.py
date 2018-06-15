@@ -972,7 +972,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         result = self.filesystem.iterateFolderContent(segments)
 
-        self.assertIteratorEqual([], result)
+        self.assertIteratorItemsEqual([], result)
 
     @conditionals.skipOnPY3()
     def test_iterateFolderContent_non_empty(self):
@@ -3008,11 +3008,11 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         result = sut.getFolderContent([])
 
-        expected = ['non-virtual', 'base', 'virtual']
+        expected = ['base', 'non-virtual', 'virtual']
         self.assertItemsEqual(expected, result)
 
         result = sut.iterateFolderContent([])
-        self.assertIteratorEqual(expected, result)
+        self.assertIteratorItemsEqual(expected, result)
 
     def test_getFolderContent_virtual_no_match(self):
         """
