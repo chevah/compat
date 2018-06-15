@@ -515,7 +515,8 @@ class PosixFilesystemBase(object):
 
             child_segments = virtual_segments[segments_length:]
             result.append(child_segments[0])
-        return result
+        # Reduce duplicates.
+        return set(result)
 
     def getFolderContent(self, segments):
         """
@@ -528,7 +529,12 @@ class PosixFilesystemBase(object):
             for entry in os.listdir(path_encoded):
                 result.append(self._decodeFilename(entry))
 
-        result.extend(self._getVirtualMembers(segments))
+        for virtual_member in self._getVirtualMembers(segments):
+            if virtual_member in result:
+                # This is on overlay over an existing member so we don't
+                # want to list it twice.
+                continue
+            result.append(virtual_member)
 
         return result
 
@@ -553,10 +559,10 @@ class PosixFilesystemBase(object):
             # The list is empty so just return an empty iterator.
             return iter([])
 
-        firsts = [first_member.name]
+        firsts = [self._decodeFilename(first_member.name)]
         firsts.extend(self._getVirtualMembers(segments))
-
-        return self._iterateScandir(firsts, folder_iterator)
+        # We set as set to eliminate duplicates.
+        return self._iterateScandir(set(firsts), folder_iterator)
 
     def _iterateScandir(self, firsts, folder_iterator):
         """
@@ -564,10 +570,13 @@ class PosixFilesystemBase(object):
         otherwise we get a GeneratorExit error.
         """
         for name in firsts:
-            yield self._decodeFilename(name)
+            yield name
 
         for member in folder_iterator:
-            yield self._decodeFilename(member.name)
+            name = self._decodeFilename(member.name)
+            if name in firsts:
+                continue
+            yield name
 
     def _decodeFilename(self, name):
         """

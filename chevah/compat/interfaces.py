@@ -382,8 +382,8 @@ class ILocalFilesystem(Interface):
         """
         Return the real path for the segments.
 
-        If `no_virtual_root` is True, it will return None if segments are
-        for the root of virtual folder.
+        If `no_virtual_root` is True, it will return VIRTUAL_ROOT if segments
+        are for the root of virtual folder.
         """
 
     def getSegmentsFromRealPath(real_path):

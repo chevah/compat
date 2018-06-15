@@ -1080,10 +1080,10 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     def cleanWorkingFolder(cls):
         path = mk.fs.getAbsoluteRealPath('.')
         segments = mk.fs.getSegmentsFromRealPath(path)
-        return cls._cleanFolder(segments)
+        return cls._cleanFolder(segments, only_marked=True)
 
     @classmethod
-    def _cleanFolder(cls, folder_segments):
+    def _cleanFolder(cls, folder_segments, only_marked=False):
         """
         Clean all test files from folder_segments.
 
@@ -1102,14 +1102,15 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         temp_filesystem = LocalFilesystem(avatar=temp_avatar)
         temp_members = []
         for member in (temp_filesystem.getFolderContent(folder_segments)):
-            if member.find(TEST_NAME_MARKER) != -1:
-                temp_members.append(member)
-                segments = folder_segments[:]
-                segments.append(member)
-                if temp_filesystem.isFolder(segments):
-                    temp_filesystem.deleteFolder(segments, recursive=True)
-                else:
-                    temp_filesystem.deleteFile(segments)
+            if only_marked and member.find(TEST_NAME_MARKER) == -1:
+                continue
+            temp_members.append(member)
+            segments = folder_segments[:]
+            segments.append(member)
+            if temp_filesystem.isFolder(segments):
+                temp_filesystem.deleteFolder(segments, recursive=True)
+            else:
+                temp_filesystem.deleteFile(segments)
 
         return temp_members
 

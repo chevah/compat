@@ -2616,12 +2616,12 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         """
         sut = self.getFilesystem(virtual_folders=[
             (['some', 'base'], '/some/path'),
-            (['base'], '/other/path'),
+            (['base\N{leo}'], '/other\N{sun}/path'),
             ])
 
-        result = sut.getRealPathFromSegments(['base'])
+        result = sut.getRealPathFromSegments(['base\N{leo}'])
 
-        self.assertEqual('/other/path', result)
+        self.assertEqual('/other\N{sun}/path', result)
 
     @conditionals.onOSFamily('nt')
     def test_getRealPathFromSegments_match_nt(self):
@@ -2632,16 +2632,16 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         Tests with NT paths.
         """
         sut = self.getFilesystem(virtual_folders=[
-            (['some', 'base'], 'c:/some/path'),
-            (['base'], 'e:\\other\\path'),
+            (['some\N{sun}', 'base\N{sun}'], 'c:/someN{sun}/path'),
+            (['base\N{sun}'], 'e:\\otherN{leo}\\path'),
             ])
 
-        result = sut.getRealPathFromSegments(['base'])
-        self.assertEqual('e:\\other\\path', result)
+        result = sut.getRealPathFromSegments(['base\N{sun}'])
+        self.assertEqual('e:\\otherN{leo}\\path', result)
 
         # It will normalize the path.
-        result = sut.getRealPathFromSegments(['some', 'base'])
-        self.assertEqual('c:\\some\\path', result)
+        result = sut.getRealPathFromSegments(['some\N{sun}', 'base\N{sun}'])
+        self.assertEqual('c:\\some\N{sun}\\path', result)
 
     def test_getRealPathFromSegments_match_no_root(self):
         """
@@ -2649,16 +2649,17 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         folder and were asked to not return virtual roots.
         """
         sut = self.getFilesystem(virtual_folders=[
-            (['some', 'base'], '/some/path'),
-            (['base'], '/other/path'),
+            (['some\N{sun}', 'base\N{sun}'], '/some/path'),
+            (['base\N{sun}'], '/other/path'),
             ])
 
-        result = sut.getRealPathFromSegments(['base'], no_virtual_root=True)
+        result = sut.getRealPathFromSegments(
+            ['base\N{sun}'], no_virtual_root=True)
 
         self.assertIs(sut._VIRTUAL_ROOT, result)
 
         result = sut.getRealPathFromSegments(
-            ['some', 'base'], no_virtual_root=True)
+            ['some\N{sun}', 'base\N{sun}'], no_virtual_root=True)
 
         self.assertIs(sut._VIRTUAL_ROOT, result)
 
@@ -2671,13 +2672,13 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         Test with Posix paths.
         """
         sut = self.getFilesystem(virtual_folders=[
-            (['some', 'base'], '/some/path'),
-            (['base'], '/other/path'),
+            (['some', 'base'], '/some/path\N{sun}'),
+            (['base\N{sun}'], '/other/path\N{sun}'),
             ])
 
-        result = sut.getRealPathFromSegments(['base', 'child'])
+        result = sut.getRealPathFromSegments(['base\N{sun}', 'child\N{cloud}'])
 
-        self.assertEqual('/other/path/child', result)
+        self.assertEqual('/other/path\N{sun}/child\N{cloud}', result)
 
     @conditionals.onOSFamily('nt')
     def test_getRealPathFromSegments_child_match_nt(self):
@@ -2686,15 +2687,16 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         segments.
         """
         sut = self.getFilesystem(virtual_folders=[
-            (['some', 'base'], 'c:/some/path'),
-            (['base'], 'e:\\other\\path'),
+            (['some', 'base\N{sun}'], 'c:/some/path\N{sun}'),
+            (['base\N{sun}'], 'e:\\other\N{sun}\\path'),
             ])
 
-        result = sut.getRealPathFromSegments(['base', 'child'])
-        self.assertEqual('e:\\other\\path\\child', result)
+        result = sut.getRealPathFromSegments(['base\N{sun}', 'child\N{cloud}'])
+        self.assertEqual('e:\\other\N{sun}\\path\\child\N{cloud}', result)
 
-        result = sut.getRealPathFromSegments(['some', 'base', 'child'])
-        self.assertEqual('c:\\some\\path\\child', result)
+        result = sut.getRealPathFromSegments(
+            ['some', 'base\N{sun}', 'child\N{sun}'])
+        self.assertEqual('c:\\some\\path\N{sun}\\child\N{sun}', result)
 
     def test_getSegmentsFromRealPath_no_match(self):
         """
@@ -2728,27 +2730,27 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         Tests with posix paths. Keep in sync with NT paths.
         """
         sut = self.getFilesystem(virtual_folders=[
-            (['some', 'base'], '/virtual/path/'),
-            (['base'], '/other/path'),
+            (['some\N{sun}', 'base'], '/virtual/path\N{sun}/'),
+            (['base\N{sun}'], '/other\N{sun}/path'),
             ])
 
-        result = sut.getSegmentsFromRealPath('/virtual/path')
-        self.assertEqual(['some', 'base'], result)
+        result = sut.getSegmentsFromRealPath('/virtual/path\N{sun}')
+        self.assertEqual(['some\N{sun}', 'base'], result)
 
-        result = sut.getSegmentsFromRealPath('/virtual/path/')
-        self.assertEqual(['some', 'base'], result)
+        result = sut.getSegmentsFromRealPath('/virtual/path\N{sun}/')
+        self.assertEqual(['some\N{sun}', 'base'], result)
 
-        result = sut.getSegmentsFromRealPath('/virtual/path//')
-        self.assertEqual(['some', 'base'], result)
+        result = sut.getSegmentsFromRealPath('/virtual/path\N{sun}//')
+        self.assertEqual(['some\N{sun}', 'base'], result)
 
-        result = sut.getSegmentsFromRealPath('/other/../virtual/path//')
-        self.assertEqual(['some', 'base'], result)
+        result = sut.getSegmentsFromRealPath('/other/../virtual/path\N{sun}//')
+        self.assertEqual(['some\N{sun}', 'base'], result)
 
-        result = sut.getSegmentsFromRealPath('/other/path')
-        self.assertEqual(['base'], result)
+        result = sut.getSegmentsFromRealPath('/other\N{sun}/path')
+        self.assertEqual(['base\N{sun}'], result)
 
-        result = sut.getSegmentsFromRealPath('/other/path/')
-        self.assertEqual(['base'], result)
+        result = sut.getSegmentsFromRealPath('/other\N{sun}/path/')
+        self.assertEqual(['base\N{sun}'], result)
 
     @conditionals.onOSFamily('nt')
     def test_getSegmentsFromRealPath_match_nt(self):
@@ -2842,6 +2844,50 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         with self.assertRaises(CompatError) as context:
             sut.deleteFolder(['some', 'base'])
 
+        self.assertEqual(1010, context.exception.event_id)
+
+        # When only a partial match is done, it will try to delete the
+        # real path.
+        with self.assertRaises(OSError) as context:
+            sut.deleteFolder(['some'])
+
+    def test_createFolder_virtual(self):
+        """
+        You can't create a folder over a virtual path.
+        """
+        sut = self.getFilesystem(virtual_folders=[
+            (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path)
+            ])
+
+        # It can create outside of the virtual folders.
+        sut.createFolder(['new\N{cloud}'])
+        self.addCleanup(sut.deleteFolder, ['new\N{cloud}'])
+        result = sut.getFolderContent([])
+        self.assertItemsEqual(['new\N{cloud}', 'virtual-\N{cloud}'], result)
+
+        # It can create folders over the virtual ones.
+        with self.assertRaises(CompatError) as context:
+            sut.createFolder(['virtual-\N{cloud}'])
+        self.assertEqual(1010, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
+            sut.createFolder(['virtual-\N{cloud}', 'base\N{sun}'])
+        self.assertEqual(1010, context.exception.event_id)
+
+    def test_touch_virtual(self):
+        """
+        It can't touch a virtual root.
+        """
+        sut = self.getFilesystem(virtual_folders=[
+            (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path)
+            ])
+
+        with self.assertRaises(CompatError) as context:
+            sut.touch(['virtual-\N{cloud}'])
+        self.assertEqual(1010, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
+            sut.touch(['virtual-\N{cloud}', 'base\N{sun}'])
         self.assertEqual(1010, context.exception.event_id)
 
     def test_setOwner_virtual(self):
@@ -2984,74 +3030,108 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         """
         virtual_path, virtual_segments = self.tempFolder('virtual')
         mk.fs.createFolder(virtual_segments + ['child-folder'])
-        mk.fs.createFile(virtual_segments + ['child-file'])
+        mk.fs.createFile(virtual_segments + ['child-file\N{sun}'])
 
         sut = self.getFilesystem(virtual_folders=[
-            (['base'], virtual_path)
+            (['base\N{sun}'], virtual_path)
             ])
 
-        result = sut.getFolderContent(['base'])
+        result = sut.getFolderContent(['base\N{sun}'])
 
-        self.assertItemsEqual(['child-folder', 'child-file'], result)
+        self.assertItemsEqual(['child-folder', 'child-file\N{sun}'], result)
 
     @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_member(self):
         """
         It can list a virtual folder as member of a parent folder.
         """
-        virtual_path, virtual_segments = self.tempFolder('virtual')
-        self.tempFolder('non-virtual')
-        mk.fs.createFolder(virtual_segments + ['child-folder'])
+        virtual_path, virtual_segments = self.tempFolder('other-real\N{sun}')
+        self.tempFolder('non-virtual\N{sun}')
+        mk.fs.createFolder(virtual_segments + ['child-folder\N{sun}'])
         mk.fs.createFile(virtual_segments + ['child-file'])
 
         sut = self.getFilesystem(virtual_folders=[
-            (['base'], virtual_path)
+            (['\N{sun}base'], virtual_path)
             ])
 
+        expected = ['\N{sun}base', 'non-virtual\N{sun}', 'other-real\N{sun}']
         result = sut.getFolderContent([])
-
-        expected = ['base', 'non-virtual', 'virtual']
         self.assertItemsEqual(expected, result)
 
         result = sut.iterateFolderContent([])
         self.assertIteratorItemsEqual(expected, result)
 
+    @conditionals.skipOnPY3()
+    def test_getFolderContent_virtual_singe_root(self):
+        """
+        It will not list the member multiple time if they overlay with
+        virtual segments.
+        """
+        self.tempFolder('other-real\N{sun}')
+
+        sut = self.getFilesystem(virtual_folders=[
+            (['other-real\N{sun}', 'base1'], mk.fs.temp_path),
+            (['other-real\N{sun}', 'base2'], mk.fs.temp_path)
+            ])
+
+        expected = ['other-real\N{sun}']
+        result = sut.getFolderContent([])
+        self.assertItemsEqual(expected, result)
+
+        result = sut.iterateFolderContent([])
+        self.assertIteratorItemsEqual(expected, result)
+
+    @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_no_match(self):
         """
         It will ignore the virtual folders if they don't overlay to the
         requested folder..
         """
-        _, segments = self.tempFolder('non-virtual')
+        _, segments = self.tempFolder('non-virtual\N{sun}')
         mk.fs.createFolder(segments + ['child-folder'])
-        mk.fs.createFile(segments + ['child-file'])
+        mk.fs.createFile(segments + ['child-file\N{sun}'])
 
         sut = self.getFilesystem(virtual_folders=[
             (['virtual', 'child-virtual'], mk.fs.temp_path),
             (['virtual', 'deep-virtual', 'other'], mk.fs.temp_path),
             ])
 
-        result = sut.getFolderContent(['non-virtual'])
+        expected = ['child-folder', 'child-file\N{sun}']
 
-        self.assertItemsEqual(['child-folder', 'child-file'], result)
+        result = sut.getFolderContent(['non-virtual\N{sun}'])
+        self.assertItemsEqual(expected, result)
 
+        result = sut.iterateFolderContent(['non-virtual\N{sun}'])
+        self.assertIteratorItemsEqual(expected, result)
+
+    @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_mix(self):
         """
         It can list a virtual folder as member of a parent folder mixed
         with non-virtual members.
         """
-        _, segments = self.tempFolder('non-virtual')
+        _, segments = self.tempFolder('non-virtual\N{sun}')
         mk.fs.createFolder(segments + ['child-folder'])
         mk.fs.createFile(segments + ['child-file'])
 
         sut = self.getFilesystem(virtual_folders=[
-            (['non-virtual', 'virtual'], mk.fs.temp_path),
-            (['non-virtual', 'deep-virtual', 'other'], mk.fs.temp_path),
+            (['non-virtual\N{sun}', 'virtual\N{cloud}'], mk.fs.temp_path),
+            (['non-virtual\N{sun}', 'child-file', 'other'], mk.fs.temp_path),
             ])
 
-        result = sut.getFolderContent(['non-virtual'])
+        expected = ['child-folder', 'child-file', 'virtual\N{cloud}']
 
-        self.assertItemsEqual(
-            ['child-folder', 'child-file', 'virtual', 'deep-virtual'], result)
+        result = sut.getFolderContent(['non-virtual\N{sun}'])
+        self.assertItemsEqual(expected, result)
+
+        result = sut.iterateFolderContent(['non-virtual\N{sun}'])
+        self.assertIteratorItemsEqual(expected, result)
+
+        result = sut.getFolderContent([])
+        self.assertEqual(['non-virtual\N{sun}'], result)
+
+        result = sut.iterateFolderContent([])
+        self.assertIteratorItemsEqual(['non-virtual\N{sun}'], result)
 
 
 class TestFileAttributes(CompatTestCase):
