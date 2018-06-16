@@ -1,8 +1,22 @@
 Release notes for chevah.compat
 ===============================
 
+0.51.2 - 16/06/2018
+-------------------
 
-0.50.0 - 14/06/2018
+* Restrict any mutating operation on the virtual path itself or for parts
+  of the virtual path.
+* Fix listing of deep virtual path which are not overlaid.
+
+
+0.51.1 - 15/06/2018
+-------------------
+
+* Fix listing of virtual path which are overlaid
+* Fix folder iteration with unicode.
+
+
+0.50.0 - 15/06/2018
 -------------------
 
 * Add support for virtual directories as a way to allow explicit access to

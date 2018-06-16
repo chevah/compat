@@ -156,7 +156,7 @@ class NTFilesystem(PosixFilesystemBase):
         else:
             return self._root_path
 
-    def getRealPathFromSegments(self, segments, no_virtual_root=False):
+    def getRealPathFromSegments(self, segments, include_virtual=True):
         '''See `ILocalFilesystem`.
         * []
           * lock : root_path
@@ -198,7 +198,7 @@ class NTFilesystem(PosixFilesystemBase):
             return self._root_path
 
         virtual_path = self._getVirtualPathFromSegments(
-            segments, no_virtual_root)
+            segments, include_virtual)
         if virtual_path is self._VIRTUAL_ROOT:
             # We have the marker for a virtual root.
             return virtual_path
@@ -396,7 +396,8 @@ class NTFilesystem(PosixFilesystemBase):
         if not self.process_capabilities.symbolic_link:
             raise NotImplementedError('makeLink not implemented on this OS.')
 
-        target_path = self.getRealPathFromSegments(target_segments)
+        target_path = self.getRealPathFromSegments(
+            target_segments, include_virtual=False)
         link_path = self.getRealPathFromSegments(link_segments)
 
         if self.isFolder(target_segments) or target_path.startswith('\\'):
@@ -685,7 +686,7 @@ class NTFilesystem(PosixFilesystemBase):
 
         For symbolic links we always force non-recursive behaviour.
         """
-        path = self._getPathToDeleteFolder(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
         try:
             with self._windowsToOSError(segments), self._impersonateUser():
@@ -712,7 +713,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
-        path = self._getPathToSetOwner(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         try:
             self._setOwner(path, owner)
         except CompatException as error:
@@ -790,7 +791,7 @@ class NTFilesystem(PosixFilesystemBase):
 
     def addGroup(self, segments, group, permissions=None):
         '''See `ILocalFilesystem`.'''
-        path = self._getPathToAddGroup(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         try:
             group_sid, group_domain, group_type = (
                 win32security.LookupAccountName(None, group))
@@ -816,8 +817,7 @@ class NTFilesystem(PosixFilesystemBase):
 
     def removeGroup(self, segments, group):
         '''See `ILocalFilesystem`.'''
-        path = self._getPathToRemoveGroup(segments)
-
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         try:
             group_sid, group_domain, group_type = (
                 win32security.LookupAccountName(None, group))

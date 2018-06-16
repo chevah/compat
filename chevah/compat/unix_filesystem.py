@@ -52,14 +52,14 @@ class UnixFilesystem(PosixFilesystemBase):
         else:
             return self._avatar.root_folder_path
 
-    def getRealPathFromSegments(self, segments, no_virtual_root=False):
+    def getRealPathFromSegments(self, segments, include_virtual=True):
         """
         See `ILocalFilesystem`.
         """
         if segments is None or len(segments) == 0:
             return text_type(self._root_handler)
 
-        result = self._getVirtualPathFromSegments(segments, no_virtual_root)
+        result = self._getVirtualPathFromSegments(segments, include_virtual)
         if result is not None:
             return result
 
@@ -103,7 +103,7 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def readLink(self, segments):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = path.encode('utf-8')
         with self._impersonateUser():
             target = os.readlink(path_encoded).decode('utf-8')
@@ -113,9 +113,11 @@ class UnixFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
-        target_path = self.getRealPathFromSegments(target_segments)
+        target_path = self.getRealPathFromSegments(
+            target_segments, include_virtual=False)
         target_path_encoded = self.getEncodedPath(target_path)
-        link_path = self.getRealPathFromSegments(link_segments)
+        link_path = self.getRealPathFromSegments(
+            link_segments, include_virtual=False)
         link_path_encoded = self.getEncodedPath(link_path)
 
         with self._impersonateUser():
@@ -123,7 +125,7 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def setOwner(self, segments, owner):
         '''See `ILocalFilesystem`.'''
-        path = self._getPathToSetOwner(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         encoded_owner = owner.encode('utf-8')
         path_encoded = path.encode('utf-8')
         try:
@@ -145,7 +147,7 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def addGroup(self, segments, group, permissions=None):
         '''See `ILocalFilesystem`.'''
-        path = self._getPathToAddGroup(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         encoded_group = codecs.encode(group, 'utf-8')
         path_encoded = path.encode('utf-8')
         try:
@@ -168,7 +170,7 @@ class UnixFilesystem(PosixFilesystemBase):
         This has no effect on Unix/Linux but raises an error if we are
         touching a virtual root.
         '''
-        self._getPathToRemoveGroup(segments)
+        self.getRealPathFromSegments(segments, include_virtual=False)
         return
 
     def hasGroup(self, segments, group):
@@ -198,6 +200,9 @@ class UnixFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        if self._isVirtualPath(segments):
+            return False
+
         path = self.getRealPathFromSegments(segments)
         path_encoded = path.encode('utf-8')
 
@@ -212,7 +217,7 @@ class UnixFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
-        path = self._getPathToDeleteFolder(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         if path == u'/':
             raise CompatError(
                 1009, 'Deleting Unix root folder is not allowed.')
@@ -230,6 +235,10 @@ class UnixFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        if self._isVirtualPath(segments):
+            # Use a placeholder for parts of a virtual path.
+            return self._getPlaceholderStatus()
+
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():

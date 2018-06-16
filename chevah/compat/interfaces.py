@@ -378,12 +378,12 @@ class ILocalFilesystem(Interface):
     home_segments = Attribute('Segments for user home folder.')
     temp_segments = Attribute('Segments to temp folder.')
 
-    def getRealPathFromSegments(segments, no_virtual_root=False):
+    def getRealPathFromSegments(segments, include_virtual=True):
         """
         Return the real path for the segments.
 
-        If `no_virtual_root` is True, it will return VIRTUAL_ROOT if segments
-        are for the root of virtual folder.
+        Raises and error when `include_virtual` is False and the segments
+        are for a real path.
         """
 
     def getSegmentsFromRealPath(real_path):
