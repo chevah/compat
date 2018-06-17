@@ -395,7 +395,8 @@ class NTFilesystem(PosixFilesystemBase):
 
         target_path = self.getRealPathFromSegments(
             target_segments, include_virtual=False)
-        link_path = self.getRealPathFromSegments(link_segments)
+        link_path = self.getRealPathFromSegments(
+            link_segments, include_virtual=False)
 
         if self.isFolder(target_segments) or target_path.startswith('\\'):
             # We have folder or a Windows share as target.
