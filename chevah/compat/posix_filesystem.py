@@ -12,7 +12,6 @@ from contextlib import contextmanager
 import codecs
 import errno
 import os
-import posix
 import posixpath
 import re
 import shutil
@@ -576,27 +575,34 @@ class PosixFilesystemBase(object):
         try:
             with self._impersonateUser():
                 folder_iterator = scandir(path_encoded)
+
+            # On Windows we need to iterate over the first element to get the
+            # errors.
+            # Otherwise just by opening the directory, we don't get any errors.
+            # This is why we try to extract the first element, and yield it
+            # later.
+            try:
+                first_member = next(folder_iterator)
+            except StopIteration:
+                # The list is empty so just return an iterator with possible
+                # virtual members.
+                return iter(virtual_members)
+
+            firsts = [self._decodeFilename(first_member.name)]
+
         except Exception as error:
+            # We fail to list the actual folder.
             if not virtual_members:
+                # Since there are no virtual folder, we just raise the error.
                 raise error
+
+            # We have virtual folders.
             # No direct listing.
             folder_iterator = iter([])
+            firsts = []
 
-        # On Windows we need to iterate over the first element to get the
-        # errors.
-        # Otherwise just by opening the directory, we don't get any errors.
-        # This is why we try to extract the first element, and yield it
-        # later.
-        try:
-            first_member = next(folder_iterator)
-        except StopIteration:
-            # The list is empty so just return an iterator with possible
-            # virtual members.
-            return iter(virtual_members)
-
-        firsts = [self._decodeFilename(first_member.name)]
+        # We use a set to eliminate duplicates.
         firsts.extend(virtual_members)
-        # We set as set to eliminate duplicates.
         return self._iterateScandir(set(firsts), folder_iterator)
 
     def _iterateScandir(self, firsts, folder_iterator):
@@ -638,20 +644,7 @@ class PosixFilesystemBase(object):
         See `ILocalFilesystem`.
         """
         if self._isVirtualPath(segments):
-            return FileAttributes(
-                name=segments[-1],
-                path=self.getRealPathFromSegments(segments),
-                size=0,
-                is_file=False,
-                is_folder=True,
-                is_link=False,
-                modified=1,
-                mode=0,
-                hardlinks=1,
-                uid=1,
-                gid=1,
-                node_id=None,
-                )
+            return self._getPlaceholderAttributes(segments)
 
         stats = self.getStatus(segments)
         mode = stats.st_mode
@@ -682,11 +675,30 @@ class PosixFilesystemBase(object):
             node_id=stats.st_ino,
             )
 
+    def _getPlaceholderAttributes(self, segments):
+        """
+        Return a placeholder for get attributes result.
+        """
+        return FileAttributes(
+            name=segments[-1],
+            path=self.getRealPathFromSegments(segments),
+            size=0,
+            is_file=False,
+            is_folder=True,
+            is_link=False,
+            modified=1,
+            mode=0,
+            hardlinks=1,
+            uid=1,
+            gid=1,
+            node_id=None,
+            )
+
     def _getPlaceholderStatus(self):
         """
         Return a placeholder status result.
         """
-        return posix.stat_result([
+        return os.stat_result([
             0o40555, 0, 0, 0, 1, 1, 0, 1, 1, 1])
 
     def setAttributes(self, segments, attributes):

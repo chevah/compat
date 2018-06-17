@@ -199,9 +199,6 @@ class NTFilesystem(PosixFilesystemBase):
 
         virtual_path = self._getVirtualPathFromSegments(
             segments, include_virtual)
-        if virtual_path is self._VIRTUAL_ROOT:
-            # We have the marker for a virtual root.
-            return virtual_path
 
         if virtual_path is not None:
             result = virtual_path.replace('/', '\\')
@@ -335,7 +332,7 @@ class NTFilesystem(PosixFilesystemBase):
 
         Tries to mimic behaviour of Unix readlink command.
         """
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         result = self._readLink(path)
         return self.getSegmentsFromRealPath(result['target'])
 
@@ -419,6 +416,10 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        if self._isVirtualPath(segments):
+            # Use a placeholder for parts of a virtual path.
+            return self._getPlaceholderStatus()
+
         path = self.getRealPathFromSegments(segments)
         return self._getStatus(path, segments)
 
@@ -625,6 +626,9 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        if self._isVirtualPath(segments):
+            return False
+
         try:
             path = self.getRealPathFromSegments(segments)
             return self._isLink(path)
@@ -775,6 +779,9 @@ class NTFilesystem(PosixFilesystemBase):
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''
+        if self._isVirtualPath(segments):
+            return 'VirtualOwner'
+
         path = self.getRealPathFromSegments(segments)
 
         with self._impersonateUser():
@@ -859,6 +866,9 @@ class NTFilesystem(PosixFilesystemBase):
 
     def hasGroup(self, segments, group):
         '''See `ILocalFilesystem`.'''
+        if self._isVirtualPath(segments):
+            return False
+
         path = self.getRealPathFromSegments(segments)
 
         try:

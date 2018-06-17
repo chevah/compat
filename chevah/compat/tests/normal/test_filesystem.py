@@ -2654,7 +2654,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         Tests with NT paths.
         """
         sut = self.getFilesystem(virtual_folders=[
-            (['some\N{sun}', 'base\N{sun}'], 'c:/someN{sun}/path'),
+            (['some\N{sun}', 'base\N{sun}'], 'c:/some\N{sun}/path'),
             (['base\N{sun}'], 'e:\\otherN{leo}\\path'),
             ])
 
@@ -3247,6 +3247,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             sut.readLink(
                 ['virtual-\N{cloud}', 'base\N{sun}', 'non-existent-file'])
 
+    @conditionals.onCapability('symbolic_link', True)
     def test_makeLink_virtual(self):
         """
         It can't create links to or from virtual paths.
