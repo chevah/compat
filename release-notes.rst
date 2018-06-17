@@ -1,6 +1,13 @@
 Release notes for chevah.compat
 ===============================
 
+
+0.51.3 - 17/06/2018
+-------------------
+
+* Fix getAttributes and getStatus operations for root segments.
+
+
 0.51.2 - 16/06/2018
 -------------------
 

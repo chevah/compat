@@ -233,6 +233,9 @@ class PosixFilesystemBase(object):
         """
         Return True if segments are a part or full virtual folder.
         """
+        if not segments:
+            return False
+
         # Part of virtual paths, virtually exists.
         segments_length = len(segments)
         for virtual_segments, real_path in self._avatar.virtual_folders:

@@ -781,6 +781,24 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             expected_mode = 0o40777 ^ current_umask
             self.assertEqual(expected_mode, attributes.mode)
 
+    def test_getAttributes_root(self):
+        """
+        Check attributes for root.
+        """
+        attributes = self.filesystem.getAttributes([])
+
+        self.assertTrue(attributes.is_folder)
+        self.assertFalse(attributes.is_file)
+        self.assertFalse(attributes.is_link)
+        self.assertNotEqual(0, attributes.node_id)
+        self.assertIsNotNone(attributes.node_id)
+        # Root has no name.
+        self.assertIsNone(attributes.name)
+        if self.os_family == 'nt':
+            self.assertEqual('c:\\', attributes.path)
+        else:
+            self.assertEqual('/', attributes.path)
+
     @conditionals.onCapability('symbolic_link', True)
     def test_getAttributes_link_file(self):
         """
@@ -2881,6 +2899,9 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertTrue(sut.exists(['some', 'base\N{sun}']))
         self.assertTrue(sut.exists(['some']))
 
+        # And the real root exits.
+        self.assertTrue(sut.exists([]))
+
     def test_deleteFolder_virtual(self):
         """
         It can delete folders which are ancestors of a virtual path but will
@@ -3123,6 +3144,13 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             os.path.join(mk.fs.temp_path, 'some\N{cloud}'), result.path)
         self.assertEqual(0, result.size)
 
+        result = sut.getAttributes([])
+        self.assertTrue(result.is_folder)
+        self.assertFalse(result.is_file)
+        self.assertFalse(result.is_link)
+        self.assertEqual(mk.fs.temp_path, result.path)
+        self.assertIsNone(result.name)
+
     def test_getStatus_virtual(self):
         """
         It can getStatus for a virtual path or part of it, and that
@@ -3163,6 +3191,12 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertTrue(stat.S_ISDIR(result.st_mode))
         self.assertFalse(stat.S_ISLNK(result.st_mode))
         self.assertEqual(0, result.st_ino)
+
+        result = sut.getStatus([])
+        self.assertFalse(stat.S_ISREG(result.st_mode))
+        self.assertTrue(stat.S_ISDIR(result.st_mode))
+        self.assertFalse(stat.S_ISLNK(result.st_mode))
+        self.assertNotEqual(0, result.st_ino)
 
     def test_removeGroup_virtual(self):
         """
