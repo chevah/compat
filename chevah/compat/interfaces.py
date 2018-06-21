@@ -382,7 +382,7 @@ class ILocalFilesystem(Interface):
         """
         Return the real path for the segments.
 
-        Raises and error when `include_virtual` is False and the segments
+        Raises an error when `include_virtual` is False and the segments
         are for a real path.
         """
 

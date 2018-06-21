@@ -1,6 +1,17 @@
 Release notes for chevah.compat
 ===============================
 
+0.51.4 - 21/06/2018
+-------------------
+
+* Disable the filesystem overlay functionality. You can no longer mix virtual
+  with non-virtual paths.
+* The LocalFilesystem now fails to initialized if a virtual path overlaps an
+  existing folder.
+* Operation will fail if they are executed on a path which looks like a virtual
+  path but has no direct mapping.
+* Add case insensitive behaviour for Windows.
+
 
 0.51.3 - 17/06/2018
 -------------------
@@ -27,7 +38,7 @@ Release notes for chevah.compat
 -------------------
 
 * Add support for virtual directories as a way to allow explicit access to
-  selected folders outside of the locked root.
+  selected folders outside of the locked home folder.
 * Fix skipOnCondition to run the tests when condition is meet.
 
 

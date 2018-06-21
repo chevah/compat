@@ -69,6 +69,11 @@ class PosixFilesystemBase(object):
     #   desktop/aa365511(v=vs.85).aspx
     IO_REPARSE_TAG_SYMLINK = 0xA000000C
 
+    def __init__(self, avatar):
+        self._avatar = avatar
+        self._root_path = self._getRootPath()
+        self._validateVirtualFolders()
+
     @property
     def avatar(self):
         return self._avatar
@@ -190,6 +195,39 @@ class PosixFilesystemBase(object):
         '''See `ILocalFilesystem`.'''
         raise NotImplementedError('You must implement this method.')
 
+    def _areEqual(self, first, second):
+        """
+        Return true if first and second segments are for the same path.
+        """
+        if first == second:
+            return True
+
+        if os.name == 'posix':
+            # On Linux and Unix we do strict case.
+            return False
+
+        # On Windows paths are case insensitive, so we compare based on
+        # lowercase.
+        # But first try with the same case, in case we have strange
+        first = [s.lower() for s in first]
+        second = [s.lower() for s in second]
+        return first == second
+
+    def _validateVirtualFolders(self):
+        """
+        Check that virtual folders don't overlap with existing real folders.
+        """
+        for virtual_segments, real_path in self._avatar.virtual_folders:
+            target_segments = virtual_segments[:]
+            # Check for the virtual segments, but also for any ancestor.
+            while target_segments:
+                inside_path = os.path.join(self._root_path, *target_segments)
+                if not os.path.lexists(self.getEncodedPath(inside_path)):
+                    target_segments.pop()
+                    continue
+                raise CompatError(
+                    1005, 'Virtual path overlaps an existing file or folder.')
+
     def _getVirtualPathFromSegments(self, segments, include_virtual):
         """
         Return the virtual path associated with `segments`
@@ -204,7 +242,8 @@ class PosixFilesystemBase(object):
                 # Not the virtual folder of a descended of it.
                 if (
                     not include_virtual and
-                    segments == virtual_segments[:segments_length]
+                    self._areEqual(
+                        segments, virtual_segments[:segments_length])
                         ):
                     # But this is a parent of a virtual segment and we
                     # don't allow that.
@@ -213,41 +252,79 @@ class PosixFilesystemBase(object):
 
                 continue
 
-            if not include_virtual and segments == virtual_segments:
+            if (
+                not include_virtual and
+                self._areEqual(segments, virtual_segments)
+                    ):
                 # This is a virtual root, but we don't allow it.
                 raise CompatError(
                     1007, 'Modifying a virtual path is not allowed.')
 
             base_segments = segments[:len(virtual_segments)]
-            if base_segments != virtual_segments:
+            if not self._areEqual(base_segments, virtual_segments):
                 # Base does not match
                 continue
 
             tail_segments = segments[len(virtual_segments):]
             return os.path.join(real_path, *tail_segments)
 
+        # At this point we don't have a match for a virtual folder, but
+        # we should check that ancestors are not virtual as we don't
+        # want to create files in the middle of a virtual path.
+        parent = segments[:-1]
+        if not include_virtual and parent:
+            # Make sure parent is not a virtual path.
+            self._getVirtualPathFromSegments(parent, include_virtual=False)
+
         # No virtual path found for segments.
         return None
 
     def _isVirtualPath(self, segments):
         """
-        Return True if segments are a part or full virtual folder.
+        Return True if segments are a part or a full virtual folder.
+
+        Return False when they are a descendant of a virtual folder.
         """
         if not segments:
             return False
 
-        # Part of virtual paths, virtually exists.
+        partial_virtual = False
         segments_length = len(segments)
+
+        # Part of virtual paths, virtually exists.
         for virtual_segments, real_path in self._avatar.virtual_folders:
-            if segments_length > len(virtual_segments):
-                # Not a part of a virtual segment.
-                continue
-            if segments != virtual_segments[:segments_length]:
+            # Any segment which does start the same way as a virtual path is
+            # normal path
+            if not self._areEqual(segments[0:1], virtual_segments[0:1]):
                 # No match
                 continue
 
-            # This is a virtual path.
+            if self._areEqual(segments, virtual_segments[:segments_length]):
+                # This is the root of a virtual path or a sub-part of it.
+                return True
+
+            # If it looks like a virtual path, but is not a full match, then
+            # this is a broken path.
+            partial_virtual = True
+
+            if not self._areEqual(
+                    virtual_segments, segments[:len(virtual_segments)]):
+                # This is not a mapping for this virtual path.
+                continue
+
+            # Segments are the direct
+            partial_virtual = False
+
+            if segments_length > len(virtual_segments):
+                # Is longer than the virtual path so it can't be part of the
+                # full virtual path.
+                continue
+
+            # This is a virtual path which has a mapping.
             return True
+
+        if partial_virtual:
+            raise CompatError(1004, 'Broken virtual path.')
 
         return False
 
@@ -289,12 +366,16 @@ class PosixFilesystemBase(object):
     def exists(self, segments):
         '''See `ILocalFilesystem`.'''
 
-        if self._isVirtualPath(segments):
-            return True
-        else:
-            """
-            Let the normal code to check the existence.
-            """
+        try:
+            if self._isVirtualPath(segments):
+                return True
+            else:
+                """
+                Let the normal code to check the existence.
+                """
+        except CompatError:
+            # A broken virtual path does not exits.
+            return False
 
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
@@ -536,7 +617,8 @@ class PosixFilesystemBase(object):
                 # virtual folder.
                 continue
 
-            if virtual_segments[:segments_length] != segments:
+            if not self._areEqual(
+                    virtual_segments[:segments_length], segments):
                 continue
 
             child_segments = virtual_segments[segments_length:]
@@ -549,6 +631,12 @@ class PosixFilesystemBase(object):
         See `ILocalFilesystem`.
         """
         result = list(self._getVirtualMembers(segments))
+        if segments and result:
+            # We only support mixing virtual folder names with real names
+            # for the root folder.
+            # For all the other paths, we ignore the real folders if they
+            # overlay a virtual path.
+            return result
 
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
@@ -574,6 +662,12 @@ class PosixFilesystemBase(object):
         path_encoded = self.getEncodedPath(path)
 
         virtual_members = self._getVirtualMembers(segments)
+        if segments and virtual_members:
+            # We only support mixing virtual folder names with real names
+            # for the root folder.
+            # For all the other paths, we ignore the real folders if they
+            # overlay a virtual path.
+            return iter(virtual_members)
 
         try:
             with self._impersonateUser():
@@ -680,7 +774,8 @@ class PosixFilesystemBase(object):
 
     def _getPlaceholderAttributes(self, segments):
         """
-        Return a placeholder for get attributes result.
+        Return the attributes which can be used for the case when a real
+        attribute don't exists for `segments`.
         """
         return FileAttributes(
             name=segments[-1],

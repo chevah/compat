@@ -86,10 +86,6 @@ class NTFilesystem(PosixFilesystemBase):
     OPEN_READ_WRITE = os.O_RDWR | os.O_BINARY
     OPEN_APPEND = os.O_APPEND | os.O_BINARY
 
-    def __init__(self, avatar=None):
-        self._avatar = avatar
-        self._root_path = self._getRootPath()
-
     @property
     def _lock_in_home(self):
         """
@@ -245,17 +241,17 @@ class NTFilesystem(PosixFilesystemBase):
         if path is None or path == u'':
             return segments
 
-        target = os.path.abspath(path.replace('/', '\\'))
+        target = os.path.abspath(path.replace('/', '\\')).lower()
         for virtual_segments, real_path in self._avatar.virtual_folders:
-            real_path = real_path.replace('/', '\\')
+            real_path = real_path.replace('/', '\\').lower()
             virtual_root = os.path.abspath(real_path)
             if not target.startswith(virtual_root):
                 # Not a virtual folder.
                 continue
 
-            ancenstors = target[len(real_path):].split('\\')
-            ancenstors = [a for a in ancenstors if a]
-            return virtual_segments + ancenstors
+            ancestors = target[len(real_path):].split('\\')
+            ancestors = [a for a in ancestors if a]
+            return virtual_segments + ancestors
 
         head = True
 

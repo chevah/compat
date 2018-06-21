@@ -1393,12 +1393,21 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         exists will return `True` if file exists.
         """
         self.test_segments = self.filesystem.temp_segments[:]
-        self.test_segments.append(mk.makeFilename())
+        self.test_segments.append(mk.makeFilename(suffix='low'))
         with (self.filesystem.openFileForWriting(
                 self.test_segments)) as new_file:
             new_file.write(mk.getUniqueString().encode('utf8'))
 
         self.assertTrue(self.filesystem.exists(self.test_segments))
+
+        segments_case = self.test_segments[:]
+        segments_case[-1] = (
+            segments_case[-1][:-3] + segments_case[-1][-3:].upper())
+        if self.os_family == 'nt':
+            # On Windows, the operations are case insensitive.
+            self.assertTrue(self.filesystem.exists(segments_case))
+        else:
+            self.assertFalse(self.filesystem.exists(segments_case))
 
     def test_exists_folder_true(self):
         """
@@ -2594,6 +2603,62 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             )
         return LocalFilesystem(avatar=avatar)
 
+    def test_init_virtual_overlap_folder(self):
+        """
+        You can't initiate with virtual folder if the virtual path overlaps
+        with an existing folder.
+        """
+        path, segments = self.tempFolder()
+
+        # It fails when the exact path exists.
+        with self.assertRaises(CompatError) as context:
+            self.getFilesystem(virtual_folders=[
+                (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path),
+                (segments[-1:], mk.fs.temp_path),
+                ])
+        self.assertEqual(1005, context.exception.event_id)
+
+        # But also if a parent of the virtual path exists.
+        with self.assertRaises(CompatError) as context:
+            self.getFilesystem(virtual_folders=[
+                (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path),
+                (segments[-1:] + ['deep', 'virtual'], mk.fs.temp_path),
+                ])
+        self.assertEqual(1005, context.exception.event_id)
+
+    @conditionals.onOSFamily('nt')
+    def test_init_virtual_overlap_folder_nt(self):
+        """
+        Virtual path on Windows are case insensitive.
+        """
+        path, segments = self.tempFolder(suffix='low')
+        virtual_shadow = segments[-1][:-3] + segments[-1][-3:].upper()
+        # It fails when the exact path exists, even if cases are different.
+        with self.assertRaises(CompatError) as context:
+            self.getFilesystem(virtual_folders=[
+                (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path),
+                ([virtual_shadow], mk.fs.temp_path),
+                ])
+        self.assertEqual(1005, context.exception.event_id)
+
+    @conditionals.onOSFamily('posix')
+    def test_init_virtual_overlap_folder_posix(self):
+        """
+        Virtual path on Linux are case insensitive.
+        """
+        path, segments = self.tempFolder()
+        virtual_shadow = segments[-1].upper()
+
+        self.getFilesystem(virtual_folders=[
+            (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path),
+            ([virtual_shadow], mk.fs.temp_path),
+            ])
+
+        self.getFilesystem(virtual_folders=[
+            (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path),
+            ([virtual_shadow, 'deep'], mk.fs.temp_path),
+            ])
+
     def test_getRealPathFromSegments_no_match(self):
         """
         Returns the non-virtual real path when the is no match for the
@@ -2616,17 +2681,17 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         """
         sut = self.getFilesystem(virtual_folders=[
             (['base'], '/other/path'),
-            (['some', 'base'], '/some/path'),
+            (['some', 'base', 'deep'], '/some/path'),
             ])
 
-        result = sut.getRealPathFromSegments(['some', 'path'])
+        result = sut.getRealPathFromSegments(['some', 'base', 'path'])
         self.assertEqual(
-            os.path.join(mk.fs.temp_path, 'some', 'path'), result)
+            os.path.join(mk.fs.temp_path, 'some', 'base', 'path'), result)
 
-        result = sut.getRealPathFromSegments(
-            ['some', 'path'], include_virtual=False)
-        self.assertEqual(
-            os.path.join(mk.fs.temp_path, 'some', 'path'), result)
+        with self.assertRaises(CompatError) as context:
+            sut.getRealPathFromSegments(
+                ['some', 'base', 'path'], include_virtual=False)
+        self.assertEqual(1007, context.exception.event_id)
 
     def test_getRealPathFromSegments_inner_match(self):
         """
@@ -2652,7 +2717,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         Returns the non-virtual real path when the is no full match for the
         segments.
 
-        Tests with Posix paths.
+        Tests with Posix paths, which are case sensitives
         """
         sut = self.getFilesystem(virtual_folders=[
             (['some', 'base'], '/some/path'),
@@ -2660,8 +2725,11 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             ])
 
         result = sut.getRealPathFromSegments(['base\N{leo}'])
-
         self.assertEqual('/other\N{sun}/path', result)
+
+        # If case is differe
+        result = sut.getRealPathFromSegments(['Base\N{leo}'])
+        self.assertEqual(os.path.join(mk.fs.temp_path, 'Base\N{leo}'), result)
 
     @conditionals.onOSFamily('nt')
     def test_getRealPathFromSegments_match_nt(self):
@@ -2813,6 +2881,9 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result = sut.getSegmentsFromRealPath('c:\\virtual\\path')
         self.assertEqual(['some', 'base'], result)
 
+        result = sut.getSegmentsFromRealPath('C:\\Virtual\\Path')
+        self.assertEqual(['some', 'base'], result)
+
         result = sut.getSegmentsFromRealPath('c:\\virtual\\path')
         self.assertEqual(['some', 'base'], result)
 
@@ -2899,6 +2970,9 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertTrue(sut.exists(['some', 'base\N{sun}']))
         self.assertTrue(sut.exists(['some']))
 
+        # A path which has no direct virtual folder does not exists.
+        self.assertFalse(sut.exists(['some', 'lost\N{sun}']))
+
         # And the real root exits.
         self.assertTrue(sut.exists([]))
 
@@ -2921,6 +2995,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             sut.deleteFolder(['some', 'base'])
         self.assertEqual(1007, context.exception.event_id)
 
+        with self.assertRaises(CompatError) as context:
+            sut.deleteFolder(['some', 'lost\N{sun}'])
+        self.assertEqual(1007, context.exception.event_id)
+
         # It will allow to parts of the virtual root.
         with self.assertRaises(CompatError) as context:
             sut.deleteFolder(['some'])
@@ -2940,6 +3018,14 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result = sut.getFolderContent([])
         self.assertItemsEqual(['new\N{cloud}', 'virtual-\N{cloud}'], result)
 
+        # It can create folders inside the virtual folders
+        sut.createFolder(
+            ['virtual-\N{cloud}', 'base\N{sun}', 'inside-virt'])
+        # We do the assertion using the testing filesystem and not sut.
+        inside_segments = mk.fs.temp_segments + ['inside-virt']
+        self.addCleanup(mk.fs.deleteFolder, inside_segments)
+        self.assertTrue(mk.fs.isFolder(inside_segments))
+
         # It can't create folders over the virtual ones.
         with self.assertRaises(CompatError) as context:
             sut.createFolder(['virtual-\N{cloud}'])
@@ -2947,6 +3033,12 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         with self.assertRaises(CompatError) as context:
             sut.createFolder(['virtual-\N{cloud}', 'base\N{sun}'])
+        self.assertEqual(1007, context.exception.event_id)
+
+        # It will not allow create something which looks like a virtual path,
+        # but which has no direct mapping.
+        with self.assertRaises(CompatError) as context:
+            sut.createFolder(['virtual-\N{cloud}', 'air-member\N{sun}'])
         self.assertEqual(1007, context.exception.event_id)
 
     def test_deleteFile_virtual(self):
@@ -2966,6 +3058,12 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         # It will not allow delete the virtual root.
         with self.assertRaises(CompatError) as context:
             sut.deleteFile(['some', 'base'])
+        self.assertEqual(1007, context.exception.event_id)
+
+        # It will not allow delete something which looks like a virtual path,
+        # but which has no direct mapping.
+        with self.assertRaises(CompatError) as context:
+            sut.deleteFile(['some', 'lost\N{sun}'])
         self.assertEqual(1007, context.exception.event_id)
 
         # It will allow to parts of the virtual root.
@@ -2997,6 +3095,11 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertEqual(1007, context.exception.event_id)
 
         with self.assertRaises(CompatError) as context:
+            sut.setOwner(['some', 'lost\n{sun}'], 'no-such-owner')
+        # Operation denied.
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
             sut.setOwner(['some'], 'no-such-owner')
         # Operation denied.
         self.assertEqual(1007, context.exception.event_id)
@@ -3021,6 +3124,11 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         with self.assertRaises(CompatError) as context:
             sut.addGroup(['some', 'base'], 'no-such-group')
+        # Operation denied.
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
+            sut.addGroup(['some', 'lost\N{sun}'], 'no-such-group')
         # Operation denied.
         self.assertEqual(1007, context.exception.event_id)
 
@@ -3056,7 +3164,17 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertEqual(1007, context.exception.event_id)
 
         with self.assertRaises(CompatError) as context:
+            sut.rename(['some', 'lost'], ['outside-root'])
+        # Operation denied.
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
             sut.rename(['outside-folder'], ['some', 'base'])
+        # Operation denied.
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
+            sut.rename(['outside-folder'], ['some', 'lost'])
         # Operation denied.
         self.assertEqual(1007, context.exception.event_id)
 
@@ -3090,6 +3208,14 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         with self.assertRaises(CompatError) as context:
             sut.setAttributes(
                 ['some', 'base'],
+                {'atime': 1111, 'mtime': 1111},
+                )
+        # Operation denied.
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
+            sut.setAttributes(
+                ['some', 'lost'],
                 {'atime': 1111, 'mtime': 1111},
                 )
         # Operation denied.
@@ -3151,6 +3277,50 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertEqual(mk.fs.temp_path, result.path)
         self.assertIsNone(result.name)
 
+        # Since is part of virtual path, this fail as is an invalid path which
+        # does not exists.
+        with self.assertRaises(CompatError) as context:
+            sut.getAttributes(['some\N{cloud}', 'lost\N{sun}'])
+        self.assertEqual(1004, context.exception.event_id)
+
+    def test_getAttributes_virtual_case(self):
+        """
+        On Windows is case insensitive, while on other system is case
+        sensitive.
+        """
+        virtual_path, virtual_segments = self.tempFolder('virtual')
+        mk.fs.createFolder(virtual_segments + ['child-folder\N{sun}'])
+        mk.fs.createFile(
+            virtual_segments + ['child-file\N{cloud}'], content=b'123456789')
+
+        sut = self.getFilesystem(virtual_folders=[
+            (['some\N{cloud}', 'base\N{sun}'], virtual_path)
+            ])
+
+        if self.os_family == 'nt':
+            result = sut.getAttributes(['Some\N{cloud}'])
+            self.assertTrue(result.is_folder)
+            self.assertFalse(result.is_file)
+            self.assertEqual('Some\N{cloud}', result.name)
+            self.assertEqual(
+                os.path.join(mk.fs.temp_path, 'Some\N{cloud}'), result.path)
+            self.assertEqual(0, result.size)
+
+            result = sut.getAttributes(['some\N{cloud}', 'Base\N{sun}'])
+            self.assertTrue(result.is_folder)
+            self.assertFalse(result.is_file)
+            self.assertEqual('Base\N{sun}', result.name)
+            self.assertEqual(virtual_path, result.path)
+            self.assertEqual(0, result.size)
+
+        else:
+            with self.assertRaises(OSError) as context:
+                sut.getAttributes(['Some\N{cloud}'])
+
+            with self.assertRaises(CompatError) as context:
+                sut.getAttributes(['some\N{cloud}', 'Base\N{sun}'])
+            self.assertEqual(1004, context.exception.event_id)
+
     def test_getStatus_virtual(self):
         """
         It can getStatus for a virtual path or part of it, and that
@@ -3198,6 +3368,12 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertFalse(stat.S_ISLNK(result.st_mode))
         self.assertNotEqual(0, result.st_ino)
 
+        # Since is part of virtual path, this fail as is an invalid path which
+        # does not exists.
+        with self.assertRaises(CompatError) as context:
+            sut.getStatus(['some\N{cloud}', 'lost\N{sun}'])
+        self.assertEqual(1004, context.exception.event_id)
+
     def test_removeGroup_virtual(self):
         """
         It can removeGroup for folders which are ancestors of a virtual path
@@ -3227,6 +3403,11 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertEqual(1007, context.exception.event_id)
 
         with self.assertRaises(CompatError) as context:
+            sut.removeGroup(['some', 'lost'], 'no-such-group')
+        # Operation denied.
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
             sut.removeGroup(['some'], 'no-such-group')
         # Operation denied.
         self.assertEqual(1007, context.exception.event_id)
@@ -3247,6 +3428,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             sut.touch(['virtual-\N{cloud}', 'base\N{sun}'])
         self.assertEqual(1007, context.exception.event_id)
 
+        with self.assertRaises(CompatError) as context:
+            sut.touch(['virtual-\N{cloud}', 'lost\N{sun}'])
+        self.assertEqual(1007, context.exception.event_id)
+
     def test_isLink_virtual(self):
         """
         Virtual paths are not links.
@@ -3260,6 +3445,12 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertFalse(sut.isLink(
             ['virtual-\N{cloud}', 'base\N{sun}', 'non-existent-file']))
 
+        # Since is part of virtual path, this fail as is an invalid path which
+        # does not exists.
+        with self.assertRaises(CompatError) as context:
+            sut.isLink(['virtual-\N{cloud}', 'lost\N{sun}'])
+        self.assertEqual(1004, context.exception.event_id)
+
     def test_readLink_virtual(self):
         """
         Virtual paths can't be links and readLink will fail on them.
@@ -3270,6 +3461,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         with self.assertRaises(CompatError) as context:
             sut.readLink(['virtual-\N{cloud}'])
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
+            sut.readLink(['virtual-\N{cloud}', 'lost'])
         self.assertEqual(1007, context.exception.event_id)
 
         with self.assertRaises(CompatError) as context:
@@ -3299,11 +3494,19 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertEqual(1007, context.exception.event_id)
 
         with self.assertRaises(CompatError) as context:
+            sut.makeLink(['virtual-\N{cloud}', 'lost'], ['anything'])
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
             sut.makeLink(['anything'], ['virtual-\N{cloud}', 'base\N{sun}'])
         self.assertEqual(1007, context.exception.event_id)
 
         with self.assertRaises(CompatError) as context:
             sut.makeLink(['anything'], ['virtual-\N{cloud}'])
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
+            sut.makeLink(['anything'], ['virtual-\N{cloud}', 'lost'])
         self.assertEqual(1007, context.exception.event_id)
 
     def test_openFile_virtual(self):
@@ -3319,6 +3522,11 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         with self.assertRaises(CompatError) as context:
             sut.openFile(
                 ['virtual-\N{cloud}', 'base\N{sun}'], os.O_RDONLY, 0o777)
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
+            sut.openFile(
+                ['virtual-\N{cloud}', 'lost\N{sun}'], os.O_RDONLY, 0o777)
         self.assertEqual(1007, context.exception.event_id)
 
         with self.assertRaises(CompatError) as context:
@@ -3348,6 +3556,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertEqual(1007, context.exception.event_id)
 
         with self.assertRaises(CompatError) as context:
+            sut.openFileForReading(['virtual-\N{cloud}', 'lost\N{sun}'])
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
             sut.openFileForReading(['virtual-\N{cloud}'])
         self.assertEqual(1007, context.exception.event_id)
 
@@ -3369,6 +3581,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         with self.assertRaises(CompatError) as context:
             sut.openFileForWriting(['virtual-\N{cloud}', 'base\N{sun}'])
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
+            sut.openFileForWriting(['virtual-\N{cloud}', 'lost\N{sun}'])
         self.assertEqual(1007, context.exception.event_id)
 
         with self.assertRaises(CompatError) as context:
@@ -3396,6 +3612,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertEqual(1007, context.exception.event_id)
 
         with self.assertRaises(CompatError) as context:
+            sut.openFileForAppending(['virtual-\N{cloud}', 'lost\N{sun}'])
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
             sut.openFileForAppending(['virtual-\N{cloud}'])
         self.assertEqual(1007, context.exception.event_id)
 
@@ -3417,6 +3637,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         with self.assertRaises(CompatError) as context:
             sut.openFileForUpdating(['virtual-\N{cloud}', 'base\N{sun}'])
+        self.assertEqual(1007, context.exception.event_id)
+
+        with self.assertRaises(CompatError) as context:
+            sut.openFileForUpdating(['virtual-\N{cloud}', 'lost\N{sun}'])
         self.assertEqual(1007, context.exception.event_id)
 
         with self.assertRaises(CompatError) as context:
@@ -3452,6 +3676,12 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result = sut.getFileSize(['some'])
         self.assertEqual(0, result)
 
+        # Since is part of virtual path, this fail as is an invalid path which
+        # does not exists.
+        with self.assertRaises(CompatError) as context:
+            sut.getFileSize(['some', 'middle-virtual'])
+        self.assertEqual(1004, context.exception.event_id)
+
     def test_getFolderContent_virtual(self):
         """
         It can list a virtual folder.
@@ -3461,10 +3691,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFile(virtual_segments + ['child-file\N{sun}'])
 
         sut = self.getFilesystem(virtual_folders=[
-            (['base\N{sun}'], virtual_path)
+            (['base\N{sun}', 'deep'], virtual_path)
             ])
 
-        result = sut.getFolderContent(['base\N{sun}'])
+        result = sut.getFolderContent(['base\N{sun}', 'deep'])
 
         self.assertItemsEqual(['child-folder', 'child-file\N{sun}'], result)
 
@@ -3479,30 +3709,18 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFile(virtual_segments + ['child-file'])
 
         sut = self.getFilesystem(virtual_folders=[
-            (['\N{sun}base'], virtual_path)
+            (['\N{sun}base'], virtual_path),
+            (['\N{sun}base', 'base1'], mk.fs.temp_path),
+            (['\N{sun}base', 'base2'], mk.fs.temp_path),
+            (['more-virtual', 'deep'], mk.fs.temp_path),
             ])
 
-        expected = ['\N{sun}base', 'non-virtual\N{sun}', 'other-real\N{sun}']
-        result = sut.getFolderContent([])
-        self.assertItemsEqual(expected, result)
-
-        result = sut.iterateFolderContent([])
-        self.assertIteratorItemsEqual(expected, result)
-
-    @conditionals.skipOnPY3()
-    def test_getFolderContent_virtual_singe_root(self):
-        """
-        It will not list the member multiple time if they overlay with
-        virtual segments.
-        """
-        self.tempFolder('other-real\N{sun}')
-
-        sut = self.getFilesystem(virtual_folders=[
-            (['other-real\N{sun}', 'base1'], mk.fs.temp_path),
-            (['other-real\N{sun}', 'base2'], mk.fs.temp_path)
-            ])
-
-        expected = ['other-real\N{sun}']
+        expected = [
+            '\N{sun}base',
+            'non-virtual\N{sun}',
+            'other-real\N{sun}',
+            'more-virtual',
+            ]
         result = sut.getFolderContent([])
         self.assertItemsEqual(expected, result)
 
@@ -3538,16 +3756,20 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         It can list a virtual folder as member of a parent folder mixed
         with non-virtual members.
         """
-        _, segments = self.tempFolder('non-virtual\N{sun}')
-        mk.fs.createFolder(segments + ['child-folder'])
-        mk.fs.createFile(segments + ['child-file'])
 
         sut = self.getFilesystem(virtual_folders=[
             (['non-virtual\N{sun}', 'virtual\N{cloud}'], mk.fs.temp_path),
             (['non-virtual\N{sun}', 'child-file', 'other'], mk.fs.temp_path),
             ])
 
-        expected = ['child-folder', 'child-file', 'virtual\N{cloud}']
+        # We create the folders after the filesystem was initialized as
+        # otherwise it will fail to initialized as it makes checks at init
+        # time for overlapping.
+        _, segments = self.tempFolder('non-virtual\N{sun}')
+        mk.fs.createFolder(segments + ['child-folder'])
+        mk.fs.createFile(segments + ['child-file'])
+
+        expected = ['child-file', 'virtual\N{cloud}']
 
         result = sut.getFolderContent(['non-virtual\N{sun}'])
         self.assertItemsEqual(expected, result)
@@ -3587,6 +3809,43 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         result = sut.iterateFolderContent(['\N{sun}base', 'deep\N{cloud}'])
         self.assertIteratorItemsEqual(expected, result)
+
+    @conditionals.skipOnPY3()
+    def test_getFolderContent_virtual_case(self):
+        """
+        On Windows the segments are case insensitive, while on the other
+        systems are case sensitives..
+        """
+        virtual_path, segments = self.tempFolder('virt-target\N{sun}')
+        mk.fs.createFolder(segments + ['inside-virt\N{sun}'])
+
+        sut = self.getFilesystem(virtual_folders=[
+            (['\N{sun}base', 'deep\N{cloud}', 'virt\N{sun}'], virtual_path),
+            (['\N{sun}base', 'other\N{sun}', 'virt-folder'], virtual_path)
+            ])
+
+        if self.os_family == 'nt':
+            expected = ['deep\N{cloud}', 'other\N{sun}']
+            result = sut.getFolderContent(['\N{sun}Base'])
+            self.assertItemsEqual(expected, result)
+
+            result = sut.getFolderContent(['\N{sun}base', 'Deep\N{cloud}'])
+            self.assertItemsEqual(['virt\N{sun}'], result)
+
+            result = sut.getFolderContent(
+                ['\N{sun}base', 'deep\N{cloud}', 'Virt\N{sun}'])
+            self.assertItemsEqual(['inside-virt\N{sun}'], result)
+
+        else:
+            with self.assertRaises(OSError):
+                sut.getFolderContent(['\N{sun}Base'])
+
+            with self.assertRaises(OSError):
+                sut.getFolderContent(['\N{sun}base', 'Deep\N{cloud}'])
+
+            with self.assertRaises(OSError):
+                sut.getFolderContent(
+                    ['\N{sun}base', 'deep\N{cloud}', 'Virt\N{sun}'])
 
 
 class TestFileAttributes(CompatTestCase):

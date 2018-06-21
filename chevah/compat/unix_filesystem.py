@@ -36,10 +36,6 @@ class UnixFilesystem(PosixFilesystemBase):
     implements(ILocalFilesystem)
     system_users = UnixUsers()
 
-    def __init__(self, avatar):
-        self._avatar = avatar
-        self._root_handler = self._getRootPath()
-
     def _getRootPath(self):
         if not self._avatar:
             return u'/'
@@ -57,7 +53,7 @@ class UnixFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         if segments is None or len(segments) == 0:
-            return text_type(self._root_handler)
+            return text_type(self._root_path)
 
         result = self._getVirtualPathFromSegments(segments, include_virtual)
         if result is not None:
@@ -65,7 +61,7 @@ class UnixFilesystem(PosixFilesystemBase):
 
         relative_path = u'/' + u'/'.join(segments)
         relative_path = os.path.abspath(relative_path).rstrip('/')
-        return text_type(self._root_handler.rstrip('/') + relative_path)
+        return text_type(self._root_path.rstrip('/') + relative_path)
 
     def getSegmentsFromRealPath(self, path):
         """
@@ -84,13 +80,13 @@ class UnixFilesystem(PosixFilesystemBase):
                 # Not a virtual folder.
                 continue
 
-            ancenstors = tail[len(real_path):].split('/')
-            ancenstors = [a for a in ancenstors if a]
-            return virtual_segments + ancenstors
+            ancestors = tail[len(real_path):].split('/')
+            ancestors = [a for a in ancestors if a]
+            return virtual_segments + ancestors
 
         if self._avatar.lock_in_home_folder:
-            self._checkChildPath(self._root_handler, tail)
-            tail = tail[len(self._root_handler):]
+            self._checkChildPath(self._root_path, tail)
+            tail = tail[len(self._root_path):]
 
         while tail and head != u'/':
             head, tail = os.path.split(tail)
