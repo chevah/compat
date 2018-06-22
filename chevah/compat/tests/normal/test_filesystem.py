@@ -1046,6 +1046,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             # and the slave is generally slow.
             count = 32000
             base_timeout = 0.15
+        elif self.cpu_type == 'sparc':
+            count = 5000
+            base_timeout = 0.1
         else:
             count = 45000
             base_timeout = 0.1
@@ -1403,7 +1406,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         segments_case = self.test_segments[:]
         segments_case[-1] = (
             segments_case[-1][:-3] + segments_case[-1][-3:].upper())
-        if self.os_family == 'nt':
+        if self.os_name in ['windows', 'osx']:
             # On Windows, the operations are case insensitive.
             self.assertTrue(self.filesystem.exists(segments_case))
         else:
@@ -2630,38 +2633,31 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
                 ])
         self.assertEqual(1005, context.exception.event_id)
 
-    @conditionals.onOSFamily('nt')
-    def test_init_virtual_overlap_folder_nt(self):
+    def test_init_virtual_overlap_folder_case_sensitive(self):
         """
-        Virtual path on Windows are case insensitive.
+        Virtual path on Windows/OSX are case insensitive, while on other
+        systems are case sensitive.
         """
         path, segments = self.tempFolder(suffix='low')
         virtual_shadow = segments[-1][:-3] + segments[-1][-3:].upper()
-        # It fails when the exact path exists, even if cases are different.
-        with self.assertRaises(CompatError) as context:
+
+        if self.os_name in ['windows', 'osx']:
+            with self.assertRaises(CompatError) as context:
+                self.getFilesystem(virtual_folders=[
+                    (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path),
+                    ([virtual_shadow], mk.fs.temp_path),
+                    ])
+            self.assertEqual(1005, context.exception.event_id)
+
+        else:
             self.getFilesystem(virtual_folders=[
                 (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path),
                 ([virtual_shadow], mk.fs.temp_path),
                 ])
-        self.assertEqual(1005, context.exception.event_id)
-
-    @conditionals.onOSFamily('posix')
-    def test_init_virtual_overlap_folder_posix(self):
-        """
-        Virtual path on Linux are case insensitive.
-        """
-        path, segments = self.tempFolder()
-        virtual_shadow = segments[-1].upper()
-
-        self.getFilesystem(virtual_folders=[
-            (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path),
-            ([virtual_shadow], mk.fs.temp_path),
-            ])
-
-        self.getFilesystem(virtual_folders=[
-            (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path),
-            ([virtual_shadow, 'deep'], mk.fs.temp_path),
-            ])
+            self.getFilesystem(virtual_folders=[
+                (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path),
+                ([virtual_shadow, 'deep'], mk.fs.temp_path),
+                ])
 
     def test_getRealPathFromSegments_no_match(self):
         """
@@ -2731,9 +2727,14 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result = sut.getRealPathFromSegments(['base\N{leo}'])
         self.assertEqual('/other\N{sun}/path', result)
 
-        # If case is differe
+        # If case is different
         result = sut.getRealPathFromSegments(['Base\N{leo}'])
-        self.assertEqual(os.path.join(mk.fs.temp_path, 'Base\N{leo}'), result)
+        if self.os_name == 'osx':
+            # OSX is case insensitive:
+            self.assertEqual('/other\N{sun}/path', result)
+        else:
+            self.assertEqual(
+                os.path.join(mk.fs.temp_path, 'Base\N{leo}'), result)
 
     @conditionals.onOSFamily('nt')
     def test_getRealPathFromSegments_match_nt(self):
@@ -3244,7 +3245,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_segments + ['child-file\N{cloud}'], content=b'123456789')
 
         sut = self.getFilesystem(virtual_folders=[
-            (['some\N{cloud}', 'base\N{sun}'], virtual_path)
+            (['some\N{cloud}', 'other-base\N{sun}'], virtual_path),
+            (['some\N{cloud}', 'base\N{sun}'], virtual_path),
             ])
 
         result = sut.getAttributes(
@@ -3298,10 +3300,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_segments + ['child-file\N{cloud}'], content=b'123456789')
 
         sut = self.getFilesystem(virtual_folders=[
-            (['some\N{cloud}', 'base\N{sun}'], virtual_path)
+            (['some\N{cloud}', 'base\N{sun}'], virtual_path),
             ])
 
-        if self.os_family == 'nt':
+        if self.os_name in ['windows', 'osx']:
             result = sut.getAttributes(['Some\N{cloud}'])
             self.assertTrue(result.is_folder)
             self.assertFalse(result.is_file)
@@ -3336,7 +3338,9 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_segments + ['child-file\N{cloud}'], content=b'123456789')
 
         sut = self.getFilesystem(virtual_folders=[
-            (['some\N{cloud}', 'base\N{sun}'], virtual_path)
+            (['some\N{cloud}', 'other-base\N{sun}'], virtual_path),
+            (['some\N{cloud}', 'base\N{sun}'], virtual_path),
+            (['some\N{cloud}', 'more-base\N{sun}'], virtual_path),
             ])
 
         result = sut.getStatus(
@@ -3668,7 +3672,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_segments + ['child-file\N{sun}'], content=b'blalata')
 
         sut = self.getFilesystem(virtual_folders=[
-            (['some', 'base'], virtual_path)
+            (['some', 'base'], virtual_path),
+            (['some', 'more-base'], virtual_path),
             ])
 
         result = sut.getFileSize(['some', 'base', 'child-file\N{sun}'])
@@ -3713,10 +3718,9 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFile(virtual_segments + ['child-file'])
 
         sut = self.getFilesystem(virtual_folders=[
-            (['\N{sun}base'], virtual_path),
-            (['\N{sun}base', 'base1'], mk.fs.temp_path),
+            (['\N{sun}base', 'base1'], virtual_path),
             (['\N{sun}base', 'base2'], mk.fs.temp_path),
-            (['more-virtual', 'deep'], mk.fs.temp_path),
+            (['more-virtual', 'deep'], mk.fs.temp_path + 'no-such'),
             ])
 
         expected = [
@@ -3729,6 +3733,16 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertItemsEqual(expected, result)
 
         result = sut.iterateFolderContent([])
+        self.assertIteratorItemsEqual(expected, result)
+
+        expected = [
+            'non-virtual\N{sun}',
+            'other-real\N{sun}',
+            ]
+        result = sut.getFolderContent(['\N{sun}base', 'base2'])
+        self.assertItemsEqual(expected, result)
+
+        result = sut.iterateFolderContent(['\N{sun}base', 'base2'])
         self.assertIteratorItemsEqual(expected, result)
 
     @conditionals.skipOnPY3()
@@ -3828,7 +3842,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             (['\N{sun}base', 'other\N{sun}', 'virt-folder'], virtual_path)
             ])
 
-        if self.os_family == 'nt':
+        if self.os_name in ['windows', 'osx']:
             expected = ['deep\N{cloud}', 'other\N{sun}']
             result = sut.getFolderContent(['\N{sun}Base'])
             self.assertItemsEqual(expected, result)

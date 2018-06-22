@@ -202,7 +202,8 @@ class PosixFilesystemBase(object):
         if first == second:
             return True
 
-        if os.name == 'posix':
+        from chevah.compat import process_capabilities
+        if process_capabilities.os_name not in ['windows', 'osx']:
             # On Linux and Unix we do strict case.
             return False
 
@@ -321,7 +322,7 @@ class PosixFilesystemBase(object):
             if segments_length > len(virtual_segments):
                 # Is longer than the virtual path so it can't be part of the
                 # full virtual path.
-                continue
+                return False
 
             # This is a virtual path which has a mapping.
             return True

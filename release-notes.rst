@@ -1,6 +1,14 @@
 Release notes for chevah.compat
 ===============================
 
+
+0.51.5 - 22/06/2018
+-------------------
+
+* Fix detection of virtual path for nested virtual paths.
+* Add macOS on the list of case-insensitive path handling.
+
+
 0.51.4 - 21/06/2018
 -------------------
 
