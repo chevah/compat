@@ -306,7 +306,7 @@ class TestTwistedTestCase(ChevahTestCase):
         self.executeReactor()
         # Allow the thread to settle and return.
         time.sleep(0.01)
-        time.sleep(0.04)
+        time.sleep(0.05)
         self.assertTrue(self.called)
         self.assertTrue(deferred.called)
 

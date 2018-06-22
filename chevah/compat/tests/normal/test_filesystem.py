@@ -1046,7 +1046,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             # and the slave is generally slow.
             count = 32000
             base_timeout = 0.15
-        elif self.cpu_type == 'sparc':
+        elif self.cpu_type in ['sparc', 'arm64']:
             count = 5000
             base_timeout = 0.1
         else:
