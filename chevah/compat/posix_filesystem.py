@@ -225,8 +225,11 @@ class PosixFilesystemBase(object):
                 if not os.path.lexists(self.getEncodedPath(inside_path)):
                     target_segments.pop()
                     continue
+                virtual_path = '/' + '/'.join(virtual_segments)
                 raise CompatError(
-                    1005, 'Virtual path overlaps an existing file or folder.')
+                    1005,
+                    'Virtual path "%s" overlaps an existing file or '
+                    'folder at "%s".' % (virtual_path, inside_path,))
 
     def _getVirtualPathFromSegments(self, segments, include_virtual):
         """

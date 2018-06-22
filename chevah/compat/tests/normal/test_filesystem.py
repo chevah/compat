@@ -2617,6 +2617,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
                 (segments[-1:], mk.fs.temp_path),
                 ])
         self.assertEqual(1005, context.exception.event_id)
+        self.assertEqual(
+            'Virtual path "/%s" overlaps an existing file or '
+            'folder at "%s".' % (segments[-1], path),
+            context.exception.message)
 
         # But also if a parent of the virtual path exists.
         with self.assertRaises(CompatError) as context:
