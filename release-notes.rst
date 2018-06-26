@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.51.6 - 26/06/2018
+-------------------
+
+* Use start of current year for date of virtual folders.
+
+
 0.51.5 - 22/06/2018
 -------------------
 

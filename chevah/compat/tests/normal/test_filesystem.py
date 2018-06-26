@@ -6,6 +6,7 @@ Tests for portable filesystem access.
 from __future__ import absolute_import, division, unicode_literals
 from six import text_type
 
+from datetime import date
 import errno
 import os
 import platform
@@ -22,6 +23,18 @@ from chevah.compat.avatar import FilesystemApplicationAvatar
 from chevah.compat.exceptions import CompatError
 from chevah.compat.interfaces import IFileAttributes, ILocalFilesystem
 from chevah.compat.testing import CompatTestCase, conditionals, mk
+
+start_of_year = time.mktime((
+    date.today().year,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -1,
+    ))
 
 
 class FilesystemTestingHelpers(object):
@@ -3275,6 +3288,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertEqual(
             os.path.join(mk.fs.temp_path, 'some\N{cloud}'), result.path)
         self.assertEqual(0, result.size)
+        self.assertEqual(start_of_year, result.modified)
 
         result = sut.getAttributes([])
         self.assertTrue(result.is_folder)
@@ -3369,6 +3383,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertTrue(stat.S_ISDIR(result.st_mode))
         self.assertFalse(stat.S_ISLNK(result.st_mode))
         self.assertEqual(0, result.st_ino)
+        self.assertEqual(start_of_year, result.st_mtime)
+        self.assertEqual(1, result.st_atime)
 
         result = sut.getStatus([])
         self.assertFalse(stat.S_ISREG(result.st_mode))

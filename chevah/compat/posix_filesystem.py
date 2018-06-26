@@ -7,8 +7,8 @@ Windows has its layer of POSIX compatibility.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from six import text_type
 from contextlib import contextmanager
+from datetime import date
 import codecs
 import errno
 import os
@@ -18,7 +18,9 @@ import shutil
 import stat
 import struct
 import sys
+import time
 import unicodedata
+
 
 try:
     # On some systems (AIX/Windows) the public scandir module will fail to
@@ -27,6 +29,7 @@ try:
 except ImportError:
     from scandir import scandir_python as scandir
 
+from six import text_type
 from zope.interface import implements
 
 from chevah.compat.constants import (
@@ -781,6 +784,17 @@ class PosixFilesystemBase(object):
         Return the attributes which can be used for the case when a real
         attribute don't exists for `segments`.
         """
+        modified = time.mktime((
+            date.today().year,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1,
+            ))
         return FileAttributes(
             name=segments[-1],
             path=self.getRealPathFromSegments(segments),
@@ -788,7 +802,7 @@ class PosixFilesystemBase(object):
             is_file=False,
             is_folder=True,
             is_link=False,
-            modified=1,
+            modified=modified,
             mode=0,
             hardlinks=1,
             uid=1,
@@ -800,8 +814,20 @@ class PosixFilesystemBase(object):
         """
         Return a placeholder status result.
         """
+        modified = time.mktime((
+            date.today().year,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1,
+            ))
+
         return os.stat_result([
-            0o40555, 0, 0, 0, 1, 1, 0, 1, 1, 1])
+            0o40555, 0, 0, 0, 1, 1, 0, 1, modified, 0])
 
     def setAttributes(self, segments, attributes):
         '''See `ILocalFilesystem`.'''
