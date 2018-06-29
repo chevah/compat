@@ -139,7 +139,7 @@ class TestAssertionMixin(ChevahTestCase):
             exception.args[0],
             )
 
-    def test_assertIteratorEqual_no_iterable(self):
+    def test_assertIteratorItemsEqual_no_iterable(self):
         """
         Raise an exception if the actual value is not iterable.
         """
@@ -147,7 +147,7 @@ class TestAssertionMixin(ChevahTestCase):
 
         exception = self.assertRaises(
             AssertionError,
-            self.assertIteratorEqual,
+            self.assertIteratorItemsEqual,
             [],
             sut,
             )
@@ -157,25 +157,26 @@ class TestAssertionMixin(ChevahTestCase):
             exception.args[0],
             )
 
-    def test_assertIteratorEqual_ok(self):
+    def test_assertIteratorItemsEqual_ok(self):
         """
-        All file is iterator is equal.
+        Is equal even if elements are in a different order.
         """
-        value = [1, b'3', u'a', iter([2])]
+        iterator = iter([2])
+        value = [1, b'3', u'a', iterator]
         sut = iter(value)
 
-        self.assertIteratorEqual(value, sut)
+        self.assertIteratorItemsEqual([b'3', 1, u'a', iterator], sut)
 
-    def test_assertIteratorEqual_less(self):
+    def test_assertIteratorItemsEqual_less(self):
         """
-        All file is iterator is equal.
+        It fails if the values are not equal.
         """
         value = [1, b'3', u'a']
         sut = iter(value)
 
         exception = self.assertRaises(
             AssertionError,
-            self.assertIteratorEqual,
+            self.assertIteratorItemsEqual,
             [1],
             sut,
             )
@@ -183,6 +184,6 @@ class TestAssertionMixin(ChevahTestCase):
         # The check here is more complicated since the message relies on the
         # assertEqual implementation.
         self.assertStartsWith(
-            "Lists differ: [1] != [1, '3', u'a']",
+            "Element counts were not equal:",
             exception.args[0],
             )

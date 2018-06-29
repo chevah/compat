@@ -86,10 +86,6 @@ class NTFilesystem(PosixFilesystemBase):
     OPEN_READ_WRITE = os.O_RDWR | os.O_BINARY
     OPEN_APPEND = os.O_APPEND | os.O_BINARY
 
-    def __init__(self, avatar=None):
-        self._avatar = avatar
-        self._root_path = self._getRootPath()
-
     @property
     def _lock_in_home(self):
         """
@@ -156,7 +152,7 @@ class NTFilesystem(PosixFilesystemBase):
         else:
             return self._root_path
 
-    def getRealPathFromSegments(self, segments):
+    def getRealPathFromSegments(self, segments, include_virtual=True):
         '''See `ILocalFilesystem`.
         * []
           * lock : root_path
@@ -169,11 +165,10 @@ class NTFilesystem(PosixFilesystemBase):
           * [path1, path2] -> path1 :\ path2
           * [UNC, server1, path1, path2] -> \\server1\path1\path2
         '''
-        if segments is None or len(segments) == 0:
-            result = self._root_path
-        elif self._lock_in_home:
-            result = self._getLockedPathFromSegments(segments)
-        else:
+        def get_path(segments):
+            if self._lock_in_home:
+                return self._getLockedPathFromSegments(segments)
+
             drive = u'%s:\\' % segments[0]
             path_segments = segments[1:]
 
@@ -192,8 +187,21 @@ class NTFilesystem(PosixFilesystemBase):
                             result = result + ':\\'
                         else:
                             result = result.replace('\\', ':\\', 1)
-        self._validateDrivePath(result)
+            return result
 
+        if segments is None or len(segments) == 0:
+            # We have the root path for sure.
+            return self._root_path
+
+        virtual_path = self._getVirtualPathFromSegments(
+            segments, include_virtual)
+
+        if virtual_path is not None:
+            result = virtual_path.replace('/', '\\')
+        else:
+            result = get_path(segments)
+
+        self._validateDrivePath(result)
         return text_type(result)
 
     # Windows allows only 26 drive letters and is case insensitive.
@@ -232,6 +240,18 @@ class NTFilesystem(PosixFilesystemBase):
 
         if path is None or path == u'':
             return segments
+
+        target = os.path.abspath(path.replace('/', '\\')).lower()
+        for virtual_segments, real_path in self._avatar.virtual_folders:
+            real_path = real_path.replace('/', '\\').lower()
+            virtual_root = os.path.abspath(real_path)
+            if not target.startswith(virtual_root):
+                # Not a virtual folder.
+                continue
+
+            ancestors = target[len(real_path):].split('\\')
+            ancestors = [a for a in ancestors if a]
+            return virtual_segments + ancestors
 
         head = True
 
@@ -308,7 +328,7 @@ class NTFilesystem(PosixFilesystemBase):
 
         Tries to mimic behaviour of Unix readlink command.
         """
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         result = self._readLink(path)
         return self.getSegmentsFromRealPath(result['target'])
 
@@ -369,8 +389,10 @@ class NTFilesystem(PosixFilesystemBase):
         if not self.process_capabilities.symbolic_link:
             raise NotImplementedError('makeLink not implemented on this OS.')
 
-        target_path = self.getRealPathFromSegments(target_segments)
-        link_path = self.getRealPathFromSegments(link_segments)
+        target_path = self.getRealPathFromSegments(
+            target_segments, include_virtual=False)
+        link_path = self.getRealPathFromSegments(
+            link_segments, include_virtual=False)
 
         if self.isFolder(target_segments) or target_path.startswith('\\'):
             # We have folder or a Windows share as target.
@@ -391,6 +413,10 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        if self._isVirtualPath(segments):
+            # Use a placeholder for parts of a virtual path.
+            return self._getPlaceholderStatus()
+
         path = self.getRealPathFromSegments(segments)
         return self._getStatus(path, segments)
 
@@ -597,6 +623,9 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        if self._isVirtualPath(segments):
+            return False
+
         try:
             path = self.getRealPathFromSegments(segments)
             return self._isLink(path)
@@ -658,9 +687,8 @@ class NTFilesystem(PosixFilesystemBase):
 
         For symbolic links we always force non-recursive behaviour.
         """
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
-
         try:
             with self._windowsToOSError(segments), self._impersonateUser():
                 if self.isLink(segments):
@@ -686,7 +714,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         try:
             self._setOwner(path, owner)
         except CompatException as error:
@@ -748,6 +776,9 @@ class NTFilesystem(PosixFilesystemBase):
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''
+        if self._isVirtualPath(segments):
+            return 'VirtualOwner'
+
         path = self.getRealPathFromSegments(segments)
 
         with self._impersonateUser():
@@ -764,8 +795,7 @@ class NTFilesystem(PosixFilesystemBase):
 
     def addGroup(self, segments, group, permissions=None):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
-
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         try:
             group_sid, group_domain, group_type = (
                 win32security.LookupAccountName(None, group))
@@ -791,8 +821,7 @@ class NTFilesystem(PosixFilesystemBase):
 
     def removeGroup(self, segments, group):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
-
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         try:
             group_sid, group_domain, group_type = (
                 win32security.LookupAccountName(None, group))
@@ -834,6 +863,9 @@ class NTFilesystem(PosixFilesystemBase):
 
     def hasGroup(self, segments, group):
         '''See `ILocalFilesystem`.'''
+        if self._isVirtualPath(segments):
+            return False
+
         path = self.getRealPathFromSegments(segments)
 
         try:

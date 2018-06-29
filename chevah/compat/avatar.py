@@ -22,13 +22,15 @@ class FilesystemAvatar(HasImpersonatedAvatar):
 
     def __init__(
         self, name, home_folder_path, root_folder_path=None,
-        lock_in_home_folder=True, token=None
+        lock_in_home_folder=True, token=None,
+        virtual_folders=(),
             ):
         self._name = name
         self._home_folder_path = home_folder_path
         self._root_folder_path = root_folder_path
         self._token = token
         self._lock_in_home_folder = lock_in_home_folder
+        self._virtual_folders = virtual_folders
 
         if not isinstance(self._home_folder_path, text_type):
             raise RuntimeError('home_folder_path should be text.')
@@ -72,6 +74,13 @@ class FilesystemAvatar(HasImpersonatedAvatar):
         '''Return avatar's name.'''
         return self._name
 
+    @property
+    def virtual_folders(self):
+        """
+        See: :class:`IFileSystemAvatar`
+        """
+        return self._virtual_folders
+
 
 class FilesystemOSAvatar(FilesystemAvatar):
     """
@@ -90,7 +99,7 @@ class FilesystemOSAvatar(FilesystemAvatar):
 
 class FilesystemApplicationAvatar(FilesystemAvatar):
     """
-    Application avatar interacting with thefilesystem.
+    Application avatar interacting with the filesystem.
     """
 
     @property
@@ -98,6 +107,6 @@ class FilesystemApplicationAvatar(FilesystemAvatar):
         """
         See: :class:`IAvatarBase`
 
-        ApplicationAvatar can not be impersoanted.
+        ApplicationAvatar can not be impersonated.
         """
         return False

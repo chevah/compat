@@ -99,7 +99,7 @@ class AssertionMixin(object):
                     first, second)
             raise AssertionError(msg.encode('utf-8'))
 
-    def assertIteratorEqual(self, expected, actual):
+    def assertIteratorItemsEqual(self, expected, actual):
         """
         Check that once fully iterated the `actual` iterator will return the
         `expected` list.
@@ -112,7 +112,7 @@ class AssertionMixin(object):
                 raise AssertionError('Value is not iterable.')
             except StopIteration:
                 break
-        self.assertEqual(expected, actual_list)
+        self.assertItemsEqual(expected, actual_list)
 
     def assertCompatError(self, expected_id, actual_error):
         """

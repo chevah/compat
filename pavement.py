@@ -462,8 +462,9 @@ def test_ci(args):
     environment.args = args
 
     skip_coverage = False
-    if pave.os_name.startswith('alpine'):
+    if pave.os_name.startswith('alpine') or pave.os_name.startswith('hpux'):
         # On alpine coverage reporting segfaults.
+        # On HPUX we run out of memory.
         skip_coverage = True
 
     if skip_coverage:

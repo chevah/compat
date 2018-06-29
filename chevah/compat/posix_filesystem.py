@@ -7,8 +7,8 @@ Windows has its layer of POSIX compatibility.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from six import text_type
 from contextlib import contextmanager
+from datetime import date
 import codecs
 import errno
 import os
@@ -18,7 +18,9 @@ import shutil
 import stat
 import struct
 import sys
+import time
 import unicodedata
+
 
 try:
     # On some systems (AIX/Windows) the public scandir module will fail to
@@ -27,6 +29,7 @@ try:
 except ImportError:
     from scandir import scandir_python as scandir
 
+from six import text_type
 from zope.interface import implements
 
 from chevah.compat.constants import (
@@ -68,6 +71,11 @@ class PosixFilesystemBase(object):
     # http://msdn.microsoft.com/en-us/library/windows/
     #   desktop/aa365511(v=vs.85).aspx
     IO_REPARSE_TAG_SYMLINK = 0xA000000C
+
+    def __init__(self, avatar):
+        self._avatar = avatar
+        self._root_path = self._getRootPath()
+        self._validateVirtualFolders()
 
     @property
     def avatar(self):
@@ -186,9 +194,146 @@ class PosixFilesystemBase(object):
         temporary_folder = tempfile.gettempdir()
         return self._pathSplitRecursive(temporary_folder)
 
-    def getRealPathFromSegments(self, segments):
+    def getRealPathFromSegments(self, segments, include_virtual=True):
         '''See `ILocalFilesystem`.'''
         raise NotImplementedError('You must implement this method.')
+
+    def _areEqual(self, first, second):
+        """
+        Return true if first and second segments are for the same path.
+        """
+        if first == second:
+            return True
+
+        from chevah.compat import process_capabilities
+        if process_capabilities.os_name not in ['windows', 'osx']:
+            # On Linux and Unix we do strict case.
+            return False
+
+        # On Windows paths are case insensitive, so we compare based on
+        # lowercase.
+        # But first try with the same case, in case we have strange
+        first = [s.lower() for s in first]
+        second = [s.lower() for s in second]
+        return first == second
+
+    def _validateVirtualFolders(self):
+        """
+        Check that virtual folders don't overlap with existing real folders.
+        """
+        for virtual_segments, real_path in self._avatar.virtual_folders:
+            target_segments = virtual_segments[:]
+            # Check for the virtual segments, but also for any ancestor.
+            while target_segments:
+                inside_path = os.path.join(self._root_path, *target_segments)
+                if not os.path.lexists(self.getEncodedPath(inside_path)):
+                    target_segments.pop()
+                    continue
+                virtual_path = '/' + '/'.join(virtual_segments)
+                raise CompatError(
+                    1005,
+                    'Virtual path "%s" overlaps an existing file or '
+                    'folder at "%s".' % (virtual_path, inside_path,))
+
+    def _getVirtualPathFromSegments(self, segments, include_virtual):
+        """
+        Return the virtual path associated with `segments`
+
+        Return None if not found.
+        Raise CompatError when `include_virtual` is False and the segments
+        are for a virtual path (root or part of it).
+        """
+        segments_length = len(segments)
+        for virtual_segments, real_path in self._avatar.virtual_folders:
+            if segments_length < len(virtual_segments):
+                # Not the virtual folder of a descended of it.
+                if (
+                    not include_virtual and
+                    self._areEqual(
+                        segments, virtual_segments[:segments_length])
+                        ):
+                    # But this is a parent of a virtual segment and we
+                    # don't allow that.
+                    raise CompatError(
+                        1007, 'Modifying a virtual path is not allowed.')
+
+                continue
+
+            if (
+                not include_virtual and
+                self._areEqual(segments, virtual_segments)
+                    ):
+                # This is a virtual root, but we don't allow it.
+                raise CompatError(
+                    1007, 'Modifying a virtual path is not allowed.')
+
+            base_segments = segments[:len(virtual_segments)]
+            if not self._areEqual(base_segments, virtual_segments):
+                # Base does not match
+                continue
+
+            tail_segments = segments[len(virtual_segments):]
+            return os.path.join(real_path, *tail_segments)
+
+        # At this point we don't have a match for a virtual folder, but
+        # we should check that ancestors are not virtual as we don't
+        # want to create files in the middle of a virtual path.
+        parent = segments[:-1]
+        if not include_virtual and parent:
+            # Make sure parent is not a virtual path.
+            self._getVirtualPathFromSegments(parent, include_virtual=False)
+
+        # No virtual path found for segments.
+        return None
+
+    def _isVirtualPath(self, segments):
+        """
+        Return True if segments are a part or a full virtual folder.
+
+        Return False when they are a descendant of a virtual folder.
+        """
+        if not segments:
+            return False
+
+        partial_virtual = False
+        segments_length = len(segments)
+
+        # Part of virtual paths, virtually exists.
+        for virtual_segments, real_path in self._avatar.virtual_folders:
+            # Any segment which does start the same way as a virtual path is
+            # normal path
+            if not self._areEqual(segments[0:1], virtual_segments[0:1]):
+                # No match
+                continue
+
+            if self._areEqual(segments, virtual_segments[:segments_length]):
+                # This is the root of a virtual path or a sub-part of it.
+                return True
+
+            # If it looks like a virtual path, but is not a full match, then
+            # this is a broken path.
+            partial_virtual = True
+
+            if not self._areEqual(
+                    virtual_segments, segments[:len(virtual_segments)]):
+                # This is not a mapping for this virtual path.
+                continue
+
+            # Segments are the direct
+            partial_virtual = False
+
+            if segments_length > len(virtual_segments):
+                # Is longer than the virtual path so it can't be part of the
+                # full virtual path.
+                return False
+
+            # This is a virtual path which has a mapping.
+            return True
+
+        if partial_virtual:
+            raise CompatError(1004, 'Broken virtual path.')
+
+        return False
 
     def getSegmentsFromRealPath(self, path):
         '''See `ILocalFilesystem`.'''
@@ -227,6 +372,18 @@ class PosixFilesystemBase(object):
 
     def exists(self, segments):
         '''See `ILocalFilesystem`.'''
+
+        try:
+            if self._isVirtualPath(segments):
+                return True
+            else:
+                """
+                Let the normal code to check the existence.
+                """
+        except CompatError:
+            # A broken virtual path does not exits.
+            return False
+
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
@@ -234,7 +391,7 @@ class PosixFilesystemBase(object):
 
     def createFolder(self, segments, recursive=False):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
             if recursive:
@@ -283,7 +440,7 @@ class PosixFilesystemBase(object):
         """
         See: `ILocalFilesystem`.
         """
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
             try:
@@ -316,9 +473,12 @@ class PosixFilesystemBase(object):
 
     def rename(self, from_segments, to_segments):
         '''See `ILocalFilesystem`.'''
-        from_path = self.getRealPathFromSegments(from_segments)
+        from_path = self.getRealPathFromSegments(
+            from_segments, include_virtual=False)
+        to_path = self.getRealPathFromSegments(
+            to_segments, include_virtual=False)
+
         from_path_encoded = self.getEncodedPath(from_path)
-        to_path = self.getRealPathFromSegments(to_segments)
         to_path_encoded = self.getEncodedPath(to_path)
         with self._impersonateUser():
             return os.rename(from_path_encoded, to_path_encoded)
@@ -352,7 +512,7 @@ class PosixFilesystemBase(object):
 
     def openFile(self, segments, flags, mode):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
@@ -361,7 +521,7 @@ class PosixFilesystemBase(object):
 
     def openFileForReading(self, segments, utf8=False):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
@@ -378,7 +538,7 @@ class PosixFilesystemBase(object):
 
     def openFileForWriting(self, segments, utf8=False):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
@@ -397,7 +557,7 @@ class PosixFilesystemBase(object):
         """
         See `ILocalFilesystem`.
         """
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
@@ -424,7 +584,7 @@ class PosixFilesystemBase(object):
         def fail_on_read():
             raise AssertionError(
                 'File opened for appending. Read is not allowed.')
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
@@ -442,21 +602,63 @@ class PosixFilesystemBase(object):
 
     def getFileSize(self, segments):
         '''See `ILocalFilesystem`.'''
+        if self._isVirtualPath(segments):
+            # Virtual path are non-existent in real filesystem but we return
+            # a value instead of file not found.
+            return 0
+
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
             return os.path.getsize(path_encoded)
 
+    def _getVirtualMembers(self, segments):
+        """
+        Return a list with virtual folders which are children of `segments`.
+        """
+        result = []
+        segments_length = len(segments)
+        for virtual_segments, real_path in self._avatar.virtual_folders:
+            if segments_length >= len(virtual_segments):
+                # Not something that might look like the parent of a
+                # virtual folder.
+                continue
+
+            if not self._areEqual(
+                    virtual_segments[:segments_length], segments):
+                continue
+
+            child_segments = virtual_segments[segments_length:]
+            result.append(child_segments[0])
+        # Reduce duplicates.
+        return set(result)
+
     def getFolderContent(self, segments):
         """
         See `ILocalFilesystem`.
         """
+        result = list(self._getVirtualMembers(segments))
+        if segments and result:
+            # We only support mixing virtual folder names with real names
+            # for the root folder.
+            # For all the other paths, we ignore the real folders if they
+            # overlay a virtual path.
+            return result
+
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
-        result = []
-        with self._impersonateUser():
-            for entry in os.listdir(path_encoded):
-                result.append(self._decodeFilename(entry))
+
+        try:
+            with self._impersonateUser():
+                for entry in os.listdir(path_encoded):
+                    name = self._decodeFilename(entry)
+                    if name in result:
+                        continue
+                    result.append(name)
+        except Exception as error:
+            if not result:
+                raise error
+
         return result
 
     def iterateFolderContent(self, segments):
@@ -466,31 +668,60 @@ class PosixFilesystemBase(object):
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
 
-        with self._impersonateUser():
-            folder_iterator = scandir(path_encoded)
+        virtual_members = self._getVirtualMembers(segments)
+        if segments and virtual_members:
+            # We only support mixing virtual folder names with real names
+            # for the root folder.
+            # For all the other paths, we ignore the real folders if they
+            # overlay a virtual path.
+            return iter(virtual_members)
 
-        # On Windows we need to iterate over the first element to get the
-        # errors.
-        # Otherwise just by opening the directory, we don't get any errors.
-        # This is why we try to extract the first element, and yield it
-        # later.
         try:
-            first_member = next(folder_iterator)
-        except StopIteration:
-            # The list is empty so just return an empty iterator.
-            return iter([])
+            with self._impersonateUser():
+                folder_iterator = scandir(path_encoded)
 
-        return self._iterateScandir(first_member, folder_iterator)
+            # On Windows we need to iterate over the first element to get the
+            # errors.
+            # Otherwise just by opening the directory, we don't get any errors.
+            # This is why we try to extract the first element, and yield it
+            # later.
+            try:
+                first_member = next(folder_iterator)
+            except StopIteration:
+                # The list is empty so just return an iterator with possible
+                # virtual members.
+                return iter(virtual_members)
 
-    def _iterateScandir(self, first_member, folder_iterator):
+            firsts = [self._decodeFilename(first_member.name)]
+
+        except Exception as error:
+            # We fail to list the actual folder.
+            if not virtual_members:
+                # Since there are no virtual folder, we just raise the error.
+                raise error
+
+            # We have virtual folders.
+            # No direct listing.
+            folder_iterator = iter([])
+            firsts = []
+
+        # We use a set to eliminate duplicates.
+        firsts.extend(virtual_members)
+        return self._iterateScandir(set(firsts), folder_iterator)
+
+    def _iterateScandir(self, firsts, folder_iterator):
         """
         This generator wrapper needs to be delegated to this method as
         otherwise we get a GeneratorExit error.
         """
-        yield self._decodeFilename(first_member.name)
+        for name in firsts:
+            yield name
 
         for member in folder_iterator:
-            yield self._decodeFilename(member.name)
+            name = self._decodeFilename(member.name)
+            if name in firsts:
+                continue
+            yield name
 
     def _decodeFilename(self, name):
         """
@@ -516,6 +747,9 @@ class PosixFilesystemBase(object):
         """
         See `ILocalFilesystem`.
         """
+        if self._isVirtualPath(segments):
+            return self._getPlaceholderAttributes(segments)
+
         stats = self.getStatus(segments)
         mode = stats.st_mode
         is_directory = bool(stat.S_ISDIR(mode))
@@ -545,9 +779,59 @@ class PosixFilesystemBase(object):
             node_id=stats.st_ino,
             )
 
+    def _getPlaceholderAttributes(self, segments):
+        """
+        Return the attributes which can be used for the case when a real
+        attribute don't exists for `segments`.
+        """
+        modified = time.mktime((
+            date.today().year,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1,
+            ))
+        return FileAttributes(
+            name=segments[-1],
+            path=self.getRealPathFromSegments(segments),
+            size=0,
+            is_file=False,
+            is_folder=True,
+            is_link=False,
+            modified=modified,
+            mode=0,
+            hardlinks=1,
+            uid=1,
+            gid=1,
+            node_id=None,
+            )
+
+    def _getPlaceholderStatus(self):
+        """
+        Return a placeholder status result.
+        """
+        modified = time.mktime((
+            date.today().year,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1,
+            ))
+
+        return os.stat_result([
+            0o40555, 0, 0, 0, 1, 1, 0, 1, modified, 0])
+
     def setAttributes(self, segments, attributes):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
             if 'uid' in attributes and 'gid' in attributes:
@@ -562,7 +846,7 @@ class PosixFilesystemBase(object):
         """
         See: ILocalFilesystem.
         """
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
             with open(path_encoded, 'a'):
@@ -579,9 +863,11 @@ class PosixFilesystemBase(object):
             if self.exists(destination_segments):
                 raise OSError(errno.EEXIST, 'Destination exists.')
 
-        source_path = self.getRealPathFromSegments(source_segments)
+        source_path = self.getRealPathFromSegments(
+            source_segments, include_virtual=False)
         source_path_encoded = self.getEncodedPath(source_path)
-        destination_path = self.getRealPathFromSegments(destination_segments)
+        destination_path = self.getRealPathFromSegments(
+            destination_segments, include_virtual=False)
         destination_path_encoded = self.getEncodedPath(destination_path)
 
         with self._impersonateUser():

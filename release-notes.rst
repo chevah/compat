@@ -2,6 +2,60 @@ Release notes for chevah.compat
 ===============================
 
 
+0.51.6 - 26/06/2018
+-------------------
+
+* Use start of current year for date of virtual folders.
+
+
+0.51.5 - 22/06/2018
+-------------------
+
+* Fix detection of virtual path for nested virtual paths.
+* Add macOS on the list of case-insensitive path handling.
+
+
+0.51.4 - 21/06/2018
+-------------------
+
+* Disable the filesystem overlay functionality. You can no longer mix virtual
+  with non-virtual paths.
+* The LocalFilesystem now fails to initialized if a virtual path overlaps an
+  existing folder.
+* Operation will fail if they are executed on a path which looks like a virtual
+  path but has no direct mapping.
+* Add case insensitive behaviour for Windows.
+
+
+0.51.3 - 17/06/2018
+-------------------
+
+* Fix getAttributes and getStatus operations for root segments.
+
+
+0.51.2 - 16/06/2018
+-------------------
+
+* Restrict any mutating operation on the virtual path itself or for parts
+  of the virtual path.
+* Fix listing of deep virtual path which are not overlaid.
+
+
+0.51.1 - 15/06/2018
+-------------------
+
+* Fix listing of virtual path which are overlaid
+* Fix folder iteration with unicode.
+
+
+0.50.0 - 15/06/2018
+-------------------
+
+* Add support for virtual directories as a way to allow explicit access to
+  selected folders outside of the locked home folder.
+* Fix skipOnCondition to run the tests when condition is meet.
+
+
 0.49.3 - 08/05/2018
 -------------------
 

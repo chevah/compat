@@ -4,6 +4,7 @@
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from zope.interface import Interface, Attribute
 
@@ -141,9 +142,9 @@ class IFileSystemAvatar(IHasImpersonatedAvatar):
     home_folder_path = Attribute(u'Path to home folder')
     root_folder_path = Attribute(u'Path to root folder')
     lock_in_home_folder = Attribute(
-        '''
-        True if filesystem access should be limited to home folder.
-        ''')
+        'True if filesystem access should be limited to home folder.')
+    virtual_folders = Attribute(
+        'List of tuples which map segments to real paths.')
 
 
 class IOSUsers(Interface):
@@ -377,9 +378,12 @@ class ILocalFilesystem(Interface):
     home_segments = Attribute('Segments for user home folder.')
     temp_segments = Attribute('Segments to temp folder.')
 
-    def getRealPathFromSegments(segments):
+    def getRealPathFromSegments(segments, include_virtual=True):
         """
         Return the real path for the segments.
+
+        Raises an error when `include_virtual` is False and the segments
+        are for a real path.
         """
 
     def getSegmentsFromRealPath(real_path):

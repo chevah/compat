@@ -36,10 +36,6 @@ class UnixFilesystem(PosixFilesystemBase):
     implements(ILocalFilesystem)
     system_users = UnixUsers()
 
-    def __init__(self, avatar):
-        self._avatar = avatar
-        self._root_handler = self._getRootPath()
-
     def _getRootPath(self):
         if not self._avatar:
             return u'/'
@@ -52,14 +48,20 @@ class UnixFilesystem(PosixFilesystemBase):
         else:
             return self._avatar.root_folder_path
 
-    def getRealPathFromSegments(self, segments):
-        '''See `ILocalFilesystem`.'''
+    def getRealPathFromSegments(self, segments, include_virtual=True):
+        """
+        See `ILocalFilesystem`.
+        """
         if segments is None or len(segments) == 0:
-            return text_type(self._root_handler)
-        else:
-            relative_path = u'/' + u'/'.join(segments)
-            relative_path = os.path.abspath(relative_path).rstrip('/')
-            return text_type(self._root_handler.rstrip('/') + relative_path)
+            return text_type(self._root_path)
+
+        result = self._getVirtualPathFromSegments(segments, include_virtual)
+        if result is not None:
+            return result
+
+        relative_path = u'/' + u'/'.join(segments)
+        relative_path = os.path.abspath(relative_path).rstrip('/')
+        return text_type(self._root_path.rstrip('/') + relative_path)
 
     def getSegmentsFromRealPath(self, path):
         """
@@ -72,9 +74,19 @@ class UnixFilesystem(PosixFilesystemBase):
         head = True
         tail = os.path.abspath(path)
 
+        for virtual_segments, real_path in self._avatar.virtual_folders:
+            virtual_root = os.path.abspath(real_path)
+            if not tail.startswith(virtual_root):
+                # Not a virtual folder.
+                continue
+
+            ancestors = tail[len(real_path):].split('/')
+            ancestors = [a for a in ancestors if a]
+            return virtual_segments + ancestors
+
         if self._avatar.lock_in_home_folder:
-            self._checkChildPath(self._root_handler, tail)
-            tail = tail[len(self._root_handler):]
+            self._checkChildPath(self._root_path, tail)
+            tail = tail[len(self._root_path):]
 
         while tail and head != u'/':
             head, tail = os.path.split(tail)
@@ -87,7 +99,7 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def readLink(self, segments):
         '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = path.encode('utf-8')
         with self._impersonateUser():
             target = os.readlink(path_encoded).decode('utf-8')
@@ -97,9 +109,11 @@ class UnixFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
-        target_path = self.getRealPathFromSegments(target_segments)
+        target_path = self.getRealPathFromSegments(
+            target_segments, include_virtual=False)
         target_path_encoded = self.getEncodedPath(target_path)
-        link_path = self.getRealPathFromSegments(link_segments)
+        link_path = self.getRealPathFromSegments(
+            link_segments, include_virtual=False)
         link_path_encoded = self.getEncodedPath(link_path)
 
         with self._impersonateUser():
@@ -107,8 +121,8 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def setOwner(self, segments, owner):
         '''See `ILocalFilesystem`.'''
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         encoded_owner = owner.encode('utf-8')
-        path = self.getRealPathFromSegments(segments)
         path_encoded = path.encode('utf-8')
         try:
             uid = pwd.getpwnam(encoded_owner).pw_uid
@@ -129,8 +143,8 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def addGroup(self, segments, group, permissions=None):
         '''See `ILocalFilesystem`.'''
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         encoded_group = codecs.encode(group, 'utf-8')
-        path = self.getRealPathFromSegments(segments)
         path_encoded = path.encode('utf-8')
         try:
             gid = grp.getgrnam(encoded_group).gr_gid
@@ -146,7 +160,13 @@ class UnixFilesystem(PosixFilesystemBase):
                     self.raiseFailedToAddGroup(group, path, u'Not permitted.')
 
     def removeGroup(self, segments, group):
-        '''See `ILocalFilesystem`.'''
+        '''
+        See `ILocalFilesystem`.
+
+        This has no effect on Unix/Linux but raises an error if we are
+        touching a virtual root.
+        '''
+        self.getRealPathFromSegments(segments, include_virtual=False)
         return
 
     def hasGroup(self, segments, group):
@@ -176,6 +196,9 @@ class UnixFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        if self._isVirtualPath(segments):
+            return False
+
         path = self.getRealPathFromSegments(segments)
         path_encoded = path.encode('utf-8')
 
@@ -187,11 +210,14 @@ class UnixFilesystem(PosixFilesystemBase):
                 return False
 
     def deleteFolder(self, segments, recursive=True):
-        '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments)
+        """
+        See `ILocalFilesystem`.
+        """
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
         if path == u'/':
             raise CompatError(
                 1009, 'Deleting Unix root folder is not allowed.')
+
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
             if self.isLink(segments):
@@ -205,6 +231,10 @@ class UnixFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        if self._isVirtualPath(segments):
+            # Use a placeholder for parts of a virtual path.
+            return self._getPlaceholderStatus()
+
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
