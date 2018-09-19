@@ -1613,19 +1613,21 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         path, segments = mk.fs.makePathInTemp()
 
+        expected_path = path
+        if self.os_family == 'posix':
+            expected_path = path.encode('utf-8')
+
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForUpdating(segments, utf8=False)
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
-        if self.os_family == 'posix':
-            # On Windows, the path is not set to the exception.
-            self.assertEqual(path.encode('utf-8'), context.exception.filename)
+        self.assertEqual(expected_path, context.exception.filename)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForUpdating(segments, utf8=True)
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
+        self.assertEqual(expected_path, context.exception.filename)
 
     def test_openFileForUpdating_existing_binary(self):
         """
