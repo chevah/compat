@@ -108,6 +108,7 @@ TEST_PACKAGES = [
     'nose-randomly==1.2.5',
     'mock',
 
+    'coverator==0.1.4',
     'coverage==4.4.1',
 
     # used for remote debugging.
