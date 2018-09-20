@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.51.1 - 20/09/2018
+-------------------
+
+* Add path to more OSError raised on Windows.
+
+
 0.51.0 - 19/09/2018
 -------------------
 
