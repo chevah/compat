@@ -484,17 +484,19 @@ class PosixFilesystemBase(object):
             return os.rename(from_path_encoded, to_path_encoded)
 
     @contextmanager
-    def _IOToOSError(self, path):
+    def _convertToOSError(self, path):
         """
-        Convert IOError to OSError.
+        Convert the errors raised to OSError... if possible.
         """
         try:
             yield
-        except IOError as error:
+        except EnvironmentError as error:
+            if not error.filename:
+                error.filename = self.getEncodedPath(path)
             raise OSError(
                 error.errno,
-                error.strerror.encode('utf-8'),
-                path.encode('utf-8'),
+                error.strerror,
+                error.filename,
                 )
 
     def _requireFile(self, segments):
@@ -516,7 +518,7 @@ class PosixFilesystemBase(object):
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
-        with self._IOToOSError(path), self._impersonateUser():
+        with self._convertToOSError(path), self._impersonateUser():
             return os.open(path_encoded, flags, mode)
 
     def openFileForReading(self, segments, utf8=False):
@@ -525,7 +527,7 @@ class PosixFilesystemBase(object):
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
-        with self._IOToOSError(path), self._impersonateUser():
+        with self._convertToOSError(path), self._impersonateUser():
             if utf8:
                 return codecs.open(path_encoded, 'r', 'utf-8')
             else:
@@ -542,7 +544,7 @@ class PosixFilesystemBase(object):
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
-        with self._IOToOSError(path), self._impersonateUser():
+        with self._convertToOSError(path), self._impersonateUser():
             if utf8:
                 return codecs.open(path_encoded, 'w', 'utf-8')
             else:
@@ -561,7 +563,7 @@ class PosixFilesystemBase(object):
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
-        with self._IOToOSError(path), self._impersonateUser():
+        with self._convertToOSError(path), self._impersonateUser():
             if utf8:
                 # This will also allow reading, but I hope we will
                 # remove this API soon, and we patch the high level API.
@@ -588,7 +590,7 @@ class PosixFilesystemBase(object):
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
-        with self._IOToOSError(path), self._impersonateUser():
+        with self._convertToOSError(path), self._impersonateUser():
             if utf8:
                 return codecs.open(path_encoded, 'a+b', 'utf-8')
             else:

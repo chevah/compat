@@ -246,20 +246,41 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         folder_name = segments[-1]
         self.assertTrue(folder_name.startswith('build-'))
 
-    def test_IOToOSError(self):
+    def test_convertToOSError_IOError(self):
         """
-        Convert IOError to OSError using a context.
+        Convert IOError to OSError using a context, and add the path if error
+        is missing the path.
         """
         path = mk.string()
         message = mk.string()
 
         with self.assertRaises(OSError) as context:
-            with self.filesystem._IOToOSError(path):
+            with self.filesystem._convertToOSError(path):
                 raise IOError(3, message)
 
         self.assertEqual(3, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
-        self.assertEqual(message.encode('utf-8'), context.exception.strerror)
+        if self.os_family == 'posix':
+            self.assertEqual(path.encode('utf-8'), context.exception.filename)
+        else:
+            self.assertEqual(path, context.exception.filename)
+
+        self.assertEqual(message, context.exception.strerror)
+
+    def test_convertToOSError_OSError(self):
+        """
+        Keep OSError and don't add the path when the exception already has
+        a path.
+        """
+        path = mk.string()
+        message = mk.string()
+
+        with self.assertRaises(OSError) as context:
+            with self.filesystem._convertToOSError(path):
+                raise OSError(3, message, 'other-path')
+
+        self.assertEqual(3, context.exception.errno)
+        self.assertEqual('other-path', context.exception.filename)
+        self.assertEqual(message, context.exception.strerror)
 
     def test_deleteFile_folder(self):
         """
@@ -1592,19 +1613,21 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         path, segments = mk.fs.makePathInTemp()
 
+        expected_path = path
+        if self.os_family == 'posix':
+            expected_path = path.encode('utf-8')
+
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForUpdating(segments, utf8=False)
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
-        if self.os_family == 'posix':
-            # On Windows, the path is not set to the exception.
-            self.assertEqual(path.encode('utf-8'), context.exception.filename)
+        self.assertEqual(expected_path, context.exception.filename)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForUpdating(segments, utf8=True)
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
+        self.assertEqual(expected_path, context.exception.filename)
 
     def test_openFileForUpdating_existing_binary(self):
         """

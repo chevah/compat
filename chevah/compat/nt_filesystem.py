@@ -348,20 +348,19 @@ class NTFilesystem(PosixFilesystemBase):
                 None,
                 )
         except pywintypes.error as error:
-            message = '%s %s %s' % (error.winerror, error.strerror, path)
-            raise OSError(errno.ENOENT, message.encode('utf-8'))
+            message = '%s - %s' % (error.winerror, error.strerror)
+            raise OSError(errno.ENOENT, message.encode('utf-8'), path)
 
         if handle == win32file.INVALID_HANDLE_VALUE:
-            message = 'Failed to open symlink %s' % (path)
-            raise OSError(errno.EINVAL, message.encode('utf-8'))
+            raise OSError(errno.EINVAL, 'Failed to open symlink', path)
 
         try:
             # MAXIMUM_REPARSE_DATA_BUFFER_SIZE = 16384 = (16*1024)
             raw_reparse_data = win32file.DeviceIoControl(
                 handle, FSCTL_GET_REPARSE_POINT, None, 16 * 1024)
         except pywintypes.error as error:
-            message = '%s %s %s' % (error.winerror, error.strerror, path)
-            raise OSError(errno.EINVAL, message.encode('utf-8'))
+            message = '%s - %s' % (error.winerror, error.strerror)
+            raise OSError(errno.EINVAL, message.encode('utf-8'), path)
         finally:
             win32file.CloseHandle(handle)
 
@@ -370,8 +369,7 @@ class NTFilesystem(PosixFilesystemBase):
             result = self._parseReparseData(raw_reparse_data)
             result = self._parseSymbolicLinkReparse(result)
         except CompatException as error:
-            message = u'%s %s' % (error.message, path)
-            raise OSError(errno.EINVAL, message.encode('utf-8'))
+            raise OSError(errno.EINVAL, error.message, path)
 
         return result
 
@@ -407,7 +405,7 @@ class NTFilesystem(PosixFilesystemBase):
                     win32file.CreateSymbolicLink(
                         link_path, target_path, flags)
             except AdjustPrivilegeException as error:
-                raise OSError(errno.EINVAL, error.message)
+                raise OSError(errno.EINVAL, error.message, link_path)
 
     def getStatus(self, segments):
         """
@@ -574,18 +572,18 @@ class NTFilesystem(PosixFilesystemBase):
             with self._impersonateUser():
                 search = win32file.FindFilesW(path)
                 if len(search) != 1:
-                    message = 'Could not find %s' % path
                     raise OSError(
                         errno.ENOENT,
-                        message.encode('utf-8'),
+                        'Could not find',
                         path.encode('utf-8'),
                         )
                 data = search[0]
         except pywintypes.error as error:
-            message = u'%s %s %s' % (error.winerror, error.strerror, path)
+            message = u'%s - %s' % (error.winerror, error.strerror)
             raise OSError(
                 errno.EINVAL,
                 message.encode('utf-8'),
+                path,
                 )
 
         # Raw data:
@@ -655,7 +653,7 @@ class NTFilesystem(PosixFilesystemBase):
             if self.isFolder(segments):
                 raise OSError(
                     errno.EISDIR,
-                    'Is a directory: %s' % error.filename,
+                    'Is a directory',
                     error.filename,
                     )
             # When file is not found it uses EINVAL code but we want the
@@ -663,7 +661,7 @@ class NTFilesystem(PosixFilesystemBase):
             if error.errno == errno.EINVAL:
                 raise OSError(
                     errno.ENOENT,
-                    'Not found: %s' % error.filename,
+                    'Not found',
                     error.filename,
                     )
             raise error
@@ -677,7 +675,7 @@ class NTFilesystem(PosixFilesystemBase):
         if not self.isFolder(segments):
             raise OSError(
                 errno.ENOTDIR,
-                'Not a directory: %s' % path_encoded,
+                'Not a directory',
                 path_encoded,
                 )
 
@@ -791,7 +789,7 @@ class NTFilesystem(PosixFilesystemBase):
                 return name
             except win32net.error as error:
                 raise OSError(
-                    error.winerror, error.strerror)
+                    error.winerror, error.strerror, path)
 
     def addGroup(self, segments, group, permissions=None):
         '''See `ILocalFilesystem`.'''
@@ -837,7 +835,7 @@ class NTFilesystem(PosixFilesystemBase):
                     path, win32security.DACL_SECURITY_INFORMATION)
             except win32net.error as error:
                 raise OSError(
-                    error.winerror, error.strerror)
+                    error.winerror, error.strerror, path)
 
             dacl = security.GetSecurityDescriptorDacl()
             ace_count = dacl.GetAceCount()
@@ -880,7 +878,7 @@ class NTFilesystem(PosixFilesystemBase):
                     path, win32security.DACL_SECURITY_INFORMATION)
             except win32net.error as error:
                 raise OSError(
-                    error.winerror, error.strerror)
+                    error.winerror, error.strerror, path)
 
             dacl = security.GetSecurityDescriptorDacl()
             ace_count = dacl.GetAceCount()
