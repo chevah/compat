@@ -3772,6 +3772,12 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertItemsEqual(expected, result)
 
         result = sut.iterateFolderContent([])
+        expected = [
+            '\N{sun}base',
+            'non-virtual\N{sun}',
+            'other-real\N{sun}',
+            'more-virtual',
+            ]
         self.assertIteratorItemsEqual(expected, result)
 
         expected = [
@@ -3812,6 +3818,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         """
         It can list a virtual folder as member of a parent folder mixed
         with non-virtual members.
+
+        The real members are shadowed by the virtual members.
         """
 
         sut = self.getFilesystem(virtual_folders=[
@@ -3826,11 +3834,15 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFolder(segments + ['child-folder'])
         mk.fs.createFile(segments + ['child-file'])
 
-        expected = ['child-file', 'virtual\N{cloud}']
-
         result = sut.getFolderContent(['non-virtual\N{sun}'])
-        self.assertItemsEqual(expected, result)
+        self.assertItemsEqual(['child-file', 'virtual\N{cloud}'], result)
 
+        expected = [
+            sut._getPlaceholderAttributes([
+                'non-virtual\N{sun}', 'child-file']),
+            sut._getPlaceholderAttributes([
+                'non-virtual\N{sun}', 'virtual\N{cloud}']),
+            ]
         result = sut.iterateFolderContent(['non-virtual\N{sun}'])
         self.assertIteratorItemsEqual(expected, result)
 
@@ -3838,7 +3850,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertEqual(['non-virtual\N{sun}'], result)
 
         result = sut.iterateFolderContent([])
-        self.assertIteratorItemsEqual(['non-virtual\N{sun}'], result)
+        # Even if non-virtual is real, we get the attributes for the virtual
+        # path.
+        self.assertIteratorItemsEqual(
+            [sut._getPlaceholderAttributes(['non-virtual\N{sun}'])], result)
 
     @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_deep_member(self):
@@ -3857,6 +3872,12 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result = sut.getFolderContent(['\N{sun}base'])
         self.assertItemsEqual(expected, result)
 
+        expected = [
+            sut._getPlaceholderAttributes([
+                '\N{sun}base', 'deep\N{cloud}']),
+            sut._getPlaceholderAttributes([
+                '\N{sun}base', 'other\N{sun}']),
+            ]
         result = sut.iterateFolderContent(['\N{sun}base'])
         self.assertIteratorItemsEqual(expected, result)
 
@@ -3864,6 +3885,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result = sut.getFolderContent(['\N{sun}base', 'deep\N{cloud}'])
         self.assertItemsEqual(expected, result)
 
+        expected = [
+            sut._getPlaceholderAttributes([
+                '\N{sun}base', 'deep\N{cloud}', 'virt\N{sun}']),
+            ]
         result = sut.iterateFolderContent(['\N{sun}base', 'deep\N{cloud}'])
         self.assertIteratorItemsEqual(expected, result)
 

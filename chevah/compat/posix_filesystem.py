@@ -631,7 +631,9 @@ class PosixFilesystemBase(object):
                 continue
 
             child_segments = virtual_segments[segments_length:]
-            result.append(child_segments[0])
+
+            result.append(self._getPlaceholderAttributes(
+                segments + [child_segments[0]]))
         # Reduce duplicates.
         return set(result)
 
@@ -639,7 +641,7 @@ class PosixFilesystemBase(object):
         """
         See `ILocalFilesystem`.
         """
-        result = list(self._getVirtualMembers(segments))
+        result = [m.name for m in self._getVirtualMembers(segments)]
         if segments and result:
             # We only support mixing virtual folder names with real names
             # for the root folder.
@@ -694,7 +696,7 @@ class PosixFilesystemBase(object):
                 # virtual members.
                 return iter(virtual_members)
 
-            firsts = [self._decodeFilename(first_member.name)]
+            firsts = [self._dirEntryToFileAttributes(first_member)]
 
         except Exception as error:
             # We fail to list the actual folder.
@@ -715,15 +717,51 @@ class PosixFilesystemBase(object):
         """
         This generator wrapper needs to be delegated to this method as
         otherwise we get a GeneratorExit error.
-        """
-        for name in firsts:
-            yield name
 
-        for member in folder_iterator:
-            name = self._decodeFilename(member.name)
-            if name in firsts:
+        `firsts` is a list of FileAttributes.
+        `folder_iterators` is the iterator resulted from scandir.
+        """
+        first_names = []
+        for member in firsts:
+            first_names.append(member.name)
+            yield member
+
+        for entry in folder_iterator:
+            name = self._decodeFilename(entry.name)
+            if name in first_names:
+                #FIXME
+                # see why we have this here
                 continue
-            yield name
+            yield self._dirEntryToFileAttributes(entry)
+
+    def _dirEntryToFileAttributes(self, entry):
+        """
+        """
+        name = self._decodeFilename(entry.name)
+        path = self._decodeFilename(entry.path)
+        stats = entry.stat()
+
+        is_directory = entry.is_dir()
+        mode = stats.st_mode
+        if is_directory and sys.platform.startswith('aix'):
+            # On AIX mode contains an extra most significant bit
+            # which we don't use.
+            mode = mode & 0o077777
+
+        return FileAttributes(
+            name=name,
+            path=path,
+            size=stats.st_size,
+            is_file=entry.is_file(),
+            is_folder=is_directory,
+            is_link=entry.is_symlink(),
+            modified=stats.st_mtime,
+            mode=mode,
+            hardlinks=stats.st_nlink,
+            uid=stats.st_uid,
+            gid=stats.st_gid,
+            node_id=entry.inode(),
+            )
 
     def _decodeFilename(self, name):
         """
@@ -1067,7 +1105,7 @@ class FileAttributes(object):
         self.group = group
 
     def __hash__(self):
-        return hash(
+        return hash((
             self.name,
             self.path,
             self.size,
@@ -1076,13 +1114,13 @@ class FileAttributes(object):
             self.is_link,
             self.modified,
             self.mode,
-            self.hardlink,
+            self.hardlinks,
             self.uid,
             self.gid,
             self.node_id,
             self.owner,
             self.group,
-            )
+            ))
 
     def __eq__(self, other):
         return (

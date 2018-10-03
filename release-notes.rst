@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.52.0 - 03/10/2018
+-------------------
+
+* Return attributes in folder iterator.
+
+
 0.51.1 - 20/09/2018
 -------------------
 
