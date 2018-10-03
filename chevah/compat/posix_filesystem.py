@@ -632,10 +632,13 @@ class PosixFilesystemBase(object):
 
             child_segments = virtual_segments[segments_length:]
 
-            result.append(self._getPlaceholderAttributes(
-                segments + [child_segments[0]]))
-        # Reduce duplicates.
-        return set(result)
+            result.append(child_segments[0])
+
+        # Reduce duplicates and convert to attributes..
+        return [
+            self._getPlaceholderAttributes(segments + [m])
+            for m in set(result)
+            ]
 
     def getFolderContent(self, segments):
         """
@@ -697,6 +700,7 @@ class PosixFilesystemBase(object):
                 return iter(virtual_members)
 
             firsts = [self._dirEntryToFileAttributes(first_member)]
+            first_names = [firsts[0].name]
 
         except Exception as error:
             # We fail to list the actual folder.
@@ -708,9 +712,14 @@ class PosixFilesystemBase(object):
             # No direct listing.
             folder_iterator = iter([])
             firsts = []
+            first_names = []
 
-        # We use a set to eliminate duplicates.
-        firsts.extend(virtual_members)
+        for member in virtual_members:
+            if member.name in first_names:
+                # Virtual folder overlaps the real folder.
+                continue
+            firsts.append(member)
+
         return self._iterateScandir(set(firsts), folder_iterator)
 
     def _iterateScandir(self, firsts, folder_iterator):
@@ -727,32 +736,36 @@ class PosixFilesystemBase(object):
             yield member
 
         for entry in folder_iterator:
-            name = self._decodeFilename(entry.name)
-            if name in first_names:
-                #FIXME
-                # see why we have this here
+            attributes = self._dirEntryToFileAttributes(entry)
+            if attributes.name in first_names:
+                # Make sure we don't add duplicate from previous
+                # virtual folders.
                 continue
-            yield self._dirEntryToFileAttributes(entry)
+            yield attributes
 
     def _dirEntryToFileAttributes(self, entry):
         """
+        Convert the result from scandir to FileAttributes.
         """
         name = self._decodeFilename(entry.name)
         path = self._decodeFilename(entry.path)
         stats = entry.stat()
-
-        is_directory = entry.is_dir()
         mode = stats.st_mode
+        is_directory = bool(stat.S_ISDIR(mode))
         if is_directory and sys.platform.startswith('aix'):
             # On AIX mode contains an extra most significant bit
             # which we don't use.
             mode = mode & 0o077777
 
+        # We use the INODE from stats, as on Windows getting INODE from
+        # scandir result is slow.
+        inode = stats.st_ino
+
         return FileAttributes(
             name=name,
             path=path,
             size=stats.st_size,
-            is_file=entry.is_file(),
+            is_file=bool(stat.S_ISREG(mode)),
             is_folder=is_directory,
             is_link=entry.is_symlink(),
             modified=stats.st_mtime,
@@ -760,7 +773,7 @@ class PosixFilesystemBase(object):
             hardlinks=stats.st_nlink,
             uid=stats.st_uid,
             gid=stats.st_gid,
-            node_id=entry.inode(),
+            node_id=inode,
             )
 
     def _decodeFilename(self, name):

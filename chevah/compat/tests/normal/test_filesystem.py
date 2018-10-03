@@ -1036,15 +1036,27 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         folder_name = mk.makeFilename()
         file_segments = base_segments + [file_name]
         folder_segments = base_segments + [folder_name]
-        mk.fs.createFile(file_segments)
+        mk.fs.createFile(file_segments, content=b'123456789')
         mk.fs.createFolder(folder_segments)
 
         content = self.filesystem.iterateFolderContent(base_segments)
 
         result = list(content)
-        self.assertIsNotEmpty(result)
-        self.assertIsInstance(text_type, result[0])
-        self.assertItemsEqual([folder_name, file_name], result)
+        self.assertEqual(2, len(result))
+        self.assertProvides(IFileAttributes, result[0])
+        self.assertProvides(IFileAttributes, result[1])
+        result = {r.name: r for r in result}
+        folder_attributes = result[folder_name]
+        self.assertTrue(folder_attributes.is_folder)
+        self.assertFalse(folder_attributes.is_file)
+        self.assertFalse(folder_attributes.is_link)
+
+        file_attributes = result[file_name]
+        self.assertFalse(file_attributes.is_folder)
+        self.assertTrue(file_attributes.is_file)
+        self.assertFalse(file_attributes.is_link)
+        self.assertEqual(9, file_attributes.size)
+        self.assertAlmostEqual(self.now(), file_attributes.modified, delta=5)
 
     @attr('slow')
     @conditionals.skipOnPY3()
@@ -3773,10 +3785,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         result = sut.iterateFolderContent([])
         expected = [
-            '\N{sun}base',
-            'non-virtual\N{sun}',
-            'other-real\N{sun}',
-            'more-virtual',
+            sut._getPlaceholderAttributes(['\N{sun}base']),
+            sut.getAttributes(['non-virtual\N{sun}']),
+            sut.getAttributes(['other-real\N{sun}']),
+            sut._getPlaceholderAttributes(['more-virtual']),
             ]
         self.assertIteratorItemsEqual(expected, result)
 
@@ -3788,6 +3800,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertItemsEqual(expected, result)
 
         result = sut.iterateFolderContent(['\N{sun}base', 'base2'])
+        expected = [
+            sut.getAttributes(['non-virtual\N{sun}']),
+            sut.getAttributes(['other-real\N{sun}']),
+            ]
         self.assertIteratorItemsEqual(expected, result)
 
     @conditionals.skipOnPY3()
@@ -3811,6 +3827,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertItemsEqual(expected, result)
 
         result = sut.iterateFolderContent(['non-virtual\N{sun}'])
+        expected = [
+            mk.fs.getAttributes(segments + ['child-folder']),
+            mk.fs.getAttributes(segments + ['child-file\N{sun}']),
+            ]
         self.assertIteratorItemsEqual(expected, result)
 
     @conditionals.skipOnPY3()
@@ -3834,6 +3854,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFolder(segments + ['child-folder'])
         mk.fs.createFile(segments + ['child-file'])
 
+        _, other_segments = self.tempFolder('other-real\N{leo}')
+
         result = sut.getFolderContent(['non-virtual\N{sun}'])
         self.assertItemsEqual(['child-file', 'virtual\N{cloud}'], result)
 
@@ -3847,13 +3869,16 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertIteratorItemsEqual(expected, result)
 
         result = sut.getFolderContent([])
-        self.assertEqual(['non-virtual\N{sun}'], result)
+        self.assertEqual(['non-virtual\N{sun}', 'other-real\N{leo}'], result)
 
         result = sut.iterateFolderContent([])
         # Even if non-virtual is real, we get the attributes for the virtual
         # path.
-        self.assertIteratorItemsEqual(
-            [sut._getPlaceholderAttributes(['non-virtual\N{sun}'])], result)
+        self.assertIteratorItemsEqual([
+            mk.fs._getPlaceholderAttributes(segments),
+            mk.fs.getAttributes(other_segments)
+            ],
+            result)
 
     @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_deep_member(self):
