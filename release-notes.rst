@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.52.2 - 04/10/2018
+-------------------
+
+* Virtual folders always shadow the real folders.
+
+
 0.52.1 - 03/10/2018
 -------------------
 

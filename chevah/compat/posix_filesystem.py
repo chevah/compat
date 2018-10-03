@@ -683,6 +683,9 @@ class PosixFilesystemBase(object):
             # overlay a virtual path.
             return iter(virtual_members)
 
+        # We start with possible virtual folders as they should shadow the
+        # real folders.
+        firsts = virtual_members
         try:
             with self._impersonateUser():
                 folder_iterator = scandir(path_encoded)
@@ -695,12 +698,15 @@ class PosixFilesystemBase(object):
             try:
                 first_member = next(folder_iterator)
             except StopIteration:
-                # The list is empty so just return an iterator with possible
+                # The folder is empty so just return an iterator with possible
                 # virtual members.
                 return iter(virtual_members)
 
-            firsts = [self._dirEntryToFileAttributes(first_member)]
-            first_names = [firsts[0].name]
+            real_first_attributes = self._dirEntryToFileAttributes(
+                first_member)
+            first_names = [m.name for m in firsts]
+            if real_first_attributes.name not in first_names:
+                firsts.append(real_first_attributes)
 
         except Exception as error:
             # We fail to list the actual folder.
@@ -711,14 +717,6 @@ class PosixFilesystemBase(object):
             # We have virtual folders.
             # No direct listing.
             folder_iterator = iter([])
-            firsts = []
-            first_names = []
-
-        for member in virtual_members:
-            if member.name in first_names:
-                # Virtual folder overlaps the real folder.
-                continue
-            firsts.append(member)
 
         return self._iterateScandir(set(firsts), folder_iterator)
 

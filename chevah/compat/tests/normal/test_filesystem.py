@@ -3888,7 +3888,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         The real members are shadowed by the virtual members.
         """
-
+        self.maxDiff = None
         sut = self.getFilesystem(virtual_folders=[
             (['non-virtual\N{sun}', 'virtual\N{cloud}'], mk.fs.temp_path),
             (['non-virtual\N{sun}', 'child-file', 'other'], mk.fs.temp_path),
@@ -3924,6 +3924,31 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertIteratorItemsEqual([
             mk.fs._getPlaceholderAttributes(segments),
             mk.fs.getAttributes(other_segments)
+            ],
+            result)
+
+    @conditionals.skipOnPY3()
+    def test_iterateFolderContent_virtual_overlap(self):
+        """
+        When iterating over a folder with virtual members,
+        the real members are shadowed by the virtual members.
+        """
+        self.maxDiff = None
+        sut = self.getFilesystem(virtual_folders=[
+            (['non-virtual\N{sun}', 'virtual\N{cloud}'], mk.fs.temp_path),
+            (['non-virtual\N{sun}', 'child-file', 'other'], mk.fs.temp_path),
+            ])
+
+        # We create the folders after the filesystem was initialized as
+        # otherwise it will fail to initialized as it makes checks at init
+        # time for overlapping.
+        _, segments = self.tempFolder('non-virtual\N{sun}')
+
+        result = sut.iterateFolderContent([])
+        # Even if non-virtual is real, we get the attributes for the virtual
+        # path.
+        self.assertIteratorItemsEqual([
+            mk.fs._getPlaceholderAttributes(segments),
             ],
             result)
 
