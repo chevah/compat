@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.52.1 - 03/10/2018
+-------------------
+
+* Don't follow links when getting the attributes for iterated folder.
+* Use impersonation when getting the attributes during the folder iteration.
+
+
 0.52.0 - 03/10/2018
 -------------------
 

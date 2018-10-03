@@ -749,7 +749,11 @@ class PosixFilesystemBase(object):
         """
         name = self._decodeFilename(entry.name)
         path = self._decodeFilename(entry.path)
-        stats = entry.stat()
+
+        with self._impersonateUser():
+            stats = entry.stat(follow_symlinks=False)
+            is_link = entry.is_symlink()
+
         mode = stats.st_mode
         is_directory = bool(stat.S_ISDIR(mode))
         if is_directory and sys.platform.startswith('aix'):
@@ -767,7 +771,7 @@ class PosixFilesystemBase(object):
             size=stats.st_size,
             is_file=bool(stat.S_ISREG(mode)),
             is_folder=is_directory,
-            is_link=entry.is_symlink(),
+            is_link=is_link,
             modified=stats.st_mtime,
             mode=mode,
             hardlinks=stats.st_nlink,

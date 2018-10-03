@@ -1032,8 +1032,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         Return folder content as list of Unicode names.
         """
         base_segments = self.folderInTemp()
-        file_name = mk.makeFilename()
-        folder_name = mk.makeFilename()
+        file_name = mk.makeFilename(prefix='file-')
+        folder_name = mk.makeFilename(prefix='folder-')
         file_segments = base_segments + [file_name]
         folder_segments = base_segments + [folder_name]
         mk.fs.createFile(file_segments, content=b'123456789')
@@ -1057,6 +1057,53 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertFalse(file_attributes.is_link)
         self.assertEqual(9, file_attributes.size)
         self.assertAlmostEqual(self.now(), file_attributes.modified, delta=5)
+
+    @conditionals.skipOnPY3()
+    @conditionals.onCapability('symbolic_link', True)
+    def test_iterateFolderContent_broken_links(self):
+        """
+        Return placeholder for members with broken links.
+        """
+        base_segments = self.folderInTemp()
+        file_name = mk.makeFilename(prefix='file-')
+        folder_name = mk.makeFilename(prefix='folder-')
+        link_name = mk.makeFilename(prefix='link-')
+        file_segments = base_segments + [file_name]
+        folder_segments = base_segments + [folder_name]
+        link_segments = base_segments + [link_name]
+        mk.fs.createFile(file_segments, content=b'123456789')
+        mk.fs.createFolder(folder_segments)
+
+        mk.fs.makeLink(
+            target_segments=['z', 'no-such', 'target'],
+            link_segments=link_segments,
+            )
+
+        content = self.filesystem.iterateFolderContent(base_segments)
+
+        result = list(content)
+        self.assertEqual(3, len(result))
+        self.assertProvides(IFileAttributes, result[0])
+        self.assertProvides(IFileAttributes, result[1])
+        self.assertProvides(IFileAttributes, result[2])
+        result = {r.name: r for r in result}
+        folder_attributes = result[folder_name]
+        self.assertTrue(folder_attributes.is_folder)
+        self.assertFalse(folder_attributes.is_file)
+        self.assertFalse(folder_attributes.is_link)
+
+        file_attributes = result[file_name]
+        self.assertFalse(file_attributes.is_folder)
+        self.assertTrue(file_attributes.is_file)
+        self.assertFalse(file_attributes.is_link)
+        self.assertEqual(9, file_attributes.size)
+        self.assertAlmostEqual(self.now(), file_attributes.modified, delta=5)
+
+        link_attributes = result[link_name]
+        self.assertFalse(link_attributes.is_folder)
+        self.assertFalse(link_attributes.is_file)
+        self.assertTrue(link_attributes.is_link)
+        self.assertAlmostEqual(self.now(), link_attributes.modified, delta=5)
 
     @attr('slow')
     @conditionals.skipOnPY3()

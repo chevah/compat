@@ -14,6 +14,7 @@ from chevah.compat import (
     LocalFilesystem,
     SuperAvatar,
     )
+from chevah.compat.interfaces import IFileAttributes
 from chevah.compat.testing import (
     conditionals,
     mk,
@@ -282,15 +283,28 @@ class TestPosixFilesystem(FileSystemTestCase):
         file_segments = base_segments + [file_name]
         folder_segments = base_segments + [folder_name]
 
-        user_fs.createFile(file_segments)
+        user_fs.createFile(file_segments, content=b'12345678901')
         user_fs.createFolder(folder_segments)
 
         content = user_fs.iterateFolderContent(base_segments)
 
         result = list(content)
-        self.assertIsNotEmpty(result)
-        self.assertIsInstance(text_type, result[0])
-        self.assertItemsEqual([folder_name, file_name], result)
+        self.assertEqual(2, len(result))
+        self.assertProvides(IFileAttributes, result[0])
+        self.assertProvides(IFileAttributes, result[1])
+        result = {r.name: r for r in result}
+        folder_attributes = result[folder_name]
+        self.assertTrue(folder_attributes.is_folder)
+        self.assertFalse(folder_attributes.is_file)
+        self.assertFalse(folder_attributes.is_link)
+
+        file_attributes = result[file_name]
+        self.assertFalse(file_attributes.is_folder)
+        self.assertTrue(file_attributes.is_file)
+        self.assertFalse(file_attributes.is_link)
+        self.assertEqual(11, file_attributes.size)
+        self.assertAlmostEqual(self.now(), file_attributes.modified, delta=5)
+        self.assertIsInstance(text_type, file_attributes.name)
 
 
 @conditionals.onOSFamily('posix')
