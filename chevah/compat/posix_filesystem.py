@@ -763,6 +763,12 @@ class PosixFilesystemBase(object):
         # scandir result is slow.
         inode = stats.st_ino
 
+        modified = stats.st_mtime
+        if os.name == 'nt':
+            # On Windows, scandir gets float precision while
+            # getAttributes only integer.
+            modified = long(modified)
+
         return FileAttributes(
             name=name,
             path=path,
@@ -770,7 +776,7 @@ class PosixFilesystemBase(object):
             is_file=bool(stat.S_ISREG(mode)),
             is_folder=is_directory,
             is_link=is_link,
-            modified=stats.st_mtime,
+            modified=modified,
             mode=mode,
             hardlinks=stats.st_nlink,
             uid=stats.st_uid,

@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.52.3 - 04/10/2018
+-------------------
+
+* Use same modified date on Windows for folder iteration as with getAttributes.
+
+
 0.52.2 - 04/10/2018
 -------------------
 

@@ -3837,6 +3837,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             sut.getAttributes(['other-real\N{sun}']),
             sut._getPlaceholderAttributes(['more-virtual']),
             ]
+        if self.os_name == 'windows':
+            # On Windows, we don't get inode when iterating over real members.
+            expected[1].node_id = 0
+            expected[2].node_id = 0
         self.assertIteratorItemsEqual(expected, result)
 
         expected = [
@@ -3851,6 +3855,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             sut.getAttributes(['non-virtual\N{sun}']),
             sut.getAttributes(['other-real\N{sun}']),
             ]
+        if self.os_name == 'windows':
+            # On Windows, we don't get inode when iterating.
+            expected[0].node_id = 0
+            expected[1].node_id = 0
         self.assertIteratorItemsEqual(expected, result)
 
     @conditionals.skipOnPY3()
@@ -3878,6 +3886,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             mk.fs.getAttributes(segments + ['child-folder']),
             mk.fs.getAttributes(segments + ['child-file\N{sun}']),
             ]
+        if self.os_name == 'windows':
+            # On Windows, we don't get inode when iterating over real members.
+            expected[0].node_id = 0
+            expected[1].node_id = 0
         self.assertIteratorItemsEqual(expected, result)
 
     @conditionals.skipOnPY3()
@@ -3888,7 +3900,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         The real members are shadowed by the virtual members.
         """
-        self.maxDiff = None
         sut = self.getFilesystem(virtual_folders=[
             (['non-virtual\N{sun}', 'virtual\N{cloud}'], mk.fs.temp_path),
             (['non-virtual\N{sun}', 'child-file', 'other'], mk.fs.temp_path),
@@ -3921,11 +3932,15 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result = sut.iterateFolderContent([])
         # Even if non-virtual is real, we get the attributes for the virtual
         # path.
-        self.assertIteratorItemsEqual([
+
+        expected = [
             mk.fs._getPlaceholderAttributes(segments),
             mk.fs.getAttributes(other_segments)
-            ],
-            result)
+            ]
+        if self.os_name == 'windows':
+            # On Windows, we don't get inode when iterating over real members.
+            expected[1].node_id = 0
+        self.assertIteratorItemsEqual(expected, result)
 
     @conditionals.skipOnPY3()
     def test_iterateFolderContent_virtual_overlap(self):
@@ -3933,7 +3948,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         When iterating over a folder with virtual members,
         the real members are shadowed by the virtual members.
         """
-        self.maxDiff = None
         sut = self.getFilesystem(virtual_folders=[
             (['non-virtual\N{sun}', 'virtual\N{cloud}'], mk.fs.temp_path),
             (['non-virtual\N{sun}', 'child-file', 'other'], mk.fs.temp_path),
