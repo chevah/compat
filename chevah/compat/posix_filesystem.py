@@ -767,7 +767,7 @@ class PosixFilesystemBase(object):
         if os.name == 'nt':
             # On Windows, scandir gets float precision while
             # getAttributes only integer.
-            modified = long(modified)
+            modified = int(modified)
 
         return FileAttributes(
             name=name,
