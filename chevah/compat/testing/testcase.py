@@ -1067,6 +1067,12 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         """
         return patch.object(*args, **kwargs)
 
+    def now(self):
+        """
+        Return current Unix timestamp.
+        """
+        return time.time()
+
     @classmethod
     def cleanTemporaryFolder(cls):
         """

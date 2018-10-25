@@ -1032,19 +1032,78 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         Return folder content as list of Unicode names.
         """
         base_segments = self.folderInTemp()
-        file_name = mk.makeFilename()
-        folder_name = mk.makeFilename()
+        file_name = mk.makeFilename(prefix='file-')
+        folder_name = mk.makeFilename(prefix='folder-')
         file_segments = base_segments + [file_name]
         folder_segments = base_segments + [folder_name]
-        mk.fs.createFile(file_segments)
+        mk.fs.createFile(file_segments, content=b'123456789')
         mk.fs.createFolder(folder_segments)
 
         content = self.filesystem.iterateFolderContent(base_segments)
 
         result = list(content)
-        self.assertIsNotEmpty(result)
-        self.assertIsInstance(text_type, result[0])
-        self.assertItemsEqual([folder_name, file_name], result)
+        self.assertEqual(2, len(result))
+        self.assertProvides(IFileAttributes, result[0])
+        self.assertProvides(IFileAttributes, result[1])
+        result = {r.name: r for r in result}
+        folder_attributes = result[folder_name]
+        self.assertTrue(folder_attributes.is_folder)
+        self.assertFalse(folder_attributes.is_file)
+        self.assertFalse(folder_attributes.is_link)
+
+        file_attributes = result[file_name]
+        self.assertFalse(file_attributes.is_folder)
+        self.assertTrue(file_attributes.is_file)
+        self.assertFalse(file_attributes.is_link)
+        self.assertEqual(9, file_attributes.size)
+        self.assertAlmostEqual(self.now(), file_attributes.modified, delta=5)
+
+    @conditionals.skipOnPY3()
+    @conditionals.onCapability('symbolic_link', True)
+    def test_iterateFolderContent_broken_links(self):
+        """
+        Return placeholder for members with broken links.
+        """
+        base_segments = self.folderInTemp()
+        file_name = mk.makeFilename(prefix='file-')
+        folder_name = mk.makeFilename(prefix='folder-')
+        link_name = mk.makeFilename(prefix='link-')
+        file_segments = base_segments + [file_name]
+        folder_segments = base_segments + [folder_name]
+        link_segments = base_segments + [link_name]
+        mk.fs.createFile(file_segments, content=b'123456789')
+        mk.fs.createFolder(folder_segments)
+
+        mk.fs.makeLink(
+            target_segments=['z', 'no-such', 'target'],
+            link_segments=link_segments,
+            )
+
+        content = self.filesystem.iterateFolderContent(base_segments)
+
+        result = list(content)
+        self.assertEqual(3, len(result))
+        self.assertProvides(IFileAttributes, result[0])
+        self.assertProvides(IFileAttributes, result[1])
+        self.assertProvides(IFileAttributes, result[2])
+        result = {r.name: r for r in result}
+        folder_attributes = result[folder_name]
+        self.assertTrue(folder_attributes.is_folder)
+        self.assertFalse(folder_attributes.is_file)
+        self.assertFalse(folder_attributes.is_link)
+
+        file_attributes = result[file_name]
+        self.assertFalse(file_attributes.is_folder)
+        self.assertTrue(file_attributes.is_file)
+        self.assertFalse(file_attributes.is_link)
+        self.assertEqual(9, file_attributes.size)
+        self.assertAlmostEqual(self.now(), file_attributes.modified, delta=5)
+
+        link_attributes = result[link_name]
+        self.assertFalse(link_attributes.is_folder)
+        self.assertFalse(link_attributes.is_file)
+        self.assertTrue(link_attributes.is_link)
+        self.assertAlmostEqual(self.now(), link_attributes.modified, delta=5)
 
     @attr('slow')
     @conditionals.skipOnPY3()
@@ -3772,6 +3831,16 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertItemsEqual(expected, result)
 
         result = sut.iterateFolderContent([])
+        expected = [
+            sut._getPlaceholderAttributes(['\N{sun}base']),
+            sut.getAttributes(['non-virtual\N{sun}']),
+            sut.getAttributes(['other-real\N{sun}']),
+            sut._getPlaceholderAttributes(['more-virtual']),
+            ]
+        if self.os_name == 'windows':
+            # On Windows, we don't get inode when iterating over real members.
+            expected[1].node_id = 0
+            expected[2].node_id = 0
         self.assertIteratorItemsEqual(expected, result)
 
         expected = [
@@ -3782,6 +3851,14 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertItemsEqual(expected, result)
 
         result = sut.iterateFolderContent(['\N{sun}base', 'base2'])
+        expected = [
+            sut.getAttributes(['non-virtual\N{sun}']),
+            sut.getAttributes(['other-real\N{sun}']),
+            ]
+        if self.os_name == 'windows':
+            # On Windows, we don't get inode when iterating.
+            expected[0].node_id = 0
+            expected[1].node_id = 0
         self.assertIteratorItemsEqual(expected, result)
 
     @conditionals.skipOnPY3()
@@ -3805,6 +3882,14 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertItemsEqual(expected, result)
 
         result = sut.iterateFolderContent(['non-virtual\N{sun}'])
+        expected = [
+            mk.fs.getAttributes(segments + ['child-folder']),
+            mk.fs.getAttributes(segments + ['child-file\N{sun}']),
+            ]
+        if self.os_name == 'windows':
+            # On Windows, we don't get inode when iterating over real members.
+            expected[0].node_id = 0
+            expected[1].node_id = 0
         self.assertIteratorItemsEqual(expected, result)
 
     @conditionals.skipOnPY3()
@@ -3812,8 +3897,9 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         """
         It can list a virtual folder as member of a parent folder mixed
         with non-virtual members.
-        """
 
+        The real members are shadowed by the virtual members.
+        """
         sut = self.getFilesystem(virtual_folders=[
             (['non-virtual\N{sun}', 'virtual\N{cloud}'], mk.fs.temp_path),
             (['non-virtual\N{sun}', 'child-file', 'other'], mk.fs.temp_path),
@@ -3826,19 +3912,59 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFolder(segments + ['child-folder'])
         mk.fs.createFile(segments + ['child-file'])
 
-        expected = ['child-file', 'virtual\N{cloud}']
+        _, other_segments = self.tempFolder('other-real\N{leo}')
 
         result = sut.getFolderContent(['non-virtual\N{sun}'])
-        self.assertItemsEqual(expected, result)
+        self.assertItemsEqual(['child-file', 'virtual\N{cloud}'], result)
 
+        expected = [
+            sut._getPlaceholderAttributes([
+                'non-virtual\N{sun}', 'child-file']),
+            sut._getPlaceholderAttributes([
+                'non-virtual\N{sun}', 'virtual\N{cloud}']),
+            ]
         result = sut.iterateFolderContent(['non-virtual\N{sun}'])
         self.assertIteratorItemsEqual(expected, result)
 
         result = sut.getFolderContent([])
-        self.assertEqual(['non-virtual\N{sun}'], result)
+        self.assertEqual(['non-virtual\N{sun}', 'other-real\N{leo}'], result)
 
         result = sut.iterateFolderContent([])
-        self.assertIteratorItemsEqual(['non-virtual\N{sun}'], result)
+        # Even if non-virtual is real, we get the attributes for the virtual
+        # path.
+
+        expected = [
+            mk.fs._getPlaceholderAttributes(segments),
+            mk.fs.getAttributes(other_segments)
+            ]
+        if self.os_name == 'windows':
+            # On Windows, we don't get inode when iterating over real members.
+            expected[1].node_id = 0
+        self.assertIteratorItemsEqual(expected, result)
+
+    @conditionals.skipOnPY3()
+    def test_iterateFolderContent_virtual_overlap(self):
+        """
+        When iterating over a folder with virtual members,
+        the real members are shadowed by the virtual members.
+        """
+        sut = self.getFilesystem(virtual_folders=[
+            (['non-virtual\N{sun}', 'virtual\N{cloud}'], mk.fs.temp_path),
+            (['non-virtual\N{sun}', 'child-file', 'other'], mk.fs.temp_path),
+            ])
+
+        # We create the folders after the filesystem was initialized as
+        # otherwise it will fail to initialized as it makes checks at init
+        # time for overlapping.
+        _, segments = self.tempFolder('non-virtual\N{sun}')
+
+        result = sut.iterateFolderContent([])
+        # Even if non-virtual is real, we get the attributes for the virtual
+        # path.
+        self.assertIteratorItemsEqual([
+            mk.fs._getPlaceholderAttributes(segments),
+            ],
+            result)
 
     @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_deep_member(self):
@@ -3857,6 +3983,12 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result = sut.getFolderContent(['\N{sun}base'])
         self.assertItemsEqual(expected, result)
 
+        expected = [
+            sut._getPlaceholderAttributes([
+                '\N{sun}base', 'deep\N{cloud}']),
+            sut._getPlaceholderAttributes([
+                '\N{sun}base', 'other\N{sun}']),
+            ]
         result = sut.iterateFolderContent(['\N{sun}base'])
         self.assertIteratorItemsEqual(expected, result)
 
@@ -3864,6 +3996,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result = sut.getFolderContent(['\N{sun}base', 'deep\N{cloud}'])
         self.assertItemsEqual(expected, result)
 
+        expected = [
+            sut._getPlaceholderAttributes([
+                '\N{sun}base', 'deep\N{cloud}', 'virt\N{sun}']),
+            ]
         result = sut.iterateFolderContent(['\N{sun}base', 'deep\N{cloud}'])
         self.assertIteratorItemsEqual(expected, result)
 

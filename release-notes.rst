@@ -2,6 +2,31 @@ Release notes for chevah.compat
 ===============================
 
 
+0.52.3 - 04/10/2018
+-------------------
+
+* Use same modified date on Windows for folder iteration as with getAttributes.
+
+
+0.52.2 - 04/10/2018
+-------------------
+
+* Virtual folders always shadow the real folders.
+
+
+0.52.1 - 03/10/2018
+-------------------
+
+* Don't follow links when getting the attributes for iterated folder.
+* Use impersonation when getting the attributes during the folder iteration.
+
+
+0.52.0 - 03/10/2018
+-------------------
+
+* Return attributes in folder iterator.
+
+
 0.51.1 - 20/09/2018
 -------------------
 

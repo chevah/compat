@@ -631,15 +631,20 @@ class PosixFilesystemBase(object):
                 continue
 
             child_segments = virtual_segments[segments_length:]
+
             result.append(child_segments[0])
-        # Reduce duplicates.
-        return set(result)
+
+        # Reduce duplicates and convert to attributes..
+        return [
+            self._getPlaceholderAttributes(segments + [m])
+            for m in set(result)
+            ]
 
     def getFolderContent(self, segments):
         """
         See `ILocalFilesystem`.
         """
-        result = list(self._getVirtualMembers(segments))
+        result = [m.name for m in self._getVirtualMembers(segments)]
         if segments and result:
             # We only support mixing virtual folder names with real names
             # for the root folder.
@@ -678,6 +683,9 @@ class PosixFilesystemBase(object):
             # overlay a virtual path.
             return iter(virtual_members)
 
+        # We start with possible virtual folders as they should shadow the
+        # real folders.
+        firsts = virtual_members
         try:
             with self._impersonateUser():
                 folder_iterator = scandir(path_encoded)
@@ -690,11 +698,15 @@ class PosixFilesystemBase(object):
             try:
                 first_member = next(folder_iterator)
             except StopIteration:
-                # The list is empty so just return an iterator with possible
+                # The folder is empty so just return an iterator with possible
                 # virtual members.
                 return iter(virtual_members)
 
-            firsts = [self._decodeFilename(first_member.name)]
+            real_first_attributes = self._dirEntryToFileAttributes(
+                first_member)
+            first_names = [m.name for m in firsts]
+            if real_first_attributes.name not in first_names:
+                firsts.append(real_first_attributes)
 
         except Exception as error:
             # We fail to list the actual folder.
@@ -705,25 +717,72 @@ class PosixFilesystemBase(object):
             # We have virtual folders.
             # No direct listing.
             folder_iterator = iter([])
-            firsts = []
 
-        # We use a set to eliminate duplicates.
-        firsts.extend(virtual_members)
         return self._iterateScandir(set(firsts), folder_iterator)
 
     def _iterateScandir(self, firsts, folder_iterator):
         """
         This generator wrapper needs to be delegated to this method as
         otherwise we get a GeneratorExit error.
-        """
-        for name in firsts:
-            yield name
 
-        for member in folder_iterator:
-            name = self._decodeFilename(member.name)
-            if name in firsts:
+        `firsts` is a list of FileAttributes.
+        `folder_iterators` is the iterator resulted from scandir.
+        """
+        first_names = []
+        for member in firsts:
+            first_names.append(member.name)
+            yield member
+
+        for entry in folder_iterator:
+            attributes = self._dirEntryToFileAttributes(entry)
+            if attributes.name in first_names:
+                # Make sure we don't add duplicate from previous
+                # virtual folders.
                 continue
-            yield name
+            yield attributes
+
+    def _dirEntryToFileAttributes(self, entry):
+        """
+        Convert the result from scandir to FileAttributes.
+        """
+        name = self._decodeFilename(entry.name)
+        path = self._decodeFilename(entry.path)
+
+        with self._impersonateUser():
+            stats = entry.stat(follow_symlinks=False)
+            is_link = entry.is_symlink()
+
+        mode = stats.st_mode
+        is_directory = bool(stat.S_ISDIR(mode))
+        if is_directory and sys.platform.startswith('aix'):
+            # On AIX mode contains an extra most significant bit
+            # which we don't use.
+            mode = mode & 0o077777
+
+        # We use the INODE from stats, as on Windows getting INODE from
+        # scandir result is slow.
+        inode = stats.st_ino
+
+        modified = stats.st_mtime
+        if os.name == 'nt':
+            # On Windows, scandir gets float precision while
+            # getAttributes only integer.
+            modified = int(modified)
+
+        return FileAttributes(
+            name=name,
+            path=path,
+            size=stats.st_size,
+            is_file=bool(stat.S_ISREG(mode)),
+            is_folder=is_directory,
+            is_link=is_link,
+            modified=modified,
+            mode=mode,
+            hardlinks=stats.st_nlink,
+            uid=stats.st_uid,
+            gid=stats.st_gid,
+            node_id=inode,
+            )
 
     def _decodeFilename(self, name):
         """
@@ -1067,7 +1126,7 @@ class FileAttributes(object):
         self.group = group
 
     def __hash__(self):
-        return hash(
+        return hash((
             self.name,
             self.path,
             self.size,
@@ -1076,13 +1135,13 @@ class FileAttributes(object):
             self.is_link,
             self.modified,
             self.mode,
-            self.hardlink,
+            self.hardlinks,
             self.uid,
             self.gid,
             self.node_id,
             self.owner,
             self.group,
-            )
+            ))
 
     def __eq__(self, other):
         return (
