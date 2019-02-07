@@ -1460,6 +1460,20 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertFalse(self.filesystem.exists(initial_segments))
         self.assertTrue(self.filesystem.exists(self.test_segments))
 
+    def test_rename_file_overwrite_destination(self):
+        """
+        It will overwrite existing file.
+        """
+        _, source_segments = self.tempFile(prefix='src-', cleanup=False)
+        _, destination_segments = self.tempFile(prefix='dst-')
+        self.assertTrue(self.filesystem.exists(source_segments))
+        self.assertTrue(self.filesystem.exists(destination_segments))
+
+        self.filesystem.rename(source_segments, destination_segments)
+
+        self.assertFalse(self.filesystem.exists(source_segments))
+        self.assertTrue(self.filesystem.exists(destination_segments))
+
     def test_rename_folder(self):
         """
         System test for folder renaming.
