@@ -703,10 +703,23 @@ class NTFilesystem(PosixFilesystemBase):
             raise error
 
     def rename(self, from_segments, to_segments):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         with self._windowsToOSError(from_segments):
-            return super(NTFilesystem, self).rename(
-                from_segments, to_segments)
+            try:
+                return super(NTFilesystem, self).rename(
+                    from_segments, to_segments)
+            except WindowsError as error:
+                # On Windows, rename fails if destination exists as it
+                # can't guarantee an atomic operation.
+                if error.errno != errno.EEXIST:
+                    # Not a file already exists error.
+                    raise error
+                # Try to remove the fine, and then rename one more time.
+                self.deleteFile(to_segments)
+                return super(NTFilesystem, self).rename(
+                    from_segments, to_segments)
 
     def setOwner(self, segments, owner):
         """

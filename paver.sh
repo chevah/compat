@@ -544,6 +544,16 @@ detect_os() {
             if [ "$update" -lt 8 ]; then
                 OS="solaris10u3"
             fi
+        # Solaris 11 releases prior to 11.4 were bundled with OpenSSL libraries
+        # missing support for Elliptic-curve crypto. From here on:
+        #     * Solaris 11.4 (or newer) with OpenSSL 1.0.2 is "solaris11".
+        #     * Solaris 11.2/11.3 with OpenSSL 1.0.1 is "solaris112".
+        #     * Solaris 11.0/11.1 with OpenSSL 1.0.0 is not supported.
+        elif [ "${OS}" = "solaris11" ]; then
+            minor_version=$(uname -v | cut -d'.' -f2)
+            if [ "$minor_version" -lt 4 ]; then
+                OS="solaris112"
+            fi
         fi
 
     elif [ "${OS}" = "aix" ]; then
@@ -640,8 +650,14 @@ detect_os() {
                     # Arch Linux is a rolling distro, no version info available.
                     OS="archlinux"
                     ;;
+                "amzn")
+                    os_version_raw="$VERSION_ID"
+                    check_os_version "$distro_fancy_name" 2 \
+                        "$os_version_raw" os_version_chevah
+                    OS="amazon${os_version_chevah}"
+                    ;;
                 *)
-                    echo "Unsupported Linux distribution type: $linux_distro."
+                    echo "Unsupported Linux distribution: $distro_fancy_name."
                     exit 15
                     ;;
             esac

@@ -1199,7 +1199,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         """
         return mk.fs.makePathInTemp(prefix=prefix, suffix=suffix)
 
-    def tempFile(self, content='', prefix='', suffix=''):
+    def tempFile(self, content='', prefix='', suffix='', cleanup=True):
         """
         Return (path, segments) for a new file created in temp which is
         auto cleaned.
@@ -1207,7 +1207,8 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         segments = mk.fs.createFileInTemp(prefix=prefix, suffix=suffix)
         path = mk.fs.getRealPathFromSegments(segments)
 
-        self.addCleanup(mk.fs.deleteFile, segments)
+        if cleanup:
+            self.addCleanup(mk.fs.deleteFile, segments)
 
         try:
             opened_file = mk.fs.openFileForWriting(segments, utf8=False)
