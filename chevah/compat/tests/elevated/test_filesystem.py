@@ -48,6 +48,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         segments = [u'non-existent-segment']
         with self.assertRaises(OSError):
             self.filesystem.getOwner(segments)
+
         owner = self.filesystem.getOwner(self.filesystem.home_segments)
         # FIXME:928:
         # Unify this test after the Windows issue is fixed.
