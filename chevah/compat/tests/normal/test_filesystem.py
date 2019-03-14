@@ -2634,7 +2634,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         # We use a target which we know that exists on all system and which
         # is outside of the locked filesystem.
         if self.os_family == 'nt':
-            target = ['c', 'windows', 'explorer.exe']
+            target = ['c', 'windows', 'system32', 'xcopy.exe']
         else:
             target = ['bin', 'cp']
         mk.fs.makeLink(
