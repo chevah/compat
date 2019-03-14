@@ -40,7 +40,7 @@ class TestSystemUsers(CompatTestCase):
         Check getHomeFolder on Linux and Unix.
         """
         home_folder = system_users.getHomeFolder(
-            username=mk.username)
+            username=mk.username).rstrip('/')
 
         # For buildslave, home folder is in srv.
         if mk.username == 'buildslave':
