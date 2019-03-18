@@ -772,7 +772,7 @@ class NTFilesystem(PosixFilesystemBase):
                     path,
                     win32security.SE_FILE_OBJECT,
                     win32security.DACL_SECURITY_INFORMATION,
-                    None,
+                    user_sid,
                     None,
                     d_acl,
                     None,
