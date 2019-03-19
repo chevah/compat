@@ -101,7 +101,8 @@ def onAdminPrivileges(present):
     """
     hostname = gethostname()
     is_running_as_normal = ChevahTestCase.os_version.startswith((
-            'nt-5.1', 'nt-5.2'))
+        'nt-5.1', 'nt-5.2'))
+
     def check_administrator():
         if present:
             return is_running_as_normal
