@@ -82,6 +82,25 @@ class TestProcessCapabilities(FileSystemTestCase):
                 expected_capabilities += (
                     ', SeDelegateSessionUserImpersonatePrivilege:0'
                     )
+            if int(self.os_version.split('.')[2]) >= 17763:
+                # This is Win 2019 or newer, some privileges are different:
+                # SeBackupPrivilege:2, SeRestorePrivilege:2, SeDebugPrivilege:2
+                expected_capabilities = (
+                    'SeIncreaseQuotaPrivilege:0, SeSecurityPrivilege:0, '
+                    'SeTakeOwnershipPrivilege:0, SeLoadDriverPrivilege:0, '
+                    'SeSystemProfilePrivilege:0, SeSystemtimePrivilege:0, '
+                    'SeProfileSingleProcessPrivilege:0, '
+                    'SeIncreaseBasePriorityPrivilege:0, '
+                    'SeCreatePagefilePrivilege:0, SeBackupPrivilege:2, '
+                    'SeRestorePrivilege:2, SeShutdownPrivilege:0, '
+                    'SeDebugPrivilege:2, SeSystemEnvironmentPrivilege:0, '
+                    'SeChangeNotifyPrivilege:3, SeRemoteShutdownPrivilege:0, '
+                    'SeUndockPrivilege:0, SeManageVolumePrivilege:0, '
+                    'SeImpersonatePrivilege:3, SeCreateGlobalPrivilege:3, '
+                    'SeIncreaseWorkingSetPrivilege:0, SeTimeZonePrivilege:0, '
+                    'SeCreateSymbolicLinkPrivilege:0, '
+                    'SeDelegateSessionUserImpersonatePrivilege:0'
+                    )
             # This assertion is fragile. Feel free to improve it.
             self.assertEqual(expected_capabilities, text)
 
