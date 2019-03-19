@@ -50,7 +50,7 @@ class TestPosixFilesystem(FileSystemTestCase):
             self.filesystem.getOwner(segments)
 
     # FIXME:928:
-    # On Windows the profile dir owner varies because of unknown factors,
+    # On Windows, the profile dir owner varies because of unknown reasons,
     # so we check the owner of the user profiles dir ('C:\Users' by default)
     def test_getOwner_good_path(self):
         """

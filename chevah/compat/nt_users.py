@@ -136,7 +136,7 @@ class NTUsers(CompatUsers):
                 token,
                 0,
                 )
-            return path.rstrip('/')
+            return path
         except pythoncom.com_error:
             raise MissingProfileFolderException()
 
