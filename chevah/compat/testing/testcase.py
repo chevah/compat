@@ -807,18 +807,19 @@ def _get_os_version():
 
     On Linux is the distribution name, without the version.
 
-    On Windows it is the `nt` followed by the major and minor NT version.
-    IS not the marketing name.
-    We only support Windows NT family.
+    On Windows it is the `nt` followed by the version, which
+    consists of major version, minor version, build number.
+    It is not the marketing name.
+    We only support the Windows NT family.
     See: https://en.wikipedia.org/wiki/Windows_NT#Releases
 
     On OSX it returns `osx` followed by the version.
-    Is not the Darwin version.
+    It is not the version of the underlying Darwin OS.
     See: https://en.wikipedia.org/wiki/MacOS#Release_history
     """
     if os.name == 'nt':
-        parts = platform.version().split('.')
-        return 'nt-%s.%s' % (parts[0], parts[1])
+        parts = platform.win32_ver()[1].split('.')
+        return 'nt-%s.%s.%s' % (parts[0], parts[1], parts[2])
 
     # We are now in Unix zone.
     os_name = os.uname()[0].lower()

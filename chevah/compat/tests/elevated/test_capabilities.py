@@ -77,8 +77,8 @@ class TestProcessCapabilities(FileSystemTestCase):
                 'SeIncreaseWorkingSetPrivilege:0, SeTimeZonePrivilege:0, '
                 'SeCreateSymbolicLinkPrivilege:0'
                 )
-            if self.os_version == 'nt-10.0':
-                # On Win 2016 we have an extra capability by default.
+            if self.os_version.startswith('nt-10.0'):
+                # Starting with Win 2016 there's an extra default capability.
                 expected_capabilities += (
                     ', SeDelegateSessionUserImpersonatePrivilege:0'
                     )

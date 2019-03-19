@@ -265,7 +265,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
 
         # Windows XP and 2003 slaves are setup without "Backup Operators"
         # group (SE_BACKUP/SE_RESTORE) enabled.
-        if self.os_version in ['nt-5.1', 'nt-5.2']:
+        if self.os_version.startswith(('nt-5.1', 'nt-5.2')):
             self.assertFalse(result)
         else:
             self.assertTrue(result)
@@ -284,7 +284,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         self.assertNotContains('SeBackupPrivilege:0', text)
         self.assertNotContains('SeRestorePrivilege', text)
 
-        if self.os_version in 'nt-5.1':
+        if self.os_version.startswith('nt-5.1'):
             # Windows XP has SE_CREATE_GLOBAL enabled even when
             # running without administrator privileges.
             self.assertContains('SeCreateGlobalPrivilege:3', text)
