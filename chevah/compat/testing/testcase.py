@@ -805,10 +805,9 @@ def _get_os_version():
     """
     On non-Linux this is just the os_name.
 
-    On Linux is the distribution name, without the version.
+    On Linux is the distribution name and the version.
 
-    On Windows it is the `nt` followed by the version, which
-    consists of major version, minor version, build number.
+    On Windows it is the `nt` followed by the major and minor NT version.
     It is not the marketing name.
     We only support the Windows NT family.
     See: https://en.wikipedia.org/wiki/Windows_NT#Releases
@@ -818,8 +817,8 @@ def _get_os_version():
     See: https://en.wikipedia.org/wiki/MacOS#Release_history
     """
     if os.name == 'nt':
-        parts = platform.win32_ver()[1].split('.')
-        return 'nt-%s.%s.%s' % (parts[0], parts[1], parts[2])
+        parts = platform.version().split('.')
+        return 'nt-%s.%s' % (parts[0], parts[1])
 
     # We are now in Unix zone.
     os_name = os.uname()[0].lower()

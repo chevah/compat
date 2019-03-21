@@ -77,13 +77,14 @@ class TestProcessCapabilities(FileSystemTestCase):
                 'SeIncreaseWorkingSetPrivilege:0, SeTimeZonePrivilege:0, '
                 'SeCreateSymbolicLinkPrivilege:0'
                 )
-            if int(self.os_version.split('.')[2]) >= 14393:
-                # Starting with Win 2016 there's an extra default capability.
+            if self.os_version == 'nt-10.0':
+                # On latest Windows there is an extra capability by default.
                 expected_capabilities += (
                     ', SeDelegateSessionUserImpersonatePrivilege:0'
                     )
-            if int(self.os_version.split('.')[2]) >= 17763:
-                # This is Win 2019 or newer, some privileges are different:
+            if 'win-2019' in self.hostname:
+                # On the Windows 2019 slave some privileges are different,
+                # as UAC is disabled:
                 # SeBackupPrivilege:2, SeRestorePrivilege:2, SeDebugPrivilege:2
                 expected_capabilities = (
                     'SeIncreaseQuotaPrivilege:0, SeSecurityPrivilege:0, '

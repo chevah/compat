@@ -41,27 +41,32 @@ class TestPosixFilesystem(FileSystemTestCase):
     Path independent, OS independent tests.
     """
 
-    def test_getOwner_bad_path(self):
+    def test_getOwner_path_not_found(self):
         """
-        Check getOwner for bad path.
+        It raises an exception when the requested path is not found.
         """
-        segments = [u'non-existent-segment']
         with self.assertRaises(OSError):
-            self.filesystem.getOwner(segments)
+            self.filesystem.getOwner([u'non-existent-segment'])
 
-    # FIXME:928:
-    # On Windows, the profile dir owner varies because of unknown reasons,
-    # so we check the owner of the user profiles dir ('C:\Users' by default)
-    def test_getOwner_good_path(self):
+    def test_getOwner_ok(self):
         """
-        Check getOwner for a known good path.
+        Returns the owner as string.
         """
         if self.os_family == 'posix':
             owner = self.filesystem.getOwner(self.filesystem.home_segments)
             self.assertEqual(self.avatar.name, owner)
         else:
-            owner = self.filesystem.getOwner(
-                self.filesystem.home_segments[:-1])
+            if 'win-2019' in self.hostname:
+                # FIXME:928:
+                # On Windows 2019 slave, the profile dir owner varies because
+                # of unknown reasons,
+                # so we check the owner of the user profiles dir
+                # ('C:\Users' by default)
+                segments = self.filesystem.home_segments[:-1]
+            else:
+                segments = self.filesystem.home_segments
+
+            owner = self.filesystem.getOwner(segments)
             self.assertEqual('Administrators', owner)
 
     def test_setOwner_bad_segments(self):
