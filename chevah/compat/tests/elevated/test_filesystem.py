@@ -48,26 +48,30 @@ class TestPosixFilesystem(FileSystemTestCase):
         with self.assertRaises(OSError):
             self.filesystem.getOwner([u'non-existent-segment'])
 
-    def test_getOwner_ok(self):
+    @conditionals.onOSFamily('posix')
+    def test_getOwner_ok_posix(self):
         """
         Returns the owner as string.
         """
-        if self.os_family == 'posix':
-            owner = self.filesystem.getOwner(self.filesystem.home_segments)
-            self.assertEqual(self.avatar.name, owner)
-        else:
-            if 'win-2019' in self.hostname:
-                # FIXME:928:
-                # On Windows 2019 slave, the profile dir owner varies because
-                # of unknown reasons,
-                # so we check the owner of the user profiles dir
-                # ('C:\Users' by default)
-                segments = self.filesystem.home_segments[:-1]
-            else:
-                segments = self.filesystem.home_segments
+        owner = self.filesystem.getOwner(self.filesystem.home_segments)
+        self.assertEqual(self.avatar.name, owner)
 
-            owner = self.filesystem.getOwner(segments)
-            self.assertEqual('Administrators', owner)
+    @conditionals.onOSFamily('nt')
+    def test_getOwner_ok_nt(self):
+        """
+        Returns the owner as string.
+        """
+        owner = self.filesystem.getOwner(['c', 'Users'])
+        self.assertEqual('Administrators', owner)
+
+        # This is a folder.
+        owner = self.filesystem.getOwner(['c', 'Users', 'chevah_ci_support'])
+        self.assertEqual('chevah', owner)
+
+        # This is a file
+        owner = self.filesystem.getOwner(
+            ['c', 'Users', 'chevah_ci_support', 'users_ci_support'])
+        self.assertEqual('Users', owner)
 
     def test_setOwner_bad_segments(self):
         """
