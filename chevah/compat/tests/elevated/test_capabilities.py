@@ -6,7 +6,6 @@ Capabilities detection tests for accounts with elevated permissions.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-import os
 
 from chevah.compat import process_capabilities, system_users
 from chevah.compat.exceptions import AdjustPrivilegeException
@@ -54,36 +53,44 @@ class TestProcessCapabilities(FileSystemTestCase):
 
         self.assertTrue(result)
 
-    def test_getCurrentPrivilegesDescription(self):
+    @conditionals.onOSFamily('posix')
+    def test_getCurrentPrivilegesDescription_posix(self):
+        """
+        Lists all available privileges. On Posix there are limited
+        capabilities.
+        """
+        text = self.capabilities.getCurrentPrivilegesDescription()
+        self.assertEqual(u'root capabilities enabled.', text)
+
+    @conditionals.onOSFamily('nt')
+    def test_getCurrentPrivilegesDescription_nt(self):
         """
         Lists all available privileges and their state.
         """
         text = self.capabilities.getCurrentPrivilegesDescription()
-        if os.name == 'posix':
-            self.assertEqual(u'root capabilities enabled.', text)
-        else:
-            expected_capabilities = (
-                'SeIncreaseQuotaPrivilege:0, SeSecurityPrivilege:0, '
-                'SeTakeOwnershipPrivilege:0, SeLoadDriverPrivilege:0, '
-                'SeSystemProfilePrivilege:0, SeSystemtimePrivilege:0, '
-                'SeProfileSingleProcessPrivilege:0, '
-                'SeIncreaseBasePriorityPrivilege:0, '
-                'SeCreatePagefilePrivilege:0, SeBackupPrivilege:0, '
-                'SeRestorePrivilege:0, SeShutdownPrivilege:0, '
-                'SeDebugPrivilege:0, SeSystemEnvironmentPrivilege:0, '
-                'SeChangeNotifyPrivilege:3, SeRemoteShutdownPrivilege:0, '
-                'SeUndockPrivilege:0, SeManageVolumePrivilege:0, '
-                'SeImpersonatePrivilege:3, SeCreateGlobalPrivilege:3, '
-                'SeIncreaseWorkingSetPrivilege:0, SeTimeZonePrivilege:0, '
-                'SeCreateSymbolicLinkPrivilege:0'
+        # Capabilities for slaves running as service, outside of UAC.
+        service_capabilities = (
+            'SeIncreaseQuotaPrivilege:0, SeSecurityPrivilege:0, '
+            'SeTakeOwnershipPrivilege:0, SeLoadDriverPrivilege:0, '
+            'SeSystemProfilePrivilege:0, SeSystemtimePrivilege:0, '
+            'SeProfileSingleProcessPrivilege:0, '
+            'SeIncreaseBasePriorityPrivilege:0, '
+            'SeCreatePagefilePrivilege:0, SeBackupPrivilege:2, '
+            'SeRestorePrivilege:2, SeShutdownPrivilege:0, '
+            'SeDebugPrivilege:2, SeSystemEnvironmentPrivilege:0, '
+            'SeChangeNotifyPrivilege:3, SeRemoteShutdownPrivilege:0, '
+            'SeUndockPrivilege:0, SeManageVolumePrivilege:0, '
+            'SeImpersonatePrivilege:3, SeCreateGlobalPrivilege:3, '
+            'SeIncreaseWorkingSetPrivilege:0, SeTimeZonePrivilege:0, '
+            'SeCreateSymbolicLinkPrivilege:0'
+            )
+
+        if self.os_version == 'nt-10.0':
+            # On latest Windows there is an extra capability by default.
+            service_capabilities += (
+                ', SeDelegateSessionUserImpersonatePrivilege:0'
                 )
-            if self.os_version == 'nt-10.0':
-                # On Win 2016 we have an extra capability by default.
-                expected_capabilities += (
-                    ', SeDelegateSessionUserImpersonatePrivilege:0'
-                    )
-            # This assertion is fragile. Feel free to improve it.
-            self.assertEqual(expected_capabilities, text)
+        self.assertEqual(service_capabilities, text)
 
     @conditionals.onOSFamily('posix')
     def test_getCurrentPrivilegesDescription_impersonated(self):

@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.52.4 - 26/03/2019
+-------------------
+
+* getHomeFolder now always returns a path without the trailing separater.
+* Update Twisted reactor cleanup code to show the tasks from the queue.
+
+
 0.52.3 - 04/10/2018
 -------------------
 

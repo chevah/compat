@@ -344,6 +344,16 @@ class ChevahCommonsFactory(object):
         ipv4 = address.IPv4Address(protocol, host, port)
         return ipv4
 
+    def makeIPv6Address(self, host='localhost', port=None, protocol='TCP'):
+        """
+        Creates an IPv6 address.
+        """
+        if port is None:
+            port = random.randrange(20000, 30000)
+
+        ipv4 = address.IPv6Address(protocol, host, port)
+        return ipv4
+
     def FilesystemOsAvatar(self, user, home_folder_path=None):
         """
         Create an avatar to be used with the test filesystem.

@@ -41,20 +41,37 @@ class TestPosixFilesystem(FileSystemTestCase):
     Path independent, OS independent tests.
     """
 
-    def test_getOwner(self):
+    def test_getOwner_path_not_found(self):
         """
-        Check getOwner for good and bad path.
+        It raises an exception when the requested path is not found.
         """
-        segments = [u'non-existent-segment']
         with self.assertRaises(OSError):
-            self.filesystem.getOwner(segments)
+            self.filesystem.getOwner([u'non-existent-segment'])
+
+    @conditionals.onOSFamily('posix')
+    def test_getOwner_ok_posix(self):
+        """
+        Returns the owner as string.
+        """
         owner = self.filesystem.getOwner(self.filesystem.home_segments)
-        # FIXME:928:
-        # Unify this test after the Windows issue is fixed.
-        if self.os_family == 'posix':
-            self.assertEqual(self.avatar.name, owner)
-        else:
-            self.assertEqual(u'Administrators', owner)
+        self.assertEqual(self.avatar.name, owner)
+
+    @conditionals.onOSFamily('nt')
+    def test_getOwner_ok_nt(self):
+        """
+        Returns the owner as string.
+        """
+        owner = self.filesystem.getOwner(['c', 'Users'])
+        self.assertEqual('Administrators', owner)
+
+        # This is a folder.
+        owner = self.filesystem.getOwner(['c', 'Users', 'chevah_ci_support'])
+        self.assertEqual('chevah', owner)
+
+        # This is a file
+        owner = self.filesystem.getOwner(
+            ['c', 'Users', 'chevah_ci_support', 'users_ci_support'])
+        self.assertEqual('Users', owner)
 
     def test_setOwner_bad_segments(self):
         """

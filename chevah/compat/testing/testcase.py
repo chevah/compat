@@ -133,33 +133,37 @@ class TwistedTestCase(TestCase):
             result.append(text_type(delayed.func))
         return '\n'.join(result)
 
-    def _threadPoolQueueSize(self):
+    def _threadPoolQueue(self):
         """
-        Return current size of thread Pool, or None when threadpool does not
+        Return current tasks of thread Pool, or [] when threadpool does not
         exists.
         """
         if not reactor.threadpool:
-            return 0
-        else:
-            return reactor.threadpool.q.qsize()
+            return []
+
+        # Consume all the
+        result = []
+        while not reactor.threadpool.q.empty():
+            result.append(reactor.threadpool.q.get()[1])
+        return result
 
     def _threadPoolThreads(self):
         """
-        Return current threads from pool, or None when threadpool does not
-        exists.
+        Return current threads from pool, or empty list when threadpool does
+        not exists.
         """
         if not reactor.threadpool:
-            return 0
+            return []
         else:
             return reactor.threadpool.threads
 
     def _threadPoolWorking(self):
         """
-        Return working thread from pool, or None when threadpool does not
-        exists.
+        Return working thread from pool, or empty when threadpool does not
+        exists or has no job.
         """
         if not reactor.threadpool:
-            return 0
+            return []
         else:
             return reactor.threadpool.working
 
@@ -237,7 +241,7 @@ class TwistedTestCase(TestCase):
                 u'threads: %s\n'
                 u'writers: %s\n'
                 u'readers: %s\n'
-                u'threadpool size: %s\n'
+                u'threadpool queue: %s\n'
                 u'threadpool threads: %s\n'
                 u'threadpool working: %s\n'
                 u'\n' % (
@@ -245,7 +249,7 @@ class TwistedTestCase(TestCase):
                     reactor.threadCallQueue,
                     reactor.getWriters(),
                     reactor.getReaders(),
-                    self._threadPoolQueueSize(),
+                    self._threadPoolQueue(),
                     self._threadPoolThreads(),
                     self._threadPoolWorking(),
                     )
@@ -311,13 +315,14 @@ class TwistedTestCase(TestCase):
         if len(reactor.threadCallQueue) > 0:
             raise_failure('threads', reactor.threadCallQueue)
 
-        if self._threadPoolQueueSize() > 0:
-            raise_failure('threadpoool queue', self._threadPoolQueueSize())
+        pool_queue = self._threadPoolQueue()
+        if pool_queue:
+            raise_failure('threadpoool queue', pool_queue)
 
-        if self._threadPoolWorking() > 0:
+        if self._threadPoolWorking():
             raise_failure('threadpoool working', self._threadPoolWorking())
 
-        if self._threadPoolThreads() > 0:
+        if self._threadPoolThreads():
             raise_failure('threadpoool threads', self._threadPoolThreads())
 
         if len(reactor.getWriters()) > 0:  # noqa:cover
@@ -805,15 +810,15 @@ def _get_os_version():
     """
     On non-Linux this is just the os_name.
 
-    On Linux is the distribution name, without the version.
+    On Linux is the distribution name and the version.
 
     On Windows it is the `nt` followed by the major and minor NT version.
-    IS not the marketing name.
-    We only support Windows NT family.
+    It is not the marketing name.
+    We only support the Windows NT family.
     See: https://en.wikipedia.org/wiki/Windows_NT#Releases
 
     On OSX it returns `osx` followed by the version.
-    Is not the Darwin version.
+    It is not the version of the underlying Darwin OS.
     See: https://en.wikipedia.org/wiki/MacOS#Release_history
     """
     if os.name == 'nt':
@@ -880,6 +885,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     excepted_threads = [
         'MainThread',
         'threaded_reactor',
+        'GlobalPool-WorkerHandler',
+        'GlobalPool-TaskHandler',
+        'GlobalPool-ResultHandler',
         Contains('PoolThread-twisted.internet.reactor'),
         ]
 

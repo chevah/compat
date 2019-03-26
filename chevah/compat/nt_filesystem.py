@@ -716,7 +716,7 @@ class NTFilesystem(PosixFilesystemBase):
                 if error.errno != errno.EEXIST:
                     # Not a file already exists error.
                     raise error
-                # Try to remove the fine, and then rename one more time.
+                # Try to remove the file, and then rename one more time.
                 self.deleteFile(to_segments)
                 return super(NTFilesystem, self).rename(
                     from_segments, to_segments)
@@ -772,7 +772,7 @@ class NTFilesystem(PosixFilesystemBase):
                     path,
                     win32security.SE_FILE_OBJECT,
                     win32security.DACL_SECURITY_INFORMATION,
-                    None,
+                    user_sid,
                     None,
                     d_acl,
                     None,

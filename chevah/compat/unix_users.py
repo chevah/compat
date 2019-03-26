@@ -127,7 +127,7 @@ class UnixUsers(CompatUsers):
             username_encoded = username.encode('utf-8')
             home_folder = pwd.getpwnam(
                 username_encoded).pw_dir.decode('utf-8')
-            return home_folder
+            return home_folder.rstrip('/')
         except KeyError:
             self.raiseFailedToGetHomeFolder(
                 username, _(u'Username not found.'))

@@ -154,7 +154,9 @@ class IOSUsers(Interface):
 
     def getHomeFolder(username, token=None):
         """
-        Get home folder for local (or NIS) user.
+        Get home folder path for local (or NIS) user.
+
+        The path is returned without the trailing separator.
         """
 
     def userExists(username):
