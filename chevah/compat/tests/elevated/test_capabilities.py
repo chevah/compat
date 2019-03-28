@@ -68,7 +68,8 @@ class TestProcessCapabilities(FileSystemTestCase):
         Lists all available privileges and their state.
         """
         text = self.capabilities.getCurrentPrivilegesDescription()
-        # Capabilities for slaves running as service, outside of UAC.
+        # Capabilities for slaves running as service, outside of UAC, or
+        # with UAC -> Run as administrator.
         service_capabilities = (
             'SeIncreaseQuotaPrivilege:0, SeSecurityPrivilege:0, '
             'SeTakeOwnershipPrivilege:0, SeLoadDriverPrivilege:0, '

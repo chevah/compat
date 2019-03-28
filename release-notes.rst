@@ -2,7 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
-0.52.4 - 26/03/2019
+0.52.5 - 26/03/2019
+-------------------
+
+* Fix previous base version on Chevah PyPi.
+
+0.52.4 - 24/03/2019
 -------------------
 
 * getHomeFolder now always returns a path without the trailing separater.

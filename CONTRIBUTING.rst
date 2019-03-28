@@ -2,6 +2,21 @@ Chevah Compat Development Guide
 ===============================
 
 
+Local tests
+------------
+
+To run the full tests you will need to create a local user named 'chevah'.
+You can just create and disable this user.
+
+You need C:\Users\chevah_ci_support folder manually created and owned by the
+user `chevah`
+You need to manually create a file C:\Users\chevah_ci_suppport\users_ci_support
+and set the `Users` group as the owner.
+
+During the tests, new random accounts are created and they are removed at
+the end of the tests.
+
+
 Remote test
 -----------
 
