@@ -100,10 +100,8 @@ class TestSystemUsers(CompatTestCase):
         """
         Check that shadow files are supported on the expected Unix systems.
         """
-        # AIX and OSX only uses PAM.
+        # OSX only uses PAM.
         # Windows don't support shadow.
-        # FIXME:2717:
-        # HP-UX shadow support is not enabled in our python build.
         if self.os_name in [
             'aix',
             'freebsd',

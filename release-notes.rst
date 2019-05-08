@@ -2,10 +2,31 @@ Release notes for chevah.compat
 ===============================
 
 
+0.54.1 - 08/05/2019
+-------------------
+
+* Remove TODOs for Solaris/AIX/HPUX as there is no plan to fix them.
+* Fix test case teardown.
+
+
+0.54.0 - 15/04/2019
+-------------------
+
+* Fix reactor debug mode.
+* Fix assertEqual str vs unicode check.
+
+
+0.53.0 - 03/04/2019
+-------------------
+
+* Fix command line argument parsing when using multiprocessiong.
+
+
 0.52.5 - 26/03/2019
 -------------------
 
 * Fix previous base version on Chevah PyPi.
+
 
 0.52.4 - 24/03/2019
 -------------------

@@ -1129,8 +1129,6 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Main code for running the test
         """
-        # FIXME:4036:
-        # Enable full test once we have fast filesystem access.
         if self.os_name == 'aix':
             count = 3000
             base_timeout = 0.02

@@ -395,7 +395,6 @@ class UnixUsers(CompatUsers):
 
             from chevah.compat import process_capabilities
             if process_capabilities.os_name == 'hpux':
-                # FIXME:2745:
                 # Ctypes and pam are broken on HPUX.
                 self._pam_authenticate = False
                 return self._pam_authenticate

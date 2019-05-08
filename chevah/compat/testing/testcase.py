@@ -91,6 +91,9 @@ class TwistedTestCase(TestCase):
         _SIGCHLDWaker,
         ]
 
+    # Scheduled event to stop waiting for a deferred.
+    _reactor_timeout_call = None
+
     def setUp(self):
         super(TwistedTestCase, self).setUp()
         self._timeout_reached = False
@@ -137,6 +140,9 @@ class TwistedTestCase(TestCase):
         """
         Return current tasks of thread Pool, or [] when threadpool does not
         exists.
+
+        This should only be called at cleanup as it removed elements from
+        the Twisted thread queue, which will never be called.
         """
         if not reactor.threadpool:
             return []
@@ -241,7 +247,7 @@ class TwistedTestCase(TestCase):
                 u'threads: %s\n'
                 u'writers: %s\n'
                 u'readers: %s\n'
-                u'threadpool queue: %s\n'
+                u'threadpool size: %s\n'
                 u'threadpool threads: %s\n'
                 u'threadpool working: %s\n'
                 u'\n' % (
@@ -249,7 +255,7 @@ class TwistedTestCase(TestCase):
                     reactor.threadCallQueue,
                     reactor.getWriters(),
                     reactor.getReaders(),
-                    self._threadPoolQueue(),
+                    reactor.getThreadPool().q.qsize(),
                     self._threadPoolThreads(),
                     self._threadPoolWorking(),
                     )
@@ -262,6 +268,9 @@ class TwistedTestCase(TestCase):
             t = reactor.running and t2
             reactor.doIteration(t)
         else:
+            # FIXME:4428:
+            # When not executed in debug mode, some test will fail as they
+            # will not spin the reactor.
             # To not slow down all the tests, we run with a very small value.
             reactor.doIteration(0.000001)
 
@@ -273,7 +282,10 @@ class TwistedTestCase(TestCase):
         """
         if not self._timeout_reached:
             # Everything fine, disable timeout.
-            if not self._reactor_timeout_call.cancelled:
+            if (
+                self._reactor_timeout_call and
+                not self._reactor_timeout_call.cancelled
+                    ):
                 self._reactor_timeout_call.cancel()
 
         if prevent_stop:
@@ -800,7 +812,7 @@ class TwistedTestCase(TestCase):
         self.assertWasCalled(deferred)
 
         if isinstance(deferred.result, Failure):
-            error = deferred.result.value
+            error = deferred.result
             self.ignoreFailure(deferred)
             raise AssertionError(
                 'Deferred contains a failure: %s' % (error))
@@ -990,6 +1002,44 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             self._testMethodName,
             class_name,
             self._testMethodName)
+
+    def assertRaises(self, exception_class, callback=None, *args, **kwargs):
+        """
+        Wrapper around the stdlib call to allow non-context usage.
+        """
+        super_assertRaises = super(ChevahTestCase, self).assertRaises
+        if callback is None:
+            return super_assertRaises(exception_class)
+
+        with super_assertRaises(exception_class) as context:
+            callback(*args, **kwargs)
+
+        return context.exception
+
+    def _baseAssertEqual(self, first, second, msg=None):
+        """
+        Update to stdlib to make sure we don't compare str with unicode.
+        """
+        if (
+            isinstance(first, unicode) and
+            not isinstance(second, unicode)
+                ):  # noqa:cover
+            if not msg:
+                msg = u'First is unicode while second is str for "%s".' % (
+                    first,)
+            raise AssertionError(msg.encode('utf-8'))
+
+        if (
+            not isinstance(first, unicode) and
+            isinstance(second, unicode)
+                ):  # noqa:cover
+            if not msg:
+                msg = u'First is str while second is unicode for "%s".' % (
+                    first,)
+            raise AssertionError(msg.encode('utf-8'))
+
+        return super(ChevahTestCase, self)._baseAssertEqual(
+            first, second, msg=msg)
 
     @staticmethod
     def getHostname():

@@ -303,7 +303,6 @@ class TestSystemUsers(SystemUsersTestCase):
         Check PAM authentication.
         """
         if self.os_name == 'solaris':
-            # FIXME:3128:
             # PAM is broken on Solaris.
             raise self.skipTest()
 
