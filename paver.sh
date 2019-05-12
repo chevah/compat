@@ -241,6 +241,31 @@ pip_install() {
     fi
 }
 
+#
+# Check for wget or curl and set needed download commands accordingly.
+#
+set_download_commands() {
+    set +o errexit
+    command -v wget > /dev/null
+    if [ $? -eq 0 ]; then
+        set -o errexit
+        echo "Using WGET for downloading Python package..."
+        ONLINETEST_CMD="wget --spider --quiet"
+        # Use 1MB dots to reduce output, avoiding polluting Buildbot's pages.
+        DOWNLOAD_CMD="wget --progress=dot --execute dot_bytes=1m"
+        return
+    fi
+    command -v curl > /dev/null
+    if [ $? -eq 0 ]; then
+        set -o errexit
+        echo "Using CURL for downloading Python package..."
+        ONLINETEST_CMD="curl --fail --silent --head --output /dev/null"
+        DOWNLOAD_CMD="curl --remote-name"
+        return
+    fi
+    echo "Missing wget or curl! One of them is needed for online operations."
+    exit 30
+}
 
 #
 # Download and extract a binary distribution.
@@ -261,9 +286,7 @@ get_binary_dist() {
         rm -rf $dist_name
         rm -f $tar_gz_file
         rm -f $tar_file
-        # Use 1M dot to reduce console pollution.
-        execute wget --progress=dot -e dotbytes=1M \
-            $remote_base_url/${tar_gz_file}
+        execute $DOWNLOAD_CMD $remote_base_url/${tar_gz_file}
         execute gunzip $tar_gz_file
         execute tar -xf $tar_file
         rm -f $tar_gz_file
@@ -277,12 +300,10 @@ get_binary_dist() {
 #
 test_version_exists() {
     local remote_base_url=$1
-    local wget_test
     local target_file=python-${PYTHON_VERSION}-${OS}-${ARCH}.tar.gz
 
-    wget --spider $remote_base_url/${OS}/${ARCH}/$target_file
-    wget_test=$?
-    return $wget_test
+    $ONLINETEST_CMD $remote_base_url/${OS}/${ARCH}/$target_file
+    return $?
 }
 
 #
@@ -521,7 +542,7 @@ detect_os() {
 
     OS=$(uname -s | tr "[A-Z]" "[a-z]")
 
-    if [ "${OS%mingw*}" = "" ]; then
+    if [ "${OS%mingw*}" = "" -o "${OS%msys*}" = "" ]; then
 
         OS='windows'
         ARCH='x86'
@@ -603,10 +624,6 @@ detect_os() {
                 check_os_version "SUSE Linux Enterprise Server" 10 \
                     "$os_version_raw" os_version_chevah
                 OS="sles${os_version_chevah}"
-                # On 11.x, check for OpenSSL 1.0.x (a.k.a. Security Module).
-                if [ ${os_version_chevah} -eq 11 -a -x /usr/bin/openssl1 ]; then
-                    OS="sles11sm"
-                fi
             fi
         elif [ -f /etc/os-release ]; then
             source /etc/os-release
@@ -669,12 +686,16 @@ detect_os() {
         check_os_version "Mac OS X" 10.8 "$os_version_raw" os_version_chevah
 
         if [ ${os_version_chevah:0:2} -eq 10 -a \
-            ${os_version_chevah:2:2} -ge 12  ]; then
-            # For newer, macOS versions, we use '1012'.
-            OS="macos1012"
+            ${os_version_chevah:2:2} -ge 13 ]; then
+            # For macOS 10.13 or newer we use 'macos'.
+            OS="macos"
+        elif [ ${os_version_chevah:0:2} -eq 10 -a \
+            ${os_version_chevah:2:2} -ge 8 ]; then
+            # For macOS 10.12 and OS X 10.8-10.11 we use 'osx'.
+            OS="osx"
         else
-            # For older, OS X versions, we use '108'.
-            OS="osx108"
+            echo "Unsupported Mac OS X version: $os_version_raw."
+            exit 17
         fi
 
 
@@ -747,6 +768,9 @@ if [ "$COMMAND" = "detect_os" ] ; then
     write_default_values
     exit 0
 fi
+
+# Following functions need to check or download online packages.
+set_download_commands
 
 if [ "$COMMAND" = "get_python" ] ; then
     OS=$2
