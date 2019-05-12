@@ -1113,17 +1113,19 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         On some systems, this test takes more than 1 minute.
         """
+        final_error = None
         for _ in range(3):  # pragma: no branch
             try:
                 self._iterateFolderContent_big()
                 # All good. Stop trying.
                 return
             except AssertionError as error:
+                final_error = error
                 # Run cleanup and try again.
                 self.callCleanup()
 
         # We tried 3 times and still got a failure.
-        raise error  # noqa:cover
+        raise final_error  # noqa:cover
 
     def _iterateFolderContent_big(self):
         """

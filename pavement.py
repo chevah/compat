@@ -89,8 +89,8 @@ BUILD_PACKAGES = [
     'chevah-js-linter==2.4.0',
     'pycodestyle==2.3.1',
     'bandit==1.4.0',
-    'pylint==1.7.1',
-    'astroid==1.5.3',
+    'pylint==1.9.4',
+    'astroid==1.6.6',
     # These are build packages, but are needed for testing the documentation.
     'sphinx==1.2.2',
     'repoze.sphinx.autointerface==0.7.1.c4',
