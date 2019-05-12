@@ -848,7 +848,7 @@ def _get_os_version():
         parts = platform.release().split('.')
         return 'solaris-%s' % (parts[1],)
 
-    if os_name == 'aix':
+    if os_name == 'aix':  # noqa:cover
         return 'aix-%s.%s' % (platform.version(), platform.release())
 
     if os_name != 'linux':
@@ -891,7 +891,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     os_name = process_capabilities.os_name
     os_family = process_capabilities.os_family
     os_version = _get_os_version()
-    cpu_type = _get_cpu_type()
+    cpu_type = process_capabilities.cpu_type
 
     # List of thread names to ignore during the tearDown.
     excepted_threads = [
@@ -1237,19 +1237,6 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             raise AssertionError(
                 "Expecting type %s, but got %s. %s" % (
                     expected_type, type(value), msg))
-
-    def assertRaises(self, exception_class, callback=None, *args, **kwargs):
-        """
-        Overwrites the stdlib call to allow non-context usage.
-        """
-        super_assertRaises = super(ChevahTestCase, self).assertRaises
-        if callback is None:
-            return super_assertRaises(exception_class)
-
-        with super_assertRaises(exception_class) as context:
-            callback(*args, **kwargs)
-
-        return context.exception
 
     def tempPath(self, prefix='', suffix=''):
         """

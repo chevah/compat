@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.55.0 - 12/05/2019
+-------------------
+
+* Updated testing text generator to include upper and lower characters.
+
+
 0.54.1 - 08/05/2019
 -------------------
 
