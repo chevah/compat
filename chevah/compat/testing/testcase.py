@@ -1021,8 +1021,8 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         Update to stdlib to make sure we don't compare str with unicode.
         """
         if (
-            isinstance(first, unicode) and
-            not isinstance(second, unicode)
+            isinstance(first, text_type) and
+            not isinstance(second, text_type)
                 ):  # noqa:cover
             if not msg:
                 msg = u'First is unicode while second is str for "%s".' % (
@@ -1030,8 +1030,8 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             raise AssertionError(msg.encode('utf-8'))
 
         if (
-            not isinstance(first, unicode) and
-            isinstance(second, unicode)
+            not isinstance(first, text_type) and
+            isinstance(second, text_type)
                 ):  # noqa:cover
             if not msg:
                 msg = u'First is str while second is unicode for "%s".' % (

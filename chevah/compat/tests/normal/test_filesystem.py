@@ -886,7 +886,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         if self.os_family == 'nt':
             expected_path = path
-            expected_message = 'The system cannot find the path specified'
+            expected_message = b'The system cannot find the path specified'
         else:
             expected_path = path.encode('utf-8')
             expected_message = b'No such file or directory'
