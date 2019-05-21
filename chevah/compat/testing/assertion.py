@@ -43,6 +43,8 @@ class Contains(object):
 class AssertionMixin(object):
     """
     Mixin to be combined with a test case for providing additional assertions.
+
+    The assertions from here should not overwrite anything.
     """
 
     Contains = Contains
@@ -70,34 +72,6 @@ class AssertionMixin(object):
             message = u'Working folder is not clean. %s' % (
                 u', '.join(members))
             raise AssertionError(message.encode('utf-8'))
-
-    def assertEqual(self, first, second, msg=None):
-        '''Extra checks for assert equal.'''
-        try:
-            super(AssertionMixin, self).assertEqual(first, second, msg)
-        except AssertionError as error:  # noqa:cover
-            message = error.message
-            if isinstance(message, text_type):
-                message = message.encode('utf-8')
-            raise AssertionError(message)
-
-        if (
-            isinstance(first, text_type) and
-            not isinstance(second, text_type)
-                ):  # noqa:cover
-            if not msg:
-                msg = u'Type of "%s" is unicode while for "%s" is str.' % (
-                    first, second)
-            raise AssertionError(msg.encode('utf-8'))
-
-        if (
-            not isinstance(first, text_type) and
-            isinstance(second, text_type)
-                ):  # noqa:cover
-            if not msg:
-                msg = u'Type of "%s" is str while for "%s" is unicode.' % (
-                    first, second)
-            raise AssertionError(msg.encode('utf-8'))
 
     def assertIteratorItemsEqual(self, expected, actual):
         """

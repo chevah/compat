@@ -30,7 +30,7 @@ mk
 
 # Test accounts and passwords.
 TEST_ACCOUNT_USERNAME = 'mâț mițișor'
-TEST_ACCOUNT_PASSWORD = 'Baroșanu42!'
+TEST_ACCOUNT_PASSWORD = '42!Baroșanu'
 TEST_ACCOUNT_GROUP = 'g mâțmițișor'
 # FIXME:2106:
 # Replace hard-coded constant with posixID()
@@ -38,7 +38,7 @@ TEST_ACCOUNT_UID = 2000
 TEST_ACCOUNT_GID = 2010
 TEST_ACCOUNT_GROUP_WIN = 'Users'
 TEST_ACCOUNT_USERNAME_OTHER = 'miț motan'
-TEST_ACCOUNT_PASSWORD_OTHER = 'altapara'
+TEST_ACCOUNT_PASSWORD_OTHER = '4!Altapara'
 # FIXME:2106:
 # Replace hard-coded constant with posixID()
 TEST_ACCOUNT_UID_OTHER = 2001

@@ -56,7 +56,7 @@ if os.name == 'nt':
 # These are the hard dependencies needed by the library itself.
 RUN_PACKAGES = [
     'zope.interface==3.8.0',
-    'six==1.11.0',
+    'six==1.12.0',
     ]
 
 if os.name == 'posix':
@@ -76,40 +76,36 @@ BUILD_PACKAGES = [
 
     # For PQM
     'chevah-github-hooks-server==0.1.6',
-    'smmap==0.8.2',
+    'smmap==0.9.0',
     'async==0.6.1',
     'gitdb==0.6.4',
     'gitpython==1.0.1',
-    'pygithub==1.10.0',
-    ]
+    'pygithub==1.34.0',
+    'pyjwt==1.6.4',  # Used by pygithub.
 
-
-# Packages required by the static analysis tests.
-LINT_PACKAGES = [
-    'scame==0.4.2',
-    'pyflakes==1.5.0',
+    # For Lint and static checkers.
+    'scame==0.5.0',
+    'pyflakes>=1.5.0',
+    'chevah-js-linter==2.4.0',
     'pycodestyle==2.3.1',
     'bandit==1.4.0',
-    'pylint==1.7.1',
-    'astroid==1.5.3',
-
+    'pylint==1.9.4',
+    'astroid==1.6.6',
     # These are build packages, but are needed for testing the documentation.
     'sphinx==1.2.2',
     'repoze.sphinx.autointerface==0.7.1.c4',
     # Docutils is required for RST parsing and for Sphinx.
     'docutils==0.12.c1',
-    ]
 
-# Packages required to run the test suite.
-TEST_PACKAGES = [
+    # Packages required to run the test suite.
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
     'nose==1.3.0.chevah10',
     'nose-randomly==1.2.5',
     'mock',
 
-    'coverator==0.1.4',
     'coverage==4.4.1',
+    'coverator==0.1.4',
 
     # used for remote debugging.
     'remote_pdb==1.2.0',
@@ -198,9 +194,6 @@ try:
         }
 
     options.pyflakes['enabled'] = True
-
-    options.closure_linter['enabled'] = True
-    options.closure_linter['ignore'] = [1, 10, 11, 110, 220]
 
     options.pycodestyle['enabled'] = True
     options.pycodestyle['hang_closing'] = True
@@ -308,21 +301,7 @@ def deps():
     Install all dependencies.
     """
     print('Installing dependencies to %s...' % (pave.path.build,))
-    packages = RUN_PACKAGES + TEST_PACKAGES
-
-    env_ci = os.environ.get('CI', '').strip()
-    if env_ci.lower() != 'true':
-        packages += BUILD_PACKAGES + LINT_PACKAGES
-    else:
-        builder = os.environ.get('BUILDER_NAME', '')
-        if 'os-independent' in builder or '-py3' in builder:
-            packages += LINT_PACKAGES
-            print('Installing only lint and test dependencies.')
-        elif '-gk-merge' in builder:
-            packages += BUILD_PACKAGES
-            print('Installing only build and test dependencies.')
-        else:
-            print('Installing only test dependencies.')
+    packages = RUN_PACKAGES + BUILD_PACKAGES
 
     pave.pip(
         command='install',

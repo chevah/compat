@@ -82,7 +82,6 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
             return False
 
         if self.os_name == 'hpux':
-            # FIXME:2745:
-            # We don't yet support PAM on HPUX.
+            # We don't support PAM on HPUX.
             return False
         return True

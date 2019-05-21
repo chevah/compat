@@ -886,10 +886,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         if self.os_family == 'nt':
             expected_path = path
-            expected_message = 'The system cannot find the path specified'
+            expected_message = b'The system cannot find the path specified'
         else:
             expected_path = path.encode('utf-8')
-            expected_message = 'No such file or directory'
+            expected_message = b'No such file or directory'
         self.assertEqual(errno.ENOENT, error.errno)
         self.assertEqual(expected_path, error.filename)
         self.assertEqual(expected_message, error.strerror)
@@ -1113,24 +1113,24 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         On some systems, this test takes more than 1 minute.
         """
+        final_error = None
         for _ in range(3):  # pragma: no branch
             try:
                 self._iterateFolderContent_big()
                 # All good. Stop trying.
                 return
             except AssertionError as error:
+                final_error = error
                 # Run cleanup and try again.
                 self.callCleanup()
 
         # We tried 3 times and still got a failure.
-        raise error  # noqa:cover
+        raise final_error  # noqa:cover
 
     def _iterateFolderContent_big(self):
         """
         Main code for running the test
         """
-        # FIXME:4036:
-        # Enable full test once we have fast filesystem access.
         if self.os_name == 'aix':
             count = 3000
             base_timeout = 0.02
@@ -1579,7 +1579,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             a_file = self.filesystem.openFileForReading(
                 self.test_segments)
 
-            self.assertEqual('', a_file.read())
+            self.assertEqual(b'', a_file.read())
         finally:
             if a_file:
                 a_file.close()
@@ -1604,7 +1604,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Check opening a file for writing in plain/ascii/str mode.
         """
-        content = 'some ascii text'
+        content = b'some ascii text'
         self.test_segments = mk.fs.createFileInTemp(length=0)
         a_file = None
         try:
@@ -1759,7 +1759,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             test_file.read()
 
         error_message = context.exception.args[0]
-        self.assertEqual('File not open for reading', error_message)
+        self.assertEqual(b'File not open for reading', error_message)
 
         # Even if we go for the low level FD, we can't read it.
         with self.assertRaises(OSError) as context:
@@ -1783,7 +1783,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             test_file.read()
 
         error_message = context.exception.args[0]
-        self.assertEqual('File not open for reading', error_message)
+        self.assertEqual(b'File not open for reading', error_message)
 
         # We can read it if we go to the low level API.
         # This is a known issue.
@@ -1818,8 +1818,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Check opening file for reading in ascii mode.
         """
-        content = u'ceva nou'
-        content_str = 'ceva nou'
+        content = 'ceva nou'
+        content_str = b'ceva nou'
         self.test_segments = mk.fs.createFileInTemp(content=content)
         a_file = None
         try:
@@ -3714,7 +3714,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             ['virtual-\N{cloud}', 'base\N{sun}', segments[-1]])
         result.write(b'56789')
         result.close()
-        self.assertEqual(b'56789', mk.fs.getFileContent(segments))
+        self.assertEqual(u'56789', mk.fs.getFileContent(segments))
 
     def test_openFileForAppending_virtual(self):
         """
@@ -3742,7 +3742,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             ['virtual-\N{cloud}', 'base\N{sun}', segments[-1]])
         result.write(b'56789')
         result.close()
-        self.assertEqual(b'123456789', mk.fs.getFileContent(segments))
+        self.assertEqual(u'123456789', mk.fs.getFileContent(segments))
 
     def test_openFileForUpdating_virtual(self):
         """
@@ -3771,7 +3771,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result.seek(2)
         result.write(b'56789')
         result.close()
-        self.assertEqual(b'1256789', mk.fs.getFileContent(segments))
+        self.assertEqual(u'1256789', mk.fs.getFileContent(segments))
 
     def test_getFileSize_virtual(self):
         """

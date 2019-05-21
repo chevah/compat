@@ -43,7 +43,7 @@ def _sanitize_name_legacy_unix(candidate):
 
     By default password is limited to 8 characters without spaces.
     """
-    return unidecode(candidate).replace(' ', '_')[:8]
+    return unidecode(candidate).replace(' ', '_')[:8].decode('utf-8')
 
 
 def _sanitize_name_windows(candidate):
@@ -52,7 +52,7 @@ def _sanitize_name_windows(candidate):
     """
     # FIXME:927:
     # On Windows, we can't delete home folders with unicode names.
-    return unidecode(candidate)
+    return unidecode(candidate).decode('utf-8')
 
 
 class SanitizeNameMixin(object):
@@ -64,9 +64,9 @@ class SanitizeNameMixin(object):
         """
         os_name = process_capabilities.os_name
         if os_name in ['aix', 'hpux', 'freebsd', 'openbsd']:
-            return _sanitize_name_legacy_unix(name)
+            return _sanitize_name_legacy_unix(name).decode('utf-8')
         elif os_name == 'windows':
-            return _sanitize_name_windows(name)
+            return _sanitize_name_windows(name).decode('utf-8')
 
         return name
 
@@ -214,12 +214,6 @@ class ChevahCommonsFactory(object):
         _unique_id += 1
         return _unique_id
 
-    def ascii(self):
-        """
-        Return a unique (per session) ASCII string.
-        """
-        return b'ascii_str' + text_type(self.number()).encode('utf-8')
-
     def bytes(self, size=8):
         """
         Returns a bytes array with random values that cannot be decoded
@@ -238,6 +232,12 @@ class ChevahCommonsFactory(object):
             factory = Factory()
 
         return Port(port, factory, interface=address)
+
+    def ascii(self):
+        """
+        Return a unique (per session) ASCII string.
+        """
+        return b'ascii_StR' + text_type(self.number()).encode('utf-8')
 
     def string(self, *args, **kwargs):
         """
@@ -284,7 +284,7 @@ class ChevahCommonsFactory(object):
         """
         A string unique for this session.
         """
-        base = u'str' + text_type(self.number())
+        base = u'StR' + text_type(self.number())
 
         # The minimum length so that we don't truncate the unique string.
         min_length = len(base) + len(TEST_NAME_MARKER)

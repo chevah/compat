@@ -76,8 +76,7 @@ class TestProcessCapabilitiesPosix(CompatTestCase):
         PAM is supported on Linux/Unix.
         """
         if self.os_name == 'hpux':
-            # FIXME:2745:
-            # PAM is not yet supported on HPUX.
+            # PAM is not supported on HPUX.
             self.assertFalse(self.capabilities.pam)
         elif self.os_name == 'openbsd':
             # OpenBSD does not has PAM by default.

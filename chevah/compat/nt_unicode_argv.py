@@ -37,6 +37,11 @@ def get_unicode_argv():
     if argc.value > 0:
         # Remove Python executable and commands if present
         start = argc.value - len(sys.argv)
-        return [argv[i] for i in range(start, argc.value)]
+        try:
+            return [argv[i] for i in range(start, argc.value)]
+        except ValueError:
+            # When using subprocess, the argument conversion fails.
+            # This should be OK, as we don't care about arguments.
+            return sys.argv
     else:
         return sys.argv

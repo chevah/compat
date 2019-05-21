@@ -6,6 +6,7 @@ Capabilities detection tests for accounts with elevated permissions.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from chevah.compat import process_capabilities, system_users
 from chevah.compat.exceptions import AdjustPrivilegeException
@@ -68,7 +69,8 @@ class TestProcessCapabilities(FileSystemTestCase):
         Lists all available privileges and their state.
         """
         text = self.capabilities.getCurrentPrivilegesDescription()
-        # Capabilities for slaves running as service, outside of UAC.
+        # Capabilities for slaves running as service, outside of UAC, or
+        # with UAC -> Run as administrator.
         service_capabilities = (
             'SeIncreaseQuotaPrivilege:0, SeSecurityPrivilege:0, '
             'SeTakeOwnershipPrivilege:0, SeLoadDriverPrivilege:0, '
