@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 from win32com.shell import shell, shellcon
 from zope.interface import implements
+import pywintypes
 import pythoncom
 import win32net
 import win32profile
@@ -164,7 +165,7 @@ class NTUsers(CompatUsers):
 
             profile = win32profile.LoadUserProfile(token, profile_info)
             win32profile.UnloadUserProfile(token, profile)
-        except win32security.error as error:
+        except (win32security.error, pywintypes.error) as error:
             (error_id, error_call, error_message) = error
             error_text = (
                 u'Failed to create user profile. '
@@ -181,15 +182,16 @@ class NTUsers(CompatUsers):
         # Even when guest account is disabled.
         if not username:
             return False
+
         try:
             win32security.LookupAccountName('', username)
             return True
-        except win32security.error as error:
+        except (win32security.error, pywintypes.error) as error:
             (number, name, message) = error
             if number == ERROR_NONE_MAPPED:
                 return False
-            else:
-                raise
+            error_text = u'[%s] %s %s' % (number, name, message)
+            self.raiseFailedtoCheckUserExists(username, error_text)
 
     def isUserInGroups(self, username, groups, token):
         """
@@ -202,7 +204,7 @@ class NTUsers(CompatUsers):
                 group_sid, group_domain, group_type = (
                     win32security.LookupAccountName(
                         primary_domain_controller, group))
-            except win32security.error:
+            except (win32security.error, pywintypes.error):
                 continue
             if win32security.CheckTokenMembership(token, group_sid):
                 return True
@@ -218,7 +220,7 @@ class NTUsers(CompatUsers):
 
         try:
             token = self._getToken(username, password)
-        except win32security.error:
+        except (win32security.error, pywintypes.error):
             return (False, None)
         return (True, token)
 
