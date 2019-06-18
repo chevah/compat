@@ -145,6 +145,9 @@ class UnixUsers(CompatUsers):
             pwd.getpwnam(username)
         except KeyError:
             return False
+        except Exception as error:
+            self.raiseFailedtoCheckUserExists(username, str(error))
+
         return True
 
     def isUserInGroups(self, username, groups, token=None):

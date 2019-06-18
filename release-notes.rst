@@ -1,6 +1,12 @@
 Release notes for chevah.compat
 ===============================
 
+0.55.1 - 17/06/2019
+-------------------
+
+* system_users.userExist now raised a CompatError when it fails to check the
+  existence of an user.
+
 
 0.55.0 - 12/05/2019
 -------------------

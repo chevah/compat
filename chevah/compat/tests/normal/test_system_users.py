@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from six import text_type
+import os
 
 from chevah.compat import (
     DefaultAvatar,
@@ -62,6 +63,23 @@ class TestSystemUsers(CompatTestCase):
         self.assertContains(
             mk.username.lower(), home_folder.lower())
         self.assertIsInstance(text_type, home_folder)
+
+    def test_userExists_not_found(self):
+        """
+        Return `False` when user does not exists.
+        """
+        result = system_users.userExists(u'no-such-user-\N{sun}')
+
+        self.assertFalse(result)
+
+    def test_userExists_found(self):
+        """
+        Return `True` when user exists.
+        """
+        current_user = os.getenv('USER')
+        result = system_users.userExists(current_user)
+
+        self.assertTrue(result)
 
     @conditionals.onOSFamily('nt')
     def test_parseUPN_no_domain(self):

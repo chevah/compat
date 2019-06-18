@@ -13,7 +13,7 @@ import re
 import uuid
 
 from chevah.compat import LocalFilesystem
-from chevah.compat.testing.constants import TEST_NAME_MARKER
+from chevah.compat.testing.constant import TEST_NAME_MARKER
 
 
 class LocalTestFilesystem(LocalFilesystem):

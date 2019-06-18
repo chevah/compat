@@ -84,7 +84,7 @@ BUILD_PACKAGES = [
     'pyjwt==1.6.4',  # Used by pygithub.
 
     # For Lint and static checkers.
-    'scame==0.5.0',
+    'scame==0.5.1',
     'pyflakes>=1.5.0',
     'chevah-js-linter==2.4.0',
     'pycodestyle==2.3.1',

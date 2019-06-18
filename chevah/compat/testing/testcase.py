@@ -42,7 +42,7 @@ from chevah.compat import (
 from chevah.compat.administration import os_administration
 from chevah.compat.testing.assertion import AssertionMixin, Contains
 from chevah.compat.testing.mockup import mk
-from chevah.compat.testing.constants import (
+from chevah.compat.testing.constant import (
     TEST_NAME_MARKER,
     )
 from chevah.compat.testing.filesystem import LocalTestFilesystem
@@ -1025,6 +1025,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             not isinstance(second, text_type)
                 ):  # noqa:cover
             if not msg:
+
                 msg = u'First is unicode while second is str for "%s".' % (
                     first,)
             raise AssertionError(msg.encode('utf-8'))

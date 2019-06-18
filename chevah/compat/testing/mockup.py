@@ -29,7 +29,7 @@ from chevah.compat.avatar import (
     FilesystemOSAvatar,
     )
 from chevah.compat.testing.filesystem import LocalTestFilesystem
-from chevah.compat.testing.constants import (
+from chevah.compat.testing.constant import (
     TEST_NAME_MARKER,
     )
 
