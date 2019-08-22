@@ -1,6 +1,26 @@
 Release notes for chevah.compat
 ===============================
 
+
+0.55.4 - 22/08/2019
+-------------------
+
+* Update for short os names in brink.
+
+
+0.55.3 - 21/08/2019
+-------------------
+
+* Fix py3 exception in nose_runner script.
+
+
+0.55.2 - 21/08/2019
+-------------------
+
+* Remove support for `Contains`.
+* Fix print function in nose_runner script.
+
+
 0.55.1 - 17/06/2019
 -------------------
 

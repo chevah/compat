@@ -10,7 +10,6 @@ from six import text_type
 from threading import Thread, Event
 
 from chevah.compat.testing import ChevahTestCase, mk
-from chevah.compat.testing.assertion import Contains
 
 
 class TestFactory(ChevahTestCase):
@@ -83,7 +82,7 @@ class TestFactory(ChevahTestCase):
             def run(self):
                 event.wait()
 
-        self.excepted_threads = self.excepted_threads + [Contains('TestTh')]
+        self.excepted_threads = self.excepted_threads + ['TestTh']
 
         thread = TestThread(name="TestThread")
         thread.start()
