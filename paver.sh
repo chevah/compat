@@ -58,7 +58,7 @@ LOCAL_PYTHON_BINARY_DIST=""
 
 # Put default values and create them as global variables.
 OS='not-detected-yet'
-ARCH='x86'
+ARCH='not-detected-yet'
 
 # Initialize default values from paver.conf
 PYTHON_CONFIGURATION='NOT-YET-DEFINED'
@@ -122,7 +122,7 @@ delete_folder() {
     local target="$1"
     # On Windows, we use internal command prompt for maximum speed.
     # See: http://stackoverflow.com/a/6208144/539264
-    if [ $OS = "windows" -a -d $target ]; then
+    if [ $OS = "win" -a -d $target ]; then
         cmd //c "del /f/s/q $target > nul"
         cmd //c "rmdir /s/q $target"
     else
@@ -145,7 +145,7 @@ execute() {
     exit_code=$?
     set -e
     if [ $exit_code -ne 0 ]; then
-        echo "Fail:" $@
+        (>&2 echo "Fail:" $@)
         exit 1
     fi
 }
@@ -156,7 +156,7 @@ execute() {
 update_path_variables() {
     resolve_python_version
 
-    if [ "${OS}" = "windows" ] ; then
+    if [ "${OS}" = "win" ] ; then
         PYTHON_BIN="/lib/python.exe"
         PYTHON_LIB="/lib/Lib/"
     else
@@ -236,8 +236,8 @@ pip_install() {
     exit_code=$?
     set -e
     if [ $exit_code -ne 0 ]; then
-        echo "Failed to install brink."
-        exit 1
+        (>&2 echo "Failed to install brink.")
+        exit 2
     fi
 }
 
@@ -263,8 +263,8 @@ set_download_commands() {
         DOWNLOAD_CMD="curl --remote-name"
         return
     fi
-    echo "Missing wget and curl! One of them is needed for online operations."
-    exit 30
+    (>&2 echo "Missing wget/curl! One of them is needed for online operations.")
+    exit 3
 }
 
 #
@@ -324,13 +324,8 @@ get_python_dist() {
         # We have the requested python version.
         get_binary_dist $python_distributable $remote_base_url/${OS}/${ARCH}
     else
-        if [ $download_mode == "strict" ]; then
-            echo "The requested version was not found on the remote server."
-            exit 1
-        fi
-        # Fall back to the non-versioned distribution.
-        echo "!!!Getting FALLBACK version!!!"
-        get_binary_dist $PYTHON_NAME-$OS-$ARCH $remote_base_url
+        (>&2 echo "Requested version was not found on the remote server.")
+        exit 4
     fi
 }
 
@@ -349,8 +344,8 @@ copy_python() {
     COPY_PYTHON_RECURSIONS=`expr $COPY_PYTHON_RECURSIONS + 1`
 
     if [ $COPY_PYTHON_RECURSIONS -gt 2 ]; then
-        echo "Too many calls to copy_python. ($COPY_PYTHON_RECURSIONS)"
-        exit 1
+        (>&2 echo "Too many calls to copy_python: $COPY_PYTHON_RECURSIONS")
+        exit 5
     fi
 
     # Check that python dist was installed
@@ -407,10 +402,10 @@ copy_python() {
                 local test_version=$?
                 set -o errexit
                 if [ $test_version -ne 0 ]; then
-                    echo "The build is now at $python_installed_version"
-                    echo "Failed to find the required $PYTHON_VERSION"
-                    echo "Check your configuration or the remote server."
-                    exit 1
+                    (>&2 echo "The build is now at $python_installed_version")
+                    (>&2 echo "Failed to find the required $PYTHON_VERSION")
+                    (>&2 echo "Check your configuration or the remote server.")
+                    exit 6
                 fi
 
                 # Remove it and try to install it again.
@@ -456,8 +451,8 @@ install_dependencies(){
     exit_code=$?
     set -e
     if [ $exit_code -ne 0 ]; then
-        echo 'Failed to run the initial "paver deps" command.'
-        exit 1
+        (>&2 echo 'Failed to run the initial "./paver.sh deps" command.')
+        exit 7
     fi
 }
 
@@ -470,9 +465,9 @@ install_dependencies(){
 check_source_folder() {
 
     if [ ! -e pavement.py ]; then
-        echo 'No pavement.py file found in current folder.'
-        echo 'Make sure you are running paver from a source folder.'
-        exit 1
+        (>&2 echo 'No "pavement.py" file found in current folder.')
+        (>&2 echo 'Make sure you are running "paver.sh" from a source folder.')
+        exit 8
     fi
 }
 
@@ -502,8 +497,8 @@ check_os_version() {
     local version_good_array
 
     if [[ $version_raw =~ [^[:digit:]\.] ]]; then
-        echo "Unparsed OS version should only have numbers and periods, but:"
-        echo "    \$version_raw=$version_raw"
+        (>&2 echo "OS version should only have numbers and periods, but:")
+        (>&2 echo "    \$version_raw=$version_raw")
         exit 12
     fi
 
@@ -525,208 +520,253 @@ check_os_version() {
     done
 
     if [ "$flag_supported" = 'false' ]; then
-        echo "The current version of ${name_fancy} is too old: ${version_raw}"
-        echo "Oldest supported version of ${name_fancy} is: ${version_good}"
-        exit 13
+        (>&2 echo "Current version of ${name_fancy} is too old: ${version_raw}")
+        (>&2 echo "Oldest supported ${name_fancy} version is: ${version_good}")
+        if [ "$OS" = "Linux" ]; then
+            # For old and/or unsupported Linux distros there's a second chance!
+            check_linux_glibc
+        else
+            exit 13
+        fi
     fi
 
     # The sane way to return fancy values with a bash function is to use eval.
     eval $version_chevah="'$version_constructed'"
 }
 
+#
+# For old unsupported Linux distros (with no /etc/os-release) and for exotic
+# unsupported Linux distros (eg. Arch), we check if the system is glibc-based.
+# If so, we use a generic code path that builds everything statically,
+# including OpenSSL, thus only requiring glibc 2.x.
+#
+check_linux_glibc() {
+    local glibc_version
+    local glibc_version_array
+
+    echo "Unsupported Linux distribution detected!"
+    echo "To get you going, we'll try to treat it as generic Linux..."
+
+    set +o errexit
+
+    command -v ldd > /dev/null
+    if [ $? -ne 0 ]; then
+        (>&2 echo "No ldd binary found, can't check for glibc!")
+        exit 18
+    fi
+
+    ldd --version | egrep "GNU\ libc|GLIBC" > /dev/null
+    if [ $? -ne 0 ]; then
+        (>&2 echo "No glibc reported by ldd... Unsupported Linux libc?")
+        exit 19
+    fi
+
+    # Parsing tested with glibc 2.11 - 2.29, eglibc 2.13 - 2.19.
+    glibc_version=$(ldd --version | head -n 1 | rev | cut -d\  -f1 | rev)
+
+    if [[ $glibc_version =~ [^[:digit:]\.] ]]; then
+        (>&2 echo "Glibc version should only have numbers and periods, but:")
+        (>&2 echo "    \$glibc_version=$glibc_version")
+        exit 20
+    fi
+
+    IFS=. read -a glibc_version_array <<< "$glibc_version"
+
+    if [ ${glibc_version_array[0]} -ne 2 ]; then
+        (>&2 echo "Only glibc 2 is supported! Detected version: $glibc_version")
+        exit 21
+    fi
+
+    if [ ${glibc_version_array[1]} -lt 11 ]; then
+        (>&2 echo "Beware glibc versions older than 2.11 were NOT tested!")
+        (>&2 echo "Detected glibc version: $glibc_version")
+    fi
+
+    set -o errexit
+
+    # glibc 2 detected, we set $OS for a generic build.
+    OS="lnx"
+}
 
 #
-# Update OS and ARCH variables with the current values.
+# For glibc-based Linux distros, after checking if current version is
+# supported with check_os_version(), $OS might already be set to "lnx"
+# if current version is too old, through check_linux_glibc().
+#
+set_os_if_not_generic() {
+    local distro_name="$1"
+    local distro_version="$2"
+
+    if [ "$OS" != "lnx" ]; then
+        OS="${distro_name}${distro_version}"
+    fi
+}
+
+#
+# Update OS and ARCH variables for current system.
 #
 detect_os() {
 
-    OS=$(uname -s | tr "[A-Z]" "[a-z]")
+    OS=$(uname -s)
 
-    if [ "${OS%mingw*}" = "" -o "${OS%msys*}" = "" ]; then
-
-        OS='windows'
-        ARCH='x86'
-
-    elif [ "${OS}" = "sunos" ]; then
-
-        ARCH=$(isainfo -n)
-        os_version_raw=$(uname -r | cut -d'.' -f2)
-        check_os_version Solaris 10 "$os_version_raw" os_version_chevah
-
-        OS="solaris${os_version_chevah}"
-
-        # Solaris 10u8 (from 10/09) updated the libc version, so for older
-        # releases we build on 10u3, and use that up to 10u7 (from 5/09).
-        # The "solaris10u3" code path also preserves the way to link to the
-        # OpenSSL 0.9.7 libs bundled in /usr/sfw/ with all Solaris 10 releases.
-        if [ "${OS}" = "solaris10" ]; then
-            # We extract the update number from the first line.
-            update=$(head -1 /etc/release | cut -d'_' -f2 | sed 's/[^0-9]*//g')
-            if [ "$update" -lt 8 ]; then
-                OS="solaris10u3"
+    case "$OS" in
+        MINGW*|MSYS*)
+            ARCH=$(uname -m)
+            OS="win"
+            ;;
+        Linux)
+            ARCH=$(uname -m)
+            if [ ! -f /etc/os-release ]; then
+                # No /etc/os-release file present, so we don't support this
+                # distro, but check for glibc, the generic build should work.
+                check_linux_glibc
+            else
+                source /etc/os-release
+                linux_distro="$ID"
+                distro_fancy_name="$NAME"
+                # Some rolling-release distros (eg. Arch Linux) have
+                # no VERSION_ID here, so don't count on it unconditionally.
+                case "$linux_distro" in
+                    rhel|centos)
+                        os_version_raw="$VERSION_ID"
+                        check_os_version "Red Hat Enterprise Linux" 7 \
+                            "$os_version_raw" os_version_chevah
+                        set_os_if_not_generic "rhel" $os_version_chevah
+                        if [ "$os_version_chevah" -eq 7 ]; then
+                            if openssl version | grep -F -q "1.0.1"; then
+                                # 7.0-7.3 has OpenSSL 1.0.1, use generic build.
+                                check_linux_glibc
+                            fi
+                        fi
+                        ;;
+                    amzn)
+                        os_version_raw="$VERSION_ID"
+                        check_os_version "$distro_fancy_name" 2 \
+                            "$os_version_raw" os_version_chevah
+                        set_os_if_not_generic "amzn" $os_version_chevah
+                        ;;
+                    sles)
+                        os_version_raw="$VERSION_ID"
+                        check_os_version "SUSE Linux Enterprise Server" 11 \
+                            "$os_version_raw" os_version_chevah
+                        # SLES 11 has OpenSSL 0.9.8, Security Module adds 1.0.1,
+                        # so we use generic builds with included OpenSSL libs.
+                        if [ "$os_version_chevah" -eq 11 ]; then
+                            # We support this, so no need for check_linux_glibc,
+                            # As it has oldest glibc version among our slaves,
+                            # we use it for building generic Linux runtimes.
+                            OS="lnx"
+                        fi
+                        set_os_if_not_generic "sles" $os_version_chevah
+                        ;;
+                    ubuntu|ubuntu-core)
+                        os_version_raw="$VERSION_ID"
+                        # 12.04/14.04 have OpenSSL 1.0.1, use generic Linux.
+                        check_os_version "$distro_fancy_name" 16.04 \
+                            "$os_version_raw" os_version_chevah
+                        # Only LTS versions are supported. If it doesn't end in
+                        # 04 or first two digits are uneven, use generic build.
+                        if [ ${os_version_chevah%%04} == ${os_version_chevah} \
+                            -o $(( ${os_version_chevah:0:2} % 2 )) -ne 0 ]; then
+                            check_linux_glibc
+                        fi
+                        set_os_if_not_generic "ubuntu" $os_version_chevah
+                        ;;
+                    debian)
+                        os_version_raw="$VERSION_ID"
+                        # Debian 7/8 have OpenSSL 1.0.1, use generic Linux.
+                        check_os_version "$distro_fancy_name" 9 \
+                            "$os_version_raw" os_version_chevah
+                        set_os_if_not_generic "debian" $os_version_chevah
+                        ;;
+                    alpine)
+                        os_version_raw="$VERSION_ID"
+                        check_os_version "$distro_fancy_name" 3.6 \
+                            "$os_version_raw" os_version_chevah
+                        set_os_if_not_generic "alpine" $os_version_chevah
+                        ;;
+                    *)
+                        # Unsupported modern distros, such as Arch Linux.
+                        check_linux_glibc
+                        ;;
+                esac
             fi
-        # Solaris 11 releases prior to 11.4 were bundled with OpenSSL libraries
-        # missing support for Elliptic-curve crypto. From here on:
-        #     * Solaris 11.4 (or newer) with OpenSSL 1.0.2 is "solaris11".
-        #     * Solaris 11.2/11.3 with OpenSSL 1.0.1 is "solaris112".
-        #     * Solaris 11.0/11.1 with OpenSSL 1.0.0 is not supported.
-        elif [ "${OS}" = "solaris11" ]; then
-            minor_version=$(uname -v | cut -d'.' -f2)
-            if [ "$minor_version" -lt 4 ]; then
-                OS="solaris112"
+            ;;
+        Darwin)
+            ARCH=$(uname -m)
+            os_version_raw=$(sw_vers -productVersion)
+            check_os_version "Mac OS X" 10.8 "$os_version_raw" os_version_chevah
+            if [ ${os_version_chevah:0:2} -eq 10 -a \
+                ${os_version_chevah:2:2} -ge 13 ]; then
+                # For macOS 10.13 or newer we use 'macos'.
+                OS="macos"
+            elif [ ${os_version_chevah:0:2} -eq 10 -a \
+                ${os_version_chevah:2:2} -ge 8 ]; then
+                # For macOS 10.12 and OS X 10.8-10.11 we use 'osx'.
+                OS="osx"
+            else
+                (>&2 echo "Unsupported Mac OS X version: $os_version_raw.")
+                exit 17
             fi
-        fi
-
-    elif [ "${OS}" = "aix" ]; then
-
-        ARCH="ppc$(getconf HARDWARE_BITMODE)"
-        os_version_raw=$(oslevel)
-        check_os_version AIX 5.3 "$os_version_raw" os_version_chevah
-
-        OS="aix${os_version_chevah}"
-
-    elif [ "${OS}" = "hp-ux" ]; then
-
-        ARCH=$(uname -m)
-        os_version_raw=$(uname -r | cut -d'.' -f2-)
-        check_os_version HP-UX 11.31 "$os_version_raw" os_version_chevah
-
-        OS="hpux${os_version_chevah}"
-
-    elif [ "${OS}" = "linux" ]; then
-
-        ARCH=$(uname -m)
-
-        if [ -f /etc/redhat-release ]; then
-            # Avoid getting confused by Red Hat derivatives such as Fedora.
-            if egrep -q 'Red\ Hat|CentOS|Scientific' /etc/redhat-release; then
-                os_version_raw=$(\
-                    cat /etc/redhat-release | sed s/.*release// | cut -d' ' -f2)
-                check_os_version "Red Hat Enterprise Linux" 5 \
-                    "$os_version_raw" os_version_chevah
-                # RHEL 7.4 and newer have OpenSSL 1.0.2, while 7.3 and older
-                # have version 1.0.1. Thus for the older RHEL 7 versions we use
-                # a separate OS signature, to make use of a dedicated Python
-                # package.
-                if [ "$os_version_chevah" -eq 7 ]; then
-                    if openssl version | grep -F -q "1.0.1"; then
-                        # We are on 1.0.1 which is pre RHEL 7.4
-                        os_version_chevah=7openssl101
+            ;;
+        FreeBSD)
+            ARCH=$(uname -m)
+            os_version_raw=$(uname -r | cut -d'.' -f1)
+            check_os_version "FreeBSD" 11 "$os_version_raw" os_version_chevah
+            OS="fbsd${os_version_chevah}"
+            ;;
+        OpenBSD)
+            ARCH=$(uname -m)
+            os_version_raw=$(uname -r)
+            check_os_version "OpenBSD" 6.5 "$os_version_raw" os_version_chevah
+            OS="obsd${os_version_chevah}"
+            ;;
+        SunOS)
+            ARCH=$(isainfo -n)
+            os_version_raw=$(uname -r | cut -d'.' -f2)
+            check_os_version Solaris 10 "$os_version_raw" os_version_chevah
+            OS="sol${os_version_chevah}"
+            case "$OS" in
+                sol10)
+                    # Solaris 10u8 (from 10/09) updated libc version, so for
+                    # older releases up to 10u7 (from 5/09) we build on 10u3.
+                    # The "sol10u3" code path also shows the way to link to
+                    # OpenSSL 0.9.7 libs bundled in /usr/sfw/ with Solaris 10.
+                    # Update number is taken from first line of /etc/release.
+                    un=$(head -1 /etc/release | cut -d_ -f2 | sed s/[^0-9]*//g)
+                    if [ "$un" -lt 8 ]; then
+                        OS="sol10u3"
                     fi
-                fi
-                OS="rhel${os_version_chevah}"
-            fi
-        elif [ -f /etc/SuSE-release ]; then
-            # Avoid getting confused by SUSE derivatives such as OpenSUSE.
-            if [ $(head -n1 /etc/SuSE-release | cut -d' ' -f1) = 'SUSE' ]; then
-                os_version_raw=$(\
-                    grep VERSION /etc/SuSE-release | cut -d' ' -f3)
-                check_os_version "SUSE Linux Enterprise Server" 10 \
-                    "$os_version_raw" os_version_chevah
-                OS="sles${os_version_chevah}"
-            fi
-        elif [ -f /etc/os-release ]; then
-            source /etc/os-release
-            linux_distro="$ID"
-            distro_fancy_name="$NAME"
-            case "$linux_distro" in
-                "ubuntu"|"ubuntu-core")
-                    os_version_raw="$VERSION_ID"
-                    check_os_version "$distro_fancy_name" 14.04 \
-                        "$os_version_raw" os_version_chevah
-                    # Only Long-term Support versions are supported,
-                    # thus $os_version_chevah should end in 04,
-                    # and the first two digits should represent an even year.
-                    if [ ${os_version_chevah%%04} != ${os_version_chevah} -a \
-                        $(( ${os_version_chevah%%04} % 2 )) -eq 0 ]; then
-                        OS="ubuntu${os_version_chevah}"
-                    else
-                        echo "Unsupported Ubuntu, please try a LTS version!"
-                        exit 16
+                    ;;
+                sol11)
+                    # Solaris 11 releases prior to 11.4 bundled OpenSSL libs
+                    # missing support for Elliptic-curve crypto. From here on:
+                    #   * Solaris 11.4 (or newer) with OpenSSL 1.0.2 is "sol11",
+                    #   * Solaris 11.2/11.3 with OpenSSL 1.0.1 is "sol112",
+                    #   * Solaris 11.0/11.1 with OpenSSL 1.0.0 is not supported.
+                    minor_version=$(uname -v | cut -d'.' -f2)
+                    if [ "$minor_version" -lt 4 ]; then
+                        OS="sol112"
                     fi
-                    ;;
-                "debian")
-                    os_version_raw="$VERSION_ID"
-                    check_os_version "$distro_fancy_name" 7 \
-                        "$os_version_raw" os_version_chevah
-                    OS="debian${os_version_chevah}"
-                    ;;
-                "raspbian")
-                    os_version_raw="$VERSION_ID"
-                    check_os_version "$distro_fancy_name" 7 \
-                        "$os_version_raw" os_version_chevah
-                    OS="raspbian${os_version_chevah}"
-                    ;;
-                "alpine")
-                    os_version_raw="$VERSION_ID"
-                    check_os_version "$distro_fancy_name" 3.6 \
-                        "$os_version_raw" os_version_chevah
-                    OS="alpine${os_version_chevah}"
-                    ;;
-                "arch")
-                    # Arch Linux is a rolling distro, no version info available.
-                    OS="archlinux"
-                    ;;
-                "amzn")
-                    os_version_raw="$VERSION_ID"
-                    check_os_version "$distro_fancy_name" 2 \
-                        "$os_version_raw" os_version_chevah
-                    OS="amazon${os_version_chevah}"
-                    ;;
-                *)
-                    echo "Unsupported Linux distribution: $distro_fancy_name."
-                    exit 15
                     ;;
             esac
-        fi
-    elif [ "${OS}" = "darwin" ]; then
-        ARCH=$(uname -m)
-
-        os_version_raw=$(sw_vers -productVersion)
-        check_os_version "Mac OS X" 10.8 "$os_version_raw" os_version_chevah
-
-        if [ ${os_version_chevah:0:2} -eq 10 -a \
-            ${os_version_chevah:2:2} -ge 13 ]; then
-            # For macOS 10.13 or newer we use 'macos'.
-            OS="macos"
-        elif [ ${os_version_chevah:0:2} -eq 10 -a \
-            ${os_version_chevah:2:2} -ge 8 ]; then
-            # For macOS 10.12 and OS X 10.8-10.11 we use 'osx'.
-            OS="osx"
-        else
-            echo "Unsupported Mac OS X version: $os_version_raw."
-            exit 17
-        fi
-
-
-    elif [ "${OS}" = "freebsd" ]; then
-        ARCH=$(uname -m)
-
-        os_version_raw=$(uname -r | cut -d'.' -f1)
-        check_os_version "FreeBSD" 10 "$os_version_raw" os_version_chevah
-
-        OS="freebsd${os_version_chevah}"
-
-    elif [ "${OS}" = "openbsd" ]; then
-        ARCH=$(uname -m)
-
-        os_version_raw=$(uname -r)
-        check_os_version "OpenBSD" 5.9 "$os_version_raw" os_version_chevah
-        OS="openbsd${os_version_chevah}"
-
-    elif [ "${OS}" = "netbsd" ]; then
-        ARCH=$(uname -m)
-
-        os_version_raw=$(uname -r | cut -d'.' -f1)
-        check_os_version "NetBSD" 7 "$os_version_raw" os_version_chevah
-
-        # For now, no matter the actual NetBSD version returned, we use '7'.
-        OS="netbsd7"
-
-    else
-        echo 'Unsupported operating system:' $OS
-        exit 14
-    fi
+            ;;
+        AIX)
+            ARCH="ppc$(getconf HARDWARE_BITMODE)"
+            os_version_raw=$(oslevel)
+            check_os_version AIX 5.3 "$os_version_raw" os_version_chevah
+            OS="aix${os_version_chevah}"
+            ;;
+        HP-UX)
+            ARCH=$(uname -m)
+            os_version_raw=$(uname -r | cut -d'.' -f2-)
+            check_os_version HP-UX 11.31 "$os_version_raw" os_version_chevah
+            OS="hpux${os_version_chevah}"
+            ;;
+        *)
+            (>&2 echo "Unsupported operating system: ${OS}.")
+            exit 14
+    esac
 
     # Normalize arch names. Force 32bit builds on some OS'es.
     case "$ARCH" in
@@ -735,6 +775,13 @@ detect_os() {
             ;;
         "amd64"|"x86_64")
             ARCH="x64"
+            case "$OS" in
+                win|sol10)
+                    # On Windows, only 32bit builds are currently supported.
+                    # On Solaris 10, x64 built fine prior to adding "bcrypt".
+                    ARCH="x86"
+                    ;;
+            esac
             ;;
         "aarch64")
             ARCH="arm64"

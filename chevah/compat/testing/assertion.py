@@ -30,14 +30,16 @@ class Contains(object):
     """
     Marker class used in tests when something needs to contain a value.
     """
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, *value):
+        self._values = value
 
     def __eq__(self, other):
-        return self.value in other
+        for value in self._values:
+            if value not in other:
+                return False
 
     def __hash__(self):  # noqa:cover
-        return hash(self.value)
+        return hash(self._value[0])
 
 
 class AssertionMixin(object):
@@ -46,8 +48,6 @@ class AssertionMixin(object):
 
     The assertions from here should not overwrite anything.
     """
-
-    Contains = Contains
 
     @classmethod
     def assertTempIsClean(cls):
@@ -133,39 +133,6 @@ class AssertionMixin(object):
             message = u'Failure %s is not of type %s' % (
                 text_type(failure), failure_class)
             raise AssertionError(message.encode('utf-8'))
-
-    def _checkData(self, kind, kind_id, expected_data, current_data):
-        """
-        Helper for sharing same code between various data checkers.
-        """
-        for key, value in expected_data.items():
-            try:
-                current_value = current_data[key]
-
-                if isinstance(value, Contains):
-                    if value.value not in current_value:
-                        message = (
-                            u'%s %s, for data "%s" does not contains "%s", '
-                            u'but is "%s"') % (
-                            kind, text_type(kind_id), key, value.value,
-                            current_value)
-                        raise AssertionError(message.encode('utf-8'))
-                else:
-                    if value != current_value:
-                        message = (
-                            u'%s %s, for data "%s" is not "%s", but "%s"') % (
-                            kind,
-                            text_type(kind_id),
-                            key,
-                            repr(value),
-                            repr(current_value),
-                            )
-                        raise AssertionError(message.encode('utf-8'))
-            except KeyError:  # noqa:cover
-                values = (
-                    kind, text_type(kind_id), repr(key), repr(current_data))
-                message = u'%s %s, has no data "%s". Data is:\n%s' % values
-                raise AssertionError(message.encode('utf-8'))
 
     def assertIsEmpty(self, target):
         """

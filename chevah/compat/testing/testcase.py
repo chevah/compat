@@ -40,7 +40,7 @@ from chevah.compat import (
     SuperAvatar,
     )
 from chevah.compat.administration import os_administration
-from chevah.compat.testing.assertion import AssertionMixin, Contains
+from chevah.compat.testing.assertion import AssertionMixin
 from chevah.compat.testing.mockup import mk
 from chevah.compat.testing.constant import (
     TEST_NAME_MARKER,
@@ -893,14 +893,15 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     os_version = _get_os_version()
     cpu_type = process_capabilities.cpu_type
 
-    # List of thread names to ignore during the tearDown.
+    # List of partial thread names to ignore during the tearDown.
+    # No need for the full thread name
     excepted_threads = [
         'MainThread',
         'threaded_reactor',
         'GlobalPool-WorkerHandler',
         'GlobalPool-TaskHandler',
         'GlobalPool-ResultHandler',
-        Contains('PoolThread-twisted.internet.reactor'),
+        'PoolThread-twisted.internet.reactor',
         ]
 
     # We assume that hostname does not change during test and this
@@ -930,7 +931,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             # an exception here.
             for thread in threads:
                 thread_name = thread.getName()
-                if thread_name in self.excepted_threads:
+                if self._isExceptedThread(thread_name):
                     continue
 
                 raise AssertionError(
@@ -939,6 +940,19 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
                         thread_name, threads))
 
         super(ChevahTestCase, self).tearDown()
+
+    def _isExceptedThread(self, name):
+        """
+        Return `True` if is OK for thread to exist after test is done.
+        """
+        for exception in self.excepted_threads:
+            if name in exception:
+                return True
+
+            if exception in name:
+                return True
+
+        return False
 
     def addCleanup(self, function, *args, **kwargs):
         """

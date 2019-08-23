@@ -7,6 +7,7 @@ This is needed since on Unix the tests are executed using sudo.
 
 It is also used to trigger coverage reporting.
 """
+from __future__ import absolute_import, print_function
 import os
 import sys
 
@@ -15,7 +16,7 @@ if have_coverage:
     import coverage
     cov = coverage.Coverage(auto_data=True, config_file='.coveragerc')
     cov.start()
-    print 'Coverage reporting started.'
+    print('Coverage reporting started.')
 else:
     cov = None
 
@@ -57,18 +58,18 @@ def main():
         ]
     try:
         nose_main(addplugins=plugins)
-    except SystemExit, error:
+    except SystemExit as error:
         if cov:
             cov.stop()
             cov.save()
         import threading
-        print "Max RSS: %s" % ChevahTestCase.getPeakMemoryUsage()
+        print("Max RSS: %s" % ChevahTestCase.getPeakMemoryUsage())
         threads = threading.enumerate()
         if len(threads) < 2:
             # No running threads, other than main so we can exit as normal.
             sys.exit(error.code)
         else:
-            print "There are still active threads: %s" % threads
+            print("There are still active threads: %s" % threads)
 
             # We do a brute force exit here, since sys.exit will wait for
             # unjoined threads.
