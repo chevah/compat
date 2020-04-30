@@ -138,8 +138,8 @@ class LocalTestFilesystem(LocalFilesystem):
         """
         Write content into file replacing existing content.
         """
-        opened_file = self.openFileForWriting(segments, utf8=True)
-        opened_file.write(content)
+        opened_file = self.openFileForWriting(segments)
+        opened_file.write(content.encode('utf-8'))
         opened_file.close()
 
     def _makeFilename(self, prefix=u'', suffix=u''):
@@ -161,7 +161,7 @@ class LocalTestFilesystem(LocalFilesystem):
         path = os.path.join(self.temp_path, name)
         return (path, segments)
 
-    def pathInTemp(self, cleanup):
+    def pathInTemp(self, cleanup, prefix=u'', suffix=u''):
         """
         Return a path and segments pointing to a temp location, which will be
         cleaned up.
@@ -364,9 +364,13 @@ class LocalTestFilesystem(LocalFilesystem):
 
         By default, the content is returned as Unicode.
         """
-        opened_file = self.openFileForReading(segments, utf8=utf8)
+        opened_file = self.openFileForReading(segments)
         result = opened_file.read()
         opened_file.close()
+
+        if utf8:
+            return result.decode('utf-8')
+
         return result
 
     def getFileLines(self, segments, utf8=True):
@@ -375,11 +379,14 @@ class LocalTestFilesystem(LocalFilesystem):
 
         By default, the content is returned as Unicode.
         """
-        opened_file = self.openFileForReading(segments, utf8=utf8)
+        opened_file = self.openFileForReading(segments)
         content = []
         try:
             for line in opened_file:
-                content.append(line.rstrip())
+                line = line.rstrip()
+                if utf8:
+                    line = line.decode('utf-8')
+                content.append()
         finally:
             opened_file.close()
 
@@ -392,7 +399,7 @@ class LocalTestFilesystem(LocalFilesystem):
         It takes a list for tuples [(pattern1, substitution1), (pat2, sub2)]
         and applies them in order.
         """
-        opened_file = self.openFileForReading(segments, utf8=True)
+        opened_file = self.openFileForReading(segments)
         altered_lines = []
         for line in opened_file:
             new_line = line
@@ -406,7 +413,7 @@ class LocalTestFilesystem(LocalFilesystem):
             altered_lines.append(new_line)
         opened_file.close()
 
-        opened_file = self.openFileForWriting(segments, utf8=True)
+        opened_file = self.openFileForWriting(segments)
         for line in altered_lines:
             opened_file.write(line)
         opened_file.close()

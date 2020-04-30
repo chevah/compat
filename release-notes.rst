@@ -2,6 +2,16 @@ Release notes for chevah.compat
 ===============================
 
 
+0.56.0 - 2020-04-30
+-------------------
+
+* Remove `openFileForUpdating`.
+* Remove `utf8` argument from `openFileForReading`, `openFileForWriting`,
+   and `openFileForAppending`.
+* Add `mode` argument from `openFileForWriting`, and `openFileForAppending`.
+* `DEFAULT_FILE_MODE` was removed.
+
+
 0.55.4 - 22/08/2019
 -------------------
 

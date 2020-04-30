@@ -56,7 +56,7 @@ if os.name == 'nt':
 # These are the hard dependencies needed by the library itself.
 RUN_PACKAGES = [
     'zope.interface==3.8.0',
-    'six==1.12.0',
+    'six==1.14.0',
     ]
 
 if os.name == 'posix':

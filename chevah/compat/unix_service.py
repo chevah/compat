@@ -83,7 +83,8 @@ class Daemon(object):
         pid_path = os.path.abspath(self.options.pid)
         pid_segments = local_filesystem.getSegmentsFromRealPath(pid_path)
         try:
-            pid_file = local_filesystem.openFileForWriting(pid_segments)
+            pid_file = local_filesystem.openFileForWriting(
+                pid_segments, mode=0o640)
             pid_file.write('%d' % os.getpid())
             pid_file.close()
         except (OSError, IOError):

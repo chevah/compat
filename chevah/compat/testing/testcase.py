@@ -356,9 +356,12 @@ class TwistedTestCase(TestCase):
                     continue
                 raise_failure('delayed calls', delayed_str)
 
-    def runDeferred(
+    def _runDeferred(
             self, deferred, timeout=None, debug=False, prevent_stop=False):
         """
+        This is low level method. In most tests you would like to use
+        `getDeferredFailure` or `getDeferredResult`.
+
         Run the deferred in the reactor loop.
 
         Starts the reactor, waits for deferred execution,
@@ -367,16 +370,13 @@ class TwistedTestCase(TestCase):
         This will do recursive calls, in case the original deferred returns
         another deferred.
 
-        This is low level method. In most tests you would like to use
-        `getDeferredFailure` or `getDeferredResult`.
-
         Usage::
 
             checker = mk.credentialsChecker()
             credentials = mk.credentials()
 
             deferred = checker.requestAvatarId(credentials)
-            self.runDeferred(deferred)
+            self._runDeferred(deferred)
 
             self.assertIsNotFailure(deferred)
             self.assertEqual('something', deferred.result)
@@ -389,12 +389,12 @@ class TwistedTestCase(TestCase):
 
         try:
             self._initiateTestReactor(timeout=timeout)
-            self._runDeferred(deferred, timeout, debug=debug)
+            self._executeDeferred(deferred, timeout, debug=debug)
         finally:
             self._shutdownTestReactor(
                 prevent_stop=prevent_stop)
 
-    def _runDeferred(self, deferred, timeout, debug):
+    def _executeDeferred(self, deferred, timeout, debug):
         """
         Does the actual deferred execution.
         """
@@ -411,7 +411,7 @@ class TwistedTestCase(TestCase):
         # Check executing all deferred from chained callbacks.
         result = deferred.result
         while isinstance(result, Deferred):
-            self._runDeferred(result, timeout=timeout, debug=debug)
+            self._executeDeferred(result, timeout=timeout, debug=debug)
             result = deferred.result
 
     def executeReactor(self, timeout=None, debug=False, run_once=False):
@@ -622,7 +622,7 @@ class TwistedTestCase(TestCase):
 
             self.assertFailureType(AuthenticationError, failure)
         """
-        self.runDeferred(
+        self._runDeferred(
             deferred,
             timeout=timeout,
             debug=debug,
@@ -770,7 +770,7 @@ class TwistedTestCase(TestCase):
 
             self.assertEqual('something', result)
         """
-        self.runDeferred(
+        self._runDeferred(
             deferred,
             timeout=timeout,
             debug=debug,
@@ -1259,6 +1259,14 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         """
         return mk.fs.makePathInTemp(prefix=prefix, suffix=suffix)
 
+    def tempPathCleanup(self, prefix='', suffix=''):
+        """
+        Return (path, segments) for a path which is not created yet but which
+        will be automatically removed.
+        """
+        return mk.fs.pathInTemp(
+            cleanup=self.addCleanup, prefix=prefix, suffix=suffix)
+
     def tempFile(self, content='', prefix='', suffix='', cleanup=True):
         """
         Return (path, segments) for a new file created in temp which is
@@ -1271,7 +1279,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             self.addCleanup(mk.fs.deleteFile, segments)
 
         try:
-            opened_file = mk.fs.openFileForWriting(segments, utf8=False)
+            opened_file = mk.fs.openFileForWriting(segments)
             opened_file.write(content)
         finally:
             opened_file.close()
@@ -1286,7 +1294,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         segments = mk.fs.createFolderInTemp(
             foldername=name, prefix=prefix, suffix=suffix)
         path = mk.fs.getRealPathFromSegments(segments)
-        self.addCleanup(mk.fs.deleteFolder, segments)
+        self.addCleanup(mk.fs.deleteFolder, segments, recursive=True)
         return (path, segments)
 
 

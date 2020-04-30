@@ -42,7 +42,7 @@ class TestTwistedTestCase(ChevahTestCase):
         delayed_call = scheduler.callLater(0, lambda: None)  # pragma: no cover
 
         with self.assertRaises(AssertionError) as context:
-            self.runDeferred(delayed_call)
+            self._runDeferred(delayed_call)
 
         self.assertEqual(
             'This is not a deferred.', context.exception.args[0])
@@ -55,7 +55,7 @@ class TestTwistedTestCase(ChevahTestCase):
         deferred = defer.Deferred()
 
         with self.assertRaises(AssertionError) as context:
-            self.runDeferred(deferred, timeout=0)
+            self._runDeferred(deferred, timeout=0)
 
         self.assertEqual(
             'Deferred took more than 0 to execute.',
@@ -75,7 +75,7 @@ class TestTwistedTestCase(ChevahTestCase):
         deferred = defer.Deferred()
 
         with self.assertRaises(AssertionError) as context:
-            self.runDeferred(deferred)
+            self._runDeferred(deferred)
 
         self.assertEqual(
             'Deferred took more than 0 to execute.',
@@ -94,7 +94,7 @@ class TestTwistedTestCase(ChevahTestCase):
         deferred = defer.Deferred()
         reactor.callLater(0.001, lambda d: d.callback('ok'), deferred)
 
-        self.runDeferred(deferred, timeout=0.3)
+        self._runDeferred(deferred, timeout=0.3)
 
         self.assertEqual('ok', deferred.result)
 
@@ -118,7 +118,7 @@ class TestTwistedTestCase(ChevahTestCase):
             0.002, lambda d: d.callback('three'), three_deferred)
         reactor.callLater(0.003, lambda d: d.callback('four'), four_deferred)
 
-        self.runDeferred(deferred, timeout=0.3)
+        self._runDeferred(deferred, timeout=0.3)
 
         self.assertEqual('four', deferred.result)
 
@@ -134,7 +134,7 @@ class TestTwistedTestCase(ChevahTestCase):
         self.assertIsNotNone(threadpool)
         self.assertIsNotNone(reactor.threadpool)
 
-        self.runDeferred(deferred, timeout=0.3)
+        self._runDeferred(deferred, timeout=0.3)
 
         self.assertIsTrue(deferred.result)
         self.assertIsNone(reactor.threadpool)
@@ -154,7 +154,7 @@ class TestTwistedTestCase(ChevahTestCase):
         initial_pool = reactor.getThreadPool()
 
         with self.patchObject(reactor, 'stop') as mock_stop:
-            self.runDeferred(deferred, timeout=0.3, prevent_stop=True)
+            self._runDeferred(deferred, timeout=0.3, prevent_stop=True)
 
         # reactor.stop() is not called
         self.assertIsFalse(mock_stop.called)
@@ -165,7 +165,7 @@ class TestTwistedTestCase(ChevahTestCase):
 
         # Run again and we should still have the same pool.
         with self.patchObject(reactor, 'startRunning') as mock_start:
-            self.runDeferred(
+            self._runDeferred(
                 defer.succeed(True), timeout=0.3, prevent_stop=True)
 
         # reactor.start() is not called if reactor was not previously
@@ -174,7 +174,7 @@ class TestTwistedTestCase(ChevahTestCase):
         self.assertIs(initial_pool, reactor.threadpool)
 
         # Run again but this time call reactor.stop.
-        self.runDeferred(
+        self._runDeferred(
             defer.succeed(True), timeout=0.3, prevent_stop=False)
 
         self.assertIsFalse(reactor._started)

@@ -67,13 +67,6 @@ class TestDaemon(CompatTestCase):
             raise cls.skipTest()
         super(TestDaemon, cls).setUpClass()
 
-    def getPIDPath(self):
-        """
-        Return path to a pid file.
-        """
-        (path, _) = mk.fs.makePathInTemp()
-        return path
-
     def test_init(self):
         """
         Check initialization.
@@ -91,7 +84,7 @@ class TestDaemon(CompatTestCase):
         When preserve_standard_streams is set, the new daemon will
         inherit the standard stream.
         """
-        pid_path = self.getPIDPath()
+        pid_path, _ = mk.fs.makePathInTemp()
         options = self.Bunch(pid=pid_path)
         daemon = DaemonImplementation(options=options)
         daemon.preserve_standard_streams = True
@@ -107,7 +100,7 @@ class TestDaemon(CompatTestCase):
         When preserve_standard_streams is not set, the new daemon will use
         a dedicated set of standard streams.
         """
-        pid_path = self.getPIDPath()
+        pid_path, _ = mk.fs.makePathInTemp()
         options = self.Bunch(pid=pid_path)
         daemon = DaemonImplementation(options=options)
         daemon.preserve_standard_streams = False
@@ -123,7 +116,7 @@ class TestDaemon(CompatTestCase):
         At launch, detach_process is copied to the internal DaemonContext
         instance.
         """
-        pid_path = self.getPIDPath()
+        pid_path, _ = mk.fs.makePathInTemp()
         options = self.Bunch(pid=pid_path)
         daemon = DaemonImplementation(options=options)
         daemon.detach_process = object()
@@ -151,7 +144,7 @@ class TestDaemon(CompatTestCase):
         """
         When launching the daemon it will call the `onEVENT` methods.
         """
-        pid_path = self.getPIDPath()
+        pid_path, _ = mk.fs.makePathInTemp()
         options = self.Bunch(pid=pid_path)
         daemon = DaemonImplementation(options=options)
 
@@ -160,3 +153,26 @@ class TestDaemon(CompatTestCase):
         daemon.onInitialize.assert_called_once_with()
         daemon.onStart.assert_called_once_with()
         daemon.onStop.assert_called_once_with(0)
+
+        # PID file is removed on exit.
+        self.assertFalse(mk.fs.exists(
+            mk.fs.getSegmentsFromRealPath(pid_path)))
+
+    def test_launch_pid_permission(self):
+        """
+        When launching the daemon it will call the `onEVENT` methods.
+        """
+        pid_path, _ = self.tempPathCleanup()
+        options = self.Bunch(pid=pid_path)
+        daemon = DaemonImplementation(options=options)
+        daemon._deletePID = lambda: None
+
+        daemon.launch()
+
+        daemon.onInitialize.assert_called_once_with()
+        daemon.onStart.assert_called_once_with()
+        daemon.onStop.assert_called_once_with(0)
+
+        result = mk.fs.getAttributes(
+            mk.fs.getSegmentsFromRealPath(pid_path))
+        self.assertEqual(result.mode | 0o640, result.mode)
