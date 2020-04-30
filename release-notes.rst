@@ -10,6 +10,7 @@ Release notes for chevah.compat
    and `openFileForAppending`.
 * Add `mode` argument from `openFileForWriting`, and `openFileForAppending`.
 * `DEFAULT_FILE_MODE` was removed.
+* The Unix daemon will now delete the PID file on exit.
 
 
 0.55.4 - 22/08/2019
