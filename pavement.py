@@ -72,7 +72,7 @@ if os.name == 'posix':
 # Packages required to use the dev/build system.
 BUILD_PACKAGES = [
     # Buildbot is used for try scheduler
-    'buildbot==0.8.11.c7',
+    'buildbot==0.8.11.chevah11',
 
     # For PQM
     'chevah-github-hooks-server==0.1.6',
@@ -111,7 +111,7 @@ BUILD_PACKAGES = [
     'remote_pdb==1.2.0',
 
     # Twisted is optionl, but we have it here for complete tests.
-    'twisted==15.5.0.chevah4',
+    'twisted==15.5.0.chevah7',
 
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
