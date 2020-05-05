@@ -181,6 +181,7 @@ try:
     options.scope = {
         'include': [
             'pavement.py',
+            'example/',
             'README.rst',
             'chevah/compat/',
             ],
@@ -201,6 +202,7 @@ try:
     options.bandit['enabled'] = True
     options.bandit['exclude'] = [
         'B104',  # Bind to 0.0.0.0
+        'B108',  # Hardcoded /tmp usage.
         ]
 
     # For now pylint is disabled, as there are to many errors.
