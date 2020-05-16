@@ -1085,15 +1085,6 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         cls.cleanTemporaryFolder()
 
     @classmethod
-    def haveSuperPowers(cls):
-        '''Return true if we can access privileged OS operations.'''
-        if os.name == 'posix' and cls._drop_user == '-':
-            return False
-        if not process_capabilities.impersonate_local_account:
-            return False
-        return True
-
-    @classmethod
     def dropPrivileges(cls):
         '''Drop privileges to normal users.'''
         if cls._drop_user == '-':

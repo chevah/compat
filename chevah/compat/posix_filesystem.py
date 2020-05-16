@@ -31,9 +31,6 @@ except ImportError:
 from six import text_type
 from zope.interface import implements
 
-from chevah.compat.constants import (
-    DEFAULT_FOLDER_MODE,
-    )
 from chevah.compat.exceptions import (
     ChangeUserException,
     CompatError,
@@ -43,6 +40,7 @@ from chevah.compat.interfaces import IFileAttributes
 from chevah.compat.helpers import _, NoOpContext
 
 
+_DEFAULT_FOLDER_MODE = 0o777
 _DEFAULT_FILE_MODE = 0o600
 
 
@@ -396,9 +394,9 @@ class PosixFilesystemBase(object):
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
             if recursive:
-                return os.makedirs(path_encoded, DEFAULT_FOLDER_MODE)
+                return os.makedirs(path_encoded, _DEFAULT_FOLDER_MODE)
             else:
-                return os.mkdir(path_encoded, DEFAULT_FOLDER_MODE)
+                return os.mkdir(path_encoded, _DEFAULT_FOLDER_MODE)
 
     def deleteFolder(self, segments, recursive=True):
         """
