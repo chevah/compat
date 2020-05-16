@@ -794,7 +794,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertIsNotNone(attributes.node_id)
 
         if self.os_family == 'posix':
-            self.assertEqual(0o100600, attributes.mode)
+            current_umask = mk.fs._getCurrentUmask()
+            expected_mode = 0o100666 ^ current_umask
+            self.assertEqual(expected_mode, attributes.mode)
 
     def test_getAttributes_folder(self):
         """
