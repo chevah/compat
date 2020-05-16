@@ -96,13 +96,15 @@ class LocalTestFilesystem(LocalFilesystem):
         segments = self.temp_segments
         return self.getRealPathFromSegments(segments)
 
-    def createFile(self, segments, length=0, access_time=None, content=None):
+    def createFile(
+        self, segments, length=0, access_time=None, content=None, mode=0o666,
+            ):
         '''Creates a file.
 
         Raise AssertionError if file already exists or it can not be created.
         '''
         assert not self.isFile(segments), 'File already exists.'
-        new_file = self.openFileForWriting(segments)
+        new_file = self.openFileForWriting(segments, mode=mode)
         if content is None:
             value = 'a'
             content = ''
@@ -372,25 +374,6 @@ class LocalTestFilesystem(LocalFilesystem):
             return result.decode('utf-8')
 
         return result
-
-    def getFileLines(self, segments, utf8=True):
-        """
-        Return a list with all lines from file.
-
-        By default, the content is returned as Unicode.
-        """
-        opened_file = self.openFileForReading(segments)
-        content = []
-        try:
-            for line in opened_file:
-                line = line.rstrip()
-                if utf8:
-                    line = line.decode('utf-8')
-                content.append()
-        finally:
-            opened_file.close()
-
-        return content
 
     def replaceFileContent(self, segments, rules):
         """
