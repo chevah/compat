@@ -2,6 +2,29 @@ Release notes for chevah.compat
 ===============================
 
 
+0.56.2 - 2020-05-18
+-------------------
+
+* Explicitly set permissions after PID file is created.
+
+
+0.56.1 - 2020-05-17
+-------------------
+
+* Fix testing code.
+
+
+0.56.0 - 2020-05-15
+-------------------
+
+* Remove `openFileForUpdating`.
+* Remove `utf8` argument from `openFileForReading`, `openFileForWriting`,
+   and `openFileForAppending`.
+* Add `mode` argument from `openFileForWriting`, and `openFileForAppending`.
+* `DEFAULT_FILE_MODE` was removed.
+* The Unix daemon will now delete the PID file on exit.
+
+
 0.55.4 - 22/08/2019
 -------------------
 

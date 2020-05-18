@@ -56,7 +56,7 @@ if os.name == 'nt':
 # These are the hard dependencies needed by the library itself.
 RUN_PACKAGES = [
     'zope.interface==3.8.0',
-    'six==1.12.0',
+    'six==1.14.0',
     ]
 
 if os.name == 'posix':
@@ -72,7 +72,7 @@ if os.name == 'posix':
 # Packages required to use the dev/build system.
 BUILD_PACKAGES = [
     # Buildbot is used for try scheduler
-    'buildbot==0.8.11.c7',
+    'buildbot==0.8.11.chevah11',
 
     # For PQM
     'chevah-github-hooks-server==0.1.6',
@@ -111,7 +111,7 @@ BUILD_PACKAGES = [
     'remote_pdb==1.2.0',
 
     # Twisted is optionl, but we have it here for complete tests.
-    'twisted==15.5.0.chevah4',
+    'twisted==15.5.0.chevah7',
 
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
@@ -181,6 +181,7 @@ try:
     options.scope = {
         'include': [
             'pavement.py',
+            'example/',
             'README.rst',
             'chevah/compat/',
             ],
@@ -201,6 +202,7 @@ try:
     options.bandit['enabled'] = True
     options.bandit['exclude'] = [
         'B104',  # Bind to 0.0.0.0
+        'B108',  # Hardcoded /tmp usage.
         ]
 
     # For now pylint is disabled, as there are to many errors.

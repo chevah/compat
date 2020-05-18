@@ -9,7 +9,6 @@ from __future__ import division
 from __future__ import absolute_import
 from contextlib import contextmanager
 from datetime import date
-import codecs
 import errno
 import os
 import posixpath
@@ -32,10 +31,6 @@ except ImportError:
 from six import text_type
 from zope.interface import implements
 
-from chevah.compat.constants import (
-    DEFAULT_FILE_MODE,
-    DEFAULT_FOLDER_MODE,
-    )
 from chevah.compat.exceptions import (
     ChangeUserException,
     CompatError,
@@ -43,6 +38,10 @@ from chevah.compat.exceptions import (
     )
 from chevah.compat.interfaces import IFileAttributes
 from chevah.compat.helpers import _, NoOpContext
+
+
+_DEFAULT_FOLDER_MODE = 0o777
+_DEFAULT_FILE_MODE = 0o600
 
 
 class PosixFilesystemBase(object):
@@ -395,9 +394,9 @@ class PosixFilesystemBase(object):
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
             if recursive:
-                return os.makedirs(path_encoded, DEFAULT_FOLDER_MODE)
+                return os.makedirs(path_encoded, _DEFAULT_FOLDER_MODE)
             else:
-                return os.mkdir(path_encoded, DEFAULT_FOLDER_MODE)
+                return os.mkdir(path_encoded, _DEFAULT_FOLDER_MODE)
 
     def deleteFolder(self, segments, recursive=True):
         """
@@ -521,67 +520,39 @@ class PosixFilesystemBase(object):
         with self._convertToOSError(path), self._impersonateUser():
             return os.open(path_encoded, flags, mode)
 
-    def openFileForReading(self, segments, utf8=False):
+    def openFileForReading(self, segments):
         '''See `ILocalFilesystem`.'''
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
         with self._convertToOSError(path), self._impersonateUser():
-            if utf8:
-                return codecs.open(path_encoded, 'r', 'utf-8')
-            else:
-                fd = os.open(
-                    path_encoded,
-                    self.OPEN_READ_ONLY,
-                    DEFAULT_FILE_MODE,
-                    )
-                return os.fdopen(fd, 'rb')
+            fd = os.open(
+                path_encoded,
+                self.OPEN_READ_ONLY,
+                )
+            return os.fdopen(fd, 'rb')
 
-    def openFileForWriting(self, segments, utf8=False):
-        '''See `ILocalFilesystem`.'''
-        path = self.getRealPathFromSegments(segments, include_virtual=False)
-        path_encoded = self.getEncodedPath(path)
-
-        self._requireFile(segments)
-        with self._convertToOSError(path), self._impersonateUser():
-            if utf8:
-                return codecs.open(path_encoded, 'w', 'utf-8')
-            else:
-                fd = os.open(
-                    path_encoded,
-                    (self.OPEN_WRITE_ONLY | self.OPEN_CREATE |
-                        self.OPEN_TRUNCATE),
-                    DEFAULT_FILE_MODE)
-                return os.fdopen(fd, 'wb')
-
-    def openFileForUpdating(self, segments, utf8=False):
+    def openFileForWriting(self, segments, mode=_DEFAULT_FILE_MODE):
         """
         See `ILocalFilesystem`.
+
+        For security reasons, the file is only opened with read/write for
+        owner.
         """
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
         with self._convertToOSError(path), self._impersonateUser():
-            if utf8:
-                # This will also allow reading, but I hope we will
-                # remove this API soon, and we patch the high level API.
-                file = codecs.open(path_encoded, 'r+', 'utf-8')
+            fd = os.open(
+                path_encoded,
+                (self.OPEN_WRITE_ONLY | self.OPEN_CREATE |
+                    self.OPEN_TRUNCATE),
+                mode)
+            return os.fdopen(fd, 'wb')
 
-                def deny_read(size=None):
-                    raise IOError('File not open for reading')
-
-                file.read = deny_read
-                return file
-            else:
-                fd = os.open(
-                    path_encoded,
-                    self.OPEN_WRITE_ONLY,
-                    DEFAULT_FILE_MODE)
-                return os.fdopen(fd, 'wb')
-
-    def openFileForAppending(self, segments, utf8=False):
+    def openFileForAppending(self, segments, mode=_DEFAULT_FILE_MODE):
         '''See `ILocalFilesystem`.'''
         def fail_on_read():
             raise AssertionError(
@@ -591,16 +562,13 @@ class PosixFilesystemBase(object):
 
         self._requireFile(segments)
         with self._convertToOSError(path), self._impersonateUser():
-            if utf8:
-                return codecs.open(path_encoded, 'a+b', 'utf-8')
-            else:
-                fd = os.open(
-                    path_encoded,
-                    (self.OPEN_APPEND | self.OPEN_CREATE |
-                        self.OPEN_WRITE_ONLY),
-                    DEFAULT_FILE_MODE)
-                new_file = os.fdopen(fd, 'ab')
-                return new_file
+            fd = os.open(
+                path_encoded,
+                (self.OPEN_APPEND | self.OPEN_CREATE |
+                    self.OPEN_WRITE_ONLY),
+                mode)
+            new_file = os.fdopen(fd, 'ab')
+            return new_file
 
     def getFileSize(self, segments):
         '''See `ILocalFilesystem`.'''

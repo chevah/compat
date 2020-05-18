@@ -36,12 +36,6 @@ class Daemon(object):
         self.preserve_standard_streams = False
         self.detach_process = True
 
-    def _onStopSignal(self, signum, frame):
-        """
-        Called when SIGINT or SIGTERM are received.
-        """
-        self.onStop(0)
-
     def launch(self):
         """
         See `IDaemon`.
@@ -73,8 +67,16 @@ class Daemon(object):
         with self._daemon_context:
             self._writePID()
             self.onStart()
-            self._deletePID()
-            self.onStop(0)
+            # Under normal operation, we will not reach this point as the
+            # execution is interrupted by the signal handling.
+            self._onStopSignal(None, None)
+
+    def _onStopSignal(self, signum, frame):
+        """
+        Called when SIGINT or SIGTERM are received.
+        """
+        self.onStop(0)
+        self._deletePID()
 
     def _writePID(self):
         """
@@ -83,7 +85,9 @@ class Daemon(object):
         pid_path = os.path.abspath(self.options.pid)
         pid_segments = local_filesystem.getSegmentsFromRealPath(pid_path)
         try:
-            pid_file = local_filesystem.openFileForWriting(pid_segments)
+            pid_file = local_filesystem.openFileForWriting(
+                pid_segments, mode=0o640)
+            local_filesystem.setAttributes(pid_segments, {'mode': 0o640})
             pid_file.write('%d' % os.getpid())
             pid_file.close()
         except (OSError, IOError):

@@ -673,11 +673,11 @@ class OSAdministrationUnix(object):
         temp_segments = segments[:]
         temp_segments[-1] = temp_segments[-1] + '-'
         content = self._getFileContent(segments)
-        opened_file = self.fs.openFileForWriting(temp_segments, utf8=True)
+        opened_file = self.fs.openFileForWriting(temp_segments)
         try:
             for line in content:
-                opened_file.write(line + '\n')
-            opened_file.write(new_line + '\n')
+                opened_file.write((line + '\n').encode('utf-8'))
+            opened_file.write((new_line + '\n').encode('utf-8'))
         finally:
             opened_file.close()
 
@@ -698,8 +698,7 @@ class OSAdministrationUnix(object):
             temp_segments[-1] = temp_segments[-1] + '-'
 
             content = self._getFileContent(segments)
-            opened_file = self.fs.openFileForWriting(
-                temp_segments, utf8=True)
+            opened_file = self.fs.openFileForWriting(temp_segments)
             try:
 
                 for line in content:
@@ -707,7 +706,7 @@ class OSAdministrationUnix(object):
                     if entry_name == name:
                         exists = True
                         continue
-                    opened_file.write(line + '\n')
+                    opened_file.write((line + '\n').encode('utf-8'))
             finally:
                 if opened_file:
                     opened_file.close()
@@ -733,8 +732,7 @@ class OSAdministrationUnix(object):
         temp_segments[-1] = temp_segments[-1] + '-'
 
         content = self._getFileContent(segments)
-        opened_file = self.fs.openFileForWriting(
-            temp_segments, utf8=True)
+        opened_file = self.fs.openFileForWriting(temp_segments)
         try:
             for line in content:
                 fields = line.split(':')
@@ -761,7 +759,7 @@ class OSAdministrationUnix(object):
                 else:
                     new_line = line
 
-                opened_file.write(new_line + '\n')
+                opened_file.write((new_line + '\n').encode('utf-8'))
         finally:
                 opened_file.close()
 
@@ -786,11 +784,11 @@ class OSAdministrationUnix(object):
         """
         Return a list of all lines from file.
         """
-        opened_file = self.fs.openFileForReading(segments, utf8=True)
+        opened_file = self.fs.openFileForReading(segments)
         content = []
         try:
             for line in opened_file:
-                content.append(line.rstrip())
+                content.append(line.rstrip().decode('utf-8'))
         finally:
             opened_file.close()
 

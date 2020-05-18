@@ -474,12 +474,12 @@ class ILocalFilesystem(Interface):
         `flags` and `mode` are used for os.open function.
         """
 
-    def openFileForReading(segments, utf8=False):
+    def openFileForReading(segments):
         """
         Return a file object for reading the file.
         """
 
-    def openFileForWriting(segments, utf8=False):
+    def openFileForWriting(segments, mode='default'):
         """
         Return a file object for writing into the file.
 
@@ -487,15 +487,7 @@ class ILocalFilesystem(Interface):
         File is truncated if it exists.
         """
 
-    def openFileForUpdating(segments, utf8=False):
-        """
-        Return a file object for writing into the file.
-
-        File is not created if it does not exist.
-        File is not truncated if it exists.
-        """
-
-    def openFileForAppending(segments, utf8=False):
+    def openFileForAppending(segments):
         """
         Return a file object for writing at the end a file.
 

@@ -792,6 +792,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertFalse(attributes.is_link)
         self.assertNotEqual(0, attributes.node_id)
         self.assertIsNotNone(attributes.node_id)
+
         if self.os_family == 'posix':
             current_umask = mk.fs._getCurrentUmask()
             expected_mode = 0o100666 ^ current_umask
@@ -1217,13 +1218,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         path = mk.fs.getRealPathFromSegments(self.test_segments)
 
         with self.assertRaises(OSError) as context:
-            self.filesystem.openFileForReading(self.test_segments, utf8=False)
+            self.filesystem.openFileForReading(self.test_segments)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
-
-        with self.assertRaises(OSError) as context:
-            self.filesystem.openFileForReading(self.test_segments, utf8=True)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
@@ -1236,13 +1234,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         path = mk.fs.getRealPathFromSegments(self.test_segments)
 
         with self.assertRaises(OSError) as context:
-            self.filesystem.openFileForWriting(self.test_segments, utf8=False)
+            self.filesystem.openFileForWriting(self.test_segments)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
-
-        with self.assertRaises(OSError) as context:
-            self.filesystem.openFileForWriting(self.test_segments, utf8=True)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
@@ -1256,33 +1251,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForAppending(
-                self.test_segments, utf8=False)
+                self.test_segments)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
-
-        with self.assertRaises(OSError) as context:
-            self.filesystem.openFileForAppending(self.test_segments, utf8=True)
-
-        self.assertEqual(errno.EISDIR, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
-
-    def test_openFileForUpdating_folder(self):
-        """
-        Raise OSError when trying to open a folder as file for updating.
-        """
-        self.test_segments = mk.fs.createFolderInTemp()
-        path = mk.fs.getRealPathFromSegments(self.test_segments)
-
-        with self.assertRaises(OSError) as context:
-            self.filesystem.openFileForUpdating(
-                self.test_segments, utf8=False)
-
-        self.assertEqual(errno.EISDIR, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
-
-        with self.assertRaises(OSError) as context:
-            self.filesystem.openFileForUpdating(self.test_segments, utf8=True)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
@@ -1560,10 +1532,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         a_file = None
         try:
 
-            a_file = self.filesystem.openFileForReading(
-                self.test_segments, utf8=True)
+            a_file = self.filesystem.openFileForReading(self.test_segments)
 
-            self.assertEqual(content, a_file.read())
+            self.assertEqual(content, a_file.read().decode('utf-8'))
         finally:
             if a_file:
                 a_file.close()
@@ -1603,44 +1574,40 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
     def test_openFileForWriting_ascii(self):
         """
         Check opening a file for writing in plain/ascii/str mode.
+
+        It will create the file if it doesn't exists with owner only
+        permisisons.
         """
         content = b'some ascii text'
-        self.test_segments = mk.fs.createFileInTemp(length=0)
-        a_file = None
-        try:
+        _, segments = self.tempPathCleanup()
+        self.assertFalse(mk.fs.exists(segments))
 
-            a_file = self.filesystem.openFileForWriting(self.test_segments)
-            a_file.write(content)
-            a_file.close()
+        sut = self.filesystem.openFileForWriting(segments)
+        sut.write(content)
+        sut.close()
 
-            a_file = self.filesystem.openFileForReading(self.test_segments)
-            test_content = a_file.read()
-            self.assertEqual(test_content, content)
-        finally:
-            if a_file:
-                a_file.close()
+        result = self.filesystem.getAttributes(segments)
+        self.assertEqual(result.mode | 0o600, result.mode)
 
-    def test_openFileForWriting_unicode(self):
+        a_file = self.filesystem.openFileForReading(segments)
+        test_content = a_file.read()
+        a_file.close()
+        self.assertEqual(test_content, content)
+
+    def test_openFileForWriting_mode(self):
         """
-        Check opening a file for writing in Unicode mode.
+        You can specify the file permissions for the newly created file.
         """
-        content = mk.getUniqueString()
-        self.test_segments = mk.fs.createFileInTemp(length=0)
-        a_file = None
-        try:
+        _, segments = self.tempPathCleanup()
 
-            a_file = self.filesystem.openFileForWriting(
-                self.test_segments, utf8=True)
-            a_file.write(content)
-            a_file.close()
+        sut = self.filesystem.openFileForWriting(segments, mode=0o642)
+        self.addCleanup(sut.close)
+        sut.write(b'some data')
 
-            a_file = self.filesystem.openFileForReading(
-                self.test_segments, utf8=True)
-            test_content = a_file.read()
-            self.assertEqual(test_content, content)
-        finally:
-            if a_file:
-                a_file.close()
+        if self.os_family == 'posix':
+            result = self.filesystem.getAttributes(segments)
+            # The umask will overwrite the requested attributes.
+            self.assertEqual(0o640, result.mode & 0o640)
 
     def test_openFileForWriting_no_read(self):
         """
@@ -1669,6 +1636,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         new_content = mk.getUniqueString(50)
         # Create initial content.
         self.test_segments = mk.fs.createFileInTemp(content=content)
+        if self.os_family == 'posix':
+            result = self.filesystem.setAttributes(
+                self.test_segments, {'mode': 0o666})
 
         # Write new content into file.
         test_file = self.filesystem.openFileForWriting(
@@ -1679,117 +1649,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         file_content = mk.fs.getFileContent(self.test_segments)
         self.assertEqual(new_content, file_content)
 
-    def test_openFileForUpdating_non_existing(self):
-        """
-        An error is raised when trying to open a file which does not
-        exists for updating.
-        """
-        path, segments = mk.fs.makePathInTemp()
-
-        expected_path = path
         if self.os_family == 'posix':
-            expected_path = path.encode('utf-8')
-
-        with self.assertRaises(OSError) as context:
-            self.filesystem.openFileForUpdating(segments, utf8=False)
-
-        self.assertEqual(errno.ENOENT, context.exception.errno)
-        self.assertEqual(expected_path, context.exception.filename)
-
-        with self.assertRaises(OSError) as context:
-            self.filesystem.openFileForUpdating(segments, utf8=True)
-
-        self.assertEqual(errno.ENOENT, context.exception.errno)
-        self.assertEqual(expected_path, context.exception.filename)
-
-    def test_openFileForUpdating_existing_binary(self):
-        """
-        When a file is opened for updating the previous content is kept and
-        it will allow writing at arbitrary offsets.
-        """
-        content = b'some existing content'
-        new_content = b'more here'
-        # Create initial content.
-        self.test_segments = mk.fs.createFileInTemp(content=content)
-
-        # Write new content into file.
-        test_file = self.filesystem.openFileForUpdating(
-            self.test_segments, utf8=False)
-        test_file.seek(10, 0)
-        test_file.write(new_content.encode('utf-8'))
-        test_file.close()
-
-        file_content = mk.fs.getFileContent(self.test_segments)
-        self.assertEqual(u'some existmore herent', file_content)
-
-    def test_openFileForUpdating_existing_utf8(self):
-        """
-        When a file is opened for updating the previous content is kept and
-        it will allow writing at arbitrary offsets.
-        """
-        content = b'some existing content'
-        # Snowman Unicode has 3 bytes.
-        new_content = u'more \N{snowman}'
-        # Create initial content.
-        self.test_segments = mk.fs.createFileInTemp(content=content)
-
-        # Write new content into file.
-        test_file = self.filesystem.openFileForUpdating(
-            self.test_segments, utf8=True)
-        test_file.seek(10, 0)
-        test_file.write(new_content)
-        test_file.close()
-
-        file_content = mk.fs.getFileContent(self.test_segments)
-        self.assertEqual(u'some existmore \N{snowman}ent', file_content)
-
-    def test_openFileForUpdating_read_binary(self):
-        """
-        Will not allow reading the file.
-        """
-        content = b'some existing content'
-        # Create initial content.
-        self.test_segments = mk.fs.createFileInTemp(content=content)
-
-        # Write new content into file.
-        test_file = self.filesystem.openFileForUpdating(
-            self.test_segments, utf8=False)
-        test_file.seek(10, 0)
-        with self.assertRaises(IOError) as context:
-            test_file.read()
-
-        error_message = context.exception.args[0]
-        self.assertEqual(b'File not open for reading', error_message)
-
-        # Even if we go for the low level FD, we can't read it.
-        with self.assertRaises(OSError) as context:
-            os.read(test_file.fileno(), 1)
-
-        test_file.close()
-
-    def test_openFileForUpdating_read_utf8(self):
-        """
-        Will not allow reading the file.
-        """
-        content = b'some existing content'
-        # Create initial content.
-        self.test_segments = mk.fs.createFileInTemp(content=content)
-
-        # Write new content into file.
-        test_file = self.filesystem.openFileForUpdating(
-            self.test_segments, utf8=True)
-        test_file.seek(10, 0)
-        with self.assertRaises(IOError) as context:
-            test_file.read()
-
-        error_message = context.exception.args[0]
-        self.assertEqual(b'File not open for reading', error_message)
-
-        # We can read it if we go to the low level API.
-        # This is a known issue.
-        os.read(test_file.fileno(), 1)
-
-        test_file.close()
+            # It will not overwrite the permissions for existing files.
+            result = self.filesystem.getAttributes(self.test_segments)
+            self.assertEqual(0o666, result.mode & 0o666)
 
     def test_openFileForAppending(self):
         """
@@ -1798,21 +1661,51 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         content = mk.getUniqueString()
         new_content = mk.getUniqueString()
         self.test_segments = mk.fs.createFileInTemp(content=content)
+
+        if self.os_family == 'posix':
+            result = self.filesystem.setAttributes(
+                self.test_segments, {'mode': 0o666})
+
         a_file = None
         try:
             a_file = self.filesystem.openFileForAppending(
-                self.test_segments, utf8=True)
+                self.test_segments)
 
-            a_file.write(new_content)
+            a_file.write(new_content.encode('utf-8'))
             a_file.close()
 
             a_file = self.filesystem.openFileForReading(
-                self.test_segments, utf8=True)
-            new_test_content = a_file.read()
+                self.test_segments)
+            new_test_content = a_file.read().decode('utf-8')
             self.assertEqual(new_test_content, content + new_content)
         finally:
             if a_file:
                 a_file.close()
+
+        if self.os_family == 'posix':
+            # It will not overwrite the permissions for existing files.
+            result = self.filesystem.getAttributes(self.test_segments)
+            self.assertEqual(0o666, result.mode & 0o666)
+
+    def test_openFileForAppending_mode(self):
+        """
+        You can specify the file permissions used to create a new file
+        if doesn't exists.
+        """
+        _, segments = self.tempPathCleanup()
+
+        sut = self.filesystem.openFileForAppending(segments, mode=0o642)
+        sut.write(b'some data')
+        sut.close()
+
+        a_file = self.filesystem.openFileForReading(segments)
+        new_test_content = a_file.read()
+        self.assertEqual(b'some data', new_test_content)
+
+        if self.os_family == 'posix':
+            result = self.filesystem.getAttributes(segments)
+            # The umask will overwrite the requested attributes.
+            self.assertEqual(0o640, result.mode & 0o640)
 
     def test_openFileForReading_ascii(self):
         """
@@ -2691,7 +2584,7 @@ class TestLocalFilesystemLockedUNC(CompatTestCase, FilesystemTestMixin):
         outside_segments = ['c', 'temp', name]
         a_file = None
         try:
-            a_file = self.filesystem.openFileForWriting([name], utf8=False)
+            a_file = self.filesystem.openFileForWriting([name])
             self.addCleanup(mk.fs.deleteFile, outside_segments)
             a_file.write(content.encode('utf-8'))
         finally:
@@ -3743,35 +3636,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result.write(b'56789')
         result.close()
         self.assertEqual(u'123456789', mk.fs.getFileContent(segments))
-
-    def test_openFileForUpdating_virtual(self):
-        """
-        It can't open file to virtual paths or its parents, but can open
-        files inside the virtual root.
-        """
-        _, segments = self.tempFile(content=b'1234')
-        sut = self.getFilesystem(virtual_folders=[
-            (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path)
-            ])
-
-        with self.assertRaises(CompatError) as context:
-            sut.openFileForUpdating(['virtual-\N{cloud}', 'base\N{sun}'])
-        self.assertEqual(1007, context.exception.event_id)
-
-        with self.assertRaises(CompatError) as context:
-            sut.openFileForUpdating(['virtual-\N{cloud}', 'lost\N{sun}'])
-        self.assertEqual(1007, context.exception.event_id)
-
-        with self.assertRaises(CompatError) as context:
-            sut.openFileForUpdating(['virtual-\N{cloud}'])
-        self.assertEqual(1007, context.exception.event_id)
-
-        result = sut.openFileForUpdating(
-            ['virtual-\N{cloud}', 'base\N{sun}', segments[-1]])
-        result.seek(2)
-        result.write(b'56789')
-        result.close()
-        self.assertEqual(u'1256789', mk.fs.getFileContent(segments))
 
     def test_getFileSize_virtual(self):
         """
