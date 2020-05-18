@@ -2,7 +2,19 @@ Release notes for chevah.compat
 ===============================
 
 
-0.56.0 - 2020-04-30
+0.56.2 - 2020-05-18
+-------------------
+
+* Explicitly set permissions after PID file is created.
+
+
+0.56.1 - 2020-05-17
+-------------------
+
+* Fix testing code.
+
+
+0.56.0 - 2020-05-15
 -------------------
 
 * Remove `openFileForUpdating`.

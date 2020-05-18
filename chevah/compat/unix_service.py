@@ -87,6 +87,7 @@ class Daemon(object):
         try:
             pid_file = local_filesystem.openFileForWriting(
                 pid_segments, mode=0o640)
+            local_filesystem.setAttributes(pid_segments, {'mode': 0o640})
             pid_file.write('%d' % os.getpid())
             pid_file.close()
         except (OSError, IOError):
