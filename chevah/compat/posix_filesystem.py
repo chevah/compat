@@ -885,12 +885,12 @@ class PosixFilesystemBase(object):
         """
         See: ILocalFilesystem.
         """
-        if not overwrite:
-            if self.isFolder(destination_segments):
-                destination_segments = destination_segments[:]
-                destination_segments.append(source_segments[-1])
-            if self.exists(destination_segments):
-                raise OSError(errno.EEXIST, 'Destination exists.')
+        if self.isFolder(destination_segments):
+            destination_segments = destination_segments[:]
+            destination_segments.append(source_segments[-1])
+
+        if not overwrite and self.exists(destination_segments):
+            raise OSError(errno.EEXIST, 'Destination exists.')
 
         source_path = self.getRealPathFromSegments(
             source_segments, include_virtual=False)
@@ -900,7 +900,8 @@ class PosixFilesystemBase(object):
         destination_path_encoded = self.getEncodedPath(destination_path)
 
         with self._impersonateUser():
-            shutil.copy(source_path_encoded, destination_path_encoded)
+            shutil.copyfile(
+                source_path_encoded, destination_path_encoded)
 
     def setGroup(self, segments, group, permissions=None):
         '''Informational method for not using setGroup.'''

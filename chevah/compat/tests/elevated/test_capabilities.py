@@ -114,7 +114,6 @@ class TestProcessCapabilities(FileSystemTestCase):
         getCurrentPrivilegesDescription can be used for impersonated accounts
         and will return the impersonated user's capabilities instead.
         """
-        # FIXME:2095:
         # Unify tests once proper capabilities support is implemented.
         initial_text = self.capabilities.getCurrentPrivilegesDescription()
         self.assertContains(u'SeIncreaseWorkingSetPrivilege:0', initial_text)

@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.57.0 - 2020-05-18
+-------------------
+
+* Don't copy permissions on local file copy.
+* Copy file and don't create symlink on local copy.
+
+
 0.56.2 - 2020-05-18
 -------------------
 

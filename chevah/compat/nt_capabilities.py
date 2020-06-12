@@ -129,7 +129,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
             # impersonation will affect only the current thread and not the
             # entire process.
             try:
-                # FIXME:2095:
+                # See Trac ticket 2095.
                 # Implement distinct API for opening currently impersonated
                 # user token.
                 process_token = win32security.OpenThreadToken(

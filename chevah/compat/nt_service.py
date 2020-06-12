@@ -21,6 +21,10 @@ from chevah.compat.helpers import _
 class ChevahNTService(win32serviceutil.ServiceFramework, object):
     """
     Basic NT service implementation.
+
+    This code is obsolete.
+    On Windows, is better to use the external WinSW tool and start
+    as a foreground process, similar to debug mode or macOS, or Docker.
     """
     __version__ = u'Define version here.'
     _svc_name_ = u'Define service name here.'
@@ -34,7 +38,6 @@ class ChevahNTService(win32serviceutil.ServiceFramework, object):
         # is untestable since it imports servicemanager inside the method.
         service_name, = args[0]
 
-        # FIXME:1328: isolate registry creating code
         self.ssh = self._service_manager.RegisterServiceCtrlHandler(
             service_name, self.ServiceCtrlHandlerEx, True)
         self._service_manager.SetEventSourceName(service_name)
