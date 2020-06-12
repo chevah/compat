@@ -764,7 +764,9 @@ detect_os() {
                     ;;
                 win)
                     # 32bit build on Windows 2016, 64bit otherwise.
-                    win_ver=$(systeminfo.exe | grep "OS Name" | cut -b 28-56)
+                    # Should work with a l10n pack too (tested with French).
+                    win_ver=$(systeminfo.exe | head -n 3 | tail -n 1 \
+                        | cut -d ":" -f 2 | cut -b 15-43)
                     if [ "$win_ver" = "Microsoft Windows Server 2016" ]; then
                         ARCH="x86"
                     fi
