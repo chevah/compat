@@ -85,9 +85,17 @@ class TestPosixFilesystem(FileSystemTestCase):
 
         self.assertCompatError(1016, context.exception)
 
+        self.assertContains(
+            'Failed to set owner to', context.exception.message)
+
         if self.os_family == 'posix':
             self.assertContains(
                 u'No such file or directory', context.exception.message)
+        elif '-i18n' in os.getenv('BUILDER_NAME', ''):
+            self.assertContains(
+                u'[2] Le fichier sp\ufffdcifi\ufffd est introuvable.',
+                context.exception.message,
+                )
         else:
             self.assertContains(
                 u'The system cannot find the file specified',

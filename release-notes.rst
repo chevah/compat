@@ -1,8 +1,13 @@
 Release notes for chevah.compat
 ===============================
 
+0.57.1 - 2020-06-15
+-------------------
 
-0.57.0 - 2020-05-18
+* Fix compat when running on non-English Windows.
+
+
+0.57.0 - 2020-06-12
 -------------------
 
 * Don't copy permissions on local file copy.

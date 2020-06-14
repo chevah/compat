@@ -885,7 +885,12 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             self.filesystem.getAttributes, link_segments,
             )
 
-        if self.os_family == 'nt':
+        if '-i18n' in os.getenv('BUILDER_NAME', ''):
+            expected_path = path
+            expected_message = (
+                b'Le chemin d\x92acc\xe8s sp\xe9cifi\xe9 est introuvable')
+
+        elif self.os_family == 'nt':
             expected_path = path
             expected_message = b'The system cannot find the path specified'
         else:

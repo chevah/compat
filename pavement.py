@@ -46,11 +46,19 @@ from paver.easy import call_task, consume_args, environment, needs, pushd, task
 if os.name == 'nt':
     # Use shorter temp folder on Windows.
     import tempfile
+    import win32api
+
+    # Create the short temp.
     tempfile.tempdir = "c:\\temp"
     try:
         os.mkdir(tempfile.tempdir)
     except OSError:
         pass
+
+    # Create default temp.
+    if not os.path.exists(win32api.GetTempPath()):
+        os.mkdir(win32api.GetTempPath())
+
 
 # Keep run_packages in sync with setup.py.
 # These are the hard dependencies needed by the library itself.
