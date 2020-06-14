@@ -55,10 +55,12 @@ def force_unicode(value):
             # No unicode representation.
             # Try to decode the str()
             try:
-                return unicode_type(str(value), encoding='utf-8', errors='replace')
+                return unicode_type(
+                    str(value), encoding='utf-8', errors='replace')
             except Exception:
                 # No luck with str, try repr()
-                return unicode_type(repr(value), encoding='utf-8', errors='replace')
+                return unicode_type(
+                    repr(value), encoding='utf-8', errors='replace')
 
     result = str_or_repr(value)
 
