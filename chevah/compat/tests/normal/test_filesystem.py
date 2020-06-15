@@ -885,7 +885,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             self.filesystem.getAttributes, link_segments,
             )
 
-        if '-i18n' in os.getenv('BUILDER_NAME', ''):
+        if self.TEST_LANGUAGE == 'FR':
             expected_path = path
             expected_message = (
                 b'Le chemin d\x92acc\xe8s sp\xe9cifi\xe9 est introuvable')

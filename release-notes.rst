@@ -1,6 +1,13 @@
 Release notes for chevah.compat
 ===============================
 
+
+0.57.2 - 2020-06-15
+-------------------
+
+* Use `windows-1252` encoding when running on non-English Windows.
+
+
 0.57.1 - 2020-06-15
 -------------------
 

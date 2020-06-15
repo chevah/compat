@@ -91,9 +91,9 @@ class TestPosixFilesystem(FileSystemTestCase):
         if self.os_family == 'posix':
             self.assertContains(
                 u'No such file or directory', context.exception.message)
-        elif '-i18n' in os.getenv('BUILDER_NAME', ''):
+        elif self.TEST_LANGUAGE == 'FR':
             self.assertContains(
-                u'[2] Le fichier sp\ufffdcifi\ufffd est introuvable.',
+                u'[2] Le fichier sp\xe9cifi\xe9 est introuvable.',
                 context.exception.message,
                 )
         else:

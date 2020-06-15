@@ -50,17 +50,35 @@ def force_unicode(value):
 
     def str_or_repr(value):
         try:
-            return unicode_type(value)
+            return unicode(value, encoding='utf-8')
         except Exception:
-            # No unicode representation.
-            # Try to decode the str()
-            try:
-                return unicode_type(
-                    str(value), encoding='utf-8', errors='replace')
-            except Exception:
-                # No luck with str, try repr()
-                return unicode_type(
-                    repr(value), encoding='utf-8', errors='replace')
+            """
+            Not UTF-8 encoded value.
+            """
+
+        try:
+            return unicode(value, encoding='windows-1252')
+        except Exception:
+            """
+            Not Windows encoded value.
+            """
+
+        str_value = str(value)
+        try:
+            return unicode(str_value, encoding='utf-8', errors='replace')
+        except UnicodeDecodeError:
+            """
+            Not UTF-8 encoded value.
+            """
+
+        try:
+            return unicode(
+                str_value, encoding='windows-1252', errors='replace')
+        except UnicodeDecodeError:
+            pass
+
+        # No luck with str, try repr()
+        return unicode(repr(value), encoding='windows-1252', errors='replace')
 
     result = str_or_repr(value)
 

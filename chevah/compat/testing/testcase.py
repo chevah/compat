@@ -892,6 +892,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     os_family = process_capabilities.os_family
     os_version = _get_os_version()
     cpu_type = process_capabilities.cpu_type
+    TEST_LANGUAGE = os.getenv('TEST_LANG', 'EN')
 
     # List of partial thread names to ignore during the tearDown.
     # No need for the full thread name
