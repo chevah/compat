@@ -21,6 +21,7 @@ from nose.plugins.attrib import attr
 from chevah.compat import DefaultAvatar, FileAttributes, LocalFilesystem
 from chevah.compat.avatar import FilesystemApplicationAvatar
 from chevah.compat.exceptions import CompatError
+from chevah.compat.helpers import force_unicode
 from chevah.compat.interfaces import IFileAttributes, ILocalFilesystem
 from chevah.compat.testing import CompatTestCase, conditionals, mk
 
@@ -251,36 +252,34 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         Convert IOError to OSError using a context, and add the path if error
         is missing the path.
         """
-        path = mk.string()
-        message = mk.string()
+        path = '/some/path-\N{snowman}'
+        message = 'Message \N{sun} day'
 
         with self.assertRaises(OSError) as context:
             with self.filesystem._convertToOSError(path):
                 raise IOError(3, message)
 
         self.assertEqual(3, context.exception.errno)
-        if self.os_family == 'posix':
-            self.assertEqual(path.encode('utf-8'), context.exception.filename)
-        else:
-            self.assertEqual(path, context.exception.filename)
 
-        self.assertEqual(message, context.exception.strerror)
+        expected = '[Errno 3] Message \u2609 day: /some/path-\u2603'
+        self.assertEqual(expected, force_unicode(context.exception))
 
     def test_convertToOSError_OSError(self):
         """
         Keep OSError and don't add the path when the exception already has
         a path.
         """
-        path = mk.string()
-        message = mk.string()
+        path = '/some/path-\N{snowman}'
+        message = 'Message \N{sun} day'
 
         with self.assertRaises(OSError) as context:
             with self.filesystem._convertToOSError(path):
                 raise OSError(3, message, 'other-path')
 
         self.assertEqual(3, context.exception.errno)
-        self.assertEqual('other-path', context.exception.filename)
-        self.assertEqual(message, context.exception.strerror)
+
+        expected = '[Errno 3] Message \u2609 day: other-path'
+        self.assertEqual(expected, force_unicode(context.exception))
 
     def test_deleteFile_folder(self):
         """
@@ -294,8 +293,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             self.filesystem.deleteFile(self.test_segments)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
         self.assertTrue(self.filesystem.exists(self.test_segments))
+        expected = '[Errno 21] Is a directory: ' + path
+        self.assertEqual(expected, force_unicode(context.exception))
 
     def test_deleteFile_regular(self):
         """
@@ -313,11 +313,28 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         Return OSError with errno.ENOENT.
         """
         segments = ['c', mk.string()]
+        path = mk.fs.getRealPathFromSegments(segments)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.deleteFile(segments)
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
+
+        if self.TEST_LANGUAGE == 'FR':
+            details = (
+                '[Errno 2] Le fichier sp\xe9cifi\xe9 est introuvable: '
+                + path
+                )
+        elif self.os_name == 'windows':
+            details = (
+                '[Errno 2] The system cannot find the file specified: '
+                + path
+                )
+        else:
+            details = '[Errno 2] No such file or directory: ' + path
+
+        self.assertContains(
+            details, force_unicode(context.exception))
 
     @conditionals.onCapability('symbolic_link', True)
     def test_deleteFile_file_link(self):
@@ -338,28 +355,32 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Raise an OS error when trying to delete a file using folder API.
         """
-        self.test_segments = mk.fs.createFileInTemp()
-        self.assertTrue(self.filesystem.exists(self.test_segments))
+        path, segments = self.tempFile()
+        self.assertTrue(self.filesystem.exists(segments))
 
         with self.assertRaises(OSError) as context:
-            self.filesystem.deleteFolder(self.test_segments, recursive=False)
+            self.filesystem.deleteFolder(segments, recursive=False)
 
         self.assertEqual(errno.ENOTDIR, context.exception.errno)
-        self.assertTrue(self.filesystem.exists(self.test_segments))
+        self.assertTrue(self.filesystem.exists(segments))
+        expected = '[Errno 20] Not a directory: ' + path
+        self.assertEqual(expected, force_unicode(context.exception))
 
     def test_deleteFolder_file_recursive(self):
         """
         Raise an OS error when trying to delete a file using folder API,
         event when doing recursive delete.
         """
-        self.test_segments = mk.fs.createFileInTemp()
-        self.assertTrue(self.filesystem.exists(self.test_segments))
+        path, segments = self.tempFile()
+        self.assertTrue(self.filesystem.exists(segments))
 
         with self.assertRaises(OSError) as context:
-            self.filesystem.deleteFolder(self.test_segments, recursive=True)
+            self.filesystem.deleteFolder(segments, recursive=True)
 
         self.assertEqual(errno.ENOTDIR, context.exception.errno)
-        self.assertTrue(self.filesystem.exists(self.test_segments))
+        self.assertTrue(self.filesystem.exists(segments))
+        expected = '[Errno 20] Not a directory: ' + path
+        self.assertEqual(expected, force_unicode(context.exception))
 
     def test_deleteFolder_non_recursive_empty(self):
         """
@@ -415,12 +436,28 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         Raise OSError when folder is not found.
         """
         segments = ['c', 'no-such', mk.string()]
+        path = mk.fs.getRealPathFromSegments(segments)
         self.assertFalse(self.filesystem.exists(segments))
 
         with self.assertRaises(OSError) as context:
             self.filesystem.deleteFolder(segments, recursive=False)
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
+
+        if self.TEST_LANGUAGE == 'FR':
+            expected = (
+                '[Errno 2] Le chemin d\u2019acc\xe8s sp\xe9cifi\xe9 est '
+                'introuvable: ' + path
+                )
+        elif self.os_name == 'windows':
+            expected = (
+                '[Errno 2] The system cannot find the path specified: '
+                + path
+                )
+        else:
+            expected = '[Errno 2] No such file or directory: ' + path
+
+        self.assertEqual(expected, force_unicode(context.exception))
 
     @conditionals.onCapability('symbolic_link', True)
     def test_deleteFolder_link(self):
@@ -682,22 +719,54 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Raise an error when path was not found.
         """
+        segments = ['c', 'no-such-segments']
+        path = mk.fs.getRealPathFromSegments(segments)
         with self.assertRaises(OSError) as context:
-            self.filesystem.readLink(['c', 'no-such-segments'])
+            self.filesystem.readLink(segments)
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
+
+        if self.TEST_LANGUAGE == 'FR':
+            expected = (
+                '[Errno 2] 2 - Le fichier sp\xe9cifi\xe9 est '
+                'introuvable.: ' + path
+                )
+        elif self.os_name == 'windows':
+            expected = (
+                '[Errno 2] 2 - The system cannot find the file specified.: '
+                + path
+                )
+        else:
+            expected = '[Errno 2] No such file or directory: ' + path
+
+        self.assertEqual(expected, force_unicode(context.exception))
 
     @conditionals.onCapability('symbolic_link', True)
     def test_readLink_not_link(self):
         """
         Raise an error when path is not a link.
         """
-        self.test_segments = mk.fs.createFileInTemp()
+        path, segments = self.tempFile()
 
         with self.assertRaises(OSError) as context:
-            self.filesystem.readLink(self.test_segments)
+            self.filesystem.readLink(segments)
 
         self.assertEqual(errno.EINVAL, context.exception.errno)
+
+        if self.TEST_LANGUAGE == 'FR':
+            expected = (
+                '[Errno 22] 4390 - Le fichier ou r\xe9pertoire n\u2019est '
+                'pas un point d\u2019analyse.: ' + path
+                )
+        elif self.os_name == 'windows':
+            expected = (
+                '[Errno 22] 4390 - The file or directory is not a reparse '
+                'point.: ' + path
+                )
+        else:
+            expected = '[Errno 22] Invalid argument: ' + path
+
+        self.assertEqual(expected, force_unicode(context.exception))
 
     @conditionals.onCapability('symbolic_link', True)
     def test_readLink_bad_target(self):
@@ -944,22 +1013,40 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         Raise OSError when trying to get folder for a non existent path.
         """
         segments = ['c', mk.string()]
+        path = mk.fs.getRealPathFromSegments(segments)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.getFolderContent(segments)
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
 
+        if self.TEST_LANGUAGE == 'FR':
+            expected = (
+                '[Errno 2] Le chemin d\u2019acc\xe8s sp\xe9cifi\xe9 est '
+                'introuvable: ' + path + '\\*.*'
+                )
+        elif self.os_name == 'windows':
+            expected = (
+                '[Errno 2] The system cannot find the path specified: '
+                + path + '\\*.*'
+                )
+        else:
+            expected = '[Errno 2] No such file or directory: ' + path
+
+        self.assertEqual(expected, force_unicode(context.exception))
+
     def test_getFolderContent_file(self):
         """
         Raise OSError when trying to get folder content for a file.
         """
-        self.test_segments = mk.fs.createFileInTemp()
+        path, segments = self.tempFile()
 
         with self.assertRaises(OSError) as context:
-            self.filesystem.getFolderContent(self.test_segments)
+            self.filesystem.getFolderContent(segments)
 
         self.assertEqual(errno.ENOTDIR, context.exception.errno)
+        expected = '[Errno 20] Not a directory: ' + path
+        self.assertEqual(expected, force_unicode(context.exception))
 
     def test_getFolderContent_empty(self):
         """
@@ -997,11 +1084,27 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         Raise OSError when trying to get folder for a non existent path.
         """
         segments = ['c', mk.string(), mk.string()]
+        path = mk.fs.getRealPathFromSegments(segments)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.iterateFolderContent(segments)
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
+
+        if self.TEST_LANGUAGE == 'FR':
+            expected = (
+                '[Errno 2] Le chemin d\u2019acc\xe8s sp\xe9cifi\xe9 est '
+                'introuvable: ' + path
+                )
+        elif self.os_name == 'windows':
+            expected = (
+                '[Errno 2] The system cannot find the path specified: '
+                + path
+                )
+        else:
+            expected = '[Errno 2] No such file or directory: ' + path
+
+        self.assertEqual(expected, force_unicode(context.exception))
 
     @conditionals.skipOnPY3()
     def test_iterateFolderContent_file(self):
@@ -1009,6 +1112,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         Raise OSError when trying to get folder content for a file.
         """
         segments = self.fileInTemp()
+        path = mk.fs.getRealPathFromSegments(segments)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.iterateFolderContent(segments)
@@ -1020,6 +1124,20 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             expected_error = errno.ENOTDIR
 
         self.assertEqual(expected_error, context.exception.errno)
+
+        if self.TEST_LANGUAGE == 'FR':
+            expected = (
+                '[Errno 22] Nom de r\xe9pertoire non valide: '
+                + path
+                )
+        elif self.os_name == 'windows':
+            expected = (
+                '[Errno 22] The directory name is invalid: '
+                + path
+                )
+        else:
+            expected = '[Errno 20] Not a directory: ' + path
+        self.assertEqual(expected, force_unicode(context.exception))
 
     @conditionals.skipOnPY3()
     def test_iterateFolderContent_empty(self):
@@ -1213,7 +1331,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             self.filesystem.openFile(self.test_segments, os.O_RDONLY, 0o777)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
+        expected = '[Errno 21] Is a directory: ' + path
+        self.assertStartsWith(expected, force_unicode(context.exception))
 
     def test_openFileForReading_folder(self):
         """
@@ -1226,10 +1345,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             self.filesystem.openFileForReading(self.test_segments)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
-
-        self.assertEqual(errno.EISDIR, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
+        details = '[Errno 21] Is a directory: ' + path
+        self.assertStartsWith(details, force_unicode(context.exception))
 
     def test_openFileForWriting_folder(self):
         """
@@ -1243,9 +1360,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
-
-        self.assertEqual(errno.EISDIR, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
+        details = '[Errno 21] Is a directory: ' + path
+        self.assertStartsWith(details, force_unicode(context.exception))
 
     def test_openFileForAppending_folder(self):
         """
@@ -1260,18 +1376,22 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path.encode('utf-8'), context.exception.filename)
-
-        self.assertEqual(errno.EISDIR, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
+        details = '[Errno 21] Is a directory: ' + path
+        self.assertStartsWith(details, force_unicode(context.exception))
 
     def test_touch_no_parent(self):
         """
         Raise an error when path does not exists and can not be created.
         """
+        segments = ['c', 'no-such', 'path']
+        path = mk.fs.getRealPathFromSegments(segments)
+
         with self.assertRaises(IOError) as context:
-            self.filesystem.touch(['c', 'no-such', 'path'])
+            self.filesystem.touch(segments)
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
+        details = '[Errno 2] No such file or directory: ' + path
+        self.assertEqual(details, force_unicode(context.exception))
 
     def test_touch_dont_exists(self):
         """
@@ -1306,11 +1426,14 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         self.test_segments = mk.fs.createFileInTemp(content=mk.string())
         destination_segments = ['c', 'no-parent', 'path']
+        path = mk.fs.getRealPathFromSegments(destination_segments)
 
         with self.assertRaises(IOError) as context:
             self.filesystem.copyFile(self.test_segments, destination_segments)
 
         self.assertEqual(errno.ENOENT, context.exception.errno)
+        details = '[Errno 2] No such file or directory: ' + path
+        self.assertEqual(details, force_unicode(context.exception))
 
     def test_copyFile_file_destination_exists_no_overwrite(self):
         """
@@ -1318,12 +1441,14 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         overwrite existing files.
         """
         source_segments = ['ignore', 'source']
-        self.test_segments = mk.fs.createFileInTemp()
+        path, segments = self.tempFile()
 
         with self.assertRaises(OSError) as context:
-            self.filesystem.copyFile(source_segments, self.test_segments)
+            self.filesystem.copyFile(source_segments, segments)
 
         self.assertEqual(errno.EEXIST, context.exception.errno)
+        details = '[Errno 17] Destination exists: ' + path
+        self.assertEqual(details, force_unicode(context.exception))
 
     def test_copyFile_file_destination_exists_overwrite(self):
         """
@@ -1347,12 +1472,16 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         self.test_segments = mk.fs.createFileInTemp()
         destination_segments = self.test_segments[:-1]
+        path = mk.fs.getRealPathFromSegments(
+            destination_segments + self.test_segments[-1:])
         source_segments = ['bla', self.test_segments[-1]]
 
         with self.assertRaises(OSError) as context:
             self.filesystem.copyFile(source_segments, destination_segments)
 
         self.assertEqual(errno.EEXIST, context.exception.errno)
+        details = '[Errno 17] Destination exists: ' + path
+        self.assertEqual(details, force_unicode(context.exception))
 
     def test_copyFile_folder_destination_exists_overwrite(self):
         """

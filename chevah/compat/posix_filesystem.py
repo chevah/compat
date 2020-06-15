@@ -889,15 +889,17 @@ class PosixFilesystemBase(object):
             destination_segments = destination_segments[:]
             destination_segments.append(source_segments[-1])
 
+        destination_path = self.getRealPathFromSegments(
+            destination_segments, include_virtual=False)
+        destination_path_encoded = self.getEncodedPath(destination_path)
+
         if not overwrite and self.exists(destination_segments):
-            raise OSError(errno.EEXIST, 'Destination exists.')
+            raise OSError(
+                errno.EEXIST, 'Destination exists', destination_path_encoded)
 
         source_path = self.getRealPathFromSegments(
             source_segments, include_virtual=False)
         source_path_encoded = self.getEncodedPath(source_path)
-        destination_path = self.getRealPathFromSegments(
-            destination_segments, include_virtual=False)
-        destination_path_encoded = self.getEncodedPath(destination_path)
 
         with self._impersonateUser():
             shutil.copyfile(

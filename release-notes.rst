@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.57.3 - 2020-06-15
+-------------------
+
+* Fix unicode conversion in error messages.
+
+
 0.57.2 - 2020-06-15
 -------------------
 
