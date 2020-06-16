@@ -234,7 +234,7 @@ class TestSystemUsers(SystemUsersTestCase):
             password=TEST_ACCOUNT_PASSWORD,
             )
 
-        if self.os_name in ['osx']:
+        if self.os_name in ['osx', 'freebsd']:
             self.assertIsNone(result)
         else:
             self.assertTrue(result)
@@ -400,7 +400,7 @@ class TestSystemUsers(SystemUsersTestCase):
             self.assertEqual(TEST_ACCOUNT_GROUP, impersonated_groupname)
             self.assertNotEqual(initial_uid, uid)
             self.assertNotEqual(initial_gid, gid)
-            if self.os_name != 'osx':
+            if not self.os_name in ['osx', 'freebsd']:
                 # FIXME:3808:
                 # Investigate why this no longer works/passes on OSX.
                 # On OSX newer than 10.5 get/set groups are useless.
