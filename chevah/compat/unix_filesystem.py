@@ -60,7 +60,7 @@ class UnixFilesystem(PosixFilesystemBase):
             return result
 
         relative_path = u'/' + u'/'.join(segments)
-        relative_path = os.path.abspath(relative_path).rstrip('/')
+        relative_path = self.getAbsoluteRealPath(relative_path).rstrip('/')
         return text_type(self._root_path.rstrip('/') + relative_path)
 
     def getSegmentsFromRealPath(self, path):
@@ -72,10 +72,10 @@ class UnixFilesystem(PosixFilesystemBase):
             return segments
 
         head = True
-        tail = os.path.abspath(path)
+        tail = self.getAbsoluteRealPath(path)
 
         for virtual_segments, real_path in self._avatar.virtual_folders:
-            virtual_root = os.path.abspath(real_path)
+            virtual_root = self.getAbsoluteRealPath(real_path)
             if not tail.startswith(virtual_root):
                 # Not a virtual folder.
                 continue

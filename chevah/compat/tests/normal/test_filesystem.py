@@ -2283,7 +2283,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         path = u'some_path'
         relative_segments = (
             self.unlocked_filesystem.getSegmentsFromRealPath(path))
-        absolute_path = os.path.abspath(path)
+        absolute_path = self.unlocked_filesystem.getAbsoluteRealPath(path)
         absolute_segments = (
             self.unlocked_filesystem.getSegmentsFromRealPath(absolute_path))
         self.assertEqual(absolute_segments, relative_segments)

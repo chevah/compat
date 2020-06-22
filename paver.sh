@@ -164,7 +164,10 @@ update_path_variables() {
         PYTHON_LIB="/lib/${PYTHON_NAME}/"
     fi
 
-    BUILD_FOLDER="build-${OS}-${ARCH}"
+    if [ "${BUILD_FOLDER}" = "" ] ; then
+        BUILD_FOLDER="build-${OS}-${ARCH}"
+    fi
+
     PYTHON_BIN="${BUILD_FOLDER}${PYTHON_BIN}"
     PYTHON_LIB="${BUILD_FOLDER}${PYTHON_LIB}"
 

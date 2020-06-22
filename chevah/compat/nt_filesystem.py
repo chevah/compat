@@ -133,11 +133,31 @@ class NTFilesystem(PosixFilesystemBase):
             return self._pathSplitRecursive(
                 win32api.GetLongPathName(win32api.GetTempPath()))
 
+    @property
+    def installation_segments(self):
+        """
+        See `ILocalFilesystem`.
+
+        We use 'os' module to find where the python is installed, and from
+        there we find the base folder.
+
+        * Windows - INSTALL_FOLDER/ lib/ Lib/       os.py
+        """
+        path = os.path.dirname(os.__file__)
+        segments = self.getSegmentsFromRealPath(path)
+        return segments[:-2]
+
     @classmethod
     def getEncodedPath(cls, path):
         '''Return the encoded representation of the path, use in the lower
         lever API for accessing the filesystem.'''
         return path
+
+    def getAbsolutePath(self, path):
+        """
+        Always use unicode on Windows.
+        """
+        return os.path.abspath(path)
 
     def _getLockedPathFromSegments(self, segments):
         '''

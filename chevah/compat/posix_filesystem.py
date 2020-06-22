@@ -91,7 +91,7 @@ class PosixFilesystemBase(object):
         * Windows - INSTALL_FOLDER/ lib/ Lib/       os.py
         * Unix    - INSTALL_FOLDER/ lib/ python2.X/ os.py
         """
-        path = os.path.dirname(os.__file__)
+        path = os.path.dirname(os.__file__).decode('utf-8')
         segments = self.getSegmentsFromRealPath(path)
         return segments[:-2]
 
@@ -340,10 +340,8 @@ class PosixFilesystemBase(object):
 
     def getAbsoluteRealPath(self, path):
         '''See `ILocalFilesystem`.'''
-        if not isinstance(path, text_type):
-            path = path.decode(self.INTERNAL_ENCODING)
+        absolute_path = os.path.abspath(self.getEncodedPath(path))
 
-        absolute_path = os.path.abspath(path)
         if not isinstance(absolute_path, text_type):
             absolute_path = absolute_path.decode(self.INTERNAL_ENCODING)
 
@@ -933,8 +931,8 @@ class PosixFilesystemBase(object):
         """
         Check that child path is inside root path.
         """
-        child_strip = os.path.abspath(child)
-        root_strip = os.path.abspath(root)
+        child_strip = self.getAbsoluteRealPath(child)
+        root_strip = self.getAbsoluteRealPath(root)
 
         if not child_strip.startswith(root_strip):
             raise CompatError(
