@@ -113,7 +113,8 @@ BUILD_PACKAGES = [
     'mock',
 
     'coverage==4.4.1',
-    'coverator==0.1.4',
+    'diff_cover==0.9.11',
+    'codecov==2.1.7',
 
     # used for remote debugging.
     'remote_pdb==1.2.0',
