@@ -22,7 +22,7 @@ jobs:
 
     - name: Move build to Unicode path
       run: |
-        mv build build-ț
+        mv build-compat build-ț
         echo "BUILD_FOLDER=build-ț" >> paver.conf
 
     - name: Test
@@ -39,7 +39,7 @@ jobs:
 
     - name: Move build to Unicode path
       run: |
-        mv build build-ț
+        mv build-compat build-ț
         echo "BUILD_FOLDER=build-ț" >> paver.conf
 
     - name: Test
