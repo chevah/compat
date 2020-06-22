@@ -1,0 +1,58 @@
+name: GitHub-CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  linux-unicode-path:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    - name: Deps
+      run: ./paver.sh deps
+
+    - name: Move build to Unicode path
+      run: |
+        mv build build-ț
+        echo "BUILD_FOLDER=build-ț" >> paver.conf
+
+    - name: Test
+      run: ./paver.sh test
+
+
+  osx-unicode-path:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Deps
+      run: ./paver.sh deps
+
+    - name: Move build to Unicode path
+      run: |
+        mv build build-ț
+        echo "BUILD_FOLDER=build-ț" >> paver.conf
+
+    - name: Test
+      run: ./paver.sh test
+
+
+  windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Deps
+      run: sh ./paver.sh deps
+
+    - name: Test
+      run: sh ./paver.sh test
