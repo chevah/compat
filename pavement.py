@@ -20,7 +20,7 @@ from brink.pavement_commons import (
     buildbot_list,
     buildbot_try,
     coverage_prepare,
-    coverator_publish,
+    codecov_publish,
     default,
     github,
     harness,
@@ -138,7 +138,7 @@ BUILD_PACKAGES = [
 buildbot_list
 buildbot_try
 coverage_prepare
-coverator_publish
+codecov_publish
 default
 github
 harness
@@ -481,7 +481,7 @@ def test_ci(args):
     exit_code = call_task('test_os_dependent', args=args)
 
     if os.environ.get(b'CODECOV_TOKEN', ''):
-        call_task('coverator_publish')
+        call_task('codecov_publish')
 
     return exit_code
 
