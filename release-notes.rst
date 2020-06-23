@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.58.0 - 2020-06-23
+-------------------
+
+* Fix running from Unicode path on Linux/macOS.
+
+
 0.57.3 - 2020-06-15
 -------------------
 
