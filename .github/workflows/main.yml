@@ -11,9 +11,13 @@ jobs:
   linux-unicode-path:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    # Will not run for commits with 'skip-ci'.
+    if: "!contains(github.event.head_commit.message, 'skip-ci')"
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+    # Make sure we don't have multiple job
+    - uses: chevah/auto-cancel-redundant-job@v1
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
@@ -32,6 +36,7 @@ jobs:
   osx-unicode-path:
     runs-on: macos-latest
     steps:
+    - uses: chevah/auto-cancel-redundant-job@v1
     - uses: actions/checkout@v2
 
     - name: Deps
@@ -49,6 +54,7 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
+    - uses: chevah/auto-cancel-redundant-job@v1
     - uses: actions/checkout@v2
 
     - name: Deps

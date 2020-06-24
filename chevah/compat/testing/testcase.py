@@ -665,7 +665,8 @@ class TwistedTestCase(TestCase):
             self.fail(
                 "Success result expected on %r, "
                 "found failure result instead:\n%s" % (
-                    deferred, result[0].getTraceback()))
+                    deferred, result[0].getBriefTraceback().decode(
+                        'utf-8', errors='replace')))
         else:
             return result[0]
 
@@ -716,7 +717,8 @@ class TwistedTestCase(TestCase):
                 "Failure of type (%s) expected on %r, "
                 "found type %r instead: %s" % (
                     expectedString, deferred, result[0].type,
-                    result[0].getTraceback()))
+                    result[0].getBriefTraceback().decode(
+                        'utf-8', errors='replace')))
         else:
             return result[0]
 
