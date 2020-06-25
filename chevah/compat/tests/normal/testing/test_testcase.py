@@ -713,7 +713,10 @@ class TestChevahTestCase(ChevahTestCase):
         """
         Run test on build slaves that do not have administrator privileges.
         """
-        if self.os_version in ['nt-5.1', 'nt-5.2']:
+        if (
+            self.TEST_LANGUAGE == 'fr'
+            or os.getenv('GITHUB_ACTIONS', b'') == b'true'
+                ):
             # Not available on Windows XP and 2003
             return
 

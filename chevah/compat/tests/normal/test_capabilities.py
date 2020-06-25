@@ -247,14 +247,6 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
 
         self.assertFalse(result)
 
-    def test_get_home_folder(self):
-        """
-        The home folder cannot be retrieved.
-        """
-        result = self.capabilities.get_home_folder
-
-        self.assertFalse(result)
-
     def test_create_home_folder(self):
         """
         On Windows home folders can be created if SE_BACKUP and SE_RESTORE
@@ -262,9 +254,12 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         """
         result = self.capabilities.create_home_folder
 
-        # Windows XP and 2003 slaves are setup without "Backup Operators"
+        # Windows i18n and GitHub runners are setup without "Backup Operators"
         # group (SE_BACKUP/SE_RESTORE) enabled.
-        if self.os_version in ['nt-5.1', 'nt-5.2']:
+        if (
+            self.TEST_LANGUAGE == 'fr'
+            or os.getenv('GITHUB_ACTIONS', b'') == b'true'
+            ):
             self.assertFalse(result)
         else:
             self.assertTrue(result)

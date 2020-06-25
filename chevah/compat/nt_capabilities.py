@@ -88,9 +88,8 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         """
         See `IProcessCapabilities`.
 
-        Right now only Windows 2008 and 7 are supported.
-
-        # FIXME:920:
+        This is just hardcoded to the Windows version.
+        See https://trac.chevah.com/ticket/920 for more details.
         """
         try:
             version = platform.version()
