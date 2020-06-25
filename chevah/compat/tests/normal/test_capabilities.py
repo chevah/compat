@@ -7,6 +7,7 @@ Test for platform capabilities detection.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+import os
 try:
     import win32security
 except ImportError:
@@ -259,7 +260,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         if (
             self.TEST_LANGUAGE == 'fr'
             or os.getenv('GITHUB_ACTIONS', b'') == b'true'
-            ):
+                ):
             self.assertFalse(result)
         else:
             self.assertTrue(result)
