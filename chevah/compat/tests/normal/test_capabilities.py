@@ -258,7 +258,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         # Windows i18n and GitHub runners are setup without "Backup Operators"
         # group (SE_BACKUP/SE_RESTORE) enabled.
         if (
-            self.TEST_LANGUAGE == 'fr'
+            self.TEST_LANGUAGE == 'FR'
             or os.getenv('GITHUB_ACTIONS', b'') == b'true'
                 ):
             self.assertFalse(result)
