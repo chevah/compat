@@ -298,7 +298,7 @@ class TestTwistedTestCase(ChevahTestCase):
         self.called = False
 
         def last_call():
-            time.sleep(0.3)
+            time.sleep(0.1)
             self.called = True
 
         deferred = threads.deferToThread(last_call)
