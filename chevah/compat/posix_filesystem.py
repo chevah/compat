@@ -91,7 +91,7 @@ class PosixFilesystemBase(object):
         * Windows - INSTALL_FOLDER/ lib/ Lib/       os.py
         * Unix    - INSTALL_FOLDER/ lib/ python2.X/ os.py
         """
-        path = os.path.dirname(os.__file__)
+        path = os.path.dirname(os.__file__).decode('utf-8')
         segments = self.getSegmentsFromRealPath(path)
         return segments[:-2]
 
@@ -340,10 +340,8 @@ class PosixFilesystemBase(object):
 
     def getAbsoluteRealPath(self, path):
         '''See `ILocalFilesystem`.'''
-        if not isinstance(path, text_type):
-            path = path.decode(self.INTERNAL_ENCODING)
+        absolute_path = os.path.abspath(self.getEncodedPath(path))
 
-        absolute_path = os.path.abspath(path)
         if not isinstance(absolute_path, text_type):
             absolute_path = absolute_path.decode(self.INTERNAL_ENCODING)
 
@@ -885,22 +883,25 @@ class PosixFilesystemBase(object):
         """
         See: ILocalFilesystem.
         """
-        if not overwrite:
-            if self.isFolder(destination_segments):
-                destination_segments = destination_segments[:]
-                destination_segments.append(source_segments[-1])
-            if self.exists(destination_segments):
-                raise OSError(errno.EEXIST, 'Destination exists.')
+        if self.isFolder(destination_segments):
+            destination_segments = destination_segments[:]
+            destination_segments.append(source_segments[-1])
 
-        source_path = self.getRealPathFromSegments(
-            source_segments, include_virtual=False)
-        source_path_encoded = self.getEncodedPath(source_path)
         destination_path = self.getRealPathFromSegments(
             destination_segments, include_virtual=False)
         destination_path_encoded = self.getEncodedPath(destination_path)
 
+        if not overwrite and self.exists(destination_segments):
+            raise OSError(
+                errno.EEXIST, 'Destination exists', destination_path_encoded)
+
+        source_path = self.getRealPathFromSegments(
+            source_segments, include_virtual=False)
+        source_path_encoded = self.getEncodedPath(source_path)
+
         with self._impersonateUser():
-            shutil.copy(source_path_encoded, destination_path_encoded)
+            shutil.copyfile(
+                source_path_encoded, destination_path_encoded)
 
     def setGroup(self, segments, group, permissions=None):
         '''Informational method for not using setGroup.'''
@@ -930,8 +931,8 @@ class PosixFilesystemBase(object):
         """
         Check that child path is inside root path.
         """
-        child_strip = os.path.abspath(child)
-        root_strip = os.path.abspath(root)
+        child_strip = self.getAbsoluteRealPath(child)
+        root_strip = self.getAbsoluteRealPath(root)
 
         if not child_strip.startswith(root_strip):
             raise CompatError(

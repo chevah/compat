@@ -88,9 +88,8 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         """
         See `IProcessCapabilities`.
 
-        Right now only Windows 2008 and 7 are supported.
-
-        # FIXME:920:
+        This is just hardcoded to the Windows version.
+        See https://trac.chevah.com/ticket/920 for more details.
         """
         try:
             version = platform.version()
@@ -129,7 +128,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
             # impersonation will affect only the current thread and not the
             # entire process.
             try:
-                # FIXME:2095:
+                # See Trac ticket 2095.
                 # Implement distinct API for opening currently impersonated
                 # user token.
                 process_token = win32security.OpenThreadToken(

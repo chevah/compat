@@ -2,6 +2,14 @@ Chevah Compat Development Guide
 ===============================
 
 
+Release process
+---------------
+
+* Update the version in setup.py
+* Update the release-notes.rst
+* Publish: ./build-compat/bin/python setup.py bdist_wheel upload -r chevah
+
+
 Local tests
 ------------
 
@@ -22,7 +30,7 @@ Remote test
 
 You should specify the builder name to run the tests::
 
-    $ ./paver.sh test_remote ubuntu-1204-32 --wait SOME_TEST
+    $ ./brink.sh test_remote ubuntu-1204-32 --wait SOME_TEST
 
 You can trigger a remote session by using this code instead of the regular
 `import pdb; pdb.set_trace`::

@@ -298,7 +298,7 @@ class TestTwistedTestCase(ChevahTestCase):
         self.called = False
 
         def last_call():
-            time.sleep(0.5)
+            time.sleep(0.1)
             self.called = True
 
         deferred = threads.deferToThread(last_call)
@@ -713,7 +713,10 @@ class TestChevahTestCase(ChevahTestCase):
         """
         Run test on build slaves that do not have administrator privileges.
         """
-        if self.os_version in ['nt-5.1', 'nt-5.2']:
+        if (
+            self.TEST_LANGUAGE == 'FR'
+            or os.getenv('GITHUB_ACTIONS', b'') == b'true'
+                ):
             # Not available on Windows XP and 2003
             return
 

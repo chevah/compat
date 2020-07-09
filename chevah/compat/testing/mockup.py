@@ -34,9 +34,6 @@ from chevah.compat.testing.constant import (
     )
 
 
-# FIXME:2106:
-# Get rid of global functions and replace with OS specialized TestUSer
-# instances: TestUserAIX, TestUserWindows, TestUserUnix, etc.
 def _sanitize_name_legacy_unix(candidate):
     """
     Return valid user/group name for old Unix (AIX/HPUX) from `candidate`.

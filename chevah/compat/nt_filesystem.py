@@ -26,6 +26,7 @@ from chevah.compat.exceptions import (
     CompatError,
     CompatException,
     )
+from chevah.compat.helpers import force_unicode
 from chevah.compat.interfaces import ILocalFilesystem
 from chevah.compat.nt_capabilities import NTProcessCapabilities
 from chevah.compat.nt_users import NTDefaultAvatar, NTUsers
@@ -132,11 +133,31 @@ class NTFilesystem(PosixFilesystemBase):
             return self._pathSplitRecursive(
                 win32api.GetLongPathName(win32api.GetTempPath()))
 
+    @property
+    def installation_segments(self):
+        """
+        See `ILocalFilesystem`.
+
+        We use 'os' module to find where the python is installed, and from
+        there we find the base folder.
+
+        * Windows - INSTALL_FOLDER/ lib/ Lib/       os.py
+        """
+        path = os.path.dirname(os.__file__)
+        segments = self.getSegmentsFromRealPath(path)
+        return segments[:-2]
+
     @classmethod
     def getEncodedPath(cls, path):
         '''Return the encoded representation of the path, use in the lower
         lever API for accessing the filesystem.'''
         return path
+
+    def getAbsolutePath(self, path):
+        """
+        Always use unicode on Windows.
+        """
+        return os.path.abspath(path)
 
     def _getLockedPathFromSegments(self, segments):
         '''
@@ -312,14 +333,14 @@ class NTFilesystem(PosixFilesystemBase):
 
             raise OSError(
                 error.errno,
-                error.strerror.encode('utf-8'),
+                error.strerror,
                 encoded_filename,
                 )
         except pywintypes.error as error:
             path = self.getRealPathFromSegments(segments)
             raise OSError(
                 error.winerror,
-                error.strerror.encode('utf-8'),
+                error.strerror,
                 path.encode('utf-8'))
 
     def readLink(self, segments):
@@ -349,7 +370,7 @@ class NTFilesystem(PosixFilesystemBase):
                 )
         except pywintypes.error as error:
             message = '%s - %s' % (error.winerror, error.strerror)
-            raise OSError(errno.ENOENT, message.encode('utf-8'), path)
+            raise OSError(errno.ENOENT, message, path)
 
         if handle == win32file.INVALID_HANDLE_VALUE:
             raise OSError(errno.EINVAL, 'Failed to open symlink', path)
@@ -359,8 +380,8 @@ class NTFilesystem(PosixFilesystemBase):
             raw_reparse_data = win32file.DeviceIoControl(
                 handle, FSCTL_GET_REPARSE_POINT, None, 16 * 1024)
         except pywintypes.error as error:
-            message = '%s - %s' % (error.winerror, error.strerror)
-            raise OSError(errno.EINVAL, message.encode('utf-8'), path)
+            message = b'%s - %s' % (error.winerror, error.strerror)
+            raise OSError(errno.EINVAL, message, path)
         finally:
             win32file.CloseHandle(handle)
 
@@ -579,10 +600,10 @@ class NTFilesystem(PosixFilesystemBase):
                         )
                 data = search[0]
         except pywintypes.error as error:
-            message = u'%s - %s' % (error.winerror, error.strerror)
+            message = b'%s - %s' % (error.winerror, error.strerror)
             raise OSError(
                 errno.EINVAL,
-                message.encode('utf-8'),
+                message,
                 path,
                 )
 
@@ -783,7 +804,10 @@ class NTFilesystem(PosixFilesystemBase):
                 if error.winerror == 1307:
                     self.raiseFailedToSetOwner(owner, path, u'Not permitted.')
                 else:
-                    self.raiseFailedToSetOwner(owner, path, text_type(error))
+                    message = '[%s] %s' % (
+                        error.winerror, force_unicode(error.strerror))
+                    self.raiseFailedToSetOwner(
+                        owner, path, message)
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''

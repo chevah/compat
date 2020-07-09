@@ -2,6 +2,37 @@ Release notes for chevah.compat
 ===============================
 
 
+0.58.0 - 2020-06-23
+-------------------
+
+* Fix running from Unicode path on Linux/macOS.
+
+
+0.57.3 - 2020-06-15
+-------------------
+
+* Fix unicode conversion in error messages.
+
+
+0.57.2 - 2020-06-15
+-------------------
+
+* Use `windows-1252` encoding when running on non-English Windows.
+
+
+0.57.1 - 2020-06-15
+-------------------
+
+* Fix compat when running on non-English Windows.
+
+
+0.57.0 - 2020-06-12
+-------------------
+
+* Don't copy permissions on local file copy.
+* Copy file and don't create symlink on local copy.
+
+
 0.56.2 - 2020-05-18
 -------------------
 

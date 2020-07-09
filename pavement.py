@@ -20,7 +20,7 @@ from brink.pavement_commons import (
     buildbot_list,
     buildbot_try,
     coverage_prepare,
-    coverator_publish,
+    codecov_publish,
     default,
     github,
     harness,
@@ -46,11 +46,19 @@ from paver.easy import call_task, consume_args, environment, needs, pushd, task
 if os.name == 'nt':
     # Use shorter temp folder on Windows.
     import tempfile
+    import win32api
+
+    # Create the short temp.
     tempfile.tempdir = "c:\\temp"
     try:
         os.mkdir(tempfile.tempdir)
     except OSError:
         pass
+
+    # Create default temp.
+    if not os.path.exists(win32api.GetTempPath()):
+        os.mkdir(win32api.GetTempPath())
+
 
 # Keep run_packages in sync with setup.py.
 # These are the hard dependencies needed by the library itself.
@@ -105,7 +113,8 @@ BUILD_PACKAGES = [
     'mock',
 
     'coverage==4.4.1',
-    'coverator==0.1.4',
+    'diff_cover==0.9.11',
+    'codecov==2.1.7',
 
     # used for remote debugging.
     'remote_pdb==1.2.0',
@@ -129,7 +138,7 @@ BUILD_PACKAGES = [
 buildbot_list
 buildbot_try
 coverage_prepare
-coverator_publish
+codecov_publish
 default
 github
 harness
@@ -472,7 +481,7 @@ def test_ci(args):
     exit_code = call_task('test_os_dependent', args=args)
 
     if os.environ.get(b'CODECOV_TOKEN', ''):
-        call_task('coverator_publish')
+        call_task('codecov_publish')
 
     return exit_code
 

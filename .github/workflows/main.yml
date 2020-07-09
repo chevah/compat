@@ -1,0 +1,93 @@
+name: GitHub-CI
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+    - '**.py'
+  pull_request:
+    branches: [ master ]
+    paths:
+    - '**.py'
+
+jobs:
+
+  linux-unicode-path:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-20.04
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Make sure we don't have multiple job
+    - uses: chevah/auto-cancel-redundant-job@v1
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
+
+    - name: Fail on skip ci
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-ci'
+
+    - name: Fail on skip-gha
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-gha'
+
+    - name: Deps
+      run: ./brink.sh deps
+
+    - name: Move build to Unicode path
+      run: mv build-compat build-compat-ț
+
+    - name: Test
+      run: ./brink.sh test_ci
+      env:
+        CHEVAH_BUILD: build-brink-ț
+
+
+  osx-unicode-path:
+    runs-on: macos-latest
+    steps:
+    - uses: chevah/auto-cancel-redundant-job@v1
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
+
+    - name: Fail on skip-ci
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-ci'
+
+    - name: Fail on skip-gha
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-gha'
+
+    - name: Deps
+      run: ./brink.sh deps
+
+    - name: Move build to Unicode path
+      run: mv build-compat build-compat-ț
+
+    - name: Test
+      run: ./brink.sh test_ci
+      env:
+        CHEVAH_BUILD: build-compat-ț
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+
+  windows:
+    runs-on: windows-latest
+    steps:
+    - uses: chevah/auto-cancel-redundant-job@v1
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
+
+    - name: Fail on skip ci
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-ci'
+
+    - name: Fail on skip-gha
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-gha'
+
+    - name: Deps
+      run: sh ./brink.sh deps
+
+    - name: Test
+      run: sh ./brink.sh test_ci
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

@@ -62,6 +62,9 @@ class TestPosixFilesystem(FileSystemTestCase):
         """
         Returns the owner as string.
         """
+        if os.environ.get('GITHUB_ACTIONS', '') == 'true':
+            raise self.skipTest('On GitHub actions we have different file.')
+
         owner = self.filesystem.getOwner(['c', 'Users'])
         self.assertEqual('Administrators', owner)
 
@@ -85,9 +88,17 @@ class TestPosixFilesystem(FileSystemTestCase):
 
         self.assertCompatError(1016, context.exception)
 
+        self.assertContains(
+            'Failed to set owner to', context.exception.message)
+
         if self.os_family == 'posix':
             self.assertContains(
                 u'No such file or directory', context.exception.message)
+        elif self.TEST_LANGUAGE == 'FR':
+            self.assertContains(
+                u'[2] Le fichier sp\xe9cifi\xe9 est introuvable.',
+                context.exception.message,
+                )
         else:
             self.assertContains(
                 u'The system cannot find the file specified',

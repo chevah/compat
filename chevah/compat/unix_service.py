@@ -82,7 +82,7 @@ class Daemon(object):
         """
         Write process ID in pid file.
         """
-        pid_path = os.path.abspath(self.options.pid)
+        pid_path = local_filesystem.getAbsoluteRealPath(self.options.pid)
         pid_segments = local_filesystem.getSegmentsFromRealPath(pid_path)
         try:
             pid_file = local_filesystem.openFileForWriting(
@@ -97,7 +97,7 @@ class Daemon(object):
                 )
 
     def _deletePID(self):
-        pid_path = os.path.abspath(self.options.pid)
+        pid_path = local_filesystem.getAbsoluteRealPath(self.options.pid)
         pid_segments = local_filesystem.getSegmentsFromRealPath(pid_path)
         try:
             local_filesystem.deleteFile(pid_segments)
