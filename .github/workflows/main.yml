@@ -25,6 +25,9 @@ jobs:
       with:
         fetch-depth: 2
 
+    - name: Dump event data
+      run: echo ${{ toJSON(github.event) }}
+
     - name: Fail on skip ci
       run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-ci'
 

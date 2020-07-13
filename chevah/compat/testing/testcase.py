@@ -514,7 +514,7 @@ class TwistedTestCase(TestCase):
             if len(reactor.threadCallQueue) > 0:
                 have_callbacks = True
                 continue
-            if len(reactor.threadpool.working) > 0:
+            if reactor.threadpool and len(reactor.threadpool.working) > 0:
                 have_callbacks = True
                 continue
 
