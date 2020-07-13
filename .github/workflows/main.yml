@@ -29,10 +29,10 @@ jobs:
       run: echo '${{ toJSON(github.event) }}'
 
     - name: Fail on skip ci
-      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.head.sha) }} | grep -v 'skip-ci'
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.base.head.sha) }} | grep -v 'skip-ci'
 
     - name: Fail on skip-gha
-      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.head.sha) }} | grep -v 'skip-gha'
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.base.head.sha) }} | grep -v 'skip-gha'
 
     - name: Deps
       run: ./brink.sh deps
