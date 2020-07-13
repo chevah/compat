@@ -510,8 +510,11 @@ class TwistedTestCase(TestCase):
             if have_callbacks:
                 continue
 
-            # Look at threads queue.
+            # Look at threads queue and active thread.
             if len(reactor.threadCallQueue) > 0:
+                have_callbacks = True
+                continue
+            if len(reactor.threadpool.working) > 0:
                 have_callbacks = True
                 continue
 
