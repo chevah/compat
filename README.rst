@@ -4,11 +4,15 @@ chevah-compat
 .. image:: https://codecov.io/gh/chevah/compat/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/chevah/compat
 
+.. image:: https://github.com/chevah/compat/workflows/GitHub-CI/badge.svg
+  :target: https://github.com/chevah/compat/actions
+
+
 Chevah OS Compatibility Layer.
 
 Depends on:
 
-* pam - for pam authenticaiton
+* pam - for pam authentication
 * arpy - for loading libraries on AIX.
 
 

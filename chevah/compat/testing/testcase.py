@@ -325,7 +325,10 @@ class TwistedTestCase(TestCase):
 
         # Look at threads queue.
         if len(reactor.threadCallQueue) > 0:
-            raise_failure('threads', reactor.threadCallQueue)
+            raise_failure('queued threads', reactor.threadCallQueue)
+
+        if reactor.threadpool and len(reactor.threadpool.working) > 0:
+            raise_failure('active threads', reactor.threadCallQueue)
 
         pool_queue = self._threadPoolQueue()
         if pool_queue:
@@ -510,8 +513,11 @@ class TwistedTestCase(TestCase):
             if have_callbacks:
                 continue
 
-            # Look at threads queue.
+            # Look at threads queue and active thread.
             if len(reactor.threadCallQueue) > 0:
+                have_callbacks = True
+                continue
+            if reactor.threadpool and len(reactor.threadpool.working) > 0:
                 have_callbacks = True
                 continue
 

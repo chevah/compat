@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.58.1 - 2020-06-23
+-------------------
+
+* Fix executing reactor to wait for currently executed threads, and not only
+  for the queued threads.
+
+
 0.58.0 - 2020-06-23
 -------------------
 

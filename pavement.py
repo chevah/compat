@@ -487,6 +487,78 @@ def test_ci(args):
 
 
 @task
+# It needs consume_args to initialize the paver environment.
+@consume_args
+@needs('build')
+def test_ci2(args):
+    """
+    Run tests in continuous integration environment for CI which read
+    their configuration from the repo/branch (Ex GitHub actions).
+    """
+    # When running in CI mode, we want to get more reports.
+    SETUP['test']['nose_options'] += [
+        '--with-run-reporter',
+        '--with-timer',
+        ]
+
+    # Show some info about the current environment.
+    from OpenSSL import SSL, __version__ as pyopenssl_version
+    from coverage.cmdline import main as coverage_main
+    from chevah.compat.testing.testcase import ChevahTestCase
+
+    print('%s / %s / %s / %s' % (
+        ChevahTestCase.os_family,
+        ChevahTestCase.os_name,
+        ChevahTestCase.os_version,
+        ChevahTestCase.cpu_type,
+        ))
+    print('PYTHON %s on %s with %s' % (sys.version, pave.os_name, pave.cpu))
+    print('%s (%s)' % (
+        SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER))
+    print('pyOpenSSL %s' % (pyopenssl_version,))
+    coverage_main(argv=['--version'])
+
+    print('\n#\n# Installed packages\n#')
+    pave.pip(
+        command='freeze',
+        )
+
+    env = os.environ.copy()
+    args = [env.get('TEST_ARGUMENTS', '')]
+    environment.args = args
+
+    skip_coverage = False
+    if pave.os_name.startswith('alpine') or pave.os_name.startswith('hpux'):
+        # On alpine coverage reporting segfaults.
+        # On HPUX we run out of memory.
+        skip_coverage = True
+
+    if skip_coverage:
+        os.environ[b'CODECOV_TOKEN'] = ''
+    if os.environ.get(b'CODECOV_TOKEN', ''):
+        print('Running tests with coverage')
+    else:
+        print('Running tests WITHOUT coverage.')
+
+    args = env.get('TEST_ARGUMENTS', '')
+    if not args:
+        args = []
+    else:
+        args = [args]
+    test_type = env.get('TEST_TYPE', 'normal')
+
+    if test_type == 'os-independent':
+        return call_task('test_os_independent')
+
+    if test_type == 'py3':
+        return call_task('test_py3', args=args)
+
+    exit_code = call_task('test_os_dependent', args=args)
+
+    return exit_code
+
+
+@task
 @consume_args
 def test_py3(args):
     """
