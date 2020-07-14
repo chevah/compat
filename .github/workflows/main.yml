@@ -32,6 +32,12 @@ jobs:
           build-compat
         key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}
 
+    - name: Dump event data
+      run: |
+        cat  << EOF
+        ${{ toJSON(github.event) }}
+        EOF
+
     - name: Fail on skip ci
       run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.pull_request.head.sha) }} | grep -v 'skip-ci'
 
