@@ -22,10 +22,12 @@
 # * CHEVAH_OS - name of the current OS
 # * CHEVAH_ARCH - CPU type of the current OS
 #
-# The build directory is read from brink.conf and will use a default value if
-# not defined there.
+# The build directory is used from CHEVAH_BUILD env,
+# then read from brink.conf as CHEVAH_BUILD_DIR,
+# and will use a default value if not defined there.
 #
-# The cache directory is read from brink.conf, then from CHEVAH_CACHE env,
+# The cache directory is read the CHEVAH_CACHE env,
+# and then read from brink.conf as CHEVAH_CACHE_DIR,
 # and will use a default value if not defined.
 #
 # You can define your own `execute_venv` function in paver.conf with the
@@ -61,8 +63,17 @@ WAS_PYTHON_JUST_INSTALLED=0
 DIST_FOLDER='dist'
 
 # Path global variables.
+
+# Configuration variable.
+CHEVAH_BUILD_DIR=""
+# Variale used at runtime.
 BUILD_FOLDER=""
+
+# Configuration variable
+CHEVAH_CACHE_DIR=
+# Varible used at runtime.
 CACHE_FOLDER=""
+
 PYTHON_BIN=""
 PYTHON_LIB=""
 LOCAL_PYTHON_BINARY_DIST=""
@@ -207,16 +218,25 @@ update_path_variables() {
         PYTHON_LIB="/lib/${PYTHON_NAME}/"
     fi
 
+    # Read first from env var.
+    set +o nounset
+    BUILD_FOLDER="${CHEVAH_BUILD}"
+    CACHE_FOLDER="${CHEVAH_CACHE}"
+    set -o nounset
+
     if [ "${BUILD_FOLDER}" = "" ] ; then
-        # Use default value if not defined in config file.
+        # Use value from configuration file.
+        BUILD_FOLDER="${CHEVAH_BUILD_DIR}"
+    fi
+
+    if [ "${BUILD_FOLDER}" = "" ] ; then
+        # Use default value if not yet defined.
         BUILD_FOLDER="build-${OS}-${ARCH}"
     fi
 
     if [ "${CACHE_FOLDER}" = "" ] ; then
-        # Try to read from environment if not defined in config file.\
-        set +o nounset
-        CACHE_FOLDER="${CHEVAH_CACHE}"
-        set -o nounset
+        # Use default if not yet defined.
+        CACHE_FOLDER="${CHEVAH_CACHE_DIR}"
     fi
 
     if [ "${CACHE_FOLDER}" = "" ] ; then
@@ -286,15 +306,17 @@ pip_install() {
     # See https://github.com/pypa/pip/issues/3564
     rm -rf ${BUILD_FOLDER}/pip-build
     ${PYTHON_BIN} -m \
-        pip install $1 \
+        pip install \
             --trusted-host pypi.chevah.com \
-            --index-url=$PIP_INDEX/simple \
+            --trusted-host deag.chevah.com \
+            --index-url=$PIP_INDEX \
             --build=${BUILD_FOLDER}/pip-build \
+            $1
 
     exit_code=$?
     set -e
     if [ $exit_code -ne 0 ]; then
-        (>&2 echo "Failed to install brink.")
+        (>&2 echo "Failed to install $1.")
         exit 2
     fi
 }
@@ -507,6 +529,11 @@ copy_python() {
 install_dependencies(){
 
     if [ $WAS_PYTHON_JUST_INSTALLED -ne 1 ]; then
+        return
+    fi
+
+    if [ "$COMMAND" == "deps" ] ; then
+        # Will be installed soon.
         return
     fi
 
@@ -856,12 +883,10 @@ check_source_folder
 copy_python
 install_dependencies
 
-# Always update brink when running buildbot tasks.
-for paver_task in "deps" "test_os_dependent" "test_os_independent"; do
-    if [ "$COMMAND" == "$paver_task" ] ; then
-        install_base_deps
-    fi
-done
+# Update brink.conf dependencies when running deps.
+if [ "$COMMAND" == "deps" ] ; then
+    install_base_deps
+fi
 
 case $COMMAND in
     test_ci|test_py3)
