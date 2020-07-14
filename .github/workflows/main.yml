@@ -44,6 +44,7 @@ jobs:
       run: ./brink.sh test_ci
       env:
         CHEVAH_BUILD: build-brink-ț
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
 
   osx-unicode-path:
