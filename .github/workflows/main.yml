@@ -54,10 +54,43 @@ jobs:
       run: ./brink.sh test_ci2
       env:
         CHEVAH_BUILD: build-compat-ț
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Move build back to to ascii
       run: mv build-compat-ț build-compat
+
+
+  linux-ascii-path:
+    runs-on: ubuntu-18.04
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Make sure we don't have multiple job
+    - uses: chevah/auto-cancel-redundant-job@v1
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
+
+    - name: Cache build
+      uses: actions/cache@v2
+      with:
+        path: |
+          build-compat
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}
+
+    - name: Fail on skip ci
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.pull_request.head.sha) }} | grep -v 'skip-ci'
+
+    - name: Fail on skip-gha
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.pull_request.head.sha) }} | grep -v 'skip-gha'
+
+    - name: Deps
+      run: ./brink.sh deps
+
+    - name: Test
+      run: ./brink.sh test_ci2
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Publish cov
       run: ./brink.sh codecov_publish
