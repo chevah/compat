@@ -12,7 +12,7 @@ on:
 
 jobs:
 
-  linux-unicode-path:
+  ubuntu-2004-unicode-path:
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
 
@@ -57,7 +57,7 @@ jobs:
       run: mv build-compat-ț build-compat
 
 
-  linux-ascii-path:
+  ubuntu-1804-ascii-path:
     runs-on: ubuntu-18.04
 
     # Steps represent a sequence of tasks that will be executed as part of the job
