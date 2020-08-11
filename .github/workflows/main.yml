@@ -1,3 +1,11 @@
+#
+# GitHub actions to test chevah-compat.
+#
+# Available VMs. Don't use `-latest` as we want to pin an OS version.
+# https://help.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners
+#
+# When running a tmate debug session you might need to increase the
+# timeout-minutes for each build.
 name: GitHub-CI
 
 on:
@@ -9,6 +17,11 @@ on:
     branches: [ master ]
     paths:
     - '**.py'
+
+
+env:
+  TMATE_DEBUG: 'no'
+
 
 jobs:
 
@@ -53,6 +66,10 @@ jobs:
       env:
         CHEVAH_BUILD: build-compat-ț
 
+    - name: Tmate debug on failure
+      if: failure() && env.TMATE_DEBUG == 'yes'
+      uses: mxschmitt/action-tmate@v2
+
     - name: Move build back to to ascii
       run: mv build-compat-ț build-compat
 
@@ -86,6 +103,10 @@ jobs:
       run: ./brink.sh test_ci2
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Tmate debug on failure
+      if: failure() && env.TMATE_DEBUG == 'yes'
+      uses: mxschmitt/action-tmate@v2
 
     - name: Publish cov
       run: ./brink.sh codecov_publish
@@ -122,6 +143,10 @@ jobs:
       env:
         CHEVAH_BUILD: build-compat-ț
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Tmate debug on failure
+      if: failure() && env.TMATE_DEBUG == 'yes'
+      uses: mxschmitt/action-tmate@v2
 
     - name: Move build back to to ascii
       run: mv build-compat-ț build-compat
