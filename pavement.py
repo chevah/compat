@@ -79,7 +79,7 @@ if os.name == 'posix':
 
 # Packages required to use the dev/build system.
 BUILD_PACKAGES = [
-    # Buildbot is used for try scheduler
+    # Buildbot is used for try scheduler.
     'buildbot==0.8.11.chevah11',
 
     # For PQM
