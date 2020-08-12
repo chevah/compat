@@ -20,7 +20,7 @@ on:
 
 
 env:
-  TMATE_DEBUG: 'yes'
+  TMATE_DEBUG: 'no'
 
 
 jobs:
@@ -76,7 +76,6 @@ jobs:
 
   ubuntu-1804-ascii-path:
     runs-on: ubuntu-18.04
-    timeout-minutes: 60
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
