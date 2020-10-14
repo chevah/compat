@@ -30,7 +30,7 @@
 # and then read from brink.conf as CHEVAH_CACHE_DIR,
 # and will use a default value if not defined.
 #
-# You can define your own `execute_venv` function in paver.conf with the
+# You can define your own `execute_venv` function in brink.conf with the
 # command used to execute Python inside the newly virtual environment.
 #
 
@@ -92,15 +92,14 @@ PIP_INDEX='http://pypi.chevah.com'
 BASE_REQUIREMENTS=''
 
 #
-# Check that we have a pavement.py in the current dir.
-# otherwise it means we are out of the source folder and paver can not be
-# used there.
+# Check that we have a pavement.py file in the current dir.
+# If not, we are out of the source's root dir and brink.sh won't work.
 #
 check_source_folder() {
 
     if [ ! -e pavement.py ]; then
         (>&2 echo 'No "pavement.py" file found in current folder.')
-        (>&2 echo 'Make sure you are running "paver.sh" from a source folder.')
+        (>&2 echo 'Make sure you are running "brink.sh" from a source folder.')
         exit 8
     fi
 }
@@ -120,7 +119,7 @@ update_venv() {
     exit_code=$?
     set -e
     if [ $exit_code -ne 0 ]; then
-        (>&2 echo 'Failed to run the initial "./paver.sh deps" command.')
+        (>&2 echo 'Failed to run the initial "./brink.sh deps" command.')
         exit 7
     fi
 }
@@ -253,6 +252,7 @@ update_path_variables() {
     export CHEVAH_PYTHON=${PYTHON_NAME}
     export CHEVAH_OS=${OS}
     export CHEVAH_ARCH=${ARCH}
+    export CHEVAH_CACHE=${CACHE_FOLDER}
 
 }
 
@@ -411,6 +411,7 @@ get_python_dist() {
         get_binary_dist $python_distributable $remote_base_url/${OS}/${ARCH}
     else
         (>&2 echo "Requested version was not found on the remote server.")
+        (>&2 echo "$remote_base_url $python_distributable")
         exit 4
     fi
 }
@@ -607,14 +608,28 @@ check_os_version() {
 # For old unsupported Linux distros (some with no /etc/os-release) and for other
 # unsupported Linux distros (eg. Arch), we check if the system is glibc-based.
 # If so, we use a generic code path that builds everything statically,
-# including OpenSSL, thus only requiring glibc 2.x.
+# including OpenSSL, thus only requiring glibc 2.X, where X differs by arch.
 #
 check_linux_glibc() {
     local glibc_version
     local glibc_version_array
+    local supported_glibc2_version
 
-    echo "Unsupported Linux distribution detected!"
-    echo "To get you going, we'll try to treat it as generic Linux..."
+    # Supported minimum minor glibc 2.X versions for various arches.
+    # For x64, we build on CentOS 5.11 (Final) with glibc 2.5.
+    # For arm64, we build on Ubuntu 16.04 with glibc 2.23.
+    # Beware we haven't normalized arch names yet.
+    case "$ARCH" in
+        "amd64"|"x86_64"|"x64")
+            supported_glibc2_version=5
+            ;;
+        "aarch64"|"arm64")
+            supported_glibc2_version=23
+            ;;
+    esac
+
+    (>&2 echo -n "Couldn't detect a supported distribution. ")
+    (>&2 echo "Trying to treat it as generic Linux...")
 
     set +o errexit
 
@@ -630,7 +645,7 @@ check_linux_glibc() {
         exit 19
     fi
 
-    # Parsing tested with glibc 2.11.x and 2.29, eglibc 2.13 and 2.19.
+    # Tested with glibc 2.5/2.11.3/2.12/2.23/2.28-31 and eglibc 2.13/2.19.
     glibc_version=$(ldd --version | head -n 1 | rev | cut -d\  -f1 | rev)
 
     if [[ $glibc_version =~ [^[:digit:]\.] ]]; then
@@ -647,16 +662,17 @@ check_linux_glibc() {
     fi
 
     # We pass here because:
-    #   1. In python-package building should work with older glibc version.
+    #   1. Building python-package should work with an older glibc version.
     #   2. Our generic "lnx" runtime might work with a slightly older glibc 2.
-    if [ ${glibc_version_array[1]} -lt 11 ]; then
-        (>&2 echo "Beware glibc versions older than 2.11 were NOT tested!")
-        (>&2 echo "Detected glibc version: $glibc_version")
+    if [ ${glibc_version_array[1]} -lt ${supported_glibc2_version} ]; then
+        (>&2 echo -n "Detected glibc version: ${glibc_version}. Versions older")
+        (>&2 echo " than 2.${supported_glibc2_version} were NOT tested!")
+
     fi
 
     set -o errexit
 
-    # glibc 2 detected, we set $OS for a generic build.
+    # glibc 2 detected, we set $OS for a generic Linux build.
     OS="lnx"
 }
 
@@ -720,8 +736,8 @@ detect_os() {
                         ;;
                     ubuntu|ubuntu-core)
                         os_version_raw="$VERSION_ID"
-                        # 12.04/14.04 have OpenSSL 1.0.1, use generic Linux.
-                        check_os_version "$distro_fancy_name" 16.04 \
+                        # For versions with older OpenSSL, use generic build.
+                        check_os_version "$distro_fancy_name" 18.04 \
                             "$os_version_raw" os_version_chevah
                         # Only LTS versions are supported. If it doesn't end in
                         # 04 or first two digits are uneven, use generic build.
@@ -865,6 +881,13 @@ if [ "$COMMAND" = "purge" ] ; then
     exit 0
 fi
 
+# Initialize BUILD_ENV_VARS file when building python-package from scratch.
+if [ "$COMMAND" == "detect_os" ]; then
+    echo "PYTHON_VERSION=$PYTHON_NAME" > BUILD_ENV_VARS
+    echo "OS=$OS" >> BUILD_ENV_VARS
+    echo "ARCH=$ARCH" >> BUILD_ENV_VARS
+    exit 0
+fi
 
 if [ "$COMMAND" = "get_python" ] ; then
     OS=$2
