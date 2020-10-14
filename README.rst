@@ -7,6 +7,9 @@ chevah-compat
 .. image:: https://github.com/chevah/compat/workflows/GitHub-CI/badge.svg
   :target: https://github.com/chevah/compat/actions
 
+.. image:: https://api.travis-ci.com/chevah/compat.svg?branch=master
+  :target: https://travis-ci.com/github/chevah/compat
+
 
 Chevah OS Compatibility Layer.
 
