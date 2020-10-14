@@ -46,8 +46,7 @@ class TestSystemUsers(CompatTestCase):
         # For buildslave, home folder is in srv.
         if mk.username == 'buildslave':
             self.assertEqual(u'/srv/' + mk.username, home_folder)
-        elif mk.username == 'runner' and self.os_name == 'osx':
-            # We are on macOS GitHub actions.
+        elif self.os_name == 'osx':
             self.assertEqual(u'/Users/' + mk.username, home_folder)
         else:
             self.assertEqual(u'/home/' + mk.username, home_folder)
