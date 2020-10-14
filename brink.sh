@@ -373,7 +373,7 @@ get_binary_dist() {
         rm -f $tar_gz_file
         rm -f $tar_file
         execute $DOWNLOAD_CMD $remote_base_url/${tar_gz_file}
-        execute gunzip $tar_gz_file
+        execute gunzip -f $tar_gz_file
         execute tar -xf $tar_file
         rm -f $tar_gz_file
         rm -f $tar_file
