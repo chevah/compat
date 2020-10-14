@@ -81,6 +81,7 @@ if os.name == 'posix':
 BUILD_PACKAGES = [
     # Buildbot is used for try scheduler
     'buildbot==0.8.11.chevah11',
+    'SQLAlchemy>=1.3.18',
 
     # For PQM
     'chevah-github-hooks-server==0.1.6',
@@ -100,7 +101,7 @@ BUILD_PACKAGES = [
     'pylint==1.9.4',
     'astroid==1.6.6',
     # These are build packages, but are needed for testing the documentation.
-    'sphinx==1.2.2',
+    'sphinx==1.6.3',
     'repoze.sphinx.autointerface==0.7.1.c4',
     # Docutils is required for RST parsing and for Sphinx.
     'docutils==0.12.c1',
@@ -108,11 +109,11 @@ BUILD_PACKAGES = [
     # Packages required to run the test suite.
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
-    'nose==1.3.0.chevah10',
+    'nose==1.3.0.chevah11',
     'nose-randomly==1.2.5',
     'mock',
 
-    'coverage==4.4.1',
+    'coverage==4.5.4',
     'diff_cover==0.9.11',
     'codecov==2.1.7',
 
