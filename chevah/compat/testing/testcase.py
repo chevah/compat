@@ -912,9 +912,6 @@ def _get_ci_name():
     if os.environ.get('TRAVIS', '').lower() == 'true':
         return _CI_NAMES.TRAVIS
 
-    if os.environ.get('TRAVIS', '').lower() == 'true':
-        return _CI_NAMES.TRAVIS
-
     if os.environ.get('INFRASTRUCTURE', '') == 'AZUREPIPELINES':
         return _CI_NAMES.AZURE
 

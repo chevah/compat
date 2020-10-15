@@ -432,7 +432,7 @@ def test_ci(args):
     from coverage.cmdline import main as coverage_main
     from chevah.compat.testing.testcase import ChevahTestCase
 
-    print('%s / %s / %s / %s / %s' % (
+    print('%s / os_name:%s / os_version:%s / cpu_type:%s / ci_name:%s' % (
         ChevahTestCase.os_family,
         ChevahTestCase.os_name,
         ChevahTestCase.os_version,
