@@ -332,7 +332,7 @@ def build():
         pave.path.build, pave.getPythonLibPath(), 'chevah', 'compat',
         ])
 
-    # On AIX pip (setuptools) fails to re-install, so we do some custom
+    # On AIX, pip (setuptools) fails to re-install, so we do some custom
     # cleaning as a workaround.
     members = pave.fs.listFolder(pave.fs.join([
         pave.path.build, pave.getPythonLibPath()]))
