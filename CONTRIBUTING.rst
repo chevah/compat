@@ -30,7 +30,7 @@ Remote test
 
 You should specify the builder name to run the tests::
 
-    $ ./brink.sh test_remote ubuntu-1204-32 --wait SOME_TEST
+    $ ./brink.sh test_remote ubuntu-2004 --wait SOME_TEST
 
 You can trigger a remote session by using this code instead of the regular
 `import pdb; pdb.set_trace`::
@@ -46,7 +46,7 @@ You will need access to the VPN as you will connect directly to the slave.
 PAM
 ---
 
-PAM test requires the chevah-pam-test PAM module to be enabled.
+PAM tests require the chevah-pam-test PAM module to be enabled.
 
 Create a file `/etc/pam.d/chevah-pam-test` with the following content::
 

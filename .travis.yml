@@ -2,7 +2,7 @@
 # Experimental Travis CI.
 #
 # Linux ARM64 target is pinned on the oldest distribution available on Travis,
-# to get a generic ARM64 Linux build.
+# thus matching a generic ARM64 Linux build.
 
 language: minimal
 

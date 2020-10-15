@@ -138,6 +138,8 @@ clean_build() {
     delete_folder 'publish'
     echo "Cleaning pyc files ..."
 
+    # AIX's find complains if there are no matching files when using +.
+    [ $(uname) == AIX ] && touch ./dummy_file_for_AIX.pyc
     # Faster than '-exec rm {} \;' and supported in most OS'es,
     # details at http://www.in-ulm.de/~mascheck/various/find/#xargs
     find ./ -name '*.pyc' -exec rm {} +
@@ -747,7 +749,7 @@ detect_os() {
                         ;;
                     alpine)
                         os_version_raw="$VERSION_ID"
-                        check_os_version "$distro_fancy_name" 3.12 \
+                        check_os_version "$distro_fancy_name" 3.6 \
                             "$os_version_raw" os_version_chevah
                         set_os_if_not_generic "alpine" $os_version_chevah
                         ;;
@@ -777,19 +779,50 @@ detect_os() {
         OpenBSD)
             ARCH=$(uname -m)
             os_version_raw=$(uname -r)
-            check_os_version "OpenBSD" 6.7 "$os_version_raw" os_version_chevah
+            check_os_version "OpenBSD" 6.5 "$os_version_raw" os_version_chevah
             OS="obsd${os_version_chevah}"
             ;;
         SunOS)
             ARCH=$(isainfo -n)
             os_version_raw=$(uname -r | cut -d'.' -f2)
-            check_os_version "Solaris" 11 "$os_version_raw" os_version_chevah
+            check_os_version "Solaris" 10 "$os_version_raw" os_version_chevah
             OS="sol${os_version_chevah}"
-            check_os_version Solaris 11 "$os_version_raw" os_version_chevah
-            if [ "$minor_version" -lt 4 ]; then
-                (>&2 echo "Unsupported Solaris 11 version, 11.4 needed.")
-                exit 15
-            fi
+            case "$OS" in
+                sol10)
+                    # Solaris 10u8 (from 10/09) updated libc version, so for
+                    # older releases up to 10u7 (from 5/09) we build on 10u3.
+                    # The "sol10u3" code path also shows the way to link to
+                    # OpenSSL 0.9.7 libs bundled in /usr/sfw/ with Solaris 10.
+                    # Update number is taken from first line of /etc/release.
+                    un=$(head -1 /etc/release | cut -d_ -f2 | sed s/[^0-9]*//g)
+                    if [ "$un" -lt 8 ]; then
+                        OS="sol10u3"
+                    fi
+                    ;;
+                sol11)
+                    # Solaris 11 releases prior to 11.4 bundled OpenSSL libs
+                    # missing support for Elliptic-curve crypto. From here on:
+                    #   * Solaris 11.4 (or newer) with OpenSSL 1.0.2 is "sol11",
+                    #   * Solaris 11.2/11.3 with OpenSSL 1.0.1 is "sol112",
+                    #   * Solaris 11.0/11.1 with OpenSSL 1.0.0 is not supported.
+                    minor_version=$(uname -v | cut -d'.' -f2)
+                    if [ "$minor_version" -lt 4 ]; then
+                        OS="sol112"
+                    fi
+                    ;;
+            esac
+            ;;
+        AIX)
+            ARCH="ppc$(getconf HARDWARE_BITMODE)"
+            os_version_raw=$(oslevel)
+            check_os_version AIX 5.3 "$os_version_raw" os_version_chevah
+            OS="aix${os_version_chevah}"
+            ;;
+        HP-UX)
+            ARCH=$(uname -m)
+            os_version_raw=$(uname -r | cut -d'.' -f2-)
+            check_os_version HP-UX 11.31 "$os_version_raw" os_version_chevah
+            OS="hpux${os_version_chevah}"
             ;;
         *)
             (>&2 echo "Unsupported operating system: ${OS}.")
@@ -805,6 +838,10 @@ detect_os() {
         "amd64"|"x86_64")
             ARCH="x64"
             case "$OS" in
+                sol10*)
+                    # On Solaris 10, x64 built fine prior to adding "bcrypt".
+                    ARCH="x86"
+                    ;;
                 win)
                     # 32bit build on Windows 2016, 64bit otherwise.
                     # Should work with a l10n pack too (tested with French).
@@ -818,6 +855,15 @@ detect_os() {
             ;;
         "aarch64")
             ARCH="arm64"
+            ;;
+        "ppc64")
+            # Python has not been fully tested on AIX when compiled as a 64bit
+            # binary, and has math rounding error problems (at least with XL C).
+            ARCH="ppc"
+            ;;
+        "sparcv9")
+            # We build 32bit binaries on SPARC too. Use "sparc64" for 64bit.
+            ARCH="sparc"
             ;;
     esac
 }

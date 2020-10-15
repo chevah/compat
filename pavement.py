@@ -73,7 +73,7 @@ if os.name == 'posix':
         # This is required as any other version will try to also update pip.
         'lockfile==0.9.1',
         'pam==0.1.4.c3',
-        # Required for loading PAM lib on AIX.
+        # Required for loading PAM libs on AIX.
         'arpy==1.1.1.c2',
         ])
 
