@@ -715,7 +715,8 @@ class TestChevahTestCase(ChevahTestCase):
         Run test on build slaves that do not have administrator privileges.
         """
         if (
-            self.TEST_LANGUAGE == 'FR'
+            self.TEST_LANGUAGE == 'FR' or
+            self.os_name
             or self.ci_name not in [self.CI.BUILDBOT, self.CI.LOCAL]
                 ):
             # Not available on Windows XP and 2003 and non-buildbot runs.

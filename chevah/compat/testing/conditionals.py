@@ -96,6 +96,8 @@ def onAdminPrivileges(present):
     Run test only if administrator privileges match the `present` value on
     the machine running the tests.
 
+    Only valid on Windows.
+
     For the moment only Windows 2003 and Windows XP build slaves execute the
     tests suite with a regular account.
 
@@ -110,6 +112,9 @@ def onAdminPrivileges(present):
         )
 
     def check_administrator():
+        if ChevahTestCase.os_family != 'nt':
+            return False
+
         if present:
             return not is_running_as_normal
 
