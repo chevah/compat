@@ -43,7 +43,6 @@ class TestProcessCapabilities(FileSystemTestCase):
 
         self.assertTrue(result)
 
-    @conditionals.onOSFamily('nt')
     @conditionals.onAdminPrivileges(True)
     def test_get_home_folder_windows_admin(self):
         """

@@ -149,8 +149,8 @@ class TestNTProcessCapabilities(CompatTestCase):
         self.assertFalse(self.capabilities.pam)
 
 
-@conditionals.onOSFamily('nt')
 @conditionals.onAdminPrivileges(False)
+@conditionals.onOSFamily('nt')
 class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
     """
     Capability tests executed only on Windows slaves that are configured to
@@ -285,8 +285,8 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
             self.assertNotContains('SeCreateGlobalPrivilege', text)
 
 
-@conditionals.onOSFamily('nt')
 @conditionals.onAdminPrivileges(True)
+@conditionals.onOSFamily('nt')
 class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
     """
     Capability tests executed only on Windows slaves that are configured to
