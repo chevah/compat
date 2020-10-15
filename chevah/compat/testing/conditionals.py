@@ -98,11 +98,15 @@ def onAdminPrivileges(present):
 
     For the moment only Windows 2003 and Windows XP build slaves execute the
     tests suite with a regular account.
+
+    Only local or buildbot runs have all the admin privileges setup.
     """
     hostname = gethostname()
     is_running_as_normal = (
         ChevahTestCase.os_version in ['nt-5.1', 'nt-5.2']
-        or ChevahTestCase.TEST_LANGUAGE == 'FR'
+        or ChevahTestCase.ci_name not in [
+            ChevahTestCase.CI.LOCAL,
+            ChevahTestCase.CI.BUILDBOT]
         )
 
     def check_administrator():

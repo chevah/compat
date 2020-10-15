@@ -889,6 +889,41 @@ def _get_cpu_type():
     return base
 
 
+_CI_NAMES = Bunch(
+    LOCAL='local',
+    GITHUB='github-actions',
+    TRAVIS='travis',
+    BUILDBOT='buildbot',
+    UNKNOWN='unknown-ci',
+    AZURE='azure-pipelines',
+    )
+
+
+def _get_ci_name():
+    """
+    Return the name of the CI on which the tests are currently executed.
+    """
+    if os.environ.get('BUILDBOT', '').lower() == 'true':
+        return _CI_NAMES.BUILDBOT
+
+    if os.environ.get('GITHUB_ACTIONS', '').lower() == 'true':
+        return _CI_NAMES.GITHUB
+
+    if os.environ.get('TRAVIS', '').lower() == 'true':
+        return _CI_NAMES.TRAVIS
+
+    if os.environ.get('TRAVIS', '').lower() == 'true':
+        return _CI_NAMES.TRAVIS
+
+    if os.environ.get('INFRASTRUCTURE', '') == 'AZUREPIPELINES':
+        return _CI_NAMES.AZURE
+
+    if os.environ.get('CI', '').lower() == 'true':
+        return _CI_NAMES.UNKNOWN
+
+    return _CI_NAMES.LOCAL
+
+
 class ChevahTestCase(TwistedTestCase, AssertionMixin):
     """
     Test case for Chevah tests.
@@ -900,6 +935,8 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     os_family = process_capabilities.os_family
     os_version = _get_os_version()
     cpu_type = process_capabilities.cpu_type
+    ci_name = _get_ci_name()
+    CI = _CI_NAMES
     TEST_LANGUAGE = os.getenv('TEST_LANG', 'EN')
 
     # List of partial thread names to ignore during the tearDown.

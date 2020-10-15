@@ -7,7 +7,6 @@ Test for platform capabilities detection.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-import os
 try:
     import win32security
 except ImportError:
@@ -255,15 +254,12 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         """
         result = self.capabilities.create_home_folder
 
-        # Windows i18n and GitHub runners are setup without "Backup Operators"
-        # group (SE_BACKUP/SE_RESTORE) enabled.
-        if (
-            self.TEST_LANGUAGE == 'FR'
-            or os.getenv('GITHUB_ACTIONS', b'') == b'true'
-                ):
-            self.assertFalse(result)
-        else:
+        if self.ci_name == self.CI.BUILDBOT:
+            # Only buildbot slaves are setup with "Backup Operators"
+            # group (SE_BACKUP/SE_RESTORE) enabled.
             self.assertTrue(result)
+        else:
+            self.assertFalse(result)
 
     def test_getCurrentPrivilegesDescription(self):
         """
