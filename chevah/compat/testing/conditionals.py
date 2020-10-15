@@ -116,9 +116,9 @@ def onAdminPrivileges(present):
             return False
 
         if present:
-            return not is_running_as_normal
+            return is_running_as_normal
 
-        return is_running_as_normal
+        return not is_running_as_normal
 
     return skipOnCondition(
         check_administrator,

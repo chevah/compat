@@ -254,9 +254,10 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         """
         result = self.capabilities.create_home_folder
 
-        if self.ci_name == self.CI.BUILDBOT:
+        if self.ci_name == self.CI.BUILDBOT and self.TEST_LANGUAGE != 'FR':
             # Only buildbot slaves are setup with "Backup Operators"
             # group (SE_BACKUP/SE_RESTORE) enabled.
+            # But not the I18N slave.
             self.assertTrue(result)
         else:
             self.assertFalse(result)
