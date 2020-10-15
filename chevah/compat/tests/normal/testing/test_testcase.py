@@ -705,7 +705,7 @@ class TestChevahTestCase(ChevahTestCase):
             raise AssertionError(
                 'Windows XP and 2003 BS does not run as administrator')
 
-        if self.ci_name in [self.CI.TRAVIS, self.CI.GITHHUB]:
+        if self.ci_name in [self.CI.TRAVIS, self.CI.GITHUB]:
             raise AssertionError(
                 'Travis and GitHub does not run as administrator')
 
