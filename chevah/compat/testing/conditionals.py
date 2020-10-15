@@ -106,6 +106,7 @@ def onAdminPrivileges(present):
     hostname = gethostname()
     is_running_as_normal = (
         ChevahTestCase.os_version in ['nt-5.1', 'nt-5.2']
+        or ChevahTestCase.TEST_LANGUAGE == 'FR'
         or ChevahTestCase.ci_name not in [
             ChevahTestCase.CI.LOCAL,
             ChevahTestCase.CI.BUILDBOT]
