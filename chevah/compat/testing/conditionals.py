@@ -105,24 +105,23 @@ def onAdminPrivileges(present):
     """
     hostname = gethostname()
     is_running_as_normal = (
+        ChevahTestCase.os_family != 'nt' or
         ChevahTestCase.os_version in ['nt-5.1', 'nt-5.2']
         or ChevahTestCase.TEST_LANGUAGE == 'FR'
         or ChevahTestCase.ci_name not in [
             ChevahTestCase.CI.LOCAL,
-            ChevahTestCase.CI.BUILDBOT]
+            ChevahTestCase.CI.BUILDBOT,
+            ]
         )
 
-    def check_administrator():
-        if ChevahTestCase.os_family != 'nt':
-            return False
-
+    def is_normal_user():
         if present:
             return is_running_as_normal
 
         return not is_running_as_normal
 
     return skipOnCondition(
-        check_administrator,
+        is_normal_user,
         'Administrator privileges not present on "%s".' % (hostname,)
         )
 

@@ -9,17 +9,20 @@ language: minimal
 jobs:
   include:
     - os: windows
+
     - os: linux
       dist: xenial
       arch: arm64
+
     - os: osx
       osx_image: xcode10.1
+
     - os: osx
       osx_image: xcode11.3
 
-install: skip
-
-script:
+install:
   - ./brink.sh detect_os
   - ./brink.sh deps
+
+script:
   - ./brink.sh test_ci
