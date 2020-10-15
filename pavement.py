@@ -432,11 +432,12 @@ def test_ci(args):
     from coverage.cmdline import main as coverage_main
     from chevah.compat.testing.testcase import ChevahTestCase
 
-    print('%s / %s / %s / %s' % (
+    print('%s / %s / %s / %s / %s' % (
         ChevahTestCase.os_family,
         ChevahTestCase.os_name,
         ChevahTestCase.os_version,
         ChevahTestCase.cpu_type,
+        ChevahTestCase.ci_name,
         ))
     print('PYTHON %s on %s with %s' % (sys.version, pave.os_name, pave.cpu))
     print('%s (%s)' % (
