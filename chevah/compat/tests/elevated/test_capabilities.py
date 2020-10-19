@@ -67,7 +67,7 @@ class TestProcessCapabilities(FileSystemTestCase):
         """
         Lists all available privileges and their state.
         """
-        if self.ci_name = self.CI.TRAVIS:
+        if self.ci_name == self.CI.TRAVIS:
             raise self.skipTest('Travis always run as Administrator.')
 
         text = self.capabilities.getCurrentPrivilegesDescription()
@@ -116,7 +116,7 @@ class TestProcessCapabilities(FileSystemTestCase):
         getCurrentPrivilegesDescription can be used for impersonated accounts
         and will return the impersonated user's capabilities instead.
         """
-        if self.ci_name = self.CI.TRAVIS:
+        if self.ci_name == self.CI.TRAVIS:
             raise self.skipTest('Travis always run as Administrator.')
 
         # Unify tests once proper capabilities support is implemented.
@@ -136,7 +136,7 @@ class TestProcessCapabilities(FileSystemTestCase):
         Can elevate privileges while running under impersonated account if
         privilege is already present.
         """
-        if self.ci_name = self.CI.TRAVIS:
+        if self.ci_name == self.CI.TRAVIS:
             raise self.skipTest('Travis always run as Administrator.')
 
         import win32security
