@@ -494,9 +494,11 @@ def test_ci2(args):
     test_type = env.get('TEST_TYPE', 'normal')
 
     if test_type == 'os-independent':
+        os.environ[b'CODECOV_TOKEN'] = ''
         return call_task('test_os_independent')
 
     if test_type == 'py3':
+        os.environ[b'CODECOV_TOKEN'] = ''
         return call_task('test_py3', args=args)
 
     exit_code = call_task('test_os_dependent', args=args)

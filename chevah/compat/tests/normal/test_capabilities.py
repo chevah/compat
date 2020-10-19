@@ -149,12 +149,16 @@ class TestNTProcessCapabilities(CompatTestCase):
         self.assertFalse(self.capabilities.pam)
 
 
+@conditionals.onCIName([CompatTestCase.CI.LOCAL, CompatTestCase.CI.BUILDBOT])
 @conditionals.onAdminPrivileges(False)
 @conditionals.onOSFamily('nt')
 class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
     """
     Capability tests executed only on Windows slaves that are configured to
     run without administrator rights.
+
+    These tests are only valid on local OS or on Buildbot where we have
+    a VM configured in a very specific way.
     """
 
     def setUp(self):

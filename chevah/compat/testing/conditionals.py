@@ -78,6 +78,22 @@ def onOSName(name):
         check_os_name, 'OS name "%s" not available.' % name)
 
 
+def onCIName(name):
+    """
+    Run tests only if current CI is `name` or is in one from `name` list.
+    """
+    if not isinstance(name, list) and not isinstance(name, tuple):
+        name = [name.lower()]
+    else:
+        name = [item.lower() for item in name]
+
+    def check_ci_name():
+        return ChevahTestCase.ci_name not in name
+
+    return skipOnCondition(
+        check_ci_name, 'CI "%s" not available.' % name)
+
+
 def onCapability(name, value):
     """
     Run test only if capability with `name` equals `value`.
