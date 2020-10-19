@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.58.2 - 2020-08-05
+-------------------
+
+* Fix directory attributes returned for virtual folders.
+
+
 0.58.1 - 2020-06-23
 -------------------
 

@@ -3857,6 +3857,10 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             expected[2].node_id = 0
         self.assertIteratorItemsEqual(expected, result)
 
+        self.assertEqual(0o40555, expected[0].mode)
+        self.assertIsTrue(expected[0].is_folder)
+        self.assertIsFalse(expected[0].is_file)
+
         expected = [
             'non-virtual\N{sun}',
             'other-real\N{sun}',

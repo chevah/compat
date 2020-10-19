@@ -830,7 +830,7 @@ class PosixFilesystemBase(object):
             is_folder=True,
             is_link=False,
             modified=modified,
-            mode=0,
+            mode=0o40555,
             hardlinks=1,
             uid=1,
             gid=1,

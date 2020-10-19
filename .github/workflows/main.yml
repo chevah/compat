@@ -1,3 +1,11 @@
+#
+# GitHub actions to test chevah-compat.
+#
+# Available VMs. Don't use `-latest` as we want to pin an OS version.
+# https://help.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners
+#
+# When running a tmate debug session you might need to increase the
+# timeout-minutes for each build.
 name: GitHub-CI
 
 on:
@@ -10,27 +18,19 @@ on:
     paths:
     - '**.py'
 
+
+env:
+  TMATE_DEBUG: 'no'
+
+
 jobs:
 
-  linux-unicode-path:
+  ubuntu-2004-unicode-path:
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Make sure we don't have multiple job
-    - uses: chevah/auto-cancel-redundant-job@v1
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 2
-
-    - name: Cache build
-      uses: actions/cache@v2
-      with:
-        path: |
-          build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}
 
     - name: Dump event data
       run: |
@@ -38,11 +38,23 @@ jobs:
         ${{ toJSON(github.event) }}
         EOF
 
-    - name: Fail on skip ci
-      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.pull_request.head.sha) }} | grep -v 'skip-ci'
+    # Make sure we don't have multiple job
+    - uses: chevah/auto-cancel-redundant-job@v1
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
 
-    - name: Fail on skip-gha
-      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.pull_request.head.sha) }} | grep -v 'skip-gha'
+    - name: Fail on skip-ci
+      if: ${{ github.event.after }}
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-ci'
+
+    - name: Cache build
+      uses: actions/cache@v2
+      with:
+        path: |
+          build-compat
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-unicode
 
     - name: Deps
       run: ./brink.sh deps
@@ -55,11 +67,15 @@ jobs:
       env:
         CHEVAH_BUILD: build-compat-ț
 
+    - name: Tmate debug on failure
+      if: failure() && env.TMATE_DEBUG == 'yes'
+      uses: mxschmitt/action-tmate@v2
+
     - name: Move build back to to ascii
       run: mv build-compat-ț build-compat
 
 
-  linux-ascii-path:
+  ubuntu-1804-ascii-path:
     runs-on: ubuntu-18.04
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -71,18 +87,16 @@ jobs:
       with:
         fetch-depth: 2
 
+    - name: Fail on skip-ci
+      if: ${{ github.event.after }}
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-ci'
+
     - name: Cache build
       uses: actions/cache@v2
       with:
         path: |
           build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}
-
-    - name: Fail on skip ci
-      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.pull_request.head.sha) }} | grep -v 'skip-ci'
-
-    - name: Fail on skip-gha
-      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.pull_request.head.sha) }} | grep -v 'skip-gha'
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-ascii
 
     - name: Deps
       run: ./brink.sh deps
@@ -91,6 +105,10 @@ jobs:
       run: ./brink.sh test_ci2
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Tmate debug on failure
+      if: failure() && env.TMATE_DEBUG == 'yes'
+      uses: mxschmitt/action-tmate@v2
 
     - name: Publish cov
       run: ./brink.sh codecov_publish
@@ -105,19 +123,17 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 2
+
+    - name: Fail on skip-ci
+      if: ${{ github.event.after }}
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-ci'
+
     - name: Cache build
       uses: actions/cache@v2
       with:
         path: |
           build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}
-
-
-    - name: Fail on skip-ci
-      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-ci'
-
-    - name: Fail on skip-gha
-      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-gha'
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}
 
     - name: Deps
       run: ./brink.sh deps
@@ -130,6 +146,10 @@ jobs:
       env:
         CHEVAH_BUILD: build-compat-ț
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Tmate debug on failure
+      if: failure() && env.TMATE_DEBUG == 'yes'
+      uses: mxschmitt/action-tmate@v2
 
     - name: Move build back to to ascii
       run: mv build-compat-ț build-compat
@@ -147,18 +167,16 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 2
+
+    - name: Fail on skip-ci
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.pull_request.head.sha) }} | grep -v 'skip-ci'
+
     - name: Cache build
       uses: actions/cache@v2
       with:
         path: |
           build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}
-
-    - name: Fail on skip ci
-      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-ci'
-
-    - name: Fail on skip-gha
-      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-gha'
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}
 
     - name: Deps
       run: sh ./brink.sh deps

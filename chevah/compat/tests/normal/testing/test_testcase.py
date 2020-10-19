@@ -705,16 +705,21 @@ class TestChevahTestCase(ChevahTestCase):
             raise AssertionError(
                 'Windows XP and 2003 BS does not run as administrator')
 
+        if self.ci_name in [self.CI.TRAVIS, self.CI.GITHUB]:
+            raise AssertionError(
+                'Travis and GitHub does not run as administrator')
+
     @conditionals.onAdminPrivileges(False)
     def test_onAdminPrivileges_missing(self):
         """
         Run test on build slaves that do not have administrator privileges.
         """
         if (
-            self.TEST_LANGUAGE == 'FR'
-            or os.getenv('GITHUB_ACTIONS', b'') == b'true'
+            self.TEST_LANGUAGE == 'FR' or
+            self.os_name
+            or self.ci_name not in [self.CI.BUILDBOT, self.CI.LOCAL]
                 ):
-            # Not available on Windows XP and 2003
+            # Not available on Windows XP and 2003 and non-buildbot runs.
             return
 
         raise AssertionError(

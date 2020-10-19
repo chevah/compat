@@ -78,6 +78,22 @@ def onOSName(name):
         check_os_name, 'OS name "%s" not available.' % name)
 
 
+def onCIName(name):
+    """
+    Run tests only if current CI is `name` or is in one from `name` list.
+    """
+    if not isinstance(name, list) and not isinstance(name, tuple):
+        name = [name.lower()]
+    else:
+        name = [item.lower() for item in name]
+
+    def check_ci_name():
+        return ChevahTestCase.ci_name not in name
+
+    return skipOnCondition(
+        check_ci_name, 'CI "%s" not available.' % name)
+
+
 def onCapability(name, value):
     """
     Run test only if capability with `name` equals `value`.
@@ -96,23 +112,32 @@ def onAdminPrivileges(present):
     Run test only if administrator privileges match the `present` value on
     the machine running the tests.
 
+    Only valid on Windows.
+
     For the moment only Windows 2003 and Windows XP build slaves execute the
     tests suite with a regular account.
+
+    Only local or buildbot runs have all the admin privileges setup.
     """
     hostname = gethostname()
     is_running_as_normal = (
+        ChevahTestCase.os_family != 'nt' or
         ChevahTestCase.os_version in ['nt-5.1', 'nt-5.2']
         or ChevahTestCase.TEST_LANGUAGE == 'FR'
+        or ChevahTestCase.ci_name not in [
+            ChevahTestCase.CI.LOCAL,
+            ChevahTestCase.CI.BUILDBOT,
+            ]
         )
 
-    def check_administrator():
+    def is_normal_user():
         if present:
             return is_running_as_normal
 
         return not is_running_as_normal
 
     return skipOnCondition(
-        check_administrator,
+        is_normal_user,
         'Administrator privileges not present on "%s".' % (hostname,)
         )
 

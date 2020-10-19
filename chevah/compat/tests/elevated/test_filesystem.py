@@ -57,14 +57,13 @@ class TestPosixFilesystem(FileSystemTestCase):
         owner = self.filesystem.getOwner(self.filesystem.home_segments)
         self.assertEqual(self.avatar.name, owner)
 
+    @conditionals.onCIName(
+        [FileSystemTestCase.CI.LOCAL, FileSystemTestCase.CI.BUILDBOT])
     @conditionals.onOSFamily('nt')
     def test_getOwner_ok_nt(self):
         """
         Returns the owner as string.
         """
-        if os.environ.get('GITHUB_ACTIONS', '') == 'true':
-            raise self.skipTest('On GitHub actions we have different file.')
-
         owner = self.filesystem.getOwner(['c', 'Users'])
         self.assertEqual('Administrators', owner)
 
