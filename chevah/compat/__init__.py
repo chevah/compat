@@ -30,6 +30,9 @@ if os.name == 'posix':
     DefaultAvatar = UnixDefaultAvatar
     SuperAvatar = UnixSuperAvatar
 
+    # Unconditionally allow cryptography 3.2.1 with OpenSSL 1.0.2.
+    os.environ['CRYPTOGRAPHY_ALLOW_OPENSSL_102']  = 'yes'
+
 elif os.name == 'nt':
 
     from chevah.compat.nt_users import (
