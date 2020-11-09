@@ -1258,7 +1258,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         if self.os_name == 'aix':
             count = 3000
             base_timeout = 0.02
-        if self.os_name == 'osx':
+        elif self.os_name == 'osx':
             count = 32000
             base_timeout = 0.1
         elif self.os_name in ['hpux', 'freebsd', 'openbsd']:
