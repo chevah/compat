@@ -2,7 +2,7 @@ Release notes for chevah.compat
 ===============================
 
 
-0.58.3 - 2020-08-05
+0.58.3 - 2020-11-09
 --------------------------
 
 * Allow cryptography 3.2 with OpenSSL 1.0.2.
