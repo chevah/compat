@@ -301,6 +301,7 @@ install_base_deps() {
 # * $1 - package_name and optional version.
 #
 pip_install() {
+    echo "::group::pip install $1"
     set +e
     # There is a bug in pip/setuptools when using custom build folders.
     # See https://github.com/pypa/pip/issues/3564
@@ -314,6 +315,9 @@ pip_install() {
             $1
 
     exit_code=$?
+
+    echo "::endgroup::"
+
     set -e
     if [ $exit_code -ne 0 ]; then
         (>&2 echo "Failed to install $1.")
@@ -435,10 +439,12 @@ copy_python() {
         exit 5
     fi
 
+
     # Check that python dist was installed
     if [ ! -s ${PYTHON_BIN} ]; then
         # We don't have a Python binary, so we install it since everything
         # else depends on it.
+        echo "::group::Get python."
         echo "Bootstrapping ${LOCAL_PYTHON_BINARY_DIST} environment" \
             "to ${BUILD_FOLDER}..."
         mkdir -p ${BUILD_FOLDER}
@@ -470,8 +476,11 @@ copy_python() {
         echo "Copying Python distribution files... "
         cp -R ${python_distributable}/* ${BUILD_FOLDER}
 
+        echo "::endgroup::"
+
         install_base_deps
         WAS_PYTHON_JUST_INSTALLED=1
+
     else
         # We have a Python, but we are not sure if is the right version.
         local version_file=${BUILD_FOLDER}/lib/PYTHON_PACKAGE_VERSION
@@ -773,13 +782,13 @@ detect_os() {
         FreeBSD)
             ARCH=$(uname -m)
             os_version_raw=$(uname -r | cut -d'.' -f1)
-            check_os_version "FreeBSD" 11 "$os_version_raw" os_version_chevah
+            check_os_version "FreeBSD" 12 "$os_version_raw" os_version_chevah
             OS="fbsd${os_version_chevah}"
             ;;
         OpenBSD)
             ARCH=$(uname -m)
             os_version_raw=$(uname -r)
-            check_os_version "OpenBSD" 6.5 "$os_version_raw" os_version_chevah
+            check_os_version "OpenBSD" 6.7 "$os_version_raw" os_version_chevah
             OS="obsd${os_version_chevah}"
             ;;
         SunOS)
