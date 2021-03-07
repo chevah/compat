@@ -38,10 +38,10 @@ class TestSystemUsers(CompatTestCase):
         self.assertTrue(system_users.userExists(upn))
         self.assertFalse(system_users.userExists(non_existent))
 
-    def test_isUserInGroups(self):
+    def test_getGroupForUser(self):
         """
-        Return `True` when the user is member of the group and
-        `False` otherwise.
+        Return the name of the group when the user is member of the group and
+        `None` otherwise.
         """
         test_user = mk.getTestUser(u'domain')
         # FIXME:1471:
@@ -50,9 +50,9 @@ class TestSystemUsers(CompatTestCase):
         groups = [u'Domain Users']
         groups_non_existent = [u'non-existent-group']
 
-        self.assertTrue(system_users.isUserInGroups(
+        self.assertEqual(u'Domain Users', system_users.getGroupForUser(
             test_user.upn, groups, test_user.token))
-        self.assertFalse(system_users.isUserInGroups(
+        self.assertIsNone(system_users.getGroupForUser(
             test_user.upn, groups_non_existent, test_user.token))
 
     def test_authenticateWithUsernameAndPassword_good(self):

@@ -150,8 +150,12 @@ class UnixUsers(CompatUsers):
 
         return True
 
-    def isUserInGroups(self, username, groups, token=None):
-        '''Return true if `username` is a member of `groups`.'''
+    def getGroupForUser(self, username, groups, token=None):
+        """
+        See: IOSUsers
+
+        It matched groups base on both name of group ID.
+        """
         username_encode = username.encode('utf-8')
         for group in groups:
             group_name = codecs.encode(group, 'utf-8')
@@ -164,14 +168,17 @@ class UnixUsers(CompatUsers):
                 user_struct = pwd.getpwnam(username_encode)
             except KeyError:
                 # Unknown user.
-                return False
+                return None
 
             if user_struct.pw_gid == group_struct.gr_gid:
-                return True
+                # Match on group IP.
+                return group
 
             if username_encode in group_struct.gr_mem:
-                return True
-        return False
+                # Match on group name.
+                return group
+
+        return None
 
     def authenticateWithUsernameAndPassword(self, username, password):
         """

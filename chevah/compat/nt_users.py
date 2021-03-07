@@ -193,9 +193,9 @@ class NTUsers(CompatUsers):
             error_text = u'[%s] %s %s' % (number, name, message)
             self.raiseFailedtoCheckUserExists(username, error_text)
 
-    def isUserInGroups(self, username, groups, token):
+    def getGroupForUser(self, username, groups, token):
         """
-        Return true if `username` is a member of `groups`.
+        See: IOSUsers
         """
         primary_domain_controller, name = self._parseUPN(username)
 
@@ -207,8 +207,8 @@ class NTUsers(CompatUsers):
             except (win32security.error, pywintypes.error):
                 continue
             if win32security.CheckTokenMembership(token, group_sid):
-                return True
-        return False
+                return group
+        return None
 
     def authenticateWithUsernameAndPassword(self, username, password):
         """

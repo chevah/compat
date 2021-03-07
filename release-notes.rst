@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.59.0 - 2021-03-07
+--------------------------
+
+* Replace isUserInGroups with getGroupForUser so that you also know the name
+  of the matched group.
+
+
 0.58.3 - 2020-11-09
 --------------------------
 
