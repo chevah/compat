@@ -61,7 +61,7 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}
 
     - name: Deps
-      run: ./brink.sh deps_build
+      run: ./brink.sh deps
 
     - name: Test linters
       run: ./brink.sh lint --all
