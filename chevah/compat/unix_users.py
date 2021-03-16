@@ -154,7 +154,7 @@ class UnixUsers(CompatUsers):
         """
         See: IOSUsers
 
-        It matched groups base on both name of group ID.
+        It matches groups based on both name and group ID.
         """
         username_encode = username.encode('utf-8')
         for group in groups:
@@ -171,7 +171,7 @@ class UnixUsers(CompatUsers):
                 return None
 
             if user_struct.pw_gid == group_struct.gr_gid:
-                # Match on group IP.
+                # Match on group ID.
                 return group
 
             if username_encode in group_struct.gr_mem:

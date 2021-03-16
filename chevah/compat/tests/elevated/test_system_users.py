@@ -462,7 +462,7 @@ class TestSystemUsers(SystemUsersTestCase):
 
     def test_getGroupForUser_success(self):
         """
-        True is returned if user is in groups.
+        A group is returned if user is in that group.
         """
         test_user = mk.getTestUser(u'normal')
 
@@ -478,7 +478,7 @@ class TestSystemUsers(SystemUsersTestCase):
             TEST_ACCOUNT_GROUP,
             TEST_ACCOUNT_GROUP_WIN,
             ]
-        self.assertTrue(TEST_ACCOUNT_GROUP, system_users.getGroupForUser(
+        self.assertEqual(TEST_ACCOUNT_GROUP, system_users.getGroupForUser(
             username=test_user.name, groups=groups, token=test_user.token))
 
     def test_getPrimaryGroup_good(self):
