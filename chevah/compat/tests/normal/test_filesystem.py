@@ -101,7 +101,7 @@ class FilesystemTestingHelpers(object):
 
 class FilesystemTestMixin(FilesystemTestingHelpers):
     """
-    Common tests for filesystem.
+    Common tests for filesystem for all OSes..
     """
 
     def test_getSegments_upper_paths(self):
@@ -127,6 +127,9 @@ class FilesystemTestMixin(FilesystemTestingHelpers):
         segments = self.filesystem.getSegments(u'//./a/b')
         self.assertEqual([u'a', u'b'], segments)
 
+        segments = self.filesystem.getSegments("//./a/b'c/d")
+        self.assertEqual(['a', "b'c", 'd'], segments)
+
     def test_getPath_empty(self):
         """
         It will return `/` when segments are empty.
@@ -143,6 +146,9 @@ class FilesystemTestMixin(FilesystemTestingHelpers):
 
         path = self.filesystem.getPath([u'.', 'a', u'b'])
         self.assertEqual(u'/a/b', path)
+
+        path = self.filesystem.getPath(['.', 'a', "B'Quote"])
+        self.assertEqual("/a/B'Quote", path)
 
     def test_getPath_upper_paths(self):
         """

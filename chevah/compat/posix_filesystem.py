@@ -112,11 +112,17 @@ class PosixFilesystemBase(object):
                 )
 
     def _pathSplitRecursive(self, path):
-        '''Recursive split of a path.'''
-        separators = os.path.sep
-        if os.path.altsep:
-            separators += os.path.altsep
-        segments = re.split('[%r]' % separators, path)
+        """
+        Recursive split of a path.
+        """
+        if os.path.sep == '\\':
+            # We are on Windows.
+            # Also handle Unix separators and escape the regex.
+            separators = '[\\\\/]'
+        else:
+            separators = '[/]'
+
+        segments = re.split(separators, path)
 
         if len(segments) > 0:
             segments[0] = segments[0].strip(':')

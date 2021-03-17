@@ -2,8 +2,14 @@ Release notes for chevah.compat
 ===============================
 
 
+0.58.4 - 2021-03-17
+-------------------
+
+* Fix Unix and Windows path normalization to handle single quote characters.
+
+
 0.58.3 - 2020-11-09
---------------------------
+-------------------
 
 * Allow cryptography 3.2 with OpenSSL 1.0.2.
 
