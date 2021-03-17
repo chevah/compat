@@ -384,9 +384,11 @@ class TestSystemUsers(SystemUsersTestCase):
         initial_uid, initial_gid = os.geteuid(), os.getegid()
         initial_groups = os.getgroups()
         test_user = mk.getTestUser(u'normal')
+        # os.getgroups can return duplicate group IDs and out of order.
+        # This is why we compare based on sets.
         self.assertNotEqual(
-            sorted(self.getGroupsIDForTestAccount()),
-            sorted(os.getgroups()),
+            set(self.getGroupsIDForTestAccount()),
+            set(os.getgroups()),
             )
 
         with system_users.executeAsUser(username=test_user.name):
@@ -411,8 +413,8 @@ class TestSystemUsers(SystemUsersTestCase):
                     impersonated_groups = list(set(impersonated_groups))
 
                 self.assertEqual(
-                    sorted(self.getGroupsIDForTestAccount()),
-                    sorted(impersonated_groups),
+                    set(self.getGroupsIDForTestAccount()),
+                    set(impersonated_groups),
                     )
 
         self.assertEqual(initial_uid, os.geteuid())
