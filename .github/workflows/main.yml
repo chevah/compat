@@ -32,12 +32,6 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
 
-    - name: Dump event data
-      run: |
-        cat  << EOF
-        ${{ toJSON(github.event) }}
-        EOF
-
     # Make sure we don't have multiple job
     - uses: chevah/auto-cancel-redundant-job@v1
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -58,6 +52,10 @@ jobs:
 
     - name: Deps
       run: ./brink.sh deps
+
+    - uses: twisted/python-info-action@v1.0.1
+      with:
+        python-path: build-compat/bin/python
 
     - name: Move build to Unicode path
       run: mv build-compat build-compat-ț
