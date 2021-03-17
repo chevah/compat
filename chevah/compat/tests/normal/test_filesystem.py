@@ -130,6 +130,9 @@ class FilesystemTestMixin(FilesystemTestingHelpers):
         segments = self.filesystem.getSegments("//./a/b'c/d")
         self.assertEqual(['a', "b'c", 'd'], segments)
 
+        segments = self.filesystem.getSegments("/a/b - c/d")
+        self.assertEqual(['a', "b - c", 'd'], segments)
+
     def test_getPath_empty(self):
         """
         It will return `/` when segments are empty.

@@ -53,7 +53,7 @@ jobs:
     - name: Deps
       run: ./brink.sh deps
 
-    - uses: twisted/python-info-action@v1.0.1
+    - uses: twisted/python-info-action@v1
       with:
         python-path: build-compat/bin/python
 
