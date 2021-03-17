@@ -118,7 +118,7 @@ class PosixFilesystemBase(object):
         if os.path.sep == '\\':
             # We are on Windows.
             # Also handle Unix separators and escape the regex.
-            separators = '[\\\\/]'
+            separators = r'[\\/]'
         else:
             separators = '[/]'
 
