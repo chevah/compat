@@ -158,6 +158,7 @@ class UnixUsers(CompatUsers):
         """
         if not groups:
             raise ValueError('Groups for validation can\'t be empty.')
+
         username_encode = username.encode('utf-8')
         for group in groups:
             group_name = codecs.encode(group, 'utf-8')

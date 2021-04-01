@@ -197,6 +197,9 @@ class NTUsers(CompatUsers):
         """
         See: IOSUsers
         """
+        if not groups:
+            raise ValueError('Groups for validation can\'t be empty.')
+
         primary_domain_controller, name = self._parseUPN(username)
 
         for group in groups:

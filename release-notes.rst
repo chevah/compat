@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.59.3 - 2021-04-01
+-------------------
+
+* getGroupForUser raised ValueError also on Windows.
+
+
 0.59.2 - 2021-04-01
 -------------------
 
