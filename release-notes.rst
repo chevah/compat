@@ -16,6 +16,12 @@ Release notes for chevah.compat
   of the matched group.
 
 
+0.58.4 - 2021-03-17
+-------------------
+
+* Fix Unix and Windows path normalization to handle single quote characters.
+
+
 0.58.3 - 2020-11-09
 -------------------
 

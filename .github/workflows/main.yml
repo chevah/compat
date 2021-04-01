@@ -53,6 +53,10 @@ jobs:
     - name: Deps
       run: ./brink.sh deps
 
+    - uses: twisted/python-info-action@v1
+      with:
+        python-path: build-compat/bin/python
+
     - name: Move build to Unicode path
       run: mv build-compat build-compat-ț
 
