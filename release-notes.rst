@@ -2,15 +2,22 @@ Release notes for chevah.compat
 ===============================
 
 
+0.59.1 - 2021-04-01
+-------------------
+
+* getGroupForUser raised ValueError when the request groups for validation
+  is an empty value or None.
+
+
 0.59.0 - 2021-03-07
---------------------------
+-------------------
 
 * Replace isUserInGroups with getGroupForUser so that you also know the name
   of the matched group.
 
 
 0.58.3 - 2020-11-09
---------------------------
+-------------------
 
 * Allow cryptography 3.2 with OpenSSL 1.0.2.
 

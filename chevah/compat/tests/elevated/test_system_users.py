@@ -481,6 +481,28 @@ class TestSystemUsers(SystemUsersTestCase):
         self.assertEqual(TEST_ACCOUNT_GROUP, system_users.getGroupForUser(
             username=test_user.name, groups=groups, token=test_user.token))
 
+    def test_getGroupForUser_empty_groups(self):
+        """
+        None is returned if user is not in the groups.
+        """
+        error = self.assertRaises(
+            ValueError,
+            system_users.getGroupForUser,
+            username='any-user', groups=[], token='ignored'
+            )
+
+        self.assertEqual(
+            'Groups for validation can\'t be empty.', error.args[0])
+
+        error = self.assertRaises(
+            ValueError,
+            system_users.getGroupForUser,
+            username='any-user', groups=None, token='ignored'
+            )
+
+        self.assertEqual(
+            'Groups for validation can\'t be empty.', error.args[0])
+
     def test_getPrimaryGroup_good(self):
         """
         Check getting primary group.

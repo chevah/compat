@@ -156,6 +156,8 @@ class UnixUsers(CompatUsers):
 
         It matches groups based on both name and group ID.
         """
+        if not groups:
+            raise ValueError('Groups for validation can\'t be empty.')
         username_encode = username.encode('utf-8')
         for group in groups:
             group_name = codecs.encode(group, 'utf-8')
