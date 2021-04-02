@@ -204,7 +204,7 @@ class IOSUsers(Interface):
 
         Raise a ValueError if the requested list of `groups` is empty.
 
-        Retrun None if `username` is not a member of any of the groups.
+        Return None if `username` is not a member of any of the groups.
         """
 
     def getPrimaryGroup(username):
