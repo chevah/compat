@@ -38,7 +38,7 @@ def _get_os_name():
 
 def _get_cpu_type():
     """
-    Return the CPU type as used in the paver.sh script.
+    Return the CPU type as used in the brink.sh script.
     """
     base = platform.processor()
 
