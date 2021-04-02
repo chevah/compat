@@ -2,6 +2,15 @@ Release notes for chevah.compat
 ===============================
 
 
+0.58.5 - 2021-04-02
+-------------------
+
+* Use embedded OpenSSL 1.1.1 libraries on Amazon Linux, RHEL 7 and derivatives.
+* Use embedded OpenSSL 1.0.2 libraries on AIX.
+* Updated embedded OpenSSL 1.1.1 libraries on Windows to latest version.
+* Dropped support for AIX older than 7.1, HP-UX, and Solaris older than 11.4.
+
+
 0.58.4 - 2021-03-17
 -------------------
 
