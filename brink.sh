@@ -87,7 +87,7 @@ PYTHON_CONFIGURATION='NOT-YET-DEFINED'
 PYTHON_VERSION='not.defined.yet'
 PYTHON_PLATFORM='unknown-os-and-arch'
 PYTHON_NAME='python2.7'
-BINARY_DIST_URI='https://binary.chevah.com/production'
+BINARY_DIST_URI='http://binary.chevah.com/production'
 PIP_INDEX='http://pypi.chevah.com'
 BASE_REQUIREMENTS=''
 
@@ -556,8 +556,8 @@ install_dependencies(){
 # Check version of current OS to see if it is supported.
 # If it's too old, exit with a nice informative message.
 # If it's supported, return through eval the version numbers to be used for
-# naming the package, for example: '7' for RHEL 7.7, '2' for Amazon 2,
-# '2004' for Ubuntu 20.04', '312' for Alpine Linux 3.12, '11' for Solaris 11.
+# naming the package, for example: '8' for RHEL 8.2, '2004' for Ubuntu 20.04,
+# '312' for Alpine Linux 3.12, '71' for AIX 7.1, '114' for Solaris 11.4.
 #
 check_os_version() {
     # First parameter should be the human-readable name for the current OS.
@@ -786,45 +786,30 @@ detect_os() {
             ;;
         SunOS)
             ARCH=$(isainfo -n)
-            os_version_raw=$(uname -r | cut -d'.' -f2)
-            check_os_version "Solaris" 10 "$os_version_raw" os_version_chevah
-            OS="sol${os_version_chevah}"
-            case "$OS" in
-                sol10)
-                    # Solaris 10u8 (from 10/09) updated libc version, so for
-                    # older releases up to 10u7 (from 5/09) we build on 10u3.
-                    # The "sol10u3" code path also shows the way to link to
-                    # OpenSSL 0.9.7 libs bundled in /usr/sfw/ with Solaris 10.
-                    # Update number is taken from first line of /etc/release.
-                    un=$(head -1 /etc/release | cut -d_ -f2 | sed s/[^0-9]*//g)
-                    if [ "$un" -lt 8 ]; then
-                        OS="sol10u3"
-                    fi
+            ver_major=$(uname -r | cut -d'.' -f2)
+            case $ver_major in
+                10)
+                    ver_minor=$(\
+                        head -1 /etc/release | cut -d_ -f2 | sed s/[^0-9]*//g)
                     ;;
-                sol11)
-                    # Solaris 11 releases prior to 11.4 bundled OpenSSL libs
-                    # missing support for Elliptic-curve crypto. From here on:
-                    #   * Solaris 11.4 (or newer) with OpenSSL 1.0.2 is "sol11",
-                    #   * Solaris 11.2/11.3 with OpenSSL 1.0.1 is "sol112",
-                    #   * Solaris 11.0/11.1 with OpenSSL 1.0.0 is not supported.
-                    minor_version=$(uname -v | cut -d'.' -f2)
-                    if [ "$minor_version" -lt 4 ]; then
-                        OS="sol112"
-                    fi
+                11)
+                    ver_minor=$(uname -v | cut -d'.' -f2)
+                    ;;
+                *)
+                    # Not sure if $ver_minor detection works on other versions.
+                    (>&2 echo "Unsupported Solaris version: ${ver_major}.")
+                    exit 15
                     ;;
             esac
+            os_version_raw="${ver_major}.${ver_minor}"
+            check_os_version "Solaris" 11.4 "$os_version_raw" os_version_chevah
+            OS="sol${os_version_chevah}"
             ;;
         AIX)
             ARCH="ppc$(getconf HARDWARE_BITMODE)"
             os_version_raw=$(oslevel)
-            check_os_version AIX 5.3 "$os_version_raw" os_version_chevah
+            check_os_version AIX 7.1 "$os_version_raw" os_version_chevah
             OS="aix${os_version_chevah}"
-            ;;
-        HP-UX)
-            ARCH=$(uname -m)
-            os_version_raw=$(uname -r | cut -d'.' -f2-)
-            check_os_version HP-UX 11.31 "$os_version_raw" os_version_chevah
-            OS="hpux${os_version_chevah}"
             ;;
         *)
             (>&2 echo "Unsupported operating system: ${OS}.")
@@ -840,10 +825,6 @@ detect_os() {
         "amd64"|"x86_64")
             ARCH="x64"
             case "$OS" in
-                sol10*)
-                    # On Solaris 10, x64 built fine prior to adding "bcrypt".
-                    ARCH="x86"
-                    ;;
                 win)
                     # 32bit build on Windows 2016, 64bit otherwise.
                     # Should work with a l10n pack too (tested with French).
