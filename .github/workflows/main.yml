@@ -67,7 +67,7 @@ jobs:
 
     - name: Tmate debug on failure
       if: failure() && env.TMATE_DEBUG == 'yes'
-      uses: mxschmitt/action-tmate@v2
+      uses: mxschmitt/action-tmate@v3
 
     - name: Move build back to to ascii
       run: mv build-compat-ț build-compat
@@ -106,7 +106,7 @@ jobs:
 
     - name: Tmate debug on failure
       if: failure() && env.TMATE_DEBUG == 'yes'
-      uses: mxschmitt/action-tmate@v2
+      uses: mxschmitt/action-tmate@v3
 
     - name: Publish cov
       run: ./brink.sh codecov_publish
@@ -114,7 +114,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
 
-  osx-unicode-path:
+  macos-unicode-path:
     runs-on: macos-latest
     steps:
     - uses: chevah/auto-cancel-redundant-job@v1
@@ -147,7 +147,7 @@ jobs:
 
     - name: Tmate debug on failure
       if: failure() && env.TMATE_DEBUG == 'yes'
-      uses: mxschmitt/action-tmate@v2
+      uses: mxschmitt/action-tmate@v3
 
     - name: Move build back to to ascii
       run: mv build-compat-ț build-compat
