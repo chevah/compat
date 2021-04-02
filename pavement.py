@@ -224,7 +224,7 @@ try:
     options.test_options['bandit']['enabled'] = False
 
 except ImportError:
-    # This will fail before we run `paver deps`
+    # This will fail before we run `./brink.sh deps`
     options = None
 
 
