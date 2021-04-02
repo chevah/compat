@@ -64,7 +64,7 @@ if os.name == 'nt':
 # These are the hard dependencies needed by the library itself.
 RUN_PACKAGES = [
     'zope.interface==3.8.0',
-    'six==1.14.0',
+    'six==1.15.0',
     ]
 
 if os.name == 'posix':
@@ -109,7 +109,7 @@ BUILD_PACKAGES = [
     # Packages required to run the test suite.
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
-    'nose==1.3.0.chevah11',
+    'nose==1.3.0.chevah12',
     'nose-randomly==1.2.5',
     'mock',
 
