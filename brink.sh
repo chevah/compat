@@ -793,7 +793,7 @@ detect_os() {
                         head -1 /etc/release | cut -d_ -f2 | sed s/[^0-9]*//g)
                     ;;
                 11)
-                    ver_minor=$(head -1 /etc/release | awk '{print $3}')
+                    ver_minor=$(uname -v | cut -d'.' -f2)
                     ;;
                 *)
                     # Not sure if $ver_minor detection works on other versions.
