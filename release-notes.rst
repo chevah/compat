@@ -1,6 +1,12 @@
 Release notes for chevah.compat
 ===============================
 
+0.60.0 - 2121-04-28
+-------------------
+
+* Update for Twisted 20.3.0
+* Continue cleanup on error.
+
 
 0.59.3 - 2021-04-01
 -------------------

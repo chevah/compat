@@ -22,8 +22,6 @@ from brink.pavement_commons import (
     coverage_prepare,
     codecov_publish,
     default,
-    github,
-    harness,
     help,
     lint,
     merge_init,
@@ -33,11 +31,8 @@ from brink.pavement_commons import (
     SETUP,
     test_coverage,
     test_diff,
-    test_os_dependent,
-    test_os_independent,
     test_python,
     test_remote,
-    test_review,
     test_normal,
     test_super,
     )
@@ -63,7 +58,7 @@ if os.name == 'nt':
 # Keep run_packages in sync with setup.py.
 # These are the hard dependencies needed by the library itself.
 RUN_PACKAGES = [
-    'zope.interface==3.8.0',
+    'zope.interface==5.4.0.chevah1',
     'six==1.15.0',
     ]
 
@@ -120,8 +115,9 @@ BUILD_PACKAGES = [
     # used for remote debugging.
     'remote_pdb==1.2.0',
 
-    # Twisted is optionl, but we have it here for complete tests.
-    'twisted==15.5.0.chevah7',
+    # Twisted is optional, but we have it here for complete tests.
+    'Twisted==20.3.0.chevah1',
+    'service_identity==18.1.0',
 
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
@@ -141,8 +137,6 @@ buildbot_try
 coverage_prepare
 codecov_publish
 default
-github
-harness
 help
 lint
 merge_init
@@ -150,11 +144,8 @@ merge_commit
 pqm
 test_coverage
 test_diff
-test_os_dependent
-test_os_independent
 test_python
 test_remote
-test_review
 test_normal
 test_super
 
@@ -355,7 +346,7 @@ def build():
 
 
 @task
-@needs('test_python')
+@needs('build', 'test_python')
 @consume_args
 def test(args):
     """
@@ -493,15 +484,11 @@ def test_ci2(args):
         args = [args]
     test_type = env.get('TEST_TYPE', 'normal')
 
-    if test_type == 'os-independent':
-        os.environ[b'CODECOV_TOKEN'] = ''
-        return call_task('test_os_independent')
-
     if test_type == 'py3':
         os.environ[b'CODECOV_TOKEN'] = ''
         return call_task('test_py3', args=args)
 
-    exit_code = call_task('test_os_dependent', args=args)
+    exit_code = call_task('test_python', args=args)
 
     return exit_code
 

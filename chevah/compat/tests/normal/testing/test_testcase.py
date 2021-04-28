@@ -333,7 +333,7 @@ class TestTwistedTestCase(ChevahTestCase):
         delayed_call = reactor.callLater(10, much_later)
 
         with self.assertRaises(AssertionError) as context:
-            self.assertReactorIsClean()
+            self._assertReactorIsClean()
 
         self.assertEqual(
             u'Reactor is not clean. delayed calls: much_later',
@@ -356,10 +356,30 @@ class TestTwistedTestCase(ChevahTestCase):
 
         delayed_call = reactor.callLater(10, much_later)
 
-        self.assertReactorIsClean()
+        self._assertReactorIsClean()
         # Cancel and remove it so that other tests will not fail.
         delayed_call.cancel()
         self.executeReactor()
+
+    def test_assertReactorIsClean_threads(self):
+        """
+        It will cancel any pending jobs for the threads.
+        """
+        def last_call():
+            # We don't wait for this.
+            time.sleep(1)
+
+        threads.deferToThread(last_call)
+
+        with self.assertRaises(AssertionError) as context:
+            self._assertReactorIsClean()
+
+        self.assertContains(
+            'Reactor is not clean. threadpoool queue:',
+            context.exception.message)
+
+        # It will auto-clean the pool, so calling it again will not fail.
+        self._assertReactorIsClean()
 
     def test_cleanReactor_delayed_calls_all_active(self):
         """
