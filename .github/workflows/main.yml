@@ -167,7 +167,8 @@ jobs:
         fetch-depth: 2
 
     - name: Fail on skip-ci
-      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.pull_request.head.sha) }} | grep -v 'skip-ci'
+      if: ${{ github.event.after }}
+      run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-ci'
 
     - name: Cache build
       uses: actions/cache@v2

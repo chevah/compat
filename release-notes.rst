@@ -2,6 +2,32 @@ Release notes for chevah.compat
 ===============================
 
 
+0.59.3 - 2021-04-01
+-------------------
+
+* getGroupForUser raised ValueError also on Windows.
+
+
+0.59.2 - 2021-04-01
+-------------------
+
+* Use changes from 0.58.4.
+
+
+0.59.1 - 2021-04-01
+-------------------
+
+* getGroupForUser raised ValueError when the request groups for validation
+  is an empty value or None.
+
+
+0.59.0 - 2021-03-07
+-------------------
+
+* Replace isUserInGroups with getGroupForUser so that you also know the name
+  of the matched group.
+
+
 0.58.4 - 2021-03-17
 -------------------
 

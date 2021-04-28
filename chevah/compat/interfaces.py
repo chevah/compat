@@ -197,9 +197,14 @@ class IOSUsers(Interface):
         switching to user.
         """
 
-    def isUserInGroups(username, groups, token):
+    def getGroupForUser(username, groups, token):
         """
-        Return true if `username` or 'token' is a member of `groups`.
+        Return the name of the first group from `groups` that `username` is
+        member of.
+
+        Raise a ValueError if the requested list of `groups` is empty.
+
+        Return None if `username` is not a member of any of the groups.
         """
 
     def getPrimaryGroup(username):

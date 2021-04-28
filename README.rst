@@ -18,11 +18,12 @@ Depends on:
 * pam - for pam authentication
 * arpy - for loading libraries on AIX.
 
+Only Python 2.7 is supported for now.
 
 Unified interface for working with operating system accounts on Unix
 and Windows, see IOSUsers.
 
-Support for starting Unix daemons and installing/starting Windows services.
+Support for starting Unix daemons.
 
 Importing this module on Windows populates sys.argv with Unicode values.
 

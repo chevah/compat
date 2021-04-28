@@ -429,42 +429,42 @@ class TestSystemUsers(SystemUsersTestCase):
         with self.assertRaises(ChangeUserException):
             system_users.executeAsUser(username=u'no-such-user')
 
-    def test_isUserInGroups_only_default_user_group_unix(self):
+    def test_getGroupForUser_only_default_user_group_unix(self):
         """
-        Check isUserInGroups on Unix.
+        Check getGroupForUser on Unix.
         """
         if os.name != 'posix':
             raise self.skipTest()
 
         groups = [u'other-non-group', TEST_ACCOUNT_GROUP, u'here-we-go']
 
-        self.assertTrue(system_users.isUserInGroups(
+        self.assertEqual(TEST_ACCOUNT_GROUP, system_users.getGroupForUser(
             username=TEST_ACCOUNT_USERNAME, groups=groups))
 
-    def test_isUserInGroups_non_existent_group(self):
+    def test_getGroupForUser_non_existent_group(self):
         """
-        False is returned if isUserInGroups is asked for a non-existent group.
+        None is returned if getGroupForUser is asked for a non-existent group.
         """
         test_user = mk.getTestUser(u'normal')
 
         groups = [u'non-existent-group']
-        self.assertFalse(system_users.isUserInGroups(
+        self.assertIsNone(system_users.getGroupForUser(
             username=test_user.name, groups=groups, token=test_user.token))
 
-    def test_isUserInGroups_not_in_groups(self):
+    def test_getGroupForUser_not_in_groups(self):
         """
-        False is returned if user is not in the groups.
+        None is returned if user is not in the groups.
         """
         test_user = mk.getTestUser(u'normal')
 
         groups = [u'root', u'Administrators']
 
-        self.assertFalse(system_users.isUserInGroups(
+        self.assertIsNone(system_users.getGroupForUser(
             username=test_user.name, groups=groups, token=test_user.token))
 
-    def test_isUserInGroups_success(self):
+    def test_getGroupForUser_success(self):
         """
-        True is returned if user is in groups.
+        A group is returned if user is in that group.
         """
         test_user = mk.getTestUser(u'normal')
 
@@ -472,7 +472,7 @@ class TestSystemUsers(SystemUsersTestCase):
             TEST_ACCOUNT_GROUP,
             TEST_ACCOUNT_GROUP_WIN,
             ]
-        self.assertTrue(system_users.isUserInGroups(
+        self.assertEqual(TEST_ACCOUNT_GROUP, system_users.getGroupForUser(
             username=test_user.name, groups=groups, token=test_user.token))
 
         groups = [
@@ -480,8 +480,30 @@ class TestSystemUsers(SystemUsersTestCase):
             TEST_ACCOUNT_GROUP,
             TEST_ACCOUNT_GROUP_WIN,
             ]
-        self.assertTrue(system_users.isUserInGroups(
+        self.assertEqual(TEST_ACCOUNT_GROUP, system_users.getGroupForUser(
             username=test_user.name, groups=groups, token=test_user.token))
+
+    def test_getGroupForUser_empty_groups(self):
+        """
+        None is returned if user is not in the groups.
+        """
+        error = self.assertRaises(
+            ValueError,
+            system_users.getGroupForUser,
+            username='any-user', groups=[], token='ignored'
+            )
+
+        self.assertEqual(
+            'Groups for validation can\'t be empty.', error.args[0])
+
+        error = self.assertRaises(
+            ValueError,
+            system_users.getGroupForUser,
+            username='any-user', groups=None, token='ignored'
+            )
+
+        self.assertEqual(
+            'Groups for validation can\'t be empty.', error.args[0])
 
     def test_getPrimaryGroup_good(self):
         """

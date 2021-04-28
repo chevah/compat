@@ -22,8 +22,6 @@ ignore_errors = True
 
 omit =
     setup.py
-    # Domain tests are broken.
-    chevah.compat.tests.domain.*
 
 [html]
 directory = coverage-report
