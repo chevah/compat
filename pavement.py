@@ -78,15 +78,6 @@ BUILD_PACKAGES = [
     'buildbot==0.8.11.chevah11',
     'SQLAlchemy>=1.3.18',
 
-    # For PQM
-    'chevah-github-hooks-server==0.1.6',
-    'smmap==0.9.0',
-    'async==0.6.1',
-    'gitdb==0.6.4',
-    'gitpython==1.0.1',
-    'pygithub==1.34.0',
-    'pyjwt==1.6.4',  # Used by pygithub.
-
     # For Lint and static checkers.
     'scame==0.5.1',
     'pyflakes>=1.5.0',
