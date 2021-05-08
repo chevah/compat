@@ -1016,7 +1016,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         for function, args, kwargs in reversed(self.__cleanup__):
             try:
                 function(*args, **kwargs)
-            except Exception as error:
+            except Exception as error:  # noqa:cover
                 self._teardown_errors.append(error)
 
         self.__cleanup__ = []
@@ -1046,7 +1046,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             except AssertionError as error:
                 errors.append(error.message)
 
-        if errors:
+        if errors:  # noqa:cover
             self._teardown_errors.append(AssertionError(
                 'There are temporary files or folders left over.\n %s' % (
                     '\n'.join(errors))))
