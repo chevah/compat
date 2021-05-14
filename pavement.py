@@ -83,7 +83,6 @@ BUILD_PACKAGES = [
     'pyflakes>=1.5.0',
     'chevah-js-linter==2.4.0',
     'pycodestyle==2.3.1',
-    'bandit==1.4.0',
     'pylint==1.9.4',
     'astroid==1.6.6',
     # These are build packages, but are needed for testing the documentation.
@@ -191,19 +190,12 @@ try:
     options.pycodestyle['enabled'] = True
     options.pycodestyle['hang_closing'] = True
 
-    options.bandit['enabled'] = True
-    options.bandit['exclude'] = [
-        'B104',  # Bind to 0.0.0.0
-        'B108',  # Hardcoded /tmp usage.
-        ]
+    options.bandit['enabled'] = False
 
     # For now pylint is disabled, as there are to many errors.
     options.pylint['enabled'] = False
     options.pylint['disable'] = ['C0103', 'C0330', 'R0902', 'W0212']
 
-    # For the testing and dev code we disable bandit.
-    options.test_options['bandit'] = options.bandit.copy()
-    options.test_options['bandit']['enabled'] = False
 
 except ImportError:
     # This will fail before we run `./brink.sh deps`
