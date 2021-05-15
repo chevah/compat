@@ -141,13 +141,12 @@ class TwistedTestCase(TestCase):
         Return current tasks of thread Pool, or [] when threadpool does not
         exists.
 
-        This should only be called at cleanup as it removed elements from
+        This should only be called at cleanup as it removes elements from
         the Twisted thread queue, which will never be called.
         """
         if not reactor.threadpool:
             return []
 
-        # Consume all the
         result = []
         while len(reactor.threadpool._team._pending):
             result.append(reactor.threadpool._team._pending.pop())
