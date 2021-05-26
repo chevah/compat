@@ -74,6 +74,8 @@ jobs:
     - name: Tmate debug on failure
       if: failure() && env.TMATE_DEBUG == 'yes'
       uses: mxschmitt/action-tmate@v3
+      with:
+        limit-access-to-actor: true
 
     - name: Move build back to to ascii
       run: mv build-compat-ț build-compat
@@ -111,6 +113,8 @@ jobs:
     - name: Tmate debug on failure
       if: failure() && env.TMATE_DEBUG == 'yes'
       uses: mxschmitt/action-tmate@v3
+      with:
+        limit-access-to-actor: true
 
     - name: Publish cov
       run: ./brink.sh codecov_publish
@@ -145,6 +149,8 @@ jobs:
     - name: Tmate debug on failure
       if: failure() && env.TMATE_DEBUG == 'yes'
       uses: mxschmitt/action-tmate@v3
+      with:
+        limit-access-to-actor: true
 
     - name: Move build back to to ascii
       run: mv build-compat-ț build-compat
