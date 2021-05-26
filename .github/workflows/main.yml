@@ -162,7 +162,12 @@ jobs:
 
 
   windows:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ windows-2019, windows-2016 ]
+
     steps:
     - uses: actions/checkout@v2
 

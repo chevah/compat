@@ -38,6 +38,11 @@ jobs:
       matrix:
         container:
           - alpine:3.12
+          - amazon:2018.03
+          - amazon:2
+          - centos:7
+          - centos:8.2.2004
+          - centos:8
 
     # ubuntu-latest is GitHub's newest well-suported Linux distro.
     runs-on: ubuntu-latest
