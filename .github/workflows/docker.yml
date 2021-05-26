@@ -40,6 +40,8 @@ jobs:
           - alpine:3.12
           - amazonlinux:2018.03
           - amazonlinux:2
+          - centos:5
+          - centos:6
           - centos:7
           - centos:8.2.2004
           - centos:8
@@ -67,7 +69,7 @@ jobs:
       if: startsWith(matrix.container, 'centos') || startsWith(matrix.container, 'amazon')
       run: |
         yum -y upgrade
-        yum -y install git
+        yum -y install tar git
 
 
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
