@@ -86,7 +86,7 @@ jobs:
         python-path: build-compat/bin/python
 
     # On a Docker container, everything runs as root by default.
-    - name: chevah user setup
+    - name: Chevah user setup
       run: |
         useradd -g adm -s /bin/bash -m chevah
         echo '%adm    ALL=NOPASSWD: ALL' >> /etc/sudoers
