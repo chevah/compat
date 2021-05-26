@@ -50,12 +50,12 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
 
-    # On Alpine, OpenSSL must be updated to latest version.
+    # On Alpine, OpenSSL must be updated to latest version for python-package.
     - name: Alpine setup
       if: startsWith(matrix.container, 'alpine')
       run: |
         apk update && apk upgrade
-        apk add shadow sudo bash git libffi
+        apk add git bash libffi shadow sudo
 
     # OpenSSL got updated in 8.3 from 1.1.1c to 1.1.1g.
     - name: CentOS 8.2 setup
@@ -66,7 +66,7 @@ jobs:
 
     - name: Yum-based setup
       if: startsWith(matrix.container, 'centos') || startsWith(matrix.container, 'amazon')
-      run: yum -y install which tar git
+      run: yum -y install git tar which sudo
 
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
