@@ -600,12 +600,15 @@ check_os_version() {
     done
 
     if [ "$flag_supported" = 'false' ]; then
-        (>&2 echo "Current version of ${name_fancy} is too old: ${version_raw}")
-        (>&2 echo "Oldest supported ${name_fancy} version is: ${version_good}")
         if [ "$OS" = "Linux" ]; then
             # For old and/or unsupported Linux distros there's a second chance!
+            echo "Current major version of ${name_fancy} is ${version_raw}."
+            echo "For versions older than ${name_fancy} ${version_good},"
+            echo "the generic Linux runtime is used, if possible."
             check_linux_glibc
         else
+            (>&2 echo "Current version of ${name_fancy} is: ${version_raw}")
+            (>&2 echo "Oldest supported ${name_fancy} version: ${version_good}")
             exit 13
         fi
     fi
@@ -640,9 +643,6 @@ check_linux_glibc() {
             ;;
     esac
 
-    (>&2 echo -n "Couldn't detect a supported distribution. ")
-    (>&2 echo "Trying to treat it as generic Linux...")
-
     set +o errexit
 
     command -v ldd > /dev/null
@@ -660,6 +660,7 @@ check_linux_glibc() {
 
     # Tested with glibc 2.5/2.11.3/2.12/2.23/2.28-31 and eglibc 2.13/2.19.
     glibc_version=$(head -n 1 $ldd_output_file | rev | cut -d\  -f1 | rev)
+    rm $ldd_output_file
 
     if [[ $glibc_version =~ [^[:digit:]\.] ]]; then
         (>&2 echo "Glibc version should only have numbers and periods, but:")
