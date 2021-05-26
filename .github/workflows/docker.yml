@@ -21,6 +21,11 @@ concurrency:
   cancel-in-progress: true
 
 
+env:
+  USER: chevah
+  CHEVAH_CONTAINER: yes
+
+
 jobs:
 
 
@@ -44,7 +49,7 @@ jobs:
       if: matrix.container == 'alpine:3.12'
       run: |
         apk update && apk upgrade
-        apk add bash git libffi
+        apk add shadow sudo bash git libffi
 
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
@@ -63,8 +68,12 @@ jobs:
       with:
         python-path: build-compat/bin/python
 
-    - name: Deps
-      run: ./brink.sh deps
+    # On a Docker container, everything runs as root by default.
+    - name: chevah user setup
+      run: |
+        useradd -g adm -s /bin/bash -m chevah
+        echo '%adm    ALL=NOPASSWD: ALL' >> /etc/sudoers
+        chown -R chevah .
 
     - name: Test
-      run: ./brink.sh test_ci2
+      run: su chevah -c "./brink.sh test_ci2"
