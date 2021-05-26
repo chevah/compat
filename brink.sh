@@ -625,7 +625,7 @@ check_linux_glibc() {
     local glibc_version_array
     local supported_glibc2_version
     # Output to a file to avoid "write error: Broken pipe" with grep/head.
-    local ldd_output_file="/tmp/.chevah_glibc_version"
+    local ldd_output_file=".chevah_glibc_version"
 
     # Supported minimum minor glibc 2.X versions for various arches.
     # For x64, we build on CentOS 5.11 (Final) with glibc 2.5.

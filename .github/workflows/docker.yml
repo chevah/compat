@@ -40,8 +40,6 @@ jobs:
           - alpine:3.12
           - amazonlinux:2018.03
           - amazonlinux:2
-          - centos:5
-          - centos:6
           - centos:7
           - centos:8.2.2004
           - centos:8
