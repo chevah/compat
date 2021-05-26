@@ -50,6 +50,7 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
 
+    # On Alpine, OpenSSL must be updated to latest version.
     - name: Alpine setup
       if: startsWith(matrix.container, 'alpine')
       run: |
@@ -65,10 +66,7 @@ jobs:
 
     - name: Yum-based setup
       if: startsWith(matrix.container, 'centos') || startsWith(matrix.container, 'amazon')
-      run: |
-        yum -y upgrade
-        yum -y install tar git
-
+      run: yum -y install tar git gjs
 
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
