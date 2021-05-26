@@ -643,6 +643,9 @@ check_linux_glibc() {
             ;;
     esac
 
+    echo "No specific runtime for the current version of this distribution..."
+    echo "Glibc version should be at least: 2.${supported_glibc2_version}."
+
     set +o errexit
 
     command -v ldd > /dev/null
@@ -687,6 +690,7 @@ check_linux_glibc() {
     set -o errexit
 
     # glibc 2 detected, we set $OS for a generic Linux build.
+    echo "Glibc version currently detected: ${glibc_version}."
     OS="lnx"
 }
 
