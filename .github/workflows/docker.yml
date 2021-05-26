@@ -1,0 +1,70 @@
+#
+# GitHub actions to test chevah-compat under Docker.
+#
+
+name: GitHub-CI-Docker
+
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+    - '**.py'
+  pull_request:
+    branches: [ master ]
+    paths:
+    - '**.py'
+
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+
+jobs:
+
+
+  standard:
+
+    name: ${{ matrix.container }}
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        container:
+          - alpine:3.12
+
+    # ubuntu-latest is GitHub's newest well-suported Linux distro.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
+    - name: Alpine 3.12 setup
+      if: matrix.container == 'alpine:3.12'
+      run: |
+        apk update && apk upgrade
+        apk add bash git libffi
+
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    - name: Cache build
+      uses: actions/cache@v2
+      with:
+        path: |
+          build-compat
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-${{ matrix.container }}
+
+    - name: Deps
+      run: ./brink.sh deps
+
+    - uses: twisted/python-info-action@v1
+      with:
+        python-path: build-compat/bin/python
+
+    - name: Deps
+      run: ./brink.sh deps
+
+    - name: Test
+      run: ./brink.sh test_ci2
