@@ -600,12 +600,15 @@ check_os_version() {
     done
 
     if [ "$flag_supported" = 'false' ]; then
-        (>&2 echo "Current version of ${name_fancy} is too old: ${version_raw}")
-        (>&2 echo "Oldest supported ${name_fancy} version is: ${version_good}")
         if [ "$OS" = "Linux" ]; then
             # For old and/or unsupported Linux distros there's a second chance!
+            echo "Current major version of ${name_fancy} is ${version_raw}."
+            echo "For versions older than ${name_fancy} ${version_good},"
+            echo "the generic Linux runtime is used, if possible."
             check_linux_glibc
         else
+            (>&2 echo "Current version of ${name_fancy} is: ${version_raw}")
+            (>&2 echo "Oldest supported ${name_fancy} version: ${version_good}")
             exit 13
         fi
     fi
@@ -625,7 +628,7 @@ check_linux_glibc() {
     local glibc_version_array
     local supported_glibc2_version
     # Output to a file to avoid "write error: Broken pipe" with grep/head.
-    local ldd_output_file="/tmp/.chevah_glibc_version"
+    local ldd_output_file=".chevah_glibc_version"
 
     # Supported minimum minor glibc 2.X versions for various arches.
     # For x64, we build on CentOS 5.11 (Final) with glibc 2.5.
@@ -640,8 +643,8 @@ check_linux_glibc() {
             ;;
     esac
 
-    (>&2 echo -n "Couldn't detect a supported distribution. ")
-    (>&2 echo "Trying to treat it as generic Linux...")
+    echo "No specific runtime for the current version of this distribution..."
+    echo "Glibc version should be at least: 2.${supported_glibc2_version}."
 
     set +o errexit
 
@@ -660,6 +663,7 @@ check_linux_glibc() {
 
     # Tested with glibc 2.5/2.11.3/2.12/2.23/2.28-31 and eglibc 2.13/2.19.
     glibc_version=$(head -n 1 $ldd_output_file | rev | cut -d\  -f1 | rev)
+    rm $ldd_output_file
 
     if [[ $glibc_version =~ [^[:digit:]\.] ]]; then
         (>&2 echo "Glibc version should only have numbers and periods, but:")
@@ -686,6 +690,7 @@ check_linux_glibc() {
     set -o errexit
 
     # glibc 2 detected, we set $OS for a generic Linux build.
+    echo "Glibc version currently detected: ${glibc_version}."
     OS="lnx"
 }
 

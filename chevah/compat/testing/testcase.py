@@ -121,7 +121,7 @@ class TwistedTestCase(TestCase):
                 # Check for a clean reactor at shutdown, only if test
                 # passed.
                 self.assertIsNone(self._reactor_timeout_failure)
-                self.assertReactorIsClean()
+                self._assertReactorIsClean()
         finally:
             self._cleanReactor()
         super(TwistedTestCase, self).tearDown()
@@ -141,16 +141,15 @@ class TwistedTestCase(TestCase):
         Return current tasks of thread Pool, or [] when threadpool does not
         exists.
 
-        This should only be called at cleanup as it removed elements from
+        This should only be called at cleanup as it removes elements from
         the Twisted thread queue, which will never be called.
         """
         if not reactor.threadpool:
             return []
 
-        # Consume all the
         result = []
-        while not reactor.threadpool.q.empty():
-            result.append(reactor.threadpool.q.get()[1])
+        while len(reactor.threadpool._team._pending):
+            result.append(reactor.threadpool._team._pending.pop())
         return result
 
     def _threadPoolThreads(self):
@@ -307,9 +306,11 @@ class TwistedTestCase(TestCase):
         reactor.addSystemEventTrigger(
             'during', 'startup', reactor._reallyStartRunning)
 
-    def assertReactorIsClean(self):
+    def _assertReactorIsClean(self):
         """
         Check that the reactor has no delayed calls, readers or writers.
+
+        This should only be called at teardown.
         """
         if reactor is None:
             return
@@ -962,6 +963,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     def setUp(self):
         super(ChevahTestCase, self).setUp()
         self.__cleanup__ = []
+        self._teardown_errors = []
         self.test_segments = None
 
     def tearDown(self):
@@ -969,20 +971,20 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         self._checkTemporaryFiles()
         threads = threading.enumerate()
         if len(threads) > 1:
-            # FIXME:1077:
-            # For now we don't clean the whole reactor so Twisted is
-            # an exception here.
             for thread in threads:
                 thread_name = thread.getName()
                 if self._isExceptedThread(thread_name):
                     continue
-
-                raise AssertionError(
+                self._teardown_errors.append(AssertionError(
                     'There are still active threads, '
                     'beside the main thread: %s - %s' % (
-                        thread_name, threads))
+                        thread_name, threads)))
 
         super(ChevahTestCase, self).tearDown()
+
+        errors, self._teardown_errors = self._teardown_errors, None
+        if errors:
+            raise AssertionError('Cleanup errors: %r' % (errors,))
 
     def _isExceptedThread(self, name):
         """
@@ -1006,9 +1008,16 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     def callCleanup(self):
         """
         Call all cleanup methods.
+
+        If a cleanup fails, the next cleanups will continue to be called and
+        the first failure is raised.
         """
         for function, args, kwargs in reversed(self.__cleanup__):
-            function(*args, **kwargs)
+            try:
+                function(*args, **kwargs)
+            except Exception as error:  # noqa:cover
+                self._teardown_errors.append(error)
+
         self.__cleanup__ = []
 
     def _checkTemporaryFiles(self):
@@ -1036,10 +1045,10 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             except AssertionError as error:
                 errors.append(error.message)
 
-        if errors:
-            raise AssertionError(
+        if errors:  # noqa:cover
+            self._teardown_errors.append(AssertionError(
                 'There are temporary files or folders left over.\n %s' % (
-                    '\n'.join(errors)))
+                    '\n'.join(errors))))
 
     def shortDescription(self):  # noqa:cover
         """

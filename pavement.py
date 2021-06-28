@@ -22,8 +22,6 @@ from brink.pavement_commons import (
     coverage_prepare,
     codecov_publish,
     default,
-    github,
-    harness,
     help,
     lint,
     merge_init,
@@ -33,11 +31,8 @@ from brink.pavement_commons import (
     SETUP,
     test_coverage,
     test_diff,
-    test_os_dependent,
-    test_os_independent,
     test_python,
     test_remote,
-    test_review,
     test_normal,
     test_super,
     )
@@ -63,7 +58,7 @@ if os.name == 'nt':
 # Keep run_packages in sync with setup.py.
 # These are the hard dependencies needed by the library itself.
 RUN_PACKAGES = [
-    'zope.interface==3.8.0',
+    'zope.interface==5.4.0.chevah1',
     'six==1.15.0',
     ]
 
@@ -83,21 +78,11 @@ BUILD_PACKAGES = [
     'buildbot==0.8.11.chevah11',
     'SQLAlchemy>=1.3.18',
 
-    # For PQM
-    'chevah-github-hooks-server==0.1.6',
-    'smmap==0.9.0',
-    'async==0.6.1',
-    'gitdb==0.6.4',
-    'gitpython==1.0.1',
-    'pygithub==1.34.0',
-    'pyjwt==1.6.4',  # Used by pygithub.
-
     # For Lint and static checkers.
     'scame==0.5.1',
     'pyflakes>=1.5.0',
     'chevah-js-linter==2.4.0',
     'pycodestyle==2.3.1',
-    'bandit==1.4.0',
     'pylint==1.9.4',
     'astroid==1.6.6',
     # These are build packages, but are needed for testing the documentation.
@@ -120,8 +105,9 @@ BUILD_PACKAGES = [
     # used for remote debugging.
     'remote_pdb==1.2.0',
 
-    # Twisted is optionl, but we have it here for complete tests.
-    'twisted==15.5.0.chevah7',
+    # Twisted is optional, but we have it here for complete tests.
+    'Twisted==20.3.0.chevah1',
+    'service_identity==18.1.0',
 
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
@@ -141,8 +127,6 @@ buildbot_try
 coverage_prepare
 codecov_publish
 default
-github
-harness
 help
 lint
 merge_init
@@ -150,11 +134,8 @@ merge_commit
 pqm
 test_coverage
 test_diff
-test_os_dependent
-test_os_independent
 test_python
 test_remote
-test_review
 test_normal
 test_super
 
@@ -209,19 +190,12 @@ try:
     options.pycodestyle['enabled'] = True
     options.pycodestyle['hang_closing'] = True
 
-    options.bandit['enabled'] = True
-    options.bandit['exclude'] = [
-        'B104',  # Bind to 0.0.0.0
-        'B108',  # Hardcoded /tmp usage.
-        ]
+    options.bandit['enabled'] = False
 
     # For now pylint is disabled, as there are to many errors.
     options.pylint['enabled'] = False
     options.pylint['disable'] = ['C0103', 'C0330', 'R0902', 'W0212']
 
-    # For the testing and dev code we disable bandit.
-    options.test_options['bandit'] = options.bandit.copy()
-    options.test_options['bandit']['enabled'] = False
 
 except ImportError:
     # This will fail before we run `./brink.sh deps`
@@ -355,7 +329,7 @@ def build():
 
 
 @task
-@needs('test_python')
+@needs('build', 'test_python')
 @consume_args
 def test(args):
     """
@@ -493,15 +467,11 @@ def test_ci2(args):
         args = [args]
     test_type = env.get('TEST_TYPE', 'normal')
 
-    if test_type == 'os-independent':
-        os.environ[b'CODECOV_TOKEN'] = ''
-        return call_task('test_os_independent')
-
     if test_type == 'py3':
         os.environ[b'CODECOV_TOKEN'] = ''
         return call_task('test_py3', args=args)
 
-    exit_code = call_task('test_os_dependent', args=args)
+    exit_code = call_task('test_python', args=args)
 
     return exit_code
 

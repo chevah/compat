@@ -1,0 +1,96 @@
+#
+# GitHub actions to test chevah-compat under Docker.
+#
+
+name: GitHub-CI-Docker
+
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+    - '**.py'
+  pull_request:
+    branches: [ master ]
+    paths:
+    - '**.py'
+
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+
+env:
+  USER: chevah
+  CHEVAH_CONTAINER: yes
+
+
+jobs:
+
+
+  standard:
+
+    name: ${{ matrix.container }}
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        container:
+          - alpine:3.12
+          - amazonlinux:2018.03
+          - amazonlinux:2
+          - centos:7
+          - centos:8.2.2004
+          - centos:8
+
+    # ubuntu-latest is GitHub's newest well-suported Linux distro.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
+    # On Alpine, OpenSSL must be updated to latest version for python-package.
+    - name: Alpine setup
+      if: startsWith(matrix.container, 'alpine')
+      run: |
+        apk update && apk upgrade
+        apk add git bash libffi shadow sudo
+
+    # OpenSSL got updated in 8.3 from 1.1.1c to 1.1.1g.
+    - name: CentOS 8.2 setup
+      if: matrix.container == 'centos:8.2.2004'
+      run: |
+        sed -i s/^mirrorlist=/#mirrorlist=/ /etc/yum.repos.d/*.repo
+        sed -i s@^#baseurl=http://mirror.centos.org/\$contentdir/\$releasever/@baseurl=https://vault.centos.org/8.2.2004/@ /etc/yum.repos.d/*.repo
+
+    - name: Yum-based setup
+      if: startsWith(matrix.container, 'centos') || startsWith(matrix.container, 'amazon')
+      run: yum -y install git tar which sudo
+
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    - name: Cache build
+      uses: actions/cache@v2
+      with:
+        path: |
+          build-compat
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-${{ matrix.container }}
+
+    - name: Deps
+      run: ./brink.sh deps
+
+    - uses: twisted/python-info-action@v1
+      with:
+        python-path: build-compat/bin/python
+
+    # On a Docker container, everything runs as root by default.
+    - name: Chevah user setup
+      run: |
+        useradd -g adm -s /bin/bash -m chevah
+        echo '%adm    ALL=NOPASSWD: ALL' >> /etc/sudoers
+        chown -R chevah .
+
+    - name: Test
+      run: su chevah -c "./brink.sh test_ci2"
