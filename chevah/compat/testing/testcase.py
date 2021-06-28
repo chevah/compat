@@ -9,6 +9,7 @@ from __future__ import division
 from __future__ import absolute_import
 from six import text_type
 from six.moves import range
+import contextlib
 import inspect
 import threading
 import os
@@ -1034,6 +1035,17 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         """
         self.callCleanup()
         self.__cleanup__ = self._cleanup_stack.pop()
+
+    @contextlib.contextmanager
+    def stackedCleanup(self):
+        """
+        Context manager for stacked cleanups.
+        """
+        try:
+            self.enterCleanup()
+            yield
+        finally:
+            self.exitCleanup()
 
     def _checkTemporaryFiles(self):
         """

@@ -830,16 +830,16 @@ class TestChevahTestCase(ChevahTestCase):
         self.enterCleanup()
         self.addCleanup(medium_cleanup)
 
-        self.enterCleanup()
-        self.addCleanup(top_cleanup)
+        # Can also be used as context manager.
+        with self.stackedCleanup():
+            self.addCleanup(top_cleanup)
 
-        # Nothing called so far.
-        self.assertEqual([], self.base_stack_called)
-        self.assertEqual([], self.medium_stack_called)
-        self.assertEqual([], self.top_stack_called)
+            # Nothing called so far.
+            self.assertEqual([], self.base_stack_called)
+            self.assertEqual([], self.medium_stack_called)
+            self.assertEqual([], self.top_stack_called)
 
-        # Exit top cleanup stack.
-        self.exitCleanup()
+        # Exit top cleanup stack is implicit as part of the context manager.
         self.assertEqual([], self.base_stack_called)
         self.assertEqual([], self.medium_stack_called)
         self.assertEqual([True], self.top_stack_called)
