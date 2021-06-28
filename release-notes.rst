@@ -1,7 +1,14 @@
 Release notes for chevah.compat
 ===============================
 
-0.60.0 - 2121-04-28
+
+0.61.0 - 2021-06-28
+-------------------
+
+* Add support for stacked test cleanups.
+
+
+0.60.0 - 2021-04-28
 -------------------
 
 * Update for Twisted 20.3.0

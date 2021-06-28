@@ -331,7 +331,7 @@ class ChevahCommonsFactory(object):
         name = str(self.number()) + TEST_NAME_MARKER
         return prefix + name + ('a' * (length - len(name))) + suffix
 
-    def makeIPv4Address(self, host='localhost', port=None, protocol='TCP'):
+    def makeIPv4Address(self, host='127.0.0.1', port=None, protocol='TCP'):
         """
         Creates an IPv4 address.
         """
@@ -341,7 +341,8 @@ class ChevahCommonsFactory(object):
         ipv4 = address.IPv4Address(protocol, host, port)
         return ipv4
 
-    def makeIPv6Address(self, host='localhost', port=None, protocol='TCP'):
+    def makeIPv6Address(
+            self, host='0:0:0:0:0:0:0:1', port=None, protocol='TCP'):
         """
         Creates an IPv6 address.
         """

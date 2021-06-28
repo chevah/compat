@@ -963,6 +963,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     def setUp(self):
         super(ChevahTestCase, self).setUp()
         self.__cleanup__ = []
+        self._cleanup_stack = []
         self._teardown_errors = []
         self.test_segments = None
 
@@ -1019,6 +1020,20 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
                 self._teardown_errors.append(error)
 
         self.__cleanup__ = []
+
+    def enterCleanup(self):
+        """
+        Called when start using stacked cleanups.
+        """
+        self._cleanup_stack.append(self.__cleanup__)
+        self.__cleanup__ = []
+
+    def exitCleanup(self):
+        """
+        To be called at the end of a stacked cleanup.
+        """
+        self.callCleanup()
+        self.__cleanup__ = self._cleanup_stack.pop()
 
     def _checkTemporaryFiles(self):
         """

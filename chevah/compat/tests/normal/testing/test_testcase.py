@@ -805,6 +805,57 @@ class TestChevahTestCase(ChevahTestCase):
 
         self.assertEqual('error-marker-more', exception.args[0])
 
+    def test_stacked_cleanup(self):
+        """
+        It supports calling cleanup based on multiple stacks.
+        """
+        # Tests are based on a list and append to detect accidental duplicate
+        # calls of the same cleanup.
+        self.base_stack_called = []
+        self.medium_stack_called = []
+        self.top_stack_called = []
+
+        # Not lambda to make it easy to debug.
+        def base_cleanup():
+            self.base_stack_called.append(True)
+
+        def medium_cleanup():
+            self.medium_stack_called.append(True)
+
+        def top_cleanup():
+            self.top_stack_called.append(True)
+
+        self.addCleanup(base_cleanup)
+
+        self.enterCleanup()
+        self.addCleanup(medium_cleanup)
+
+        self.enterCleanup()
+        self.addCleanup(top_cleanup)
+
+        # Nothing called so far.
+        self.assertEqual([], self.base_stack_called)
+        self.assertEqual([], self.medium_stack_called)
+        self.assertEqual([], self.top_stack_called)
+
+        # Exit top cleanup stack.
+        self.exitCleanup()
+        self.assertEqual([], self.base_stack_called)
+        self.assertEqual([], self.medium_stack_called)
+        self.assertEqual([True], self.top_stack_called)
+
+        # Exit medium cleanup stack.
+        self.exitCleanup()
+        self.assertEqual([], self.base_stack_called)
+        self.assertEqual([True], self.medium_stack_called)
+        self.assertEqual([True], self.top_stack_called)
+
+        # Call base cleanup.
+        self.callCleanup()
+        self.assertEqual([True], self.base_stack_called)
+        self.assertEqual([True], self.medium_stack_called)
+        self.assertEqual([True], self.top_stack_called)
+
 
 @conditionals.onOSFamily('posiX')
 class TestClassConditionalsPosix(ChevahTestCase):
