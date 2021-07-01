@@ -18,6 +18,10 @@ on:
     paths:
     - '**.py'
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 
 env:
   TMATE_DEBUG: 'no'
@@ -30,7 +34,6 @@ jobs:
 
     steps:
 
-    - uses: chevah/auto-cancel-redundant-job@v1
     - uses: actions/checkout@v2
     - name: Deps
       run: ./brink.sh deps
