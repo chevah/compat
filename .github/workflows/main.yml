@@ -29,19 +29,6 @@ env:
 
 jobs:
 
-  static-checks:
-    runs-on: ubuntu-20.04
-
-    steps:
-
-    - uses: actions/checkout@v2
-    - name: Deps
-      run: ./brink.sh deps
-
-    - name: Lint
-      run: ./brink.sh lint --all
-
-
   ubuntu-2004-unicode-path:
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
