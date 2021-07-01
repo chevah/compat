@@ -18,26 +18,16 @@ on:
     paths:
     - '**.py'
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 
 env:
   TMATE_DEBUG: 'no'
 
 
 jobs:
-
-  static-checks:
-    runs-on: ubuntu-20.04
-
-    steps:
-
-    - uses: chevah/auto-cancel-redundant-job@v1
-    - uses: actions/checkout@v2
-    - name: Deps
-      run: ./brink.sh deps
-
-    - name: Lint
-      run: ./brink.sh lint --all
-
 
   ubuntu-2004-unicode-path:
     # The type of runner that the job will run on

@@ -9,6 +9,7 @@ from __future__ import division
 from __future__ import absolute_import
 from six import text_type
 from six.moves import range
+import contextlib
 import inspect
 import threading
 import os
@@ -963,6 +964,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     def setUp(self):
         super(ChevahTestCase, self).setUp()
         self.__cleanup__ = []
+        self._cleanup_stack = []
         self._teardown_errors = []
         self.test_segments = None
 
@@ -1019,6 +1021,31 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
                 self._teardown_errors.append(error)
 
         self.__cleanup__ = []
+
+    def enterCleanup(self):
+        """
+        Called when start using stacked cleanups.
+        """
+        self._cleanup_stack.append(self.__cleanup__)
+        self.__cleanup__ = []
+
+    def exitCleanup(self):
+        """
+        To be called at the end of a stacked cleanup.
+        """
+        self.callCleanup()
+        self.__cleanup__ = self._cleanup_stack.pop()
+
+    @contextlib.contextmanager
+    def stackedCleanup(self):
+        """
+        Context manager for stacked cleanups.
+        """
+        try:
+            self.enterCleanup()
+            yield
+        finally:
+            self.exitCleanup()
 
     def _checkTemporaryFiles(self):
         """

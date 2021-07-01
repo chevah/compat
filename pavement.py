@@ -87,8 +87,8 @@ BUILD_PACKAGES = [
     'astroid==1.6.6',
     # These are build packages, but are needed for testing the documentation.
     'sphinx==1.6.3',
-    'repoze.sphinx.autointerface==0.7.1.c4',
     # Docutils is required for RST parsing and for Sphinx.
+    'markupsafe==1.0',
     'docutils==0.12.c1',
 
     # Packages required to run the test suite.

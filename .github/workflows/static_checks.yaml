@@ -1,0 +1,29 @@
+#
+# GitHub actions to chevah-compat linters.
+#
+# Available VMs. Don't use `-latest` as we want to pin an OS version.
+# https://help.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners
+#
+name: GitHub-Lint
+
+on: [push]
+
+
+concurrency:
+  group: static-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+
+jobs:
+
+  static-checks:
+    runs-on: ubuntu-20.04
+
+    steps:
+
+    - uses: actions/checkout@v2
+    - name: Deps
+      run: ./brink.sh deps
+
+    - name: Lint
+      run: ./brink.sh lint --all

@@ -68,7 +68,7 @@ class UnixFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         segments = []
-        if path is None or path is u'':
+        if path is None or path == u'':
             return segments
 
         head = True

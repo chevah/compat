@@ -184,12 +184,12 @@ class TestFactory(ChevahTestCase):
 
     def test_makeIPv4Address_default(self):
         """
-        Will return an TCP localhost address with a random port.
+        Will return an TCP IPv4 localhost address with a random port.
         """
         result = mk.makeIPv4Address()
 
         self.assertEqual('TCP', result.type)
-        self.assertEqual('localhost', result.host)
+        self.assertEqual('127.0.0.1', result.host)
         self.assertGreater(result.port, 20000)
         self.assertLess(result.port, 30000)
 
@@ -200,5 +200,16 @@ class TestFactory(ChevahTestCase):
         result = mk.makeIPv4Address(port=1234)
 
         self.assertEqual('TCP', result.type)
-        self.assertEqual('localhost', result.host)
+        self.assertEqual('127.0.0.1', result.host)
         self.assertEqual(result.port, 1234)
+
+    def test_makeIPv6Address_default(self):
+        """
+        Will return an TCP IPV6 localhost address with a random port.
+        """
+        result = mk.makeIPv6Address()
+
+        self.assertEqual('TCP', result.type)
+        self.assertEqual('0:0:0:0:0:0:0:1', result.host)
+        self.assertGreater(result.port, 20000)
+        self.assertLess(result.port, 30000)
