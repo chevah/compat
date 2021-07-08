@@ -92,4 +92,4 @@ jobs:
         chown -R chevah .
 
     - name: Test
-      run: su chevah -lc "./brink.sh test_ci2"
+      run: su chevah -lc "umask 002; ./brink.sh test_ci2"
