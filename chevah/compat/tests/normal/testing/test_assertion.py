@@ -187,3 +187,87 @@ class TestAssertionMixin(ChevahTestCase):
             "Element counts were not equal:",
             exception.args[0],
             )
+
+    def test_assertEqual_unicode_vs_bytestring_in_list(self):
+        """
+        Fails with AssertionError when asserting that lists containing
+        a Unicode string vs. a bytestring are equal.
+        """
+
+        unicode_list = [u'text']
+        bytes_list = [b'text']
+        with self.assertRaises(AssertionError) as context:
+            self.assertEqual(unicode_list, bytes_list)
+
+        self.assertEqual('First is unicode while second is str for "text".',
+                         context.exception.message)
+
+    def test_assertEqual_unicode_vs_bytestring_in_nested_list(self):
+        """
+        Fails with AssertionError when asserting that nested lists containing
+        a Unicode string vs. a bytestring are equal.
+        """
+
+        unicode_list = [[u'text']]
+        bytes_list = [[b'text']]
+        with self.assertRaises(AssertionError) as context:
+            self.assertEqual(unicode_list, bytes_list)
+
+        self.assertEqual('First is unicode while second is str for "text".',
+                         context.exception.message)
+
+    def test_assertEqual_unicode_vs_bytestring_in_tuple(self):
+        """
+        Fails with AssertionError when asserting that tuples containing
+        a Unicode string vs. a bytestring are equal.
+        """
+
+        unicode_tuple = (u'text',)
+        bytes_tuple = (b'text',)
+        with self.assertRaises(AssertionError) as context:
+            self.assertEqual(unicode_tuple, bytes_tuple)
+
+        self.assertEqual('First is unicode while second is str for "text".',
+                         context.exception.message)
+
+    def test_assertEqual_unicode_vs_bytestring_in_set(self):
+        """
+        Fails with AssertionError when asserting that sets containing
+        a Unicode string vs. a bytestring are equal.
+        """
+
+        unicode_set = set([u'text'])
+        bytes_set = set([b'text'])
+        with self.assertRaises(AssertionError) as context:
+            self.assertEqual(unicode_set, bytes_set)
+
+        self.assertEqual('First is unicode while second is str for "text".',
+                         context.exception.message)
+
+    def test_assertEqual_unicode_vs_bytestring_in_dict_keys(self):
+        """
+        Fails with AssertionError when asserting that lists containing
+        a Unicode string vs. a bytestring are equal.
+        """
+
+        unicode_dict = {u'key': 'value'}
+        bytes_dict = {b'key': 'value'}
+        with self.assertRaises(AssertionError) as context:
+            self.assertEqual(unicode_dict, bytes_dict)
+
+        self.assertEqual('First is unicode while second is str for "key".',
+                         context.exception.message)
+
+    def test_assertEqual_unicode_vs_bytestring_in_dict_values(self):
+        """
+        Fails with AssertionError when asserting that lists containing
+        a Unicode string vs. a bytestring are equal.
+        """
+
+        unicode_dict = {'key': u'value'}
+        bytes_dict = {'key': b'value'}
+        with self.assertRaises(AssertionError) as context:
+            self.assertEqual(unicode_dict, bytes_dict)
+
+        self.assertEqual('First is unicode while second is str for "value".',
+                         context.exception.message)

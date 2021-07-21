@@ -1109,6 +1109,30 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
 
         return context.exception
 
+    def assertSequenceEqual(self, first, second, msg, seq_type):
+        super(ChevahTestCase, self).assertSequenceEqual(
+            first, second, msg, seq_type)
+
+        for first_element, second_element in zip(first, second):
+            self.assertEqual(first_element, second_element)
+
+    def assertDictEqual(self, first, second, msg):
+        super(ChevahTestCase, self).assertDictEqual(first, second, msg)
+
+        first_keys = sorted(first.keys())
+        second_keys = sorted(second.keys())
+        first_values = [first[key] for key in first_keys]
+        second_values = [second[key] for key in second_keys]
+        self.assertSequenceEqual(first_keys, second_keys, msg, list)
+        self.assertSequenceEqual(first_values, second_values, msg, list)
+
+    def assertSetEqual(self, first, second, msg):
+        super(ChevahTestCase, self).assertSetEqual(first, second, msg)
+
+        first_elements = sorted(first)
+        second_elements = sorted(second)
+        self.assertSequenceEqual(first_elements, second_elements, msg, list)
+
     def _baseAssertEqual(self, first, second, msg=None):
         """
         Update to stdlib to make sure we don't compare str with unicode.
