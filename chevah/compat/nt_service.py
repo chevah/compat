@@ -81,7 +81,7 @@ class ChevahNTService(win32serviceutil.ServiceFramework, object):
         try:
             # Start everything up
             self.ReportServiceStatus(win32service.SERVICE_RUNNING)
-            self.info('Service started.')
+            self.info(u'Service started.')
 
             # After start this thread execution will be blocked.
             self.start()
