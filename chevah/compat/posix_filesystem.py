@@ -197,7 +197,7 @@ class PosixFilesystemBase(object):
         '''See `ILocalFilesystem`.'''
         import tempfile
         temporary_folder = tempfile.gettempdir()
-        return self._pathSplitRecursive(temporary_folder)
+        return self.getSegmentsFromRealPath(temporary_folder)
 
     def getRealPathFromSegments(self, segments, include_virtual=True):
         '''See `ILocalFilesystem`.'''

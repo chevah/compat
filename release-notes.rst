@@ -1,6 +1,11 @@
 Release notes for chevah.compat
 ===============================
 
+0.62.0 - 2021-07-22
+-------------------
+
+* `ChevahTestCase.assertEqual` now checks inside collections
+  for Unicode vs. bytestrings.
 
 0.61.0 - 2021-06-28
 -------------------

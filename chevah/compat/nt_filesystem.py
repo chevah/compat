@@ -130,7 +130,7 @@ class NTFilesystem(PosixFilesystemBase):
         else:
             # Default tempfile.gettempdir() return path with short names,
             # due to win32api.GetTempPath().
-            return self._pathSplitRecursive(
+            return self.getSegmentsFromRealPath(
                 win32api.GetLongPathName(win32api.GetTempPath()))
 
     @property
@@ -261,6 +261,8 @@ class NTFilesystem(PosixFilesystemBase):
 
         if path is None or path == u'':
             return segments
+
+        path = text_type(path)
 
         target = os.path.abspath(path.replace('/', '\\')).lower()
         for virtual_segments, real_path in self._avatar.virtual_folders:
