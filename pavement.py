@@ -435,6 +435,7 @@ def test_ci2(args):
     SETUP['test']['nose_options'] += [
         '--with-run-reporter',
         '--with-timer',
+        '-v',
         ]
 
     # Show some info about the current environment.
