@@ -94,9 +94,5 @@ jobs:
     - name: Build
       run: su chevah -c "./brink.sh build"
 
-
-    - name: Test elevated
-      run: su chevah -c "./brink.sh test_super -vs elevated"
-
     - name: Test
       run: su chevah -c "./brink.sh test_ci2"
