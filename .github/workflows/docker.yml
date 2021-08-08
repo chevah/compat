@@ -54,7 +54,7 @@ jobs:
       if: startsWith(matrix.container, 'alpine')
       run: |
         apk update && apk upgrade
-        apk add git bash libffi shadow sudo
+        apk add git bash libffi shadow sudo curl
 
     # OpenSSL got updated in 8.3 from 1.1.1c to 1.1.1g.
     - name: CentOS 8.2 setup

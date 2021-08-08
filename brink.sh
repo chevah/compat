@@ -14,7 +14,6 @@
 # * clean - remove everything, except cache
 # * purge - remove (empty) the cache
 # * get_python - download Python distribution in cache
-# * get_agent - download Rexx/Putty distribution in cache
 #
 # It exports the following environment variables:
 # * PYTHONPATH - path to the build directory
@@ -87,8 +86,8 @@ PYTHON_CONFIGURATION='NOT-YET-DEFINED'
 PYTHON_VERSION='not.defined.yet'
 PYTHON_PLATFORM='unknown-os-and-arch'
 PYTHON_NAME='python2.7'
-BINARY_DIST_URI='http://binary.chevah.com/production'
-PIP_INDEX='http://pypi.chevah.com'
+BINARY_DIST_URI='https://github.com/chevah/python-package/releases/download'
+PIP_INDEX='https://pypi.chevah.com'
 BASE_REQUIREMENTS=''
 
 #
@@ -96,7 +95,6 @@ BASE_REQUIREMENTS=''
 # If not, we are out of the source's root dir and brink.sh won't work.
 #
 check_source_folder() {
-
     if [ ! -e pavement.py ]; then
         (>&2 echo 'No "pavement.py" file found in current folder.')
         (>&2 echo 'Make sure you are running "brink.sh" from a source folder.')
@@ -114,6 +112,10 @@ execute_venv() {
 # Called to update the dependencies inside the newly created virtual
 # environment.
 update_venv() {
+    # After updating the python version, the existing pyc files might no
+    # longer be valid.
+    _clean_pyc
+
     set +e
     ${PYTHON_BIN} -c 'from paver.tasks import main; main()' deps
     exit_code=$?
@@ -136,13 +138,6 @@ clean_build() {
     delete_folder ${DIST_FOLDER}
     echo "Removing publish..."
     delete_folder 'publish'
-    echo "Cleaning pyc files ..."
-
-    # AIX's find complains if there are no matching files when using +.
-    [ $(uname) == AIX ] && touch ./dummy_file_for_AIX.pyc
-    # Faster than '-exec rm {} \;' and supported in most OS'es,
-    # details at http://www.in-ulm.de/~mascheck/various/find/#xargs
-    find ./ -name '*.pyc' -exec rm {} +
 
     # In some case pip hangs with a build folder in temp and
     # will not continue until it is manually removed.
@@ -153,6 +148,16 @@ clean_build() {
     else
         rm -rf /tmp/pip*
     fi
+}
+
+
+_clean_pyc() {
+    echo "Cleaning pyc files ..."
+    # AIX's find complains if there are no matching files when using +.
+    [ $(uname) == AIX ] && touch ./dummy_file_for_AIX.pyc
+    # Faster than '-exec rm {} \;' and supported in most OS'es,
+    # details at https://www.in-ulm.de/~mascheck/various/find/#xargs
+    find ./ -name '*.pyc' -exec rm {} +
 }
 
 
@@ -174,7 +179,7 @@ purge_cache() {
 delete_folder() {
     local target="$1"
     # On Windows, we use internal command prompt for maximum speed.
-    # See: http://stackoverflow.com/a/6208144/539264
+    # See: https://stackoverflow.com/a/6208144/539264
     if [ $OS = "win" -a -d $target ]; then
         cmd //c "del /f/s/q $target > nul"
         cmd //c "rmdir /s/q $target"
@@ -302,6 +307,7 @@ install_base_deps() {
 #
 pip_install() {
     echo "::group::pip install $1"
+
     set +e
     # There is a bug in pip/setuptools when using custom build folders.
     # See https://github.com/pypa/pip/issues/3564
@@ -326,34 +332,30 @@ pip_install() {
 }
 
 #
-# Check for wget or curl and set needed download commands accordingly.
+# Check for curl and set needed download commands accordingly.
 #
 set_download_commands() {
     set +o errexit
-    command -v wget > /dev/null
-    if [ $? -eq 0 ]; then
-        # Using WGET for downloading Python package.
-        wget --version > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            # This is not GNU Wget, could be the more frugal wget from Busybox.
-            DOWNLOAD_CMD="wget"
-        else
-            # Use 1MB dots to reduce output and avoid polluting Buildbot pages.
-            DOWNLOAD_CMD="wget --progress=dot --execute dot_bytes=1m"
-        fi
-        ONLINETEST_CMD="wget --spider --quiet"
-        set -o errexit
-        return
-    fi
     command -v curl > /dev/null
     if [ $? -eq 0 ]; then
-        # Using CURL for downloading Python package.
-        DOWNLOAD_CMD="curl --remote-name"
-        ONLINETEST_CMD="curl --fail --silent --head --output /dev/null"
+        # Options not used because of no support in CentOS 5.11's curl:
+        #     --retry-connrefused (since curl 7.52.0)
+        #     --retry-all-errors (since curl 7.71.0)
+        # Retry 2 times, allocating 10s for the connection phase,
+        # at most 300s for an attempt, sleeping for 5s between retries.
+        CURL_RETRY_OPTS="\
+            --retry 2 \
+            --connect-timeout 10 \
+            --max-time 300 \
+            --retry-delay 5 \
+            "
+        DOWNLOAD_CMD="curl --remote-name --location $CURL_RETRY_OPTS"
+        ONLINETEST_CMD="curl --fail --silent --head $CURL_RETRY_OPTS \
+            --output /dev/null"
         set -o errexit
         return
     fi
-    (>&2 echo "Missing wget and curl! One is needed for online operations.")
+    (>&2 echo "Missing curl! It is needed for downloading the Python package.")
     exit 3
 }
 
@@ -392,8 +394,8 @@ test_version_exists() {
     local remote_base_url=$1
     local target_file=python-${PYTHON_VERSION}-${OS}-${ARCH}.tar.gz
 
-    echo "Checking $remote_base_url/${OS}/${ARCH}/$target_file"
-    $ONLINETEST_CMD $remote_base_url/${OS}/${ARCH}/$target_file
+    echo "Checking $remote_base_url/${PYTHON_VERSION}/$target_file"
+    $ONLINETEST_CMD $remote_base_url/${PYTHON_VERSION}/$target_file
     return $?
 }
 
@@ -404,19 +406,19 @@ get_python_dist() {
     local remote_base_url=$1
     local download_mode=$2
     local python_distributable=python-${PYTHON_VERSION}-${OS}-${ARCH}
-    local wget_test
+    local onlinetest_errorcode
 
     set +o errexit
     test_version_exists $remote_base_url
-    wget_test=$?
+    onlinetest_errorcode=$?
     set -o errexit
 
-    if [ $wget_test -eq 0 ]; then
+    if [ $onlinetest_errorcode -eq 0 ]; then
         # We have the requested python version.
-        get_binary_dist $python_distributable $remote_base_url/${OS}/${ARCH}
+        get_binary_dist $python_distributable $remote_base_url/${PYTHON_VERSION}
     else
-        (>&2 echo "Requested version was not found on the remote server.")
-        (>&2 echo "$remote_base_url $python_distributable")
+        (>&2 echo "Couldn't find package on remote server. Full link:")
+        echo "$remote_base_url/$PYTHON_VERSION/$python_distributable.tar.gz"
         exit 4
     fi
 }
@@ -429,7 +431,6 @@ COPY_PYTHON_RECURSIONS=0
 # Copy python to build folder from binary distribution.
 #
 copy_python() {
-
     local python_distributable="${CACHE_FOLDER}/${LOCAL_PYTHON_BINARY_DIST}"
     local python_installed_version
 
@@ -440,12 +441,11 @@ copy_python() {
         exit 5
     fi
 
-
     # Check that python dist was installed
     if [ ! -s ${PYTHON_BIN} ]; then
         # We don't have a Python binary, so we install it since everything
         # else depends on it.
-        echo "::group::Get python."
+        echo "::group::Get Python"
         echo "Bootstrapping ${LOCAL_PYTHON_BINARY_DIST} environment" \
             "to ${BUILD_FOLDER}..."
         mkdir -p ${BUILD_FOLDER}
@@ -457,7 +457,7 @@ copy_python() {
             cache_ver_file=${python_distributable}/lib/PYTHON_PACKAGE_VERSION
             cache_version='UNVERSIONED'
             if [ -f $cache_ver_file ]; then
-                cache_version=`cat $cache_ver_file`
+                cache_version=`cat $cache_ver_file | cut -d - -f 1`
             fi
             if [ "$PYTHON_VERSION" != "$cache_version" ]; then
                 # We have a different version in the cache.
@@ -471,7 +471,7 @@ copy_python() {
             # We don't have a cached python distributable.
             echo "No ${LOCAL_PYTHON_BINARY_DIST} environment." \
                 "Start downloading it..."
-            get_python_dist "$BINARY_DIST_URI/python" "strict"
+            get_python_dist "$BINARY_DIST_URI" "strict"
         fi
 
         echo "Copying Python distribution files... "
@@ -481,56 +481,37 @@ copy_python() {
 
         install_base_deps
         WAS_PYTHON_JUST_INSTALLED=1
-
     else
         # We have a Python, but we are not sure if is the right version.
         local version_file=${BUILD_FOLDER}/lib/PYTHON_PACKAGE_VERSION
 
-        if [ -f $version_file ]; then
-            # We have a versioned distribution.
-            python_installed_version=`cat $version_file`
-            if [ "$PYTHON_VERSION" != "$python_installed_version" ]; then
-                # We have a different python installed.
-
-                # Check if we have the to-be-updated version and fail if
-                # it does not exists.
-                set +o errexit
-                test_version_exists "$BINARY_DIST_URI/python"
-                local test_version=$?
-                set -o errexit
-                if [ $test_version -ne 0 ]; then
-                    (>&2 echo "The build is now at $python_installed_version.")
-                    (>&2 echo "Failed to find the required $PYTHON_VERSION.")
-                    (>&2 echo "Check your configuration or the remote server.")
-                    exit 6
-                fi
-
-                # Remove it and try to install it again.
-                echo "Updating Python from" \
-                    $python_installed_version to $PYTHON_VERSION
-                rm -rf ${BUILD_FOLDER}/*
-                rm -rf ${python_distributable}
-                copy_python
-            fi
-        else
-            # The installed python has no version.
+        # If we are upgrading the cache from an unversioned Python,
+        # cat fails if this file is missing, so we create it blank.
+        touch $version_file
+        python_installed_version=`cat $version_file | cut -d - -f 1`
+        if [ "$PYTHON_VERSION" != "$python_installed_version" ]; then
+            # We have a different python installed.
+            # Check if we have the to-be-updated version and fail if
+            # it does not exists.
             set +o errexit
-            test_version_exists "$BINARY_DIST_URI/python"
+            test_version_exists "$BINARY_DIST_URI"
             local test_version=$?
             set -o errexit
-            if [ $test_version -eq 0 ]; then
-                echo "Updating Python from UNVERSIONED to $PYTHON_VERSION"
-                # We have a different python installed.
-                # Remove it and try to install it again.
-                rm -rf ${BUILD_FOLDER}/*
-                rm -rf ${python_distributable}
-                copy_python
-            else
-                echo "Leaving UNVERSIONED Python."
+            if [ $test_version -ne 0 ]; then
+                (>&2 echo "The build is now at $python_installed_version.")
+                (>&2 echo "Failed to find the required $PYTHON_VERSION.")
+                (>&2 echo "Check your configuration or the remote server.")
+                exit 6
             fi
+
+            # Remove it and try to install it again.
+            echo "Updating Python from" \
+                $python_installed_version to $PYTHON_VERSION
+            rm -rf ${BUILD_FOLDER}/*
+            rm -rf ${python_distributable}
+            copy_python
         fi
     fi
-
 }
 
 
@@ -538,7 +519,6 @@ copy_python() {
 # Install dependencies after python was just installed.
 #
 install_dependencies(){
-
     if [ $WAS_PYTHON_JUST_INSTALLED -ne 1 ]; then
         return
     fi
@@ -557,7 +537,7 @@ install_dependencies(){
 # If it's too old, exit with a nice informative message.
 # If it's supported, return through eval the version numbers to be used for
 # naming the package, for example: '8' for RHEL 8.2, '2004' for Ubuntu 20.04,
-# '312' for Alpine Linux 3.12, '71' for AIX 7.1, '114' for Solaris 11.4.
+# '314' for Alpine Linux 3.14, '71' for AIX 7.1, '114' for Solaris 11.4.
 #
 check_os_version() {
     # First parameter should be the human-readable name for the current OS.
@@ -600,15 +580,14 @@ check_os_version() {
     done
 
     if [ "$flag_supported" = 'false' ]; then
+        (>&2 echo "Detected version of ${name_fancy} is: ${version_raw}.")
+        (>&2 echo "For versions older than ${name_fancy} ${version_good},")
         if [ "$OS" = "Linux" ]; then
             # For old and/or unsupported Linux distros there's a second chance!
-            echo "Current major version of ${name_fancy} is ${version_raw}."
-            echo "For versions older than ${name_fancy} ${version_good},"
-            echo "the generic Linux runtime is used, if possible."
+            (>&2 echo "the generic Linux runtime is used, if possible.")
             check_linux_glibc
         else
-            (>&2 echo "Current version of ${name_fancy} is: ${version_raw}")
-            (>&2 echo "Oldest supported ${name_fancy} version: ${version_good}")
+            (>&2 echo "there is currently no support.")
             exit 13
         fi
     fi
@@ -641,10 +620,14 @@ check_linux_glibc() {
         "aarch64"|"arm64")
             supported_glibc2_version=23
             ;;
+        *)
+            (>&2 echo "$ARCH is an unsupported arch for generic Linux!")
+            exit 17
+            ;;
     esac
 
-    echo "No specific runtime for the current version of this distribution..."
-    echo "Glibc version should be at least: 2.${supported_glibc2_version}."
+    echo "No specific runtime for the current distribution / version / arch."
+    echo "Minimum glibc version for this arch: 2.${supported_glibc2_version}."
 
     set +o errexit
 
@@ -678,19 +661,17 @@ check_linux_glibc() {
         exit 21
     fi
 
-    # We pass here because:
-    #   1. Building Python should work with an older glibc version.
-    #   2. Our generic "lnx" runtime might work with a slightly older glibc 2.
+    # Decrement supported_glibc2_version if building against an older glibc.
     if [ ${glibc_version_array[1]} -lt ${supported_glibc2_version} ]; then
-        (>&2 echo -n "Detected glibc version: ${glibc_version}. Versions older")
-        (>&2 echo " than 2.${supported_glibc2_version} were NOT tested!")
-
+        (>&2 echo "NOT good. Detected version is older: ${glibc_version}!")
+        exit 22
+    else
+        echo "All is good. Detected glibc version: ${glibc_version}."
     fi
 
     set -o errexit
 
     # glibc 2 detected, we set $OS for a generic Linux build.
-    echo "Glibc version currently detected: ${glibc_version}."
     OS="lnx"
 }
 
@@ -713,7 +694,6 @@ set_os_if_not_generic() {
 # In some cases we normalize or even override ARCH at the end of this function.
 #
 detect_os() {
-
     OS=$(uname -s)
 
     case "$OS" in
@@ -755,7 +735,7 @@ detect_os() {
                         ;;
                     alpine)
                         os_version_raw="$VERSION_ID"
-                        check_os_version "$distro_fancy_name" 3.6 \
+                        check_os_version "$distro_fancy_name" 3.12 \
                             "$os_version_raw" os_version_chevah
                         set_os_if_not_generic "alpine" $os_version_chevah
                         ;;
@@ -882,12 +862,7 @@ if [ "$COMMAND" = "get_python" ] ; then
     OS=$2
     ARCH=$3
     resolve_python_version
-    get_python_dist "$BINARY_DIST_URI/python" "fallback"
-    exit 0
-fi
-
-if [ "$COMMAND" = "get_agent" ] ; then
-    get_binary_dist $2 "$BINARY_DIST_URI/agent"
+    get_python_dist "$BINARY_DIST_URI" "fallback"
     exit 0
 fi
 

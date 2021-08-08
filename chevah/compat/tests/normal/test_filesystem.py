@@ -2674,7 +2674,10 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         if self.os_family == 'nt':
             target = ['c', 'windows', 'system32', 'xcopy.exe']
         else:
-            target = ['usr', 'bin', 'cp']
+            # This needs to point to a file that we know that exists on all
+            # operating systems.
+            # We want with curl as this is needed by paver.sh.
+            target = ['usr', 'bin', 'curl']
         mk.fs.makeLink(
             target_segments=target,
             link_segments=segments,
@@ -2691,7 +2694,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(attributes.is_link)
         self.assertFalse(attributes.is_folder)
         # Make sure we get the attributes of the file, and not of the link.
-        self.assertLess(5000, attributes.size)
+        self.assertLess(1000, attributes.size)
 
 
 @conditionals.onOSFamily('nt')
