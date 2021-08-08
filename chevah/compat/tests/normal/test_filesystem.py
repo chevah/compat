@@ -2674,7 +2674,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         if self.os_family == 'nt':
             target = ['c', 'windows', 'system32', 'xcopy.exe']
         else:
-            target = ['bin', 'cp']
+            target = ['usr', 'bin', 'cp']
         mk.fs.makeLink(
             target_segments=target,
             link_segments=segments,

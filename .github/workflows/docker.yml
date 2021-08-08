@@ -36,7 +36,7 @@ jobs:
       fail-fast: false
       matrix:
         container:
-          - alpine:3.12
+          - alpine:3.14
           - amazonlinux:2018.03
           - amazonlinux:2
           - centos:7
@@ -90,6 +90,9 @@ jobs:
         useradd -g adm -s /bin/bash -m chevah
         echo '%adm    ALL=NOPASSWD: ALL' >> /etc/sudoers
         chown -R chevah .
+
+    - name: Debug /bin content.
+      run: ls -al /usr/bin
 
     - name: Test
       run: su chevah -c "./brink.sh test_ci2"
