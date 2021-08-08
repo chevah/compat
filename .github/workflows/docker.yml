@@ -91,7 +91,7 @@ jobs:
         echo '%adm    ALL=NOPASSWD: ALL' >> /etc/sudoers
         chown -R chevah .
 
-    - name: Test elevated
+    - name: Build
       run: su chevah -c "./brink.sh build"
 
 

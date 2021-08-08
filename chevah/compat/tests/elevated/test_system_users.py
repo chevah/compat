@@ -302,10 +302,6 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         Check PAM authentication.
         """
-        if self.os_name == 'solaris':
-            # PAM is broken on Solaris.
-            raise self.skipTest()
-
         result = system_users.pamWithUsernameAndPassword(
             username=TEST_ACCOUNT_USERNAME,
             password=TEST_ACCOUNT_PASSWORD,
