@@ -22,6 +22,7 @@ concurrency:
 
 
 env:
+  CHEVAH_REPO: compat
   USER: chevah
   CHEVAH_CONTAINER: yes
 
@@ -39,6 +40,7 @@ jobs:
           - alpine:3.14
           - amazonlinux:2018.03
           - amazonlinux:2
+          - centos:5.11
           - centos:7
           - centos:8.2.2004
           - centos:8
@@ -56,6 +58,23 @@ jobs:
         apk upgrade -U
         apk add git bash libffi shadow sudo curl
 
+    # Final CentOS 5 version is used to build the generic Linux package.
+    - name: CentOS 5.11 setup
+      if: matrix.container == 'centos:5.11'
+      run: |
+        sed -i s/^mirrorlist=/#mirrorlist=/ /etc/yum.repos.d/*.repo
+        sed -i s@^#baseurl=http://mirror.centos.org/centos/\$releasever/@baseurl=http://vault.centos.org/5.11/@ /etc/yum.repos.d/*.repo
+        yum -y upgrade
+        # Use https://bin.chevah.com:20443/third-party-stuff/centos5/tuxad/
+        # when tuxad.de dissapears, it has the minimum required stuff.
+        rpm -i http://www.tuxad.de/rpms/tuxad-release-5-1.noarch.rpm
+        yum -y install wget curl gcc44 make m4 automake libtool patch sudo which openssh-clients
+        ln -s /usr/bin/gcc44 /usr/local/bin/gcc
+        wget --mirror --no-parent https://bin.chevah.com:20443/third-party-stuff/centos5/endpoint/
+        cd bin.chevah.com\:20443/third-party-stuff/centos5/endpoint/
+        rpm -i local-perl-*.rpm
+        rpm -i --nodeps git{-core,}-2.5.0-1.ep.x86_64.rpm
+
     # OpenSSL got updated in 8.3 from 1.1.1c to 1.1.1g.
     - name: CentOS 8.2 setup
       if: matrix.container == 'centos:8.2.2004'
@@ -67,32 +86,54 @@ jobs:
       if: startsWith(matrix.container, 'centos') || startsWith(matrix.container, 'amazon')
       run: yum -y install git tar which sudo
 
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
+    # On a Docker container, everything runs as root by default.
+    - name: Chevah user setup
+      run: |
+        useradd -g adm -s /bin/bash -m chevah
+        echo '%adm    ALL=NOPASSWD: ALL' > /etc/sudoers
+
+    # GHA's checkout action doesn't work on CentOS 5. This fails on opening a new PR.
+    - name: Clone sources independently
+      run: |
+        cd /home/chevah/
+        git init $CHEVAH_REPO
+        cd $CHEVAH_REPO
+        # Cleanup the repo.
+        git rev-parse --symbolic-full-name --verify --quiet HEAD || true
+        git rev-parse --symbolic-full-name --branches || true
+        git remote remove origin || true
+        # Update repo token.
+        git remote add origin https://github.com/chevah/$CHEVAH_REPO
+        git fetch --no-tags --prune origin
+        # Prepare the code.
+        git clean -f
+        git reset --hard ${{ github.event.after }}
+        git log -1 --format='%H'
 
     - name: Cache build
       uses: actions/cache@v2
+      if: matrix.container != 'centos:5.11'
       with:
         path: |
-          build-compat
+          /home/chevah/$CHEVAH_REPO/build-$CHEVAH-REPO
         key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-${{ matrix.container }}
 
     - name: Deps
-      run: ./brink.sh deps
+      run: |
+		cd /home/chevah/$CHEVAH_REPO
+		./brink.sh deps
+		chown -R chevah .
 
     - uses: twisted/python-info-action@v1
       with:
         python-path: build-compat/bin/python
 
-    # On a Docker container, everything runs as root by default.
-    - name: Chevah user setup
-      run: |
-        useradd -g adm -s /bin/bash -m chevah
-        echo '%adm    ALL=NOPASSWD: ALL' >> /etc/sudoers
-        chown -R chevah .
-
     - name: Build
-      run: su chevah -c "./brink.sh build"
+      run: |
+		cd /home/chevah/$CHEVAH_REPO
+		su chevah -c "./brink.sh build"
 
     - name: Test
-      run: su chevah -c "./brink.sh test_ci2"
+      run: |
+		cd /home/chevah/$CHEVAH_REPO
+		su chevah -c "./brink.sh test_ci2"
