@@ -120,9 +120,9 @@ jobs:
 
     - name: Deps
       run: |
-		cd /home/chevah/$CHEVAH_REPO
-		./brink.sh deps
-		chown -R chevah .
+        cd /home/chevah/$CHEVAH_REPO
+        ./brink.sh deps
+        chown -R chevah .
 
     - uses: twisted/python-info-action@v1
       with:
@@ -130,10 +130,10 @@ jobs:
 
     - name: Build
       run: |
-		cd /home/chevah/$CHEVAH_REPO
-		su chevah -c "./brink.sh build"
+        cd /home/chevah/$CHEVAH_REPO
+        su chevah -c "./brink.sh build"
 
     - name: Test
       run: |
-		cd /home/chevah/$CHEVAH_REPO
-		su chevah -c "./brink.sh test_ci2"
+        cd /home/chevah/$CHEVAH_REPO
+        su chevah -c "./brink.sh test_ci2"
