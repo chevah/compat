@@ -58,7 +58,7 @@ if os.name == 'nt':
 # Keep run_packages in sync with setup.py.
 # These are the hard dependencies needed by the library itself.
 RUN_PACKAGES = [
-    'zope.interface==5.4.0.chevah1',
+    'zope.interface==5.4.0+chevah.2',
     'six==1.15.0',
     ]
 
@@ -94,7 +94,7 @@ BUILD_PACKAGES = [
     # Packages required to run the test suite.
     # Never version of nose, hangs on closing some tests
     # due to some thread handling.
-    'nose==1.3.0.chevah12',
+    'nose==1.3.0.chevah13',
     'nose-randomly==1.2.5',
     'mock',
 
@@ -106,7 +106,7 @@ BUILD_PACKAGES = [
     'remote_pdb==1.2.0',
 
     # Twisted is optional, but we have it here for complete tests.
-    'Twisted==20.3.0.chevah1',
+    'Twisted==20.3.0+chevah.3',
     'service_identity==18.1.0',
 
     # We install wmi everywhere even though it is only used on Windows.
