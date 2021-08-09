@@ -80,7 +80,7 @@ jobs:
       if: matrix.container == 'centos:6.10'
       run: |
         sed -i s/^mirrorlist=/#mirrorlist=/ /etc/yum.repos.d/*.repo
-        sed -i s@^#baseurl=http://mirror.centos.org/\$contentdir/\$releasever/@baseurl=https://vault.centos.org/6.10/@ /etc/yum.repos.d/*.repo
+        sed -i s@^#baseurl=http://mirror.centos.org/centos/\$releasever/@baseurl=http://vault.centos.org/6.10/@ /etc/yum.repos.d/*.repo
         yum -y upgrade
 
     # OpenSSL got updated in 8.3 from 1.1.1c to 1.1.1g.
@@ -89,6 +89,7 @@ jobs:
       run: |
         sed -i s/^mirrorlist=/#mirrorlist=/ /etc/yum.repos.d/*.repo
         sed -i s@^#baseurl=http://mirror.centos.org/\$contentdir/\$releasever/@baseurl=https://vault.centos.org/8.2.2004/@ /etc/yum.repos.d/*.repo
+        yum -y upgrade
 
     - name: Yum-based setup
       if: startsWith(matrix.container, 'centos') || startsWith(matrix.container, 'amazon')
