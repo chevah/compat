@@ -81,6 +81,9 @@ class TestProcessCapabilitiesPosix(CompatTestCase):
         elif self.os_name == 'openbsd':
             # OpenBSD does not has PAM by default.
             self.assertFalse(self.capabilities.pam)
+        elif self.os_version == 'alpine-3':
+            # We don't bother about PAM on Alpine.
+            self.assertFalse(self.capabilities.pam)
         else:
             self.assertTrue(self.capabilities.pam)
 

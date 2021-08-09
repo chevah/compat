@@ -36,7 +36,7 @@ jobs:
       fail-fast: false
       matrix:
         container:
-          - alpine:3.12
+          - alpine:3.14
           - amazonlinux:2018.03
           - amazonlinux:2
           - centos:7
@@ -53,8 +53,8 @@ jobs:
     - name: Alpine setup
       if: startsWith(matrix.container, 'alpine')
       run: |
-        apk update && apk upgrade
-        apk add git bash libffi shadow sudo
+        apk upgrade -U
+        apk add git bash libffi shadow sudo curl
 
     # OpenSSL got updated in 8.3 from 1.1.1c to 1.1.1g.
     - name: CentOS 8.2 setup
@@ -90,6 +90,9 @@ jobs:
         useradd -g adm -s /bin/bash -m chevah
         echo '%adm    ALL=NOPASSWD: ALL' >> /etc/sudoers
         chown -R chevah .
+
+    - name: Build
+      run: su chevah -c "./brink.sh build"
 
     - name: Test
       run: su chevah -c "./brink.sh test_ci2"

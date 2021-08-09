@@ -7,6 +7,7 @@ from __future__ import with_statement
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+import platform
 
 from zope.interface import implements
 
@@ -84,4 +85,11 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
         if self.os_name == 'hpux':
             # We don't support PAM on HPUX.
             return False
+
+        if self.os_name == 'linux':
+            distro_name = platform.linux_distribution(
+                supported_dists=platform._supported_dists + ('alpine',))[0]
+            if distro_name == 'alpine':
+                return False
+
         return True

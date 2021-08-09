@@ -216,6 +216,23 @@ SETUP['buildbot']['web_url'] = 'https://buildbot.chevah.com:10443'
 SETUP['pypi']['index_url'] = 'http://pypi.chevah.com/simple'
 
 
+def _set_umask(mask):
+    """
+    Try to set the umask on any OS.
+
+    Does nothing if the OS doesn't support the umask operation.
+    """
+    if not hasattr(os, 'umask'):
+        # Not an OS where we can set umask.
+        return
+    os.umask(mask)
+
+
+# Set a consistent umask across all project tools.
+# Some tests assume that a specific umask is set in the OS.
+_set_umask(0o002)
+
+
 def compile_file(fullname, ddir=None, force=0, rx=None, quiet=0):
     """
     <Byte-compile one file.
@@ -418,6 +435,7 @@ def test_ci2(args):
     SETUP['test']['nose_options'] += [
         '--with-run-reporter',
         '--with-timer',
+        '-v',
         ]
 
     # Show some info about the current environment.
