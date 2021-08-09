@@ -115,7 +115,7 @@ jobs:
       if: matrix.container != 'centos:5.11'
       with:
         path: |
-          /home/chevah/$CHEVAH_REPO/build-$CHEVAH-REPO
+          /home/chevah/$CHEVAH_REPO/build-$CHEVAH_REPO
         key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-${{ matrix.container }}
 
     - name: Deps
@@ -126,7 +126,7 @@ jobs:
 
     - uses: twisted/python-info-action@v1
       with:
-        python-path: build-compat/bin/python
+        python-path: /home/chevah/$CHEVAH_REPO/build-$CHEVAH_REPO/bin/python
 
     - name: Build
       run: |
