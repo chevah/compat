@@ -102,7 +102,7 @@ jobs:
       run: |
         apt update
         apt dist-upgrade -y
-        apt install -y git curl
+        apt install -y git curl sudo
 
     # On a Docker container, everything runs as root by default.
     - name: Chevah user setup

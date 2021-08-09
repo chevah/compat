@@ -113,7 +113,12 @@ jobs:
 
 
   macos-unicode-path:
-    runs-on: macos-latest
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ macos-10.15, macos-11 ]
+
     steps:
     - uses: actions/checkout@v2
 
