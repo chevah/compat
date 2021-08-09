@@ -41,6 +41,7 @@ jobs:
           - amazonlinux:2018.03
           - amazonlinux:2
           - centos:5.11
+          - centos:6.10
           - centos:7
           - centos:8.2.2004
           - centos:8
@@ -74,6 +75,12 @@ jobs:
         cd bin.chevah.com\:20443/third-party-stuff/centos5/endpoint/
         rpm -i local-perl-*.rpm
         rpm -i --nodeps git{-core,}-2.5.0-1.ep.x86_64.rpm
+
+    - name: CentOS 6.10 setup
+      if: matrix.container == 'centos:6.10'
+      run: |
+        sed -i s/^mirrorlist=/#mirrorlist=/ /etc/yum.repos.d/*.repo
+        sed -i s@^#baseurl=http://mirror.centos.org/\$contentdir/\$releasever/@baseurl=https://vault.centos.org/6.10/@ /etc/yum.repos.d/*.repo
 
     # OpenSSL got updated in 8.3 from 1.1.1c to 1.1.1g.
     - name: CentOS 8.2 setup
