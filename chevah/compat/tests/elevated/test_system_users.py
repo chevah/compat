@@ -257,8 +257,11 @@ class TestSystemUsers(SystemUsersTestCase):
             )
 
         if self.os_name in ['aix', 'hpux']:
-            # On AIX and HPUX password is here.
+            # On AIX and HPUX password is in the passwd file.
             self.assertTrue(result)
+        elif self.os_version in ['rhel-5']:
+            # Old RHEL/Centos contain has the password in passwd file.
+            self.assertIsTrue(result)
         else:
             # Not here.
             self.assertIsNone(result)
@@ -277,6 +280,10 @@ class TestSystemUsers(SystemUsersTestCase):
         if self.os_name in ['aix', 'hpux']:
             # On AIX and HPUX invalid passwords are not accepted.
             self.assertFalse(result)
+        elif self.os_version in ['rhel-5']:
+            # Old RHEL/Centos contain has the password in passwd file,
+            # and the provided password doesn't match what is in the file.
+            self.assertIsFalse(result)
         else:
             # On all other OSs password is not here.
             self.assertIsNone(result)
@@ -293,6 +300,9 @@ class TestSystemUsers(SystemUsersTestCase):
 
         if self.os_name in ['aix', 'hpux', 'osx', 'freebsd', 'openbsd']:
             # No shadow support.
+            self.assertIsNone(result)
+        elif self.os_version in ['rhel-5']:
+            # No shadow users on old RHEL/Centos container.
             self.assertIsNone(result)
         else:
             self.assertTrue(result)

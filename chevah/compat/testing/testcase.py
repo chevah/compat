@@ -872,6 +872,10 @@ def _get_os_version():
         # Arch has no version.
         return 'arch'
 
+    if distro_name in ['centos', 'ol']:
+        # Normalize all RHEL variants.
+        distro_name = 'rhel'
+
     distro_version = ld.version().split('.', 1)[0]
 
     return '%s-%s' % (distro_name, distro_version)
