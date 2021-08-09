@@ -45,6 +45,8 @@ jobs:
           - centos:7
           - centos:8.2.2004
           - centos:8
+          - ubuntu:14.04
+          - ubuntu:16.04
 
     # ubuntu-latest is GitHub's newest well-suported Linux distro.
     runs-on: ubuntu-latest
@@ -57,7 +59,7 @@ jobs:
       if: startsWith(matrix.container, 'alpine')
       run: |
         apk upgrade -U
-        apk add git bash libffi shadow sudo curl
+        apk add git bash shadow sudo curl
 
     # Final CentOS 5 version is used to build the generic Linux package.
     - name: CentOS 5.11 setup
@@ -94,6 +96,13 @@ jobs:
     - name: Yum-based setup
       if: startsWith(matrix.container, 'centos') || startsWith(matrix.container, 'amazon')
       run: yum -y install git tar which sudo
+
+    - name: Ubuntu setup
+      if: startsWith(matrix.container, 'ubuntu')
+      run: |
+        apt update
+        apt dist-upgrade -y
+        apt install -y git curl
 
     # On a Docker container, everything runs as root by default.
     - name: Chevah user setup
