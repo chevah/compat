@@ -6,7 +6,8 @@
 #
 # When running a tmate debug session you might need to increase the
 # timeout-minutes for each build.
-name: GitHub-CI
+
+name: Bare
 
 on:
   push:

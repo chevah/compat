@@ -2,10 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
-0.62.1 - 2021-08-08
+0.63.0 - 2021-08-09
 -------------------
 
 * Disable PAM for Alpine.
+* ChevahTestCase.os_version was updated for RHEL, CentOS and Oracle Linux to
+  always return `rhel-N` as the Linux distribution name.
 
 
 0.62.0 - 2021-07-22

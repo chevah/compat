@@ -4,7 +4,8 @@
 # Available VMs. Don't use `-latest` as we want to pin an OS version.
 # https://help.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners
 #
-name: GitHub-Lint
+
+name: Lint
 
 on: [push]
 
