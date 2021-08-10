@@ -2,7 +2,8 @@
 # GitHub actions to test chevah-compat under Docker.
 #
 
-name: GitHub-CI-Docker
+
+name: Docker
 
 
 on:
