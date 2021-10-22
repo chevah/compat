@@ -213,7 +213,7 @@ SETUP['test']['nose_options'] = ['--with-randomly']
 SETUP['test']['coverator_url'] = 'http://coverator.chevah.com:8080'
 SETUP['buildbot']['server'] = 'buildbot.chevah.com'
 SETUP['buildbot']['web_url'] = 'https://buildbot.chevah.com:10443'
-SETUP['pypi']['index_url'] = 'http://pypi.chevah.com/simple'
+SETUP['pypi']['index_url'] = 'https://bin.chevah.com:20443/pypi/simple'
 
 
 def _set_umask(mask):

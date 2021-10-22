@@ -87,7 +87,7 @@ PYTHON_VERSION='not.defined.yet'
 PYTHON_PLATFORM='unknown-os-and-arch'
 PYTHON_NAME='python2.7'
 BINARY_DIST_URI='https://github.com/chevah/python-package/releases/download'
-PIP_INDEX='https://pypi.chevah.com'
+PIP_INDEX='https://pypi.org/simple'
 BASE_REQUIREMENTS=''
 
 #
@@ -314,7 +314,7 @@ pip_install() {
     rm -rf ${BUILD_FOLDER}/pip-build
     ${PYTHON_BIN} -m \
         pip install \
-            --trusted-host pypi.chevah.com \
+            --trusted-host bin.chevah.com \
             --trusted-host deag.chevah.com \
             --index-url=$PIP_INDEX \
             --build=${BUILD_FOLDER}/pip-build \
