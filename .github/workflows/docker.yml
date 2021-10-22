@@ -74,7 +74,8 @@ jobs:
         rpm -i http://www.tuxad.de/rpms/tuxad-release-5-1.noarch.rpm
         yum -y install wget curl gcc44 make m4 automake libtool patch sudo which openssh-clients
         ln -s /usr/bin/gcc44 /usr/local/bin/gcc
-        wget --mirror --no-parent https://bin.chevah.com:20443/third-party-stuff/centos5/endpoint/
+        # Old wget mistakenly thinks Let's Encrypt certificate has expired.
+        wget --mirror --no-parent --no-check-certificate https://bin.chevah.com:20443/third-party-stuff/centos5/endpoint/
         cd bin.chevah.com\:20443/third-party-stuff/centos5/endpoint/
         rpm -i local-perl-*.rpm
         rpm -i --nodeps git{-core,}-2.5.0-1.ep.x86_64.rpm
