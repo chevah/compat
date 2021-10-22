@@ -102,9 +102,9 @@ jobs:
     - name: Ubuntu setup
       if: startsWith(matrix.container, 'ubuntu')
       run: |
-        apt update
-        apt dist-upgrade -y
-        apt install -y git curl sudo
+        apt-get update
+        apt-get dist-upgrade -y
+        apt-get install -y git curl sudo
 
     # On a Docker container, everything runs as root by default.
     - name: Chevah user setup
