@@ -41,7 +41,7 @@ jobs:
           - alpine:3.14
           - amazonlinux:2018.03
           - amazonlinux:2
-          - centos:5.11
+          - proatria/centos:5.11-chevah1
           - centos:6.10
           - centos:7
           - centos:8.2.2004
@@ -61,24 +61,6 @@ jobs:
       run: |
         apk upgrade -U
         apk add git bash shadow sudo curl
-
-    # Final CentOS 5 version is used to build the generic Linux package.
-    - name: CentOS 5.11 setup
-      if: matrix.container == 'centos:5.11'
-      run: |
-        sed -i s/^mirrorlist=/#mirrorlist=/ /etc/yum.repos.d/*.repo
-        sed -i s@^#baseurl=http://mirror.centos.org/centos/\$releasever/@baseurl=http://vault.centos.org/5.11/@ /etc/yum.repos.d/*.repo
-        yum -y upgrade
-        # Use https://bin.chevah.com:20443/third-party-stuff/centos5/tuxad/
-        # when tuxad.de dissapears, it has the minimum required stuff.
-        rpm -i http://www.tuxad.de/rpms/tuxad-release-5-1.noarch.rpm
-        yum -y install wget curl gcc44 make m4 automake libtool patch sudo which openssh-clients
-        ln -s /usr/bin/gcc44 /usr/local/bin/gcc
-        # Old wget mistakenly thinks Let's Encrypt certificate has expired.
-        wget --mirror --no-parent --no-check-certificate https://bin.chevah.com:20443/third-party-stuff/centos5/endpoint/
-        cd bin.chevah.com\:20443/third-party-stuff/centos5/endpoint/
-        rpm -i local-perl-*.rpm
-        rpm -i --nodeps git{-core,}-2.5.0-1.ep.x86_64.rpm
 
     - name: CentOS 6.10 setup
       if: matrix.container == 'centos:6.10'
