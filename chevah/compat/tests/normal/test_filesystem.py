@@ -2676,8 +2676,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         else:
             # This needs to point to a file that we know that exists on all
             # operating systems.
-            # We want with curl as this is needed by paver.sh.
-            target = ['usr', 'bin', 'curl']
+            target = [ 'bin', 'sh']
         mk.fs.makeLink(
             target_segments=target,
             link_segments=segments,
