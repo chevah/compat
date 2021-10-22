@@ -120,8 +120,8 @@ jobs:
     - name: CentOS 5 BINARY_DIST_URI hack
       if: startsWith(matrix.container, 'proatria/centos:5.11')
       run: |
-        sed -i s/^BINARY_DIST_URI=/##BINARY_DIST_URI=/ /home/chevah/$CHEVAH_REPO/brink.conf
-        sed -i s/^#BINARY_DIST_URI=/BINARY_DIST_URI=/ /home/chevah/$CHEVAH_REPO/brink.conf
+        sed -i s/^BINARY_DIST_URI='https://github.com/chevah/python-package/releases/download'/#BINARY_DIST_URI='https://github.com/chevah/python-package/releases/download'/ /home/chevah/$CHEVAH_REPO/brink.conf
+        sed -i s/^#BINARY_DIST_URI='https://bin.chevah.com:20443/production'/BINARY_DIST_URI='https://bin.chevah.com:20443/production'/ /home/chevah/$CHEVAH_REPO/brink.conf
 
     # This action also fails on CentOS 5/6.
     - name: Cache build
