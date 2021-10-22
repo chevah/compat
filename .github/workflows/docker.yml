@@ -41,6 +41,8 @@ jobs:
           - alpine:3.14
           - amazonlinux:2018.03
           - amazonlinux:2
+          # CentOS 5.11 setup was saved as an image pushed to Docker Hub. See
+          # the Overview section at https://hub.docker.com/r/proatria/centos.
           - proatria/centos:5.11-chevah1
           - centos:6.10
           - centos:7
@@ -112,6 +114,14 @@ jobs:
         git clean -f
         git reset --hard ${{ github.event.after }}
         git log -1 --format='%H'
+
+    # The old curl on CentOS 5 has cert check issues with GitHub's redirection.
+    # So we replace the default GitHub BINARY_DIST_URI with our backup one.
+    - name: CentOS 5 BINARY_DIST_URI hack
+      if: startsWith(matrix.container, 'proatria/centos:5.11')
+      run: |
+        sed -i s/^BINARY_DIST_URI=/##BINARY_DIST_URI=/ /home/chevah/$CHEVAH_REPO/brink.conf
+        sed -i s/^#BINARY_DIST_URI=/BINARY_DIST_URI=/ /home/chevah/$CHEVAH_REPO/brink.conf
 
     - name: Cache build
       uses: actions/cache@v2
