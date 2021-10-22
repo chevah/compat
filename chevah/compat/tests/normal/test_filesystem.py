@@ -2676,7 +2676,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         else:
             # This needs to point to a file that we know that exists on all
             # operating systems.
-            target = [ 'bin', 'sh']
+            target = ['bin', 'sh']
         mk.fs.makeLink(
             target_segments=target,
             link_segments=segments,
