@@ -41,7 +41,9 @@ jobs:
           - alpine:3.14
           - amazonlinux:2018.03
           - amazonlinux:2
-          - centos:5.11
+          # CentOS 5.11 setup was saved as an image pushed to Docker Hub. See
+          # the Overview section at https://hub.docker.com/r/proatria/centos.
+          - proatria/centos:5.11-chevah1
           - centos:6.10
           - centos:7
           - centos:8.2.2004
@@ -61,23 +63,6 @@ jobs:
       run: |
         apk upgrade -U
         apk add git bash shadow sudo curl
-
-    # Final CentOS 5 version is used to build the generic Linux package.
-    - name: CentOS 5.11 setup
-      if: matrix.container == 'centos:5.11'
-      run: |
-        sed -i s/^mirrorlist=/#mirrorlist=/ /etc/yum.repos.d/*.repo
-        sed -i s@^#baseurl=http://mirror.centos.org/centos/\$releasever/@baseurl=http://vault.centos.org/5.11/@ /etc/yum.repos.d/*.repo
-        yum -y upgrade
-        # Use https://bin.chevah.com:20443/third-party-stuff/centos5/tuxad/
-        # when tuxad.de dissapears, it has the minimum required stuff.
-        rpm -i http://www.tuxad.de/rpms/tuxad-release-5-1.noarch.rpm
-        yum -y install wget curl gcc44 make m4 automake libtool patch sudo which openssh-clients
-        ln -s /usr/bin/gcc44 /usr/local/bin/gcc
-        wget --mirror --no-parent https://bin.chevah.com:20443/third-party-stuff/centos5/endpoint/
-        cd bin.chevah.com\:20443/third-party-stuff/centos5/endpoint/
-        rpm -i local-perl-*.rpm
-        rpm -i --nodeps git{-core,}-2.5.0-1.ep.x86_64.rpm
 
     - name: CentOS 6.10 setup
       if: matrix.container == 'centos:6.10'
@@ -101,9 +86,9 @@ jobs:
     - name: Ubuntu setup
       if: startsWith(matrix.container, 'ubuntu')
       run: |
-        apt update
-        apt dist-upgrade -y
-        apt install -y git curl sudo
+        apt-get update
+        apt-get dist-upgrade -y
+        apt-get install -y git curl sudo
 
     # On a Docker container, everything runs as root by default.
     - name: Chevah user setup
@@ -111,7 +96,8 @@ jobs:
         useradd -g adm -s /bin/bash -m chevah
         echo '%adm    ALL=NOPASSWD: ALL' > /etc/sudoers
 
-    # GHA's checkout action doesn't work on CentOS 5/6. This fails on opening a new PR.
+    # GHA's checkout action fails on CentOS 5/6, issue same commands manually.
+    # This fails when opening a new PR, but works starting with second commit.
     - name: Clone sources independently
       run: |
         cd /home/chevah/
@@ -129,9 +115,18 @@ jobs:
         git reset --hard ${{ github.event.after }}
         git log -1 --format='%H'
 
+    # The old curl on CentOS 5 has cert check issues with GitHub's SNI.
+    # Also with Let's Encrypt certificates, lately.
+    # So download the runtime over HTTP from backup server.
+    - name: CentOS 5 BINARY_DIST_URI hack
+      if: startsWith(matrix.container, 'proatria/centos:5.11')
+      run: |
+        sed -i s@^#BINARY_DIST_URI=\'https://bin.chevah.com:20443/production\'@BINARY_DIST_URI=\'http://bin.chevah.com:20080/production\'@ /home/chevah/$CHEVAH_REPO/brink.conf
+
+    # This action also fails on CentOS 5/6.
     - name: Cache build
       uses: actions/cache@v2
-      if: matrix.container != 'centos:5.11' && matrix.container != 'centos:6.10'
+      if: matrix.container != 'proatria/centos:5.11-chevah1' && matrix.container != 'centos:6.10'
       with:
         path: |
           /home/chevah/$CHEVAH_REPO/build-$CHEVAH_REPO

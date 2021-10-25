@@ -106,7 +106,7 @@ BUILD_PACKAGES = [
     'remote_pdb==1.2.0',
 
     # Twisted is optional, but we have it here for complete tests.
-    'Twisted==20.3.0+chevah.3',
+    'Twisted==20.3.0+chevah.5',
     'service_identity==18.1.0',
 
     # We install wmi everywhere even though it is only used on Windows.
@@ -213,7 +213,7 @@ SETUP['test']['nose_options'] = ['--with-randomly']
 SETUP['test']['coverator_url'] = 'http://coverator.chevah.com:8080'
 SETUP['buildbot']['server'] = 'buildbot.chevah.com'
 SETUP['buildbot']['web_url'] = 'https://buildbot.chevah.com:10443'
-SETUP['pypi']['index_url'] = 'http://pypi.chevah.com/simple'
+SETUP['pypi']['index_url'] = 'https://bin.chevah.com:20443/pypi/simple'
 
 
 def _set_umask(mask):
