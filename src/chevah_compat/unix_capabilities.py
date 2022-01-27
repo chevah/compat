@@ -3,19 +3,15 @@
 """
 Provides information about capabilities for a process on Unix.
 """
-from __future__ import with_statement
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 import platform
 
 from zope.interface import implements
 
-from chevah.compat.capabilities import BaseProcessCapabilities
-from chevah.compat.exceptions import ChangeUserException
-from chevah.compat.helpers import _
-from chevah.compat.interfaces import IProcessCapabilities
-from chevah.compat.unix_users import _ExecuteAsUser
+from chevah_compat.capabilities import BaseProcessCapabilities
+from chevah_compat.exceptions import ChangeUserException
+from chevah_compat.helpers import _
+from chevah_compat.interfaces import IProcessCapabilities
+from chevah_compat.unix_users import _ExecuteAsUser
 
 
 class UnixProcessCapabilities(BaseProcessCapabilities):

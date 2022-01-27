@@ -17,10 +17,6 @@ Default groups and users have a maximum length of 9. Check `lsattr -El sys0`
 for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six.moves import range
 from contextlib import contextmanager
 import os
 import codecs
@@ -30,13 +26,13 @@ import subprocess
 import sys
 import time
 
-from chevah.compat import (
+from chevah_compat import (
     LocalFilesystem,
     process_capabilities,
     system_users,
     SuperAvatar,
     )
-from chevah.compat.winerrors import ERROR_NONE_MAPPED
+from chevah_compat.winerrors import ERROR_NONE_MAPPED
 
 
 def execute(command, input_text=None, output=None, ignore_errors=True):
@@ -250,7 +246,7 @@ class OSAdministrationUnix(object):
 
     def _addUser_unix(self, user):
         # Prevent circular import.
-        from chevah.compat.testing import TestGroup
+        from chevah_compat.testing import TestGroup
         group = TestGroup(name=user.name, posix_gid=user.uid)
         self._addGroup_unix(group)
 
@@ -600,7 +596,7 @@ class OSAdministrationUnix(object):
             files=[['etc', 'passwd'], ['etc', 'shadow']])
 
         # Prevent circular import.
-        from chevah.compat.testing import TestGroup
+        from chevah_compat.testing import TestGroup
         group = TestGroup(name=user.name, posix_gid=user.uid)
         self._deleteGroup_unix(group)
         self.deleteHomeFolder(user)

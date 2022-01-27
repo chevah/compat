@@ -3,10 +3,6 @@
 """
 Provides information about capabilities for a process on Windows.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
 from contextlib import contextmanager
 import platform
 import pywintypes
@@ -16,11 +12,11 @@ import win32security
 
 from zope.interface import implements
 
-from chevah.compat.capabilities import BaseProcessCapabilities
-from chevah.compat.exceptions import (
+from chevah_compat.capabilities import BaseProcessCapabilities
+from chevah_compat.exceptions import (
     AdjustPrivilegeException,
     )
-from chevah.compat.interfaces import IProcessCapabilities
+from chevah_compat.interfaces import IProcessCapabilities
 
 
 class NTProcessCapabilities(BaseProcessCapabilities):
@@ -36,7 +32,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
 
         for privilege in self._getAvailablePrivileges():
             name = win32security.LookupPrivilegeName('', privilege[0])
-            value = text_type(privilege[1])
+            value = str(privilege[1])
             result.append(name + u':' + value)
 
         return u', '.join(result)
@@ -198,7 +194,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
                 win32security.AdjustTokenPrivileges(
                     process_token, 0, new_privileges)
             except win32security.error as error:
-                raise AdjustPrivilegeException(text_type(error))
+                raise AdjustPrivilegeException(str(error))
 
     def _getPrivilegeID(self, privilege_name):
         """

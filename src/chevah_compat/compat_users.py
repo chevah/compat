@@ -6,10 +6,7 @@ Shared code by all users compatibility layer.
 Check chevah/server/static/events/events.json to make sure each CompatError
 has unique ID.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import, unicode_literals
-from chevah.compat.exceptions import CompatError
+from chevah_compat.exceptions import CompatError
 
 
 class CompatUsers(object):

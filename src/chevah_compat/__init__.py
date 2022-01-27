@@ -12,16 +12,16 @@ import os
 import sys
 
 if os.name == 'posix':
-    from chevah.compat.unix_users import (
+    from chevah_compat.unix_users import (
         UnixDefaultAvatar,
         UnixHasImpersonatedAvatar,
         UnixUsers,
         UnixSuperAvatar,
         )
-    from chevah.compat.unix_capabilities import (
+    from chevah_compat.unix_capabilities import (
         UnixProcessCapabilities,
         )
-    from chevah.compat.unix_filesystem import UnixFilesystem
+    from chevah_compat.unix_filesystem import UnixFilesystem
 
     system_users = UnixUsers()
     process_capabilities = UnixProcessCapabilities()
@@ -35,15 +35,15 @@ if os.name == 'posix':
 
 elif os.name == 'nt':
 
-    from chevah.compat.nt_users import (
+    from chevah_compat.nt_users import (
         NTDefaultAvatar,
         NTHasImpersonatedAvatar,
         NTUsers,
         NTSuperAvatar,
         )
-    from chevah.compat.nt_capabilities import NTProcessCapabilities
-    from chevah.compat.nt_filesystem import NTFilesystem
-    from chevah.compat.nt_unicode_argv import get_unicode_argv
+    from chevah_compat.nt_capabilities import NTProcessCapabilities
+    from chevah_compat.nt_filesystem import NTFilesystem
+    from chevah_compat.nt_unicode_argv import get_unicode_argv
 
     system_users = NTUsers()
     process_capabilities = NTProcessCapabilities()
@@ -58,7 +58,7 @@ elif os.name == 'nt':
 else:
     raise AssertionError('Operating system "%s" not supported.' % (os.name))
 
-from chevah.compat.posix_filesystem import FileAttributes  # noqa
+from chevah_compat.posix_filesystem import FileAttributes  # noqa
 # Silence the linter
 FileAttributes
 

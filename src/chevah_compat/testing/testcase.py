@@ -4,11 +4,6 @@
 """
 TestCase used for Chevah project.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
-from six.moves import range
 import contextlib
 import inspect
 import threading
@@ -33,20 +28,20 @@ except ImportError:
     _UnixWaker = None
     _SIGCHLDWaker = None
 
-from chevah.compat import (
+from chevah_compat import (
     DefaultAvatar,
     LocalFilesystem,
     process_capabilities,
     system_users,
     SuperAvatar,
     )
-from chevah.compat.administration import os_administration
-from chevah.compat.testing.assertion import AssertionMixin
-from chevah.compat.testing.mockup import mk
-from chevah.compat.testing.constant import (
+from chevah_compat.administration import os_administration
+from chevah_compat.testing.assertion import AssertionMixin
+from chevah_compat.testing.mockup import mk
+from chevah_compat.testing.constant import (
     TEST_NAME_MARKER,
     )
-from chevah.compat.testing.filesystem import LocalTestFilesystem
+from chevah_compat.testing.filesystem import LocalTestFilesystem
 
 # For Python below 2.7 we use the separate unittest2 module.
 # It comes by default in Python 2.7.
@@ -134,7 +129,7 @@ class TwistedTestCase(TestCase):
         """
         result = []
         for delayed in reactor.getDelayedCalls():  # noqa:cover
-            result.append(text_type(delayed.func))
+            result.append(str(delayed.func))
         return '\n'.join(result)
 
     def _threadPoolQueue(self):
@@ -343,7 +338,7 @@ class TwistedTestCase(TestCase):
             raise_failure('threadpoool threads', self._threadPoolThreads())
 
         if len(reactor.getWriters()) > 0:  # noqa:cover
-            raise_failure('writers', text_type(reactor.getWriters()))
+            raise_failure('writers', str(reactor.getWriters()))
 
         for reader in reactor.getReaders():
             excepted = False
@@ -352,7 +347,7 @@ class TwistedTestCase(TestCase):
                     excepted = True
                     break
             if not excepted:  # noqa:cover
-                raise_failure('readers', text_type(reactor.getReaders()))
+                raise_failure('readers', str(reactor.getReaders()))
 
         for delayed_call in reactor.getDelayedCalls():
             if delayed_call.active():
@@ -610,7 +605,7 @@ class TwistedTestCase(TestCase):
         """
         Return a string representation of the delayed call.
         """
-        raw_name = text_type(delayed_call.func)
+        raw_name = str(delayed_call.func)
         raw_name = raw_name.replace('<function ', '')
         raw_name = raw_name.replace('<bound method ', '')
         return raw_name.split(' ', 1)[0]
@@ -1090,7 +1085,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
 
         This is only called when we run with -v or we show the error.
         """
-        class_name = text_type(self.__class__)[8:-2]
+        class_name = str(self.__class__)[8:-2]
         class_name = class_name.replace('.Test', ':Test')
         tests_start = class_name.find('.tests.') + 7
         class_name = class_name[tests_start:]
@@ -1142,8 +1137,8 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         Update to stdlib to make sure we don't compare str with unicode.
         """
         if (
-            isinstance(first, text_type) and
-            not isinstance(second, text_type)
+            isinstance(first, str) and
+            not isinstance(second, str)
                 ):  # noqa:cover
             if not msg:
 
@@ -1152,8 +1147,8 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             raise AssertionError(msg.encode('utf-8'))
 
         if (
-            not isinstance(first, text_type) and
-            isinstance(second, text_type)
+            not isinstance(first, str) and
+            isinstance(second, str)
                 ):  # noqa:cover
             if not msg:
                 msg = u'First is str while second is unicode for "%s".' % (
@@ -1435,7 +1430,7 @@ class FileSystemTestCase(ChevahTestCase):
         """
         Set-up OS user for file system testing.
         """
-        from chevah.compat.testing import TEST_ACCOUNT_GROUP
+        from chevah_compat.testing import TEST_ACCOUNT_GROUP
         user = mk.makeTestUser(home_group=TEST_ACCOUNT_GROUP)
         os_administration.addUser(user)
         return user

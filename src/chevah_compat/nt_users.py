@@ -3,11 +3,6 @@
 """
 Adapter for working with NT users.
 """
-from __future__ import with_statement
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
 from win32com.shell import shell, shellcon
 from zope.interface import implements
 import pywintypes
@@ -16,26 +11,26 @@ import win32net
 import win32profile
 import win32security
 
-from chevah.compat.compat_users import CompatUsers
-from chevah.compat.constants import (
+from chevah_compat.compat_users import CompatUsers
+from chevah_compat.constants import (
     CSIDL_FLAG_CREATE,
     WINDOWS_PRIMARY_GROUP,
     )
-from chevah.compat.exceptions import (
+from chevah_compat.exceptions import (
     ChangeUserException,
     )
-from chevah.compat.helpers import NoOpContext
-from chevah.compat.interfaces import (
+from chevah_compat.helpers import NoOpContext
+from chevah_compat.interfaces import (
     IFileSystemAvatar,
     IHasImpersonatedAvatar,
     IOSUsers,
     )
-from chevah.compat.winerrors import (
+from chevah_compat.winerrors import (
     ERROR_NONE_MAPPED,
     )
-# We can not import chevah.compat.process_capabilities as it would
+# We can not import chevah_compat.process_capabilities as it would
 # create a circular import.
-from chevah.compat.nt_capabilities import NTProcessCapabilities
+from chevah_compat.nt_capabilities import NTProcessCapabilities
 
 from ctypes import (
     windll, c_wchar_p, c_uint, POINTER, byref, create_unicode_buffer)
@@ -46,7 +41,7 @@ GetUserNameW.argtypes = [c_wchar_p, POINTER(c_uint)]
 GetUserNameW.restype = c_uint
 
 # This is initialized at this module level so that it can be reuse in the
-# whole module as a normal import from chevah.compat.
+# whole module as a normal import from chevah_compat.
 process_capabilities = NTProcessCapabilities()
 
 

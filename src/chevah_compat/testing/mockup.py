@@ -2,11 +2,6 @@
 """
 Module containing helpers for testing the Chevah project.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
-from six.moves import range
 import hashlib
 import os
 import random
@@ -23,13 +18,13 @@ except ImportError:  # pragma: no cover
     # Twisted support is optional.
     pass
 
-from chevah.compat import DefaultAvatar, process_capabilities, system_users
-from chevah.compat.avatar import (
+from chevah_compat import DefaultAvatar, process_capabilities, system_users
+from chevah_compat.avatar import (
     FilesystemApplicationAvatar,
     FilesystemOSAvatar,
     )
-from chevah.compat.testing.filesystem import LocalTestFilesystem
-from chevah.compat.testing.constant import (
+from chevah_compat.testing.filesystem import LocalTestFilesystem
+from chevah_compat.testing.constant import (
     TEST_NAME_MARKER,
     )
 
@@ -234,7 +229,7 @@ class ChevahCommonsFactory(object):
         """
         Return a unique (per session) ASCII string.
         """
-        return b'ascii_StR' + text_type(self.number()).encode('utf-8')
+        return b'ascii_StR' + str(self.number()).encode('utf-8')
 
     def string(self, *args, **kwargs):
         """
@@ -265,7 +260,7 @@ class ChevahCommonsFactory(object):
         """
         The account under which this process is executed.
         """
-        return text_type(os.environ['USER'])
+        return str(os.environ['USER'])
 
     def md5(self, content):
         """
@@ -281,7 +276,7 @@ class ChevahCommonsFactory(object):
         """
         A string unique for this session.
         """
-        base = u'StR' + text_type(self.number())
+        base = u'StR' + str(self.number())
 
         # The minimum length so that we don't truncate the unique string.
         min_length = len(base) + len(TEST_NAME_MARKER)
@@ -423,7 +418,7 @@ class ChevahCommonsFactory(object):
         Return an existing test user instance for user with `name`.
         Return `None` if user is undefined.
         """
-        from chevah.compat.testing import TEST_USERS
+        from chevah_compat.testing import TEST_USERS
         try:
             result = TEST_USERS[name]
         except KeyError:

@@ -3,17 +3,14 @@
 """
 Decorators used for testing.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 from functools import wraps
 from nose import SkipTest
 from socket import gethostname
 from unittest import TestCase
 import sys
 
-from chevah.compat import process_capabilities
-from chevah.compat.testing.testcase import ChevahTestCase
+from chevah_compat import process_capabilities
+from chevah_compat.testing.testcase import ChevahTestCase
 
 
 def skipOnCondition(callback, message):

@@ -6,21 +6,14 @@ Package with code that helps with testing.
 
 Here are a few import shortcuts.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-from remote_pdb import RemotePdb
-
-from chevah.compat import process_capabilities
-from chevah.compat.administration import os_administration
-from chevah.compat.testing.mockup import (
+from chevah_compat import process_capabilities
+from chevah_compat.administration import os_administration
+from chevah_compat.testing.mockup import (
     mk,
     TestGroup,
     TestUser,
     )
-from chevah.compat.testing.testcase import ChevahTestCase
+from chevah_compat.testing.testcase import ChevahTestCase
 
 # Keep this alias for backward compatibility.
 CompatTestCase = ChevahTestCase
@@ -118,13 +111,6 @@ TEST_GROUPS = {
         members=[TEST_ACCOUNT_USERNAME],
         ),
     }
-
-
-def rt(port=9999, interface='0.0.0.0'):
-    """
-    Trigger a remote debugging breakpoint
-    """
-    RemotePdb(interface, port).set_trace()
 
 
 def setup_access_control(users, groups):

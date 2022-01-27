@@ -48,59 +48,6 @@ if os.name == 'nt':
     if not os.path.exists(win32api.GetTempPath()):
         os.mkdir(win32api.GetTempPath())
 
-
-# Keep run_packages in sync with setup.py.
-# These are the hard dependencies needed by the library itself.
-RUN_PACKAGES = [
-    'zope.interface==5.4.0+chevah.2',
-    'six==1.15.0',
-    ]
-
-if os.name == 'posix':
-    RUN_PACKAGES.extend([
-        # This is required as any other version will try to also update pip.
-        'lockfile==0.9.1',
-        'pam==0.1.4.c3',
-        # Required for loading PAM libs on AIX.
-        'arpy==1.1.1.c2',
-        ])
-
-# Packages required to use the dev/build system.
-BUILD_PACKAGES = [
-    # For Lint and static checkers.
-    'scame==0.6.3',
-    'pyflakes>=2.4.0',
-    'pycodestyle==2.8.0',
-    'pylint==1.9.4',
-    'astroid==1.6.6',
-    # These are build packages, but are needed for testing the documentation.
-    'sphinx==4.2.0',
-
-    # Packages required to run the test suite.
-    'nose==1.3.7',
-    'nose-randomly==1.2.5',
-    'mock',
-
-    'coverage==6.3',
-    'diff_cover==6.4.4',
-    'codecov==2.1.12',
-
-    # Twisted is optional, but we have it here for complete tests.
-    'Twisted==20.3.0+chevah.3',
-    'service_identity==21.1.0',
-
-    # We install wmi everywhere even though it is only used on Windows.
-    'wmi==1.4.9',
-
-    # Used to detect Linux distributions.
-    'ld==0.5.0',
-
-    # Required for some unicode handling.
-    'unidecode',
-
-    'bunch',
-    ]
-
 # Make pylint shut up.
 buildbot_list
 buildbot_try
@@ -283,12 +230,18 @@ def deps():
     """
     Install all dependencies.
     """
-    print('Installing dependencies to %s...' % (pave.path.build,))
-    packages = RUN_PACKAGES + BUILD_PACKAGES
+    print('Installing dependencies to ', pave.path.build)
+    dev_mode = []
+
+    env_ci = os.environ.get('CI', '').strip()
+    if env_ci.lower() != 'true':
+        dev_mode = ['-e']
+    else:
+        print('Installing in non-dev mode.')
 
     pave.pip(
         command='install',
-        arguments=packages,
+        arguments=dev_mode + ['.[dev]'],
         )
 
 
@@ -298,32 +251,7 @@ def build():
     """
     Copy new source code to build folder.
     """
-    # Clean previous files.
-    pave.fs.deleteFolder([
-        pave.path.build, pave.getPythonLibPath(), 'chevah', 'compat',
-        ])
-
-    # On AIX, pip (setuptools) fails to re-install, so we do some custom
-    # cleaning as a workaround.
-    members = pave.fs.listFolder(pave.fs.join([
-        pave.path.build, pave.getPythonLibPath()]))
-    for member in members:
-        # We are looking for folder like chevah_compat-0.45.1-py2.7.egg-info.
-        if member.startswith('chevah_compat-') and member.endswith('-info'):
-            pave.fs.deleteFolder([
-                pave.path.build, pave.getPythonLibPath(), member,
-                ])
-            break
-
-    pave.fs.deleteFolder([pave.path.build, 'setup-build'])
-
-    build_target = pave.fs.join([pave.path.build, 'setup-build'])
-    sys.argv = ['setup.py', '-q', 'build', '--build-base', build_target]
-    print("Building in " + build_target)
-    # Importing setup will trigger executing commands from sys.argv.
-    import setup
-    setup.distribution.run_command('install')
-
+    pass
 
 @task
 @needs('build', 'test_python')

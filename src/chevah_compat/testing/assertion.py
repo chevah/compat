@@ -3,10 +3,6 @@
 """
 Assertion helpers for compat testing.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import next, text_type
 from contextlib import contextmanager
 import collections
 import time
@@ -23,7 +19,7 @@ except ImportError:
     # Zope support is optional.
     pass
 
-from chevah.compat.exceptions import CompatError
+from chevah_compat.exceptions import CompatError
 
 
 class Contains(object):
@@ -103,7 +99,7 @@ class AssertionMixin(object):
         actual_id = getattr(actual_error, 'event_id', None)
         if expected_id != actual_id:
             values = (
-                actual_error, text_type(expected_id), text_type(actual_id))
+                actual_error, str(expected_id), str(actual_id))
             message = u'Error id for %s is not %s, but %s.' % values
             raise AssertionError(message.encode('utf-8'))
 
@@ -112,14 +108,14 @@ class AssertionMixin(object):
         Raise an exception if value is not 'False'.
         """
         if value is not False:
-            raise AssertionError('%s is not False.' % text_type(value))
+            raise AssertionError('%s is not False.' % str(value))
 
     def assertIsTrue(self, value):
         """
         Raise an exception if value is not 'True'.
         """
         if value is not True:
-            raise AssertionError('%s is not True.' % text_type(value))
+            raise AssertionError('%s is not True.' % str(value))
 
     def assertFailureType(self, failure_class, failure_or_deferred):
         '''Raise assertion error if failure is not of required type.'''
@@ -131,7 +127,7 @@ class AssertionMixin(object):
 
         if failure.type is not failure_class:  # noqa:cover
             message = u'Failure %s is not of type %s' % (
-                text_type(failure), failure_class)
+                str(failure), failure_class)
             raise AssertionError(message.encode('utf-8'))
 
     def assertIsEmpty(self, target):

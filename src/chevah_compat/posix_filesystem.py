@@ -4,9 +4,6 @@
 Filesystem code used by all operating systems, including Windows as
 Windows has its layer of POSIX compatibility.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 from contextlib import contextmanager
 from datetime import date
 import errno
@@ -31,13 +28,13 @@ except ImportError:
 from six import text_type
 from zope.interface import implements
 
-from chevah.compat.exceptions import (
+from chevah_compat.exceptions import (
     ChangeUserException,
     CompatError,
     CompatException,
     )
-from chevah.compat.interfaces import IFileAttributes
-from chevah.compat.helpers import _, NoOpContext
+from chevah_compat.interfaces import IFileAttributes
+from chevah_compat.helpers import _, NoOpContext
 
 
 _DEFAULT_FOLDER_MODE = 0o777
@@ -210,7 +207,7 @@ class PosixFilesystemBase(object):
         if first == second:
             return True
 
-        from chevah.compat import process_capabilities
+        from chevah_compat import process_capabilities
         if process_capabilities.os_name not in ['windows', 'osx']:
             # On Linux and Unix we do strict case.
             return False
@@ -451,7 +448,7 @@ class PosixFilesystemBase(object):
                     return os.unlink(path_encoded)
                 except OSError as error:
                     # This is done to allow lazy initialization of this module.
-                    from chevah.compat import process_capabilities
+                    from chevah_compat import process_capabilities
 
                     # On Unix (AIX, Solaris) when segments is a folder,
                     # we get EPERM, so we force a EISDIR.
@@ -763,7 +760,7 @@ class PosixFilesystemBase(object):
         `name` is in the encoded format stored on the filesystem.
         """
         # This is done to allow lazy initialization of process_capabilities.
-        from chevah.compat import process_capabilities
+        from chevah_compat import process_capabilities
         if not isinstance(name, text_type):
             name = name.decode(self.INTERNAL_ENCODING)
 

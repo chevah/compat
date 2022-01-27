@@ -3,10 +3,7 @@
 """
 Adapter for working with Unix users.
 """
-from __future__ import with_statement
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
+#FIXME
 # On Python2.7 grp module does no accept bytes so we use the codecs module
 # to convert Unicode to native str.
 import codecs
@@ -23,13 +20,13 @@ except ImportError:
 
 from zope.interface import implements
 
-from chevah.compat.compat_users import CompatUsers
-from chevah.compat.exceptions import ChangeUserException
-from chevah.compat.helpers import (
+from chevah_compat.compat_users import CompatUsers
+from chevah_compat.exceptions import ChangeUserException
+from chevah_compat.helpers import (
     _,
     NoOpContext,
     )
-from chevah.compat.interfaces import (
+from chevah_compat.interfaces import (
     IFileSystemAvatar,
     IHasImpersonatedAvatar,
     IOSUsers,
@@ -288,7 +285,7 @@ class UnixUsers(CompatUsers):
         Return False if user was not found or password is wrong.
         Returns None if password is stored in shadow file.
         """
-        from chevah.compat import process_capabilities
+        from chevah_compat import process_capabilities
 
         username = username.encode('utf-8')
         password = password.encode('utf-8')
@@ -360,7 +357,7 @@ class UnixUsers(CompatUsers):
         """
         Authenticate against /etc/spwd.db BSD file.
         """
-        from chevah.compat import process_capabilities
+        from chevah_compat import process_capabilities
         if process_capabilities.os_name not in ['freebsd', 'openbsd']:
             return None
 
@@ -406,7 +403,7 @@ class UnixUsers(CompatUsers):
         if self._pam_authenticate is None:
             # Runtime PAM support was not checked yet.
 
-            from chevah.compat import process_capabilities
+            from chevah_compat import process_capabilities
             if process_capabilities.os_name == 'hpux':
                 # Ctypes and pam are broken on HPUX.
                 self._pam_authenticate = False

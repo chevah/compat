@@ -3,17 +3,13 @@
 """
 Filesystem helpers for tests.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
 import hashlib
 import os
 import re
 import uuid
 
-from chevah.compat import LocalFilesystem
-from chevah.compat.testing.constant import TEST_NAME_MARKER
+from chevah_compat import LocalFilesystem
+from chevah_compat.testing.constant import TEST_NAME_MARKER
 
 
 class LocalTestFilesystem(LocalFilesystem):
@@ -221,7 +217,7 @@ class LocalTestFilesystem(LocalFilesystem):
     def createFileInHome(self, segments=None, **args):
         '''Create a file in home folder.'''
         if segments is None:
-            segments = [text_type(uuid.uuid1()) + TEST_NAME_MARKER]
+            segments = [str(uuid.uuid1()) + TEST_NAME_MARKER]
 
         file_segments = self.home_segments[:]
         file_segments.extend(segments)

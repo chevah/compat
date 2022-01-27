@@ -3,11 +3,6 @@
 """
 Windows specific implementation of filesystem access.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
-from six.moves import range
 from contextlib import contextmanager
 from winioctlcon import FSCTL_GET_REPARSE_POINT
 import errno
@@ -21,16 +16,16 @@ import win32security
 
 from zope.interface import implements
 
-from chevah.compat.exceptions import (
+from chevah_compat.exceptions import (
     AdjustPrivilegeException,
     CompatError,
     CompatException,
     )
-from chevah.compat.helpers import force_unicode
-from chevah.compat.interfaces import ILocalFilesystem
-from chevah.compat.nt_capabilities import NTProcessCapabilities
-from chevah.compat.nt_users import NTDefaultAvatar, NTUsers
-from chevah.compat.posix_filesystem import PosixFilesystemBase
+from chevah_compat.helpers import force_unicode
+from chevah_compat.interfaces import ILocalFilesystem
+from chevah_compat.nt_capabilities import NTProcessCapabilities
+from chevah_compat.nt_users import NTDefaultAvatar, NTUsers
+from chevah_compat.posix_filesystem import PosixFilesystemBase
 
 
 #: https://msdn.microsoft.com/en-us/library/windows/desktop/aa364939.aspx
@@ -105,12 +100,12 @@ class NTFilesystem(PosixFilesystemBase):
             return u'c:\\'
 
         if self._lock_in_home:
-            path = text_type(self._avatar.home_folder_path)
+            path = str(self._avatar.home_folder_path)
         else:
             if self._avatar.root_folder_path is None:
                 path = u'c:\\'
             else:
-                path = text_type(self._avatar.root_folder_path)
+                path = str(self._avatar.root_folder_path)
 
         # Fix folder separators.
         path = path.replace('/', '\\')
@@ -223,7 +218,7 @@ class NTFilesystem(PosixFilesystemBase):
             result = get_path(segments)
 
         self._validateDrivePath(result)
-        return text_type(result)
+        return str(result)
 
     # Windows allows only 26 drive letters and is case insensitive.
     _allowed_drive_letters = [
@@ -262,7 +257,7 @@ class NTFilesystem(PosixFilesystemBase):
         if path is None or path == u'':
             return segments
 
-        path = text_type(path)
+        path = str(path)
 
         target = os.path.abspath(path.replace('/', '\\')).lower()
         for virtual_segments, real_path in self._avatar.virtual_folders:

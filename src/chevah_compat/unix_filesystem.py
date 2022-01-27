@@ -3,10 +3,6 @@
 """
 Module for hosting the Unix specific filesystem access.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
 import codecs
 import errno
 import grp
@@ -17,10 +13,10 @@ import stat  # pylint: disable=bad-python3-import
 
 from zope.interface import implements
 
-from chevah.compat.exceptions import CompatError
-from chevah.compat.interfaces import ILocalFilesystem
-from chevah.compat.posix_filesystem import PosixFilesystemBase
-from chevah.compat.unix_users import UnixUsers
+from chevah_compat.exceptions import CompatError
+from chevah_compat.interfaces import ILocalFilesystem
+from chevah_compat.posix_filesystem import PosixFilesystemBase
+from chevah_compat.unix_users import UnixUsers
 
 
 class UnixFilesystem(PosixFilesystemBase):
@@ -53,7 +49,7 @@ class UnixFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         if segments is None or len(segments) == 0:
-            return text_type(self._root_path)
+            return str(self._root_path)
 
         result = self._getVirtualPathFromSegments(segments, include_virtual)
         if result is not None:
@@ -61,7 +57,7 @@ class UnixFilesystem(PosixFilesystemBase):
 
         relative_path = u'/' + u'/'.join(segments)
         relative_path = self.getAbsoluteRealPath(relative_path).rstrip('/')
-        return text_type(self._root_path.rstrip('/') + relative_path)
+        return str(self._root_path.rstrip('/') + relative_path)
 
     def getSegmentsFromRealPath(self, path):
         """
@@ -91,7 +87,7 @@ class UnixFilesystem(PosixFilesystemBase):
         while tail and head != u'/':
             head, tail = os.path.split(tail)
             if tail != u'':
-                if not isinstance(tail, text_type):
+                if not isinstance(tail, str):
                     tail = tail.decode('utf-8')
                 segments.insert(0, tail)
             tail = head
@@ -133,7 +129,7 @@ class UnixFilesystem(PosixFilesystemBase):
             try:
                 return os.chown(path_encoded, uid, -1)
             except Exception as error:
-                self.raiseFailedToSetOwner(owner, path, text_type(error))
+                self.raiseFailedToSetOwner(owner, path, str(error))
 
     def getOwner(self, segments):
         '''See `ILocalFilesystem`.'''
