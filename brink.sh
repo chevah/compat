@@ -42,15 +42,6 @@ set -o pipefail
 COMMAND=${1-''}
 DEBUG=${DEBUG-0}
 
-# Set default locale.
-# We use C (alias for POSIX) for having a basic default value and
-# to make sure we explicitly convert all unicode values.
-export LANG='C'
-export LANGUAGE='C'
-export LC_ALL='C'
-export LC_CTYPE='C'
-export LC_COLLATE='C'
-export LC_MESSAGES='C'
 export PATH=$PATH:'/sbin:/usr/sbin:/usr/local/bin'
 
 #

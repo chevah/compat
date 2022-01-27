@@ -3,8 +3,6 @@
 """
 Provides information about capabilities for a process on Unix.
 """
-import platform
-
 from zope.interface import implementer
 
 from chevah_compat.capabilities import BaseProcessCapabilities

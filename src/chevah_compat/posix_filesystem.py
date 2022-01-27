@@ -501,12 +501,11 @@ class PosixFilesystemBase(object):
         Raise an OSError when segments is not a file.
         """
         path = self.getRealPathFromSegments(segments)
-        path_encoded = path.encode('utf-8')
         if self.isFolder(segments):
             raise OSError(
                 errno.EISDIR,
-                'Is a directory: %s' % path_encoded,
-                path_encoded,
+                'Is a directory: %s' % path,
+                path,
                 )
 
     def openFile(self, segments, flags, mode):

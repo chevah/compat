@@ -961,7 +961,6 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             )
 
         if self.TEST_LANGUAGE == 'FR':
-            expected_path = path
             expected_message = (
                 b'Le chemin d\x92acc\xe8s sp\xe9cifi\xe9 est introuvable')
 
@@ -1362,7 +1361,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             self.filesystem.openFileForWriting(self.test_segments)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
+        self.assertEqual(path, context.exception.filename)
         details = '[Errno 21] Is a directory: ' + path
         self.assertStartsWith(details, force_unicode(context.exception))
 
@@ -1378,11 +1377,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
                 self.test_segments)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
+        self.assertEqual(path, context.exception.filename)
         details = '[Errno 21] Is a directory: ' + path
-        #FIXME
-        #
-        #self.assertStartsWith(details, str(context.exception))
+        self.assertStartsWith(details, str(context.exception))
 
     def test_touch_no_parent(self):
         """

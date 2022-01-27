@@ -33,12 +33,12 @@ from chevah_compat.interfaces import (
     )
 
 
-def _get_euid_and_egid(username_encoded):
+def _get_euid_and_egid(username):
     """
     Return a tuple of (euid, egid) for username.
     """
     try:
-        pwnam = pwd.getpwnam(username_encoded)
+        pwnam = pwd.getpwnam(username)
     except KeyError:
         raise ChangeUserException(_(u'User does not exists.'))
 
@@ -50,9 +50,8 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
     Change current process effective user and group.
     """
     if username:
-        username_encoded = username.encode('utf-8')
         try:
-            pwnam = pwd.getpwnam(username_encoded)
+            pwnam = pwd.getpwnam(username)
         except KeyError:
             raise ChangeUserException(u'User does not exists.')
         euid = pwnam.pw_uid
@@ -62,7 +61,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
             raise ChangeUserException(
                 'You need to pass euid when username is not passed.')
         pwnam = pwd.getpwuid(euid)
-        username_encoded = pwnam.pw_name
+        username = pwnam.pw_name
 
     uid, gid = os.geteuid(), os.getegid()
     if uid == euid and gid == egid:
@@ -76,7 +75,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
 
         # Make sure to set user euid as the last action. Otherwise we will no
         # longer have permissions to change egid.
-        os.initgroups(username_encoded, egid)
+        os.initgroups(username, egid)
         os.setegid(egid)
         os.seteuid(euid)
     except OSError:
@@ -120,9 +119,7 @@ class UnixUsers(CompatUsers):
     def getHomeFolder(self, username, token=None):
         '''Get home folder for local (or NIS) user.'''
         try:
-            username_encoded = username.encode('utf-8')
-            home_folder = pwd.getpwnam(
-                username_encoded).pw_dir.decode('utf-8')
+            home_folder = pwd.getpwnam(username).pw_dir
             return home_folder.rstrip('/')
         except KeyError:
             self.raiseFailedToGetHomeFolder(
@@ -136,7 +133,6 @@ class UnixUsers(CompatUsers):
         if not username:
             return False
 
-        username = username.encode('utf-8')
         try:
             pwd.getpwnam(username)
         except KeyError:
@@ -155,7 +151,6 @@ class UnixUsers(CompatUsers):
         if not groups:
             raise ValueError('Groups for validation can\'t be empty.')
 
-        username_encode = username.encode('utf-8')
         for group in groups:
             group_name = codecs.encode(group, 'utf-8')
             try:
@@ -164,7 +159,7 @@ class UnixUsers(CompatUsers):
                 continue
 
             try:
-                user_struct = pwd.getpwnam(username_encode)
+                user_struct = pwd.getpwnam(username)
             except KeyError:
                 # Unknown user.
                 return None
@@ -173,7 +168,7 @@ class UnixUsers(CompatUsers):
                 # Match on group ID.
                 return group
 
-            if username_encode in group_struct.gr_mem:
+            if username in group_struct.gr_mem:
                 # Match on group name.
                 return group
 
@@ -260,14 +255,13 @@ class UnixUsers(CompatUsers):
 
     def getPrimaryGroup(self, username):
         '''Return get primary group for avatar.'''
-        username_encode = username.encode('utf-8')
         try:
-            user_struct = pwd.getpwnam(username_encode)
+            user_struct = pwd.getpwnam(username)
             group_struct = grp.getgrgid(user_struct.pw_gid)
         except KeyError:
             self.raiseFailedToGetPrimaryGroup(username)
         group_name = group_struct.gr_name
-        return group_name.decode('utf-8')
+        return group_name
 
     def _executeAsAdministrator(self):
         '''Returns a context manager for running under administrator user.
@@ -286,8 +280,8 @@ class UnixUsers(CompatUsers):
         """
         from chevah_compat import process_capabilities
 
-        username = username.encode('utf-8')
-        password = password.encode('utf-8')
+        username = username
+        password = password
 
         try:
             # Crypted password should be readable to all users.
@@ -425,7 +419,7 @@ class _ExecuteAsUser(object):
         '''Initialize the context manager.'''
         if username is not None:
             try:
-                pwnam = pwd.getpwnam(username.encode('utf-8'))
+                pwnam = pwd.getpwnam(username)
             except KeyError:
                 raise ChangeUserException(_(u'User does not exists.'))
             euid = pwnam.pw_uid
@@ -473,8 +467,7 @@ class UnixHasImpersonatedAvatar(object):
 
         # Create cached values if not initialized.
         if not (self._euid and self._egid):
-            username_encoded = self.name.encode('utf-8')
-            (self._euid, self._egid) = _get_euid_and_egid(username_encoded)
+            (self._euid, self._egid) = _get_euid_and_egid(self.name)
 
         return _ExecuteAsUser(euid=self._euid, egid=self._egid)
 

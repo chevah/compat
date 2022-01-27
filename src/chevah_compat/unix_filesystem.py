@@ -3,7 +3,6 @@
 """
 Module for hosting the Unix specific filesystem access.
 """
-import codecs
 import errno
 import grp
 import os
@@ -95,9 +94,8 @@ class UnixFilesystem(PosixFilesystemBase):
     def readLink(self, segments):
         '''See `ILocalFilesystem`.'''
         path = self.getRealPathFromSegments(segments, include_virtual=False)
-        path_encoded = path.encode('utf-8')
         with self._impersonateUser():
-            target = os.readlink(path_encoded).decode('utf-8')
+            target = os.readlink(path)
         return self.getSegmentsFromRealPath(target)
 
     def makeLink(self, target_segments, link_segments):
@@ -106,27 +104,23 @@ class UnixFilesystem(PosixFilesystemBase):
         """
         target_path = self.getRealPathFromSegments(
             target_segments, include_virtual=False)
-        target_path_encoded = self.getEncodedPath(target_path)
         link_path = self.getRealPathFromSegments(
             link_segments, include_virtual=False)
-        link_path_encoded = self.getEncodedPath(link_path)
 
         with self._impersonateUser():
-            return os.symlink(target_path_encoded, link_path_encoded)
+            return os.symlink(target_path, link_path)
 
     def setOwner(self, segments, owner):
         '''See `ILocalFilesystem`.'''
         path = self.getRealPathFromSegments(segments, include_virtual=False)
-        encoded_owner = owner.encode('utf-8')
-        path_encoded = path.encode('utf-8')
         try:
-            uid = pwd.getpwnam(encoded_owner).pw_uid
+            uid = pwd.getpwnam(owner).pw_uid
         except KeyError:
             self.raiseFailedToSetOwner(owner, path, u'Owner not found.')
 
         with self._impersonateUser():
             try:
-                return os.chown(path_encoded, uid, -1)
+                return os.chown(path, uid, -1)
             except Exception as error:
                 self.raiseFailedToSetOwner(owner, path, str(error))
 
@@ -139,15 +133,13 @@ class UnixFilesystem(PosixFilesystemBase):
     def addGroup(self, segments, group, permissions=None):
         '''See `ILocalFilesystem`.'''
         path = self.getRealPathFromSegments(segments, include_virtual=False)
-        encoded_group = codecs.encode(group, 'utf-8')
-        path_encoded = path.encode('utf-8')
         try:
-            gid = grp.getgrnam(encoded_group).gr_gid
+            gid = grp.getgrnam(group).gr_gid
         except KeyError:
             self.raiseFailedToAddGroup(group, path, u'No such group.')
         with self._impersonateUser():
             try:
-                return os.chown(path_encoded, -1, gid)
+                return os.chown(path, -1, gid)
             except OSError as error:
                 if error.errno == errno.ENOENT:
                     self.raiseFailedToAddGroup(group, path, u'No such path.')

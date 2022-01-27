@@ -11,7 +11,6 @@ import uuid
 from unidecode import unidecode
 
 try:
-    from twisted.internet import address
     from twisted.internet.protocol import Factory
     from twisted.internet.tcp import Port
 except ImportError:  # pragma: no cover
@@ -228,8 +227,10 @@ class ChevahCommonsFactory(object):
     def ascii(self):
         """
         Return a unique (per session) ASCII string.
+
+        This is an Unicode with only ascii characters.
         """
-        return b'ascii_StR' + str(self.number()).encode('utf-8')
+        return 'ascii_StR' + str(self.number())
 
     def string(self, *args, **kwargs):
         """
@@ -325,27 +326,6 @@ class ChevahCommonsFactory(object):
         '''Return a random valid filename.'''
         name = str(self.number()) + TEST_NAME_MARKER
         return prefix + name + ('a' * (length - len(name))) + suffix
-
-    def makeIPv4Address(self, host='127.0.0.1', port=None, protocol='TCP'):
-        """
-        Creates an IPv4 address.
-        """
-        if port is None:
-            port = random.randrange(20000, 30000)
-
-        ipv4 = address.IPv4Address(protocol, host, port)
-        return ipv4
-
-    def makeIPv6Address(
-            self, host='0:0:0:0:0:0:0:1', port=None, protocol='TCP'):
-        """
-        Creates an IPv6 address.
-        """
-        if port is None:
-            port = random.randrange(20000, 30000)
-
-        ipv4 = address.IPv6Address(protocol, host, port)
-        return ipv4
 
     def FilesystemOsAvatar(self, user, home_folder_path=None):
         """

@@ -19,7 +19,6 @@ for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 """
 from contextlib import contextmanager
 import os
-import codecs
 import random
 import socket
 import subprocess
@@ -100,7 +99,6 @@ class OSAdministrationUnix(object):
         Get unix group entry, retrying if group is not available yet.
         """
         import grp
-        name_encoded = codecs.encode(name, 'utf-8')
 
         # Try to get the group in list of all groups.
         group_found = False
@@ -108,21 +106,21 @@ class OSAdministrationUnix(object):
             if group_found:
                 break
             for group in grp.getgrall():
-                if group[0] == name_encoded:
+                if group[0] == name:
                     group_found = True
                     break
             time.sleep(0.1)
 
         if not group_found:
             raise AssertionError('Failed to get group from all: %s' % (
-                name_encoded))
+                name))
 
         # Now we find the group in list of all groups, but
         # we need to make sure it is also available to be
         # retrieved by name.
         for iterator in range(1000):
             try:
-                return grp.getgrnam(name_encoded)
+                return grp.getgrnam(name)
             except KeyError:
                 # Group not ready yet.
                 pass
@@ -130,7 +128,7 @@ class OSAdministrationUnix(object):
 
         raise AssertionError(
             'Group found in all, but not available by name %s' % (
-                name_encoded))
+                name))
 
     def _addGroup_aix(self, group):
         group_name = group.name.encode('utf-8')

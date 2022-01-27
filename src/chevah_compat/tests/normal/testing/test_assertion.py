@@ -24,7 +24,7 @@ class TestAssertionMixin(ChevahTestCase):
         with self.assertRaises(AssertionError) as context:
             self.assertWorkingFolderIsClean()
 
-        message = context.exception.args[0].decode('utf-8')
+        message = context.exception.args[0]
         for member in content:
             self.assertContains(member, message)
 
@@ -47,7 +47,7 @@ class TestAssertionMixin(ChevahTestCase):
         with self.assertRaises(AssertionError) as context:
             self.assertTempIsClean()
 
-        message = context.exception.args[0].decode('utf-8')
+        message = context.exception.args[0]
         self.assertStartsWith(u'Temporary folder is not clean.', message)
         self.assertContains(temp_segments[-1], message)
 
@@ -115,7 +115,7 @@ class TestAssertionMixin(ChevahTestCase):
 
         self.assertEqual(
             "Error generic-error not CompatError but "
-            "<type 'exceptions.Exception'>",
+            "<class 'Exception'>",
             exception.args[0],
             )
 
@@ -193,11 +193,8 @@ class TestAssertionMixin(ChevahTestCase):
 
         unicode_list = [u'text']
         bytes_list = [b'text']
-        with self.assertRaises(AssertionError) as context:
+        with self.assertRaises(AssertionError):
             self.assertEqual(unicode_list, bytes_list)
-
-        self.assertEqual('First is unicode while second is str for "text".',
-                         context.exception.message)
 
     def test_assertEqual_unicode_vs_bytestring_in_nested_list(self):
         """
@@ -207,11 +204,8 @@ class TestAssertionMixin(ChevahTestCase):
 
         unicode_list = [[u'text']]
         bytes_list = [[b'text']]
-        with self.assertRaises(AssertionError) as context:
+        with self.assertRaises(AssertionError):
             self.assertEqual(unicode_list, bytes_list)
-
-        self.assertEqual('First is unicode while second is str for "text".',
-                         context.exception.message)
 
     def test_assertEqual_unicode_vs_bytestring_in_tuple(self):
         """
@@ -221,11 +215,8 @@ class TestAssertionMixin(ChevahTestCase):
 
         unicode_tuple = (u'text',)
         bytes_tuple = (b'text',)
-        with self.assertRaises(AssertionError) as context:
+        with self.assertRaises(AssertionError):
             self.assertEqual(unicode_tuple, bytes_tuple)
-
-        self.assertEqual('First is unicode while second is str for "text".',
-                         context.exception.message)
 
     def test_assertEqual_unicode_vs_bytestring_in_set(self):
         """
@@ -235,11 +226,8 @@ class TestAssertionMixin(ChevahTestCase):
 
         unicode_set = set([u'text'])
         bytes_set = set([b'text'])
-        with self.assertRaises(AssertionError) as context:
+        with self.assertRaises(AssertionError):
             self.assertEqual(unicode_set, bytes_set)
-
-        self.assertEqual('First is unicode while second is str for "text".',
-                         context.exception.message)
 
     def test_assertEqual_unicode_vs_bytestring_in_dict_keys(self):
         """
@@ -249,11 +237,8 @@ class TestAssertionMixin(ChevahTestCase):
 
         unicode_dict = {u'key': 'value'}
         bytes_dict = {b'key': 'value'}
-        with self.assertRaises(AssertionError) as context:
+        with self.assertRaises(AssertionError):
             self.assertEqual(unicode_dict, bytes_dict)
-
-        self.assertEqual('First is unicode while second is str for "key".',
-                         context.exception.message)
 
     def test_assertEqual_unicode_vs_bytestring_in_dict_values(self):
         """
@@ -263,8 +248,5 @@ class TestAssertionMixin(ChevahTestCase):
 
         unicode_dict = {'key': u'value'}
         bytes_dict = {'key': b'value'}
-        with self.assertRaises(AssertionError) as context:
+        with self.assertRaises(AssertionError):
             self.assertEqual(unicode_dict, bytes_dict)
-
-        self.assertEqual('First is unicode while second is str for "value".',
-                         context.exception.message)

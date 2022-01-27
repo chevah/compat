@@ -611,7 +611,7 @@ class TwistedTestCase(TestCase):
         raw_name = str(delayed_call.func)
         raw_name = raw_name.replace('<function ', '')
         raw_name = raw_name.replace('<bound method ', '')
-        return raw_name.split(' ', 1)[0]
+        return raw_name.split(' ', 1)[0].split('.')[-1]
 
     def getDeferredFailure(
             self, deferred, timeout=None, debug=False, prevent_stop=False):
@@ -671,8 +671,7 @@ class TwistedTestCase(TestCase):
             self.fail(
                 "Success result expected on %r, "
                 "found failure result instead:\n%s" % (
-                    deferred, result[0].getBriefTraceback().decode(
-                        'utf-8', errors='replace')))
+                    deferred, result[0].getBriefTraceback()))
         else:
             return result[0]
 
@@ -723,8 +722,7 @@ class TwistedTestCase(TestCase):
                 "Failure of type (%s) expected on %r, "
                 "found type %r instead: %s" % (
                     expectedString, deferred, result[0].type,
-                    result[0].getBriefTraceback().decode(
-                        'utf-8', errors='replace')))
+                    result[0].getBriefTraceback()))
         else:
             return result[0]
 

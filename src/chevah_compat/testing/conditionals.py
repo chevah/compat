@@ -7,7 +7,6 @@ from functools import wraps
 from nose import SkipTest
 from socket import gethostname
 from unittest import TestCase
-import sys
 
 from chevah_compat import process_capabilities
 from chevah_compat.testing.testcase import ChevahTestCase

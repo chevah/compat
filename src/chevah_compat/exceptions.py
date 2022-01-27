@@ -13,7 +13,7 @@ class CompatException(Exception):
 
     def __repr__(self):
         result = u'CompatException %s' % (self.message)
-        return result.encode('utf-8')
+        return result
 
 
 class ChangeUserException(CompatException):
@@ -40,7 +40,7 @@ class CompatError(Exception):
     def __repr__(self):
         result = u'CompatError %s - %s' % (
             str(self.event_id), self.message)
-        return result.encode('utf-8')
+        return result
 
     def __str__(self):
         return self.__repr__()

@@ -62,7 +62,7 @@ class TestFactory(ChevahTestCase):
         with self.assertRaises(AssertionError) as context:
             self.tearDown()
 
-        self.assertContains('TestThread', context.exception.message)
+        self.assertContains('TestThread', context.exception.args[0])
 
         # Stop the thread.
         event.set()

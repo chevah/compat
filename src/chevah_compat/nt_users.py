@@ -51,7 +51,7 @@ class MissingProfileFolderException(Exception):
     """
 
 
-#implementer(IOSUsers)
+@implementer(IOSUsers)
 class NTUsers(CompatUsers):
     """
     Container for NT users specific methods.
