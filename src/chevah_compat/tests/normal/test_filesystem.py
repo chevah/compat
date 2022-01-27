@@ -914,7 +914,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         A link to a file is recognized as both a link and a file.
         """
-        self.test_segments = mk.fs.createFileInTemp(content=b'blala')
+        self.test_segments = mk.fs.createFileInTemp(content='blala')
         link_segments = self.makeLink(self.test_segments)
 
         attributes = self.filesystem.getAttributes(link_segments)
@@ -1084,7 +1084,6 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertTrue(isinstance(content[0], str))
         self.assertItemsEqual([folder_name, file_name], content)
 
-    @conditionals.skipOnPY3()
     def test_iterateFolderContent_not_found(self):
         """
         Raise OSError when trying to get folder for a non existent path.
@@ -1112,7 +1111,6 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertEqual(expected, force_unicode(context.exception))
 
-    @conditionals.skipOnPY3()
     def test_iterateFolderContent_file(self):
         """
         Raise OSError when trying to get folder content for a file.
@@ -1145,7 +1143,6 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             expected = '[Errno 20] Not a directory: ' + path
         self.assertEqual(expected, force_unicode(context.exception))
 
-    @conditionals.skipOnPY3()
     def test_iterateFolderContent_empty(self):
         """
         Return empty iterator for empty folders.
@@ -1156,7 +1153,6 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertIteratorItemsEqual([], result)
 
-    @conditionals.skipOnPY3()
     def test_iterateFolderContent_non_empty(self):
         """
         Return folder content as list of Unicode names.
@@ -1188,7 +1184,6 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertEqual(9, file_attributes.size)
         self.assertAlmostEqual(self.now(), file_attributes.modified, delta=5)
 
-    @conditionals.skipOnPY3()
     @conditionals.onCapability('symbolic_link', True)
     def test_iterateFolderContent_broken_links(self):
         """
@@ -1236,7 +1231,6 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertAlmostEqual(self.now(), link_attributes.modified, delta=5)
 
     @attr('slow')
-    @conditionals.skipOnPY3()
     def test_iterateFolderContent_big(self):
         """
         It will not block on listing folders with many members.
@@ -3828,7 +3822,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         self.assertItemsEqual(['child-folder', 'child-file\N{sun}'], result)
 
-    @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_member(self):
         """
         It can list a virtual folder as member of a parent folder.
@@ -3888,7 +3881,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             expected[1].node_id = 0
         self.assertIteratorItemsEqual(expected, result)
 
-    @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_no_match(self):
         """
         It will ignore the virtual folders if they don't overlay to the
@@ -3919,7 +3911,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             expected[1].node_id = 0
         self.assertIteratorItemsEqual(expected, result)
 
-    @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_mix(self):
         """
         It can list a virtual folder as member of a parent folder mixed
@@ -3969,7 +3960,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             expected[1].node_id = 0
         self.assertIteratorItemsEqual(expected, result)
 
-    @conditionals.skipOnPY3()
     def test_iterateFolderContent_virtual_overlap(self):
         """
         When iterating over a folder with virtual members,
@@ -3993,7 +3983,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             ],
             result)
 
-    @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_deep_member(self):
         """
         It will list a deep virtual folder as a normal folder.
@@ -4030,7 +4019,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result = sut.iterateFolderContent(['\N{sun}base', 'deep\N{cloud}'])
         self.assertIteratorItemsEqual(expected, result)
 
-    @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_case(self):
         """
         On Windows the segments are case insensitive, while on the other

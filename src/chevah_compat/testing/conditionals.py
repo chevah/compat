@@ -137,13 +137,3 @@ def onAdminPrivileges(present):
         is_normal_user,
         'Administrator privileges not present on "%s".' % (hostname,)
         )
-
-
-def skipOnPY3():
-    """
-    Skip tests on Python 3 or Python 2 in forward compatibility.
-    """
-    return skipOnCondition(
-        lambda: sys.flags.py3k_warning,
-        'Python 2 only test.',
-        )

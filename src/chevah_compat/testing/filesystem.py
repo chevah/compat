@@ -102,20 +102,20 @@ class LocalTestFilesystem(LocalFilesystem):
         assert not self.isFile(segments), 'File already exists.'
         new_file = self.openFileForWriting(segments, mode=mode)
         if content is None:
-            value = 'a'
+            value = b'a'
             content = ''
             if length > 0:
                 assert length > 10, (
                     'Data length must be greater than 10.')
                 length = length - 3
                 buffer_size = 1024 * 1024
-                new_file.write('\r\n')
+                new_file.write(b'\r\n')
                 while length > 0:
                     length = length - buffer_size
                     if length < 0:
                         buffer_size = buffer_size + length
                     new_file.write(value * buffer_size)
-                new_file.write('\n')
+                new_file.write(b'\n')
         else:
             new_file.write(content.encode('utf-8'))
 
@@ -124,7 +124,11 @@ class LocalTestFilesystem(LocalFilesystem):
 
     def createFileInTemp(self, content=None, prefix=u'', suffix=u'',
                          length=0):
-        '''Create a file in the temporary folder.'''
+        """
+        Create a file in the temporary folder.
+
+        `content` is Unicode str.
+        """
         temp_segments = self.temp_segments
 
         filename = self._makeFilename(prefix=prefix, suffix=suffix)

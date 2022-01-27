@@ -16,14 +16,7 @@ import struct
 import sys
 import time
 import unicodedata
-
-
-try:
-    # On some systems (AIX/Windows) the public scandir module will fail to
-    # load the C based scandir function. We force it here by direct import.
-    from _scandir import scandir
-except ImportError:
-    from scandir import scandir_python as scandir
+from os import scandir
 
 from zope.interface import implementer
 

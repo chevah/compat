@@ -83,8 +83,8 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
             return False
 
         if self.os_name == 'linux':
-            distro_name = platform.linux_distribution(
-                supported_dists=platform._supported_dists + ('alpine',))[0]
+            import distro
+            distro_name = distro.id()
             if distro_name == 'alpine':
                 return False
 

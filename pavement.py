@@ -76,9 +76,9 @@ try:
         test_options = {}
 
         def get(self, option, path):
-            tests_path = os.path.join('chevah', 'compat', 'tests')
-            testing_path = os.path.join('chevah', 'compat', 'testing')
-            admin_path = os.path.join('chevah', 'compat', 'administration.py')
+            tests_path = os.path.join('chevah_compat', 'tests')
+            testing_path = os.path.join('chevah_compat', 'testing')
+            admin_path = os.path.join('chevah_compat', 'administration.py')
             if (
                 tests_path in path or
                 testing_path in path or
@@ -107,7 +107,7 @@ try:
         }
 
     options.towncrier = {
-        'enabled': True,
+        'enabled': False,
         'fragments_directory': None,
         'excluded_fragments': 'readme.rst',
         }
@@ -130,16 +130,13 @@ except ImportError:
 
 
 SETUP['product']['name'] = 'chevah-compat'
-SETUP['folders']['source'] = 'chevah/compat'
+SETUP['folders']['source'] = 'src/chevah_compat'
 SETUP['repository']['name'] = 'compat'
 SETUP['repository']['github'] = 'https://github.com/chevah/compat'
 SETUP['scame'] = options
 SETUP['test']['package'] = 'chevah_compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = ['--with-randomly']
-SETUP['test']['coverator_url'] = 'http://coverator.chevah.com:8080'
-SETUP['buildbot']['server'] = 'buildbot.chevah.com'
-SETUP['buildbot']['web_url'] = 'https://buildbot.chevah.com:10443'
 SETUP['pypi']['index_url'] = os.environ['PIP_INDEX']
 
 
@@ -252,6 +249,7 @@ def build():
     Copy new source code to build folder.
     """
     pass
+
 
 @task
 @needs('build', 'test_python')
