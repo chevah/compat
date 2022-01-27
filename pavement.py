@@ -29,6 +29,7 @@ from brink.pavement_commons import (
     test_remote,
     test_normal,
     test_super,
+    test_super_ci,
     )
 from paver.easy import call_task, consume_args, environment, needs, pushd, task
 
@@ -65,6 +66,7 @@ test_python
 test_remote
 test_normal
 test_super
+test_super_ci
 
 try:
     from scame.formatcheck import ScameOptions
@@ -134,7 +136,12 @@ SETUP['repository']['github'] = 'https://github.com/chevah/compat'
 SETUP['scame'] = options
 SETUP['test']['package'] = 'chevah_compat.tests'
 SETUP['test']['elevated'] = 'elevated'
-SETUP['test']['nose_options'] = ['--with-randomly']
+SETUP['test']['nose_options'] = [
+    '--with-randomly',
+    '--with-timer',
+    '--with-run-reporter',
+    '--with-memory-usage',
+    ]
 SETUP['pypi']['index_url'] = os.environ['PIP_INDEX']
 
 

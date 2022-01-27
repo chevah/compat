@@ -1227,28 +1227,14 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertTrue(link_attributes.is_link)
         self.assertAlmostEqual(self.now(), link_attributes.modified, delta=5)
 
-    #FIXME
-    #enable the test
     @attr('slow')
-    def ttest_iterateFolderContent_big(self):
+    def test_iterateFolderContent_big(self):
         """
         It will not block on listing folders with many members.
 
         On some systems, this test takes more than 1 minute.
         """
-        final_error = None
-        for _ in range(3):  # pragma: no branch
-            try:
-                self._iterateFolderContent_big()
-                # All good. Stop trying.
-                return
-            except AssertionError as error:
-                final_error = error
-                # Run cleanup and try again.
-                self.callCleanup()
-
-        # We tried 3 times and still got a failure.
-        raise final_error  # noqa:cover
+        self._iterateFolderContent_big()
 
     def _iterateFolderContent_big(self):
         """
@@ -1269,7 +1255,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             count = 5000
             base_timeout = 0.1
         else:
-            count = 45000
+            count = 40000
             base_timeout = 0.1
 
         if self.os_name == 'windows':
@@ -1288,6 +1274,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
                 sys.stdout.write('+')
                 sys.stdout.flush()
 
+        # Show progress.
+        sys.stdout.write('-SLOW-')
+        sys.stdout.flush()
+
         # We check that doing a direct listing will take a long time.
         with self.assertRaises(AssertionError):
             with self.assertExecutionTime(base_timeout):
@@ -1295,7 +1285,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertEqual(count, len(result))
 
         # Show progress.
-        sys.stdout.write('+')
+        sys.stdout.write('-FAST-')
         sys.stdout.flush()
 
         # Getting the iterator will not take long.

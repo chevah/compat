@@ -98,21 +98,11 @@ class TwistedTestCase(TestCase):
     @property
     def _caller_success_member(self):
         """
-        Retrieve the 'success' member from the None test case.
+        Return true if last test run was successful.
         """
-        #FIXME
-        # detect a failed test at teardown
+        if self._outcome.errors:
+            return False
         return True
-        success = None
-        for i in range(2, 6):
-            try:
-                success = inspect.stack()[i][0].f_locals['success']
-                break
-            except KeyError:
-                success = None
-        if success is None:
-            raise AssertionError('Failed to find "success" attribute.')
-        return success
 
     def tearDown(self):
         try:

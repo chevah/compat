@@ -3,13 +3,20 @@
 """
 Tests for the system compatibility module.
 """
-from chevah_compat.testing import mk
+import os
+from chevah_compat.testing import ChevahTestCase, mk
 
 
 def setup_package():
     """
     Called before running all tests.
     """
+    drop_user = os.environ.get('CHEVAH_DROP_USER', '-')
+
+    if drop_user != '-':
+        ChevahTestCase.initialize(drop_user=drop_user)
+        ChevahTestCase.dropPrivileges()
+
     # Prepare the main testing filesystem.
     mk.fs.setUpTemporaryFolder()
 
