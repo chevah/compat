@@ -20,4 +20,4 @@ ECHO -
 echo -
 ECHO ----- As module -----
 ECHO -
-%python_exe% -m chevah.compat.tests.manual.print_argv ^%*
+%python_exe% -m chevah_compat.tests.manual.print_argv ^%*

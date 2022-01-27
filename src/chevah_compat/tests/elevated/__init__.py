@@ -4,12 +4,8 @@
 Code for testing compat module that requires access to system security
 functions.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
-from chevah.compat import process_capabilities
-from chevah.compat.testing import (
+from chevah_compat import process_capabilities
+from chevah_compat.testing import (
     CompatTestCase,
     setup_access_control,
     teardown_access_control,

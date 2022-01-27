@@ -1,7 +1,7 @@
 # Copyright (c) 2012 Adi Roiban.
 # See LICENSE for details.
 """
-Exceptions used in chevah.compat package.
+Exceptions used in chevah_compat package.
 """
 
 class CompatException(Exception):
@@ -30,7 +30,7 @@ class AdjustPrivilegeException(CompatException):
 
 class CompatError(Exception):
     """
-    Error raised by chevah.compat package.
+    Error raised by chevah_compat package.
     """
 
     def __init__(self, event_id, message):

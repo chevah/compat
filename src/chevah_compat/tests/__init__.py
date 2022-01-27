@@ -3,10 +3,7 @@
 """
 Tests for the system compatibility module.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from chevah.compat.testing import mk
+from chevah_compat.testing import mk
 
 
 def setup_package():

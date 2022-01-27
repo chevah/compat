@@ -3,18 +3,15 @@
 """
 Tests for testing filesystem
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from chevah.compat import (
+from chevah_compat import (
     system_users,
     )
 
-from chevah.compat.testing import (
+from chevah_compat.testing import (
     mk as compat_mk,
     )
-from chevah.compat.testing import ChevahTestCase, mk, conditionals
-from chevah.compat.testing.filesystem import LocalTestFilesystem
+from chevah_compat.testing import ChevahTestCase, mk, conditionals
+from chevah_compat.testing.filesystem import LocalTestFilesystem
 
 
 class TestElevatedLocalTestFilesystem(ChevahTestCase):

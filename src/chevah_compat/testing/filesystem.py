@@ -146,7 +146,7 @@ class LocalTestFilesystem(LocalFilesystem):
         """
         # It's required to use a delayed import in order to avoid a
         # circular import reference as factory uses filesystem.
-        from chevah.compat.testing import mk
+        from chevah_compat.testing import mk
         return mk.makeFilename(prefix=prefix, suffix=suffix)
 
     def makePathInTemp(self, prefix=u'', suffix=u''):

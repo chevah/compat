@@ -25,7 +25,6 @@ try:
 except ImportError:
     from scandir import scandir_python as scandir
 
-from six import text_type
 from zope.interface import implementer
 
 from chevah_compat.exceptions import (
@@ -136,7 +135,7 @@ class PosixFilesystemBase(object):
         '''See `ILocalFilesystem`.'''
 
         if not self._avatar:
-            return self._pathSplitRecursive(text_type(os.path.expanduser('~')))
+            return self._pathSplitRecursive(str(os.path.expanduser('~')))
 
         if self._avatar.root_folder_path is None:
             return self._pathSplitRecursive(self._avatar.home_folder_path)
@@ -178,7 +177,7 @@ class PosixFilesystemBase(object):
         if path is None or path == '' or path == '.':
             return self.home_segments
 
-        if not isinstance(path, text_type):
+        if not isinstance(path, str):
             path = path.decode(self.INTERNAL_ENCODING)
 
         if not path.startswith('/'):
@@ -345,7 +344,7 @@ class PosixFilesystemBase(object):
         '''See `ILocalFilesystem`.'''
         absolute_path = os.path.abspath(self.getEncodedPath(path))
 
-        if not isinstance(absolute_path, text_type):
+        if not isinstance(absolute_path, str):
             absolute_path = absolute_path.decode(self.INTERNAL_ENCODING)
 
         return absolute_path
@@ -761,7 +760,7 @@ class PosixFilesystemBase(object):
         """
         # This is done to allow lazy initialization of process_capabilities.
         from chevah_compat import process_capabilities
-        if not isinstance(name, text_type):
+        if not isinstance(name, str):
             name = name.decode(self.INTERNAL_ENCODING)
 
         # OSX HFS+ store file as Unicode, but in normalized format.

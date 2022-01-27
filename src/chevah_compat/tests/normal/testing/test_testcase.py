@@ -3,9 +3,6 @@
 """
 Tests for ChevahTestCase.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 import os
 import sys
 import time
@@ -13,8 +10,8 @@ import time
 from twisted.internet import defer, reactor, threads
 from twisted.internet.task import Clock
 
-from chevah.compat import process_capabilities
-from chevah.compat.testing import conditionals, ChevahTestCase, mk
+from chevah_compat import process_capabilities
+from chevah_compat.testing import conditionals, ChevahTestCase, mk
 
 
 class Dummy(object):
@@ -608,7 +605,7 @@ class TestChevahTestCase(ChevahTestCase):
         value = mk.string()
 
         with self.patch(
-            'chevah.compat.tests.normal.testing.test_testcase.Dummy.method',
+            'chevah_compat.tests.normal.testing.test_testcase.Dummy.method',
             return_value=value,
                 ):
             instance = Dummy()

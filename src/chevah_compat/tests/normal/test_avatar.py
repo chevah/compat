@@ -3,15 +3,9 @@
 """
 Unit tests for simple the simplest avatar.
 """
-from __future__ import with_statement
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-from chevah.compat.avatar import FilesystemAvatar
-from chevah.compat.interfaces import IFileSystemAvatar
-from chevah.compat.testing import ChevahTestCase, mk
+from chevah_compat.avatar import FilesystemAvatar
+from chevah_compat.interfaces import IFileSystemAvatar
+from chevah_compat.testing import ChevahTestCase, mk
 
 
 class TestFilesystemAvatar(ChevahTestCase):

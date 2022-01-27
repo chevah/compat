@@ -3,20 +3,15 @@
 """
 Tests for portable filesystem access.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import unicode_literals
-from six import text_type
 import errno
 import os
 
-from chevah.compat import (
+from chevah_compat import (
     LocalFilesystem,
     SuperAvatar,
     )
-from chevah.compat.interfaces import IFileAttributes
-from chevah.compat.testing import (
+from chevah_compat.interfaces import IFileAttributes
+from chevah_compat.testing import (
     conditionals,
     mk,
     TEST_ACCOUNT_GROUP,
@@ -26,15 +21,15 @@ from chevah.compat.testing import (
     TestUser,
     TEST_USERS,
     )
-from chevah.compat.exceptions import (
+from chevah_compat.exceptions import (
     CompatError,
     CompatException,
     )
-from chevah.compat.testing.testcase import (
+from chevah_compat.testing.testcase import (
     FileSystemTestCase,
     OSAccountFileSystemTestCase,
     )
-from chevah.compat.tests.mixin.filesystem import SymbolicLinksMixin
+from chevah_compat.tests.mixin.filesystem import SymbolicLinksMixin
 
 
 class TestPosixFilesystem(FileSystemTestCase):
@@ -332,7 +327,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         self.assertFalse(file_attributes.is_link)
         self.assertEqual(11, file_attributes.size)
         self.assertAlmostEqual(self.now(), file_attributes.modified, delta=5)
-        self.assertIsInstance(text_type, file_attributes.name)
+        self.assertIsInstance(str, file_attributes.name)
 
 
 @conditionals.onOSFamily('posix')

@@ -3,15 +3,10 @@
 """
 Capabilities detection tests for accounts with elevated permissions.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-from chevah.compat import process_capabilities, system_users
-from chevah.compat.exceptions import AdjustPrivilegeException
-from chevah.compat.testing import conditionals
-from chevah.compat.testing.testcase import FileSystemTestCase
+from chevah_compat import process_capabilities, system_users
+from chevah_compat.exceptions import AdjustPrivilegeException
+from chevah_compat.testing import conditionals
+from chevah_compat.testing.testcase import FileSystemTestCase
 
 
 class TestProcessCapabilities(FileSystemTestCase):

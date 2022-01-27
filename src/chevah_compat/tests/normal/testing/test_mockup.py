@@ -3,14 +3,10 @@
 """
 Tests for the testing infrastructure.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
 import sys
 
-from chevah.compat.testing.mockup import ChevahCommonsFactory
-from chevah.compat.testing import ChevahTestCase, mk
+from chevah_compat.testing.mockup import ChevahCommonsFactory
+from chevah_compat.testing import ChevahTestCase, mk
 
 
 class TestFactory(ChevahTestCase):
@@ -28,7 +24,7 @@ class TestFactory(ChevahTestCase):
             mk.string(),
             mk.string(),
             )
-        self.assertIsInstance(text_type, mk.string())
+        self.assertIsInstance(str, mk.string())
 
     def test_number(self):
         """

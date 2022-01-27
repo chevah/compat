@@ -1,27 +1,22 @@
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
 '''Test system users portable code code.'''
-from __future__ import with_statement
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
 import os
 import sys
 
 from nose.plugins.attrib import attr
 
-from chevah.compat import (
+from chevah_compat import (
     HasImpersonatedAvatar,
     process_capabilities,
     system_users,
     )
-from chevah.compat.constants import (
+from chevah_compat.constants import (
     WINDOWS_PRIMARY_GROUP,
     )
-from chevah.compat.administration import os_administration
-from chevah.compat.helpers import NoOpContext
-from chevah.compat.testing import (
+from chevah_compat.administration import os_administration
+from chevah_compat.helpers import NoOpContext
+from chevah_compat.testing import (
     CompatTestCase,
     conditionals,
     mk,
@@ -34,11 +29,11 @@ from chevah.compat.testing import (
     TEST_ACCOUNT_PASSWORD,
     TEST_ACCOUNT_USERNAME,
     )
-from chevah.compat.exceptions import (
+from chevah_compat.exceptions import (
     ChangeUserException,
     CompatError,
     )
-from chevah.compat.interfaces import IHasImpersonatedAvatar
+from chevah_compat.interfaces import IHasImpersonatedAvatar
 
 
 class SystemUsersTestCase(CompatTestCase):
@@ -84,7 +79,7 @@ class TestSystemUsers(SystemUsersTestCase):
             username=TEST_ACCOUNT_USERNAME)
 
         self.assertEqual(u'/home/%s' % TEST_ACCOUNT_USERNAME, home_folder)
-        self.assertIsInstance(text_type, home_folder)
+        self.assertIsInstance(str, home_folder)
 
     def test_getHomeFolder_no_capabilities(self):
         """
@@ -108,7 +103,7 @@ class TestSystemUsers(SystemUsersTestCase):
             username=TEST_ACCOUNT_USERNAME)
 
         self.assertEqual(u'/Users/%s' % TEST_ACCOUNT_USERNAME, home_folder)
-        self.assertIsInstance(text_type, home_folder)
+        self.assertIsInstance(str, home_folder)
 
     def test_getHomeFolder_non_existing_user(self):
         """
@@ -168,7 +163,7 @@ class TestSystemUsers(SystemUsersTestCase):
 
         self.assertContains(
             test_user.name.lower(), home_folder.lower())
-        self.assertIsInstance(text_type, home_folder)
+        self.assertIsInstance(str, home_folder)
         self.addCleanup(os_administration.deleteUser, test_user)
 
     @conditionals.onOSFamily('nt')
@@ -183,7 +178,7 @@ class TestSystemUsers(SystemUsersTestCase):
         home_folder = system_users.getHomeFolder(username)
 
         self.assertContains(username.lower(), home_folder.lower())
-        self.assertIsInstance(text_type, home_folder)
+        self.assertIsInstance(str, home_folder)
 
     @conditionals.onOSFamily('nt')
     @conditionals.onCapability('get_home_folder', True)
@@ -219,7 +214,7 @@ class TestSystemUsers(SystemUsersTestCase):
 
             self.assertContains(
                 test_user.name.lower(), self.home_folder.lower())
-            self.assertIsInstance(text_type, self.home_folder)
+            self.assertIsInstance(str, self.home_folder)
             self.assertTrue(mk.fs.isFolder(expected_home_segments))
         finally:
             os_administration.deleteUser(test_user)
@@ -595,7 +590,7 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
             use_impersonation=True,
             )
 
-        with self.patch('chevah.compat.unix_users._ExecuteAsUser') as (
+        with self.patch('chevah_compat.unix_users._ExecuteAsUser') as (
                 mock_execute):
             with avatar.getImpersonationContext():
                 pass

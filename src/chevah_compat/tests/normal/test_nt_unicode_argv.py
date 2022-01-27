@@ -2,15 +2,12 @@
 """
 Unit tests for get_unicode_argv.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 from threading import Timer
 import os
 import subprocess
 import sys
 
-from chevah.compat.testing import CompatTestCase, conditionals
+from chevah_compat.testing import CompatTestCase, conditionals
 
 
 @conditionals.onOSFamily('nt')

@@ -3,13 +3,9 @@
 """
 Tests for nose test timer plugin.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
 from nose.plugins.attrib import attr
 
-from chevah.compat.testing import ChevahTestCase
+from chevah_compat.testing import ChevahTestCase
 
 
 class TestTestTimer(ChevahTestCase):

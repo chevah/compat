@@ -3,19 +3,15 @@
 """
 Test system users portable code.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
 import os
 
-from chevah.compat import (
+from chevah_compat import (
     DefaultAvatar,
     system_users,
     SuperAvatar,
     )
-from chevah.compat.interfaces import IFileSystemAvatar, IOSUsers
-from chevah.compat.testing import (
+from chevah_compat.interfaces import IFileSystemAvatar, IOSUsers
+from chevah_compat.testing import (
     CompatTestCase,
     conditionals,
     mk,
@@ -51,7 +47,7 @@ class TestSystemUsers(CompatTestCase):
         else:
             self.assertEqual(u'/home/' + mk.username, home_folder)
 
-        self.assertIsInstance(text_type, home_folder)
+        self.assertIsInstance(str, home_folder)
 
     @conditionals.onOSFamily('nt')
     @conditionals.onCapability('get_home_folder', True)
@@ -64,7 +60,7 @@ class TestSystemUsers(CompatTestCase):
 
         self.assertContains(
             mk.username.lower(), home_folder.lower())
-        self.assertIsInstance(text_type, home_folder)
+        self.assertIsInstance(str, home_folder)
 
     def test_userExists_not_found(self):
         """
@@ -132,7 +128,7 @@ class TestSystemUsers(CompatTestCase):
                 ]:
             raise self.skipTest()
 
-        from chevah.compat.unix_users import HAS_SHADOW_SUPPORT
+        from chevah_compat.unix_users import HAS_SHADOW_SUPPORT
 
         self.assertTrue(HAS_SHADOW_SUPPORT)
 

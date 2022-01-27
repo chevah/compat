@@ -3,12 +3,8 @@
 """
 Tests for testing filesystem
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
-from chevah.compat.testing import ChevahTestCase, mk
-from chevah.compat.testing.filesystem import LocalTestFilesystem
+from chevah_compat.testing import ChevahTestCase, mk
+from chevah_compat.testing.filesystem import LocalTestFilesystem
 
 
 class TestLocalTestFilesystem(ChevahTestCase):
@@ -55,8 +51,8 @@ class TestLocalTestFilesystem(ChevahTestCase):
             # Will contain both the new temporary folder, but also
             # the general mk.fs folder.
             message = context.exception.args[0]
-            self.assertContains(text_type(temp.temp_segments), message)
-            self.assertContains(text_type(mk.fs.temp_segments), message)
+            self.assertContains(str(temp.temp_segments), message)
+            self.assertContains(str(mk.fs.temp_segments), message)
             self.assertFalse(temp.exists(temp.temp_segments))
             self.assertFalse(temp.exists(mk.fs.temp_segments))
         finally:

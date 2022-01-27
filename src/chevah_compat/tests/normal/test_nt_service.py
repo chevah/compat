@@ -2,16 +2,13 @@
 """
 Unit tests for Windows NT Service.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 import os
 
-from chevah.compat.testing import CompatTestCase
+from chevah_compat.testing import CompatTestCase
 
 if os.name == 'nt':
     import win32service
-    from chevah.compat.nt_service import ChevahNTService
+    from chevah_compat.nt_service import ChevahNTService
     # Silence the linter.
     ChevahNTService
 else:

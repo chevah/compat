@@ -3,13 +3,9 @@
 """
 Tests for the testing infrastructure.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
 from threading import Thread, Event
 
-from chevah.compat.testing import ChevahTestCase, mk
+from chevah_compat.testing import ChevahTestCase, mk
 
 
 class TestFactory(ChevahTestCase):
@@ -22,8 +18,8 @@ class TestFactory(ChevahTestCase):
         Check that avatar is created with unicode members.
         """
         avatar = mk.makeFilesystemApplicationAvatar()
-        self.assertIsInstance(avatar.name, text_type)
-        self.assertIsInstance(avatar.home_folder_path, text_type)
+        self.assertIsInstance(avatar.name, str)
+        self.assertIsInstance(avatar.home_folder_path, str)
 
     def test_tearDown_excepted_threads(self):
         """

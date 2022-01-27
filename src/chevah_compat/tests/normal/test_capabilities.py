@@ -4,9 +4,6 @@
 """
 Test for platform capabilities detection.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 try:
     import win32security
 except ImportError:
@@ -14,10 +11,10 @@ except ImportError:
 
 from zope.interface.verify import verifyObject
 
-from chevah.compat import process_capabilities
-from chevah.compat.exceptions import AdjustPrivilegeException
-from chevah.compat.interfaces import IProcessCapabilities
-from chevah.compat.testing import conditionals, CompatTestCase, mk
+from chevah_compat import process_capabilities
+from chevah_compat.exceptions import AdjustPrivilegeException
+from chevah_compat.interfaces import IProcessCapabilities
+from chevah_compat.testing import conditionals, CompatTestCase, mk
 
 
 @conditionals.onOSFamily('posix')

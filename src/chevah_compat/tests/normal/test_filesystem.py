@@ -3,9 +3,6 @@
 """
 Tests for portable filesystem access.
 """
-from __future__ import absolute_import, division, unicode_literals
-from six import text_type
-
 from datetime import date
 import errno
 import os
@@ -18,12 +15,12 @@ import time
 
 from nose.plugins.attrib import attr
 
-from chevah.compat import DefaultAvatar, FileAttributes, LocalFilesystem
-from chevah.compat.avatar import FilesystemApplicationAvatar
-from chevah.compat.exceptions import CompatError
-from chevah.compat.helpers import force_unicode
-from chevah.compat.interfaces import IFileAttributes, ILocalFilesystem
-from chevah.compat.testing import CompatTestCase, conditionals, mk
+from chevah_compat import DefaultAvatar, FileAttributes, LocalFilesystem
+from chevah_compat.avatar import FilesystemApplicationAvatar
+from chevah_compat.exceptions import CompatError
+from chevah_compat.helpers import force_unicode
+from chevah_compat.interfaces import IFileAttributes, ILocalFilesystem
+from chevah_compat.testing import CompatTestCase, conditionals, mk
 
 start_of_year = time.mktime((
     date.today().year,
@@ -71,7 +68,7 @@ class FilesystemTestingHelpers(object):
         share_info_2 = {
             'netname': name,
             'type': win32netcon.STYPE_DISKTREE,
-            'remark': 'created by chevah.compat tests',
+            'remark': 'created by chevah_compat tests',
             'permissions': 0,  # Ignored as Windows run in user-permissions.
             'max_uses': -1,  # No limits.
             'current_uses': 0,  # Ignored here.
@@ -1084,7 +1081,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         content = self.filesystem.getFolderContent(self.test_segments)
 
         self.assertIsNotEmpty(content)
-        self.assertTrue(isinstance(content[0], text_type))
+        self.assertTrue(isinstance(content[0], str))
         self.assertItemsEqual([folder_name, file_name], content)
 
     @conditionals.skipOnPY3()
@@ -2275,7 +2272,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         content = self.unlocked_filesystem.getFolderContent(['c'])
         self.assertTrue(len(content) > 0)
         self.assertTrue(u'Program Files' in content)
-        self.assertTrue(isinstance(content[0], text_type))
+        self.assertTrue(isinstance(content[0], str))
 
     def test_getSegmentsFromRealPath_none(self):
         """
@@ -2499,7 +2496,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         Test conversion of segments to a real path.
         """
         def _p(*path):
-            return text_type(
+            return str(
                 os.path.join(self.locked_avatar.root_folder_path, *path))
 
         path = self.locked_filesystem.getRealPathFromSegments([])

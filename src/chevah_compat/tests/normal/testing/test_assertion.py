@@ -3,13 +3,10 @@
 """
 Tests for the assertion helpers.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 import os
 
-from chevah.compat.exceptions import CompatError
-from chevah.compat.testing import ChevahTestCase, mk
+from chevah_compat.exceptions import CompatError
+from chevah_compat.testing import ChevahTestCase, mk
 
 
 class TestAssertionMixin(ChevahTestCase):

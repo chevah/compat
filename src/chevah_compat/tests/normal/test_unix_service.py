@@ -3,20 +3,17 @@
 """
 Tests for Unix Daemon.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 import os
 import sys
 
-from chevah.compat.exceptions import CompatError
+from chevah_compat.exceptions import CompatError
 
-from chevah.compat.helpers import NoOpContext
-from chevah.compat.interfaces import IDaemon
-from chevah.compat.testing import CompatTestCase, mk
+from chevah_compat.helpers import NoOpContext
+from chevah_compat.interfaces import IDaemon
+from chevah_compat.testing import CompatTestCase, mk
 
 if os.name == 'posix':
-    from chevah.compat.unix_service import Daemon
+    from chevah_compat.unix_service import Daemon
     Daemon  # Shut up the linter.
 else:
     Daemon = object
