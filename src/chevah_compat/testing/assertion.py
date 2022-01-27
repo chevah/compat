@@ -45,6 +45,9 @@ class AssertionMixin(object):
     The assertions from here should not overwrite anything.
     """
 
+    def assertItemsEqual(self, first, second, message=None):
+        return self.assertCountEqual(first, second, message)
+
     @classmethod
     def assertTempIsClean(cls):
         """
@@ -142,7 +145,7 @@ class AssertionMixin(object):
                 pass
             else:
                 message = u'Iterable is not empty.\n%s.' % (
-                    repr(target).decode('utf-8'),)
+                    repr(target),)
                 raise AssertionError(message.encode('utf-8'))
             return
 

@@ -80,7 +80,7 @@ class PosixFilesystemBase(object):
         * Windows - INSTALL_FOLDER/ lib/ Lib/       os.py
         * Unix    - INSTALL_FOLDER/ lib/ python2.X/ os.py
         """
-        path = os.path.dirname(os.__file__).decode('utf-8')
+        path = os.path.dirname(os.__file__)
         segments = self.getSegmentsFromRealPath(path)
         return segments[:-2]
 
@@ -119,9 +119,14 @@ class PosixFilesystemBase(object):
 
     @classmethod
     def getEncodedPath(cls, path):
-        '''Return the encoded representation of the path, use in the lower
-        lever API for accessing the filesystem.'''
-        return path.encode(u'utf-8')
+        """
+        Return the encoded representation of the path, use in the lower
+        lever API for accessing the filesystem.
+
+        This is here from py2 and should be removed in the future.
+        On Python 3 the low level API can handle unicode.
+        """
+        return path
 
     @property
     def home_segments(self):
