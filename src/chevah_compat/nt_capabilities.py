@@ -10,7 +10,7 @@ import win32api
 import win32process
 import win32security
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from chevah_compat.capabilities import BaseProcessCapabilities
 from chevah_compat.exceptions import (
@@ -19,10 +19,10 @@ from chevah_compat.exceptions import (
 from chevah_compat.interfaces import IProcessCapabilities
 
 
+@implementer(IProcessCapabilities)
 class NTProcessCapabilities(BaseProcessCapabilities):
     '''Container for NT capabilities detection.'''
 
-    implements(IProcessCapabilities)
 
     def getCurrentPrivilegesDescription(self):
         """

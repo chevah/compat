@@ -5,7 +5,7 @@ Provides information about capabilities for a process on Unix.
 """
 import platform
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from chevah_compat.capabilities import BaseProcessCapabilities
 from chevah_compat.exceptions import ChangeUserException
@@ -14,10 +14,10 @@ from chevah_compat.interfaces import IProcessCapabilities
 from chevah_compat.unix_users import _ExecuteAsUser
 
 
+@implementer(IProcessCapabilities)
 class UnixProcessCapabilities(BaseProcessCapabilities):
     '''Container for Unix capabilities detection.'''
 
-    implements(IProcessCapabilities)
 
     @property
     def impersonate_local_account(self):

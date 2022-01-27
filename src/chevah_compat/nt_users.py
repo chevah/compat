@@ -4,7 +4,7 @@
 Adapter for working with NT users.
 """
 from win32com.shell import shell, shellcon
-from zope.interface import implements
+from zope.interface import implementer
 import pywintypes
 import pythoncom
 import win32net
@@ -51,12 +51,11 @@ class MissingProfileFolderException(Exception):
     """
 
 
+#implementer(IOSUsers)
 class NTUsers(CompatUsers):
     """
     Container for NT users specific methods.
     """
-
-    implements(IOSUsers)
 
     def getCurrentUserName(self):
         """
@@ -323,9 +322,8 @@ class _ExecuteAsUser(object):
         return False
 
 
+@implementer(IHasImpersonatedAvatar)
 class NTHasImpersonatedAvatar(object):
-
-    implements(IHasImpersonatedAvatar)
 
     @property
     def use_impersonation(self):
@@ -357,6 +355,7 @@ def get_current_username():
     return buffer.value
 
 
+@implementer(IFileSystemAvatar)
 class NTDefaultAvatar(NTHasImpersonatedAvatar):
     """
     Avatar for the default account.
@@ -365,9 +364,6 @@ class NTDefaultAvatar(NTHasImpersonatedAvatar):
     It has full access to the filesystem.
     It does not uses impersonation.
     """
-
-    implements(IFileSystemAvatar)
-
     root_folder_path = u'c:\\'
     home_folder_path = u'c:\\'
     lock_in_home_folder = False

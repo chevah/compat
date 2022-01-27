@@ -18,7 +18,7 @@ try:
 except ImportError:
     HAS_SHADOW_SUPPORT = False
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from chevah_compat.compat_users import CompatUsers
 from chevah_compat.exceptions import ChangeUserException
@@ -101,12 +101,11 @@ def _verifyCrypt(password, crypted_password):
     return False
 
 
+@implementer(IOSUsers)
 class UnixUsers(CompatUsers):
     """
     Container for Unix users specific methods.
     """
-
-    implements(IOSUsers)
 
     # Lazy loaded method to pam authenticate.
     _pam_authenticate = None
@@ -448,9 +447,8 @@ class _ExecuteAsUser(object):
         return False
 
 
+@implementer(IHasImpersonatedAvatar)
 class UnixHasImpersonatedAvatar(object):
-
-    implements(IHasImpersonatedAvatar)
 
     _euid = None
     _egid = None
@@ -481,6 +479,8 @@ class UnixHasImpersonatedAvatar(object):
         return _ExecuteAsUser(euid=self._euid, egid=self._egid)
 
 
+
+@implementer(IFileSystemAvatar)
 class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
     """
     Avatar for the default account.
@@ -489,9 +489,6 @@ class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
     It has full access to the filesystem.
     It does not use impersonation.
     """
-
-    implements(IFileSystemAvatar)
-
     home_folder_path = '/'
     root_folder_path = '/'
     lock_in_home_folder = False
@@ -514,12 +511,11 @@ class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
         return pwd.getpwuid(os.getuid()).pw_name
 
 
+@implementer(IFileSystemAvatar)
 class UnixSuperAvatar(UnixHasImpersonatedAvatar):
     """
     Avatar for the super account on Unix aka root.
     """
-
-    implements(IFileSystemAvatar)
 
     home_folder_path = u'/root'
     root_folder_path = '/'

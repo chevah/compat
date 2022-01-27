@@ -134,7 +134,7 @@ SETUP['folders']['source'] = 'chevah/compat'
 SETUP['repository']['name'] = 'compat'
 SETUP['repository']['github'] = 'https://github.com/chevah/compat'
 SETUP['scame'] = options
-SETUP['test']['package'] = 'chevah.compat.tests'
+SETUP['test']['package'] = 'chevah_compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = ['--with-randomly']
 SETUP['test']['coverator_url'] = 'http://coverator.chevah.com:8080'
@@ -349,7 +349,7 @@ def test_ci2(args):
     # Show some info about the current environment.
     from OpenSSL import SSL, __version__ as pyopenssl_version
     from coverage.cmdline import main as coverage_main
-    from chevah.compat.testing.testcase import ChevahTestCase
+    from chevah_compat.testing.testcase import ChevahTestCase
 
     print('%s / os_name:%s / os_version:%s / cpu_type:%s / ci_name:%s' % (
         ChevahTestCase.os_family,

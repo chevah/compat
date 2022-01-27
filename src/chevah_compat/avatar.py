@@ -3,18 +3,17 @@
 """
 An account as used by Chevah services.
 """
-from zope.interface import implements
+from zope.interface import implementer
 
 from chevah_compat import HasImpersonatedAvatar
 from chevah_compat.interfaces import IFileSystemAvatar
 
 
+@implementer(IFileSystemAvatar)
 class FilesystemAvatar(HasImpersonatedAvatar):
     '''
     See `IFileSystemAvatar`.
     '''
-
-    implements(IFileSystemAvatar)
 
     def __init__(
         self, name, home_folder_path, root_folder_path=None,

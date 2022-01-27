@@ -14,7 +14,7 @@ import win32file
 import win32net
 import win32security
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from chevah_compat.exceptions import (
     AdjustPrivilegeException,
@@ -66,14 +66,13 @@ ERROR_PATH_NOT_FOUND = 3
 ERROR_DIRECTORY = 267
 
 
+@implementer(ILocalFilesystem)
 class NTFilesystem(PosixFilesystemBase):
     """
     Implementation if ILocalFilesystem for local NT filesystems.
 
     This builds on top of PosixFilesystem.
     """
-
-    implements(ILocalFilesystem)
     system_users = NTUsers()
     process_capabilities = NTProcessCapabilities()
 

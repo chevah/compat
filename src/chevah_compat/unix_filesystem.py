@@ -11,7 +11,7 @@ import pwd
 # See: https://github.com/PyCQA/pylint/issues/1565
 import stat  # pylint: disable=bad-python3-import
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from chevah_compat.exceptions import CompatError
 from chevah_compat.interfaces import ILocalFilesystem
@@ -19,6 +19,7 @@ from chevah_compat.posix_filesystem import PosixFilesystemBase
 from chevah_compat.unix_users import UnixUsers
 
 
+@implementer(ILocalFilesystem)
 class UnixFilesystem(PosixFilesystemBase):
     """
     Implementation if ILocalFilesystem for local Unix filesystems.
@@ -28,8 +29,6 @@ class UnixFilesystem(PosixFilesystemBase):
 
     If avatar is None it will use the current logged in user.
     """
-
-    implements(ILocalFilesystem)
     system_users = UnixUsers()
 
     def _getRootPath(self):

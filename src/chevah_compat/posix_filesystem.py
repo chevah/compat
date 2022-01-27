@@ -26,7 +26,7 @@ except ImportError:
     from scandir import scandir_python as scandir
 
 from six import text_type
-from zope.interface import implements
+from zope.interface import implementer
 
 from chevah_compat.exceptions import (
     ChangeUserException,
@@ -1066,11 +1066,11 @@ class PosixFilesystemBase(object):
         return result
 
 
+@implementer(IFileAttributes)
 class FileAttributes(object):
     """
     See: IFileAttributes.
     """
-    implements(IFileAttributes)
 
     def __init__(
             self, name, path, size=0,
