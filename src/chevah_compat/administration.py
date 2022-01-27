@@ -291,18 +291,17 @@ class OSAdministrationUnix(object):
         Get Unix user entry, retrying if user is not available yet.
         """
         import pwd
-        name_encoded = name.encode('utf-8')
         error = None
         for iterator in range(1000):
             try:
-                user = pwd.getpwnam(name_encoded)
+                user = pwd.getpwnam(name)
                 return user
             except (KeyError, OSError) as e:
                 error = e
                 pass
             time.sleep(0.2)
         raise AssertionError(
-            'Could not get user %s: %s' % (name_encoded, error))
+            'Could not get user %s: %s' % (name, error))
 
     def _addUser_aix(self, user):
         # AIX will only allow creating users with shells from
@@ -452,7 +451,7 @@ class OSAdministrationUnix(object):
             )
         salt = ''.join(random.choice(ALPHABET) for i in range(8))
         shadow_password = crypt.crypt(
-            user.password.encode('utf-8'),
+            user.password,
             '$1$' + salt + '$',
             )
 
@@ -475,7 +474,7 @@ class OSAdministrationUnix(object):
             )
         salt = ''.join(random.choice(ALPHABET) for i in range(2))
         passwd_password = crypt.crypt(
-            user.password.encode('utf-8'), salt)
+            user.password, salt)
         self._changeUnixEntry(
             segments=segments,
             name=user.name,

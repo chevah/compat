@@ -277,12 +277,17 @@ class TestPosixFilesystem(FileSystemTestCase):
         user_fs = mk.makeLocalTestFilesystem(avatar)
         user_fs.folder(user_fs.temp_segments, cleanup=self.addCleanup)
 
-        user_fs.setAttributes(user_fs.temp_segments, {'mode': 0o700})
+        try:
+            user_fs.setAttributes(user_fs.temp_segments, {'mode': 0o000})
 
-        error = self.assertRaises(
-            OSError,
-            mk.fs.iterateFolderContent, user_fs.temp_segments,
-            )
+            error = self.assertRaises(
+                OSError,
+                user_fs.iterateFolderContent, user_fs.temp_segments,
+                )
+        finally:
+            # Make sure we revert the permissions so that we can cleanup.
+            user_fs.setAttributes(user_fs.temp_segments, {'mode': 0o700})
+
         self.assertEqual(errno.EACCES, error.errno)
 
     def test_iterateFolderContent_non_empty(self):
@@ -306,7 +311,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         file_segments = base_segments + [file_name]
         folder_segments = base_segments + [folder_name]
 
-        user_fs.createFile(file_segments, content=b'12345678901')
+        user_fs.createFile(file_segments, content='12345678901')
         user_fs.createFolder(folder_segments)
 
         content = user_fs.iterateFolderContent(base_segments)

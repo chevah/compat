@@ -3,10 +3,6 @@
 """
 Adapter for working with Unix users.
 """
-#FIXME
-# On Python2.7 grp module does no accept bytes so we use the codecs module
-# to convert Unicode to native str.
-import codecs
 import crypt
 import grp
 import os
@@ -152,9 +148,8 @@ class UnixUsers(CompatUsers):
             raise ValueError('Groups for validation can\'t be empty.')
 
         for group in groups:
-            group_name = codecs.encode(group, 'utf-8')
             try:
-                group_struct = grp.getgrnam(group_name)
+                group_struct = grp.getgrnam(group)
             except KeyError:
                 continue
 
@@ -215,10 +210,6 @@ class UnixUsers(CompatUsers):
         if not pam_authenticate:
             # PAM is not supported.
             return False
-
-        # On Python2.7/OSX PAM require str not bytes.
-        username = codecs.encode(username, 'utf-8')
-        password = codecs.encode(password, 'utf-8')
 
         with self._executeAsAdministrator():
             # FIXME:3059:
@@ -326,8 +317,8 @@ class UnixUsers(CompatUsers):
         if not HAS_SHADOW_SUPPORT:
             return None
 
-        username = username.encode('utf-8')
-        password = password.encode('utf-8')
+        username = username
+        password = password
 
         try:
             with self._executeAsAdministrator():

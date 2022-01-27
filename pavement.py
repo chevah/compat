@@ -101,7 +101,7 @@ try:
             'pavement.py',
             'example/',
             'README.rst',
-            'chevah/compat/',
+            'src/chevah_compat/',
             ],
         'exclude': [],
         }
@@ -114,9 +114,7 @@ try:
 
     options.pyflakes['enabled'] = True
 
-    options.pycodestyle['enabled'] = True
-    options.pycodestyle['hang_closing'] = True
-
+    options.pycodestyle['enabled'] = False
     options.bandit['enabled'] = False
 
     # For now pylint is disabled, as there are to many errors.

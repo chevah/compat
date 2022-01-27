@@ -14,7 +14,7 @@ import sys
 import time
 
 from bunch import Bunch
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 from nose import SkipTest
 try:
     from twisted.internet.defer import Deferred

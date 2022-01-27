@@ -396,8 +396,8 @@ class TestSystemUsers(SystemUsersTestCase):
             import pwd
             import grp
             uid, gid = os.geteuid(), os.getegid()
-            impersonated_username = pwd.getpwuid(uid)[0].decode('utf-8')
-            impersonated_groupname = grp.getgrgid(gid)[0].decode('utf-8')
+            impersonated_username = pwd.getpwuid(uid)[0]
+            impersonated_groupname = grp.getgrgid(gid)[0]
             impersonated_groups = os.getgroups()
             self.assertEqual(test_user.name, impersonated_username)
             self.assertEqual(TEST_ACCOUNT_GROUP, impersonated_groupname)

@@ -86,7 +86,7 @@ class UnixFilesystem(PosixFilesystemBase):
             head, tail = os.path.split(tail)
             if tail != u'':
                 if not isinstance(tail, str):
-                    tail = tail.decode('utf-8')
+                    tail = tail
                 segments.insert(0, tail)
             tail = head
         return segments
@@ -128,7 +128,7 @@ class UnixFilesystem(PosixFilesystemBase):
         '''See `ILocalFilesystem`.'''
         attributes = self.getAttributes(segments)
         user_struct = pwd.getpwuid(attributes.uid)
-        return user_struct.pw_name.decode('utf-8')
+        return user_struct.pw_name
 
     def addGroup(self, segments, group, permissions=None):
         '''See `ILocalFilesystem`.'''
@@ -160,7 +160,7 @@ class UnixFilesystem(PosixFilesystemBase):
         '''See `ILocalFilesystem`.'''
         attributes = self.getAttributes(segments)
         group_struct = grp.getgrgid(attributes.gid)
-        if group_struct.gr_name.decode('utf-8') == group:
+        if group_struct.gr_name == group:
             return True
         else:
             return False
