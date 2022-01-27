@@ -301,7 +301,7 @@ pip_install() {
     set +e
     ${PYTHON_BIN} -m \
         pip install \
-            --trusted-host pypi.chevah.com \
+            --trusted-host bin.chevah.com \
             --trusted-host deag.chevah.com \
             --index-url=$PIP_INDEX \
             $1

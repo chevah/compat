@@ -4,11 +4,14 @@ chevah-compat
 .. image:: https://codecov.io/gh/chevah/compat/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/chevah/compat
 
-.. image:: https://github.com/chevah/compat/workflows/GitHub-CI/badge.svg
-  :target: https://github.com/chevah/compat/actions
+.. image:: https://github.com/chevah/compat/workflows/Lint/badge.svg
+  :target: https://github.com/chevah/compat/actions/workflows/lint.yml
 
-.. image:: https://travis-ci.com/chevah/compat.svg?branch=master
-  :target: https://travis-ci.com/github/chevah/compat
+.. image:: https://github.com/chevah/compat/workflows/Bare/badge.svg
+  :target: https://github.com/chevah/compat/actions/workflows/bare.yml
+
+.. image:: https://github.com/chevah/compat/workflows/Docker/badge.svg
+  :target: https://github.com/chevah/compat/actions/workflows/docker.yml
 
 
 Chevah OS Compatibility Layer.
