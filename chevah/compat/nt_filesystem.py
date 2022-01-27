@@ -174,7 +174,7 @@ class NTFilesystem(PosixFilesystemBase):
             return self._root_path
 
     def getRealPathFromSegments(self, segments, include_virtual=True):
-        '''See `ILocalFilesystem`.
+        r'''See `ILocalFilesystem`.
         * []
           * lock : root_path
           * unlock: COMPUTER
@@ -249,7 +249,7 @@ class NTFilesystem(PosixFilesystemBase):
                 errno.EINVAL, message.encode('utf-8'), path.encode('utf-8'))
 
     def getSegmentsFromRealPath(self, path):
-        """
+        r"""
         See `ILocalFilesystem`.
 
         It supports

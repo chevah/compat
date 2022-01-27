@@ -761,7 +761,7 @@ class OSAdministrationUnix(object):
 
                 opened_file.write((new_line + '\n').encode('utf-8'))
         finally:
-                opened_file.close()
+            opened_file.close()
 
         if exists:
             self._replaceFile(temp_segments, segments)

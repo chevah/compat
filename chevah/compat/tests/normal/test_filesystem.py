@@ -2712,7 +2712,7 @@ class TestLocalFilesystemLockedUNC(CompatTestCase, FilesystemTestMixin):
         cls.locked_avatar = DefaultAvatar()
         cls._share_name = 'TestLocalFilesystemLockedUNC ' + mk.string()
         cls.addWindowsShare('c:\\temp', cls._share_name)
-        unc = '\\\\127.0.0.1\%s' % (cls._share_name)
+        unc = '\\\\127.0.0.1\\%s' % (cls._share_name)
         cls.locked_avatar.root_folder_path = unc
         cls.locked_avatar.home_folder_path = unc
         cls.locked_avatar.lock_in_home_folder = True
@@ -3089,7 +3089,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result = sut.getSegmentsFromRealPath('e:/other/path/child/')
         self.assertEqual(['base', 'child'], result)
 
-        result = sut.getSegmentsFromRealPath('e:/other\path\child/')
+        result = sut.getSegmentsFromRealPath('e:/other\\path\\child/')
         self.assertEqual(['base', 'child'], result)
 
         result = sut.getSegmentsFromRealPath(

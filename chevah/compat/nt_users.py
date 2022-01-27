@@ -92,8 +92,8 @@ class NTUsers(CompatUsers):
             else:
                 return self._getHomeFolder(username, token)
         except MissingProfileFolderException:
-                self.raiseFailedToGetHomeFolder(
-                    username, u'Failed to get home folder path.')
+            self.raiseFailedToGetHomeFolder(
+                username, u'Failed to get home folder path.')
 
     def _getHomeFolder(self, username, token):
         """

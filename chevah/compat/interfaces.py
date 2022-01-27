@@ -354,7 +354,7 @@ class IFilesystemNode(Interface):
 
 
 class ILocalFilesystem(Interface):
-    """
+    r"""
     Portable access to local filesystem.
 
     This is designed to provide a single interface for accessing local files.

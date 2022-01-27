@@ -23,8 +23,6 @@ class PublishCommand(Command):
     def run(self):
         assert os.getcwd() == self.cwd, (
             'Must be in package root: %s' % self.cwd)
-        self.run_command('bdist_wheel')
-
         upload_command = self.distribution.get_command_obj('upload')
         upload_command.repository = u'chevah'
         self.run_command('upload')

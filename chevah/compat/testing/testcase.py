@@ -242,7 +242,7 @@ class TwistedTestCase(TestCase):
             # When debug is enabled with iterate using a small delay in steps,
             # to have a much better debug output.
             # Otherwise the debug messages will flood the output.
-            print (
+            print(
                 u'delayed: %s\n'
                 u'threads: %s\n'
                 u'writers: %s\n'

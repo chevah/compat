@@ -151,7 +151,7 @@ class PosixFilesystemBase(object):
             raise CompatError(
                 20019,
                 _(
-                    'User home folder "%s" is not withing the root folder '
+                    'User home folder "%s" is not within the root folder '
                     '"%s".' % (
                         self._avatar.home_folder_path,
                         self._avatar.root_folder_path),

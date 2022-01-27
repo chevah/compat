@@ -3,18 +3,12 @@
 """
 Build script for chevah-compat.
 """
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    )
 import compileall
 import imp
 import os
 import py_compile
 import struct
 import sys
-import warnings
 
 from brink.pavement_commons import (
     buildbot_list,
@@ -64,7 +58,6 @@ RUN_PACKAGES = [
 
 if os.name == 'posix':
     RUN_PACKAGES.extend([
-        'python-daemon==1.5.5',
         # This is required as any other version will try to also update pip.
         'lockfile==0.9.1',
         'pam==0.1.4.c3',
@@ -74,40 +67,27 @@ if os.name == 'posix':
 
 # Packages required to use the dev/build system.
 BUILD_PACKAGES = [
-    # Buildbot is used for try scheduler.
-    'buildbot==0.8.11.chevah11',
-    'SQLAlchemy>=1.3.18',
-
     # For Lint and static checkers.
-    'scame==0.5.1',
-    'pyflakes>=1.5.0',
-    'chevah-js-linter==2.4.0',
-    'pycodestyle==2.3.1',
+    'scame==0.6.3',
+    'pyflakes>=2.4.0',
+    'pycodestyle==2.8.0',
     'pylint==1.9.4',
     'astroid==1.6.6',
     # These are build packages, but are needed for testing the documentation.
-    'sphinx==1.6.3',
-    # Docutils is required for RST parsing and for Sphinx.
-    'markupsafe==1.0',
-    'docutils==0.12.c1',
+    'sphinx==4.2.0',
 
     # Packages required to run the test suite.
-    # Never version of nose, hangs on closing some tests
-    # due to some thread handling.
-    'nose==1.3.0.chevah13',
+    'nose==1.3.7',
     'nose-randomly==1.2.5',
     'mock',
 
-    'coverage==4.5.4',
-    'diff_cover==0.9.11',
-    'codecov==2.1.7',
-
-    # used for remote debugging.
-    'remote_pdb==1.2.0',
+    'coverage==6.3',
+    'diff_cover==6.4.4',
+    'codecov==2.1.12',
 
     # Twisted is optional, but we have it here for complete tests.
     'Twisted==20.3.0+chevah.3',
-    'service_identity==18.1.0',
+    'service_identity==21.1.0',
 
     # We install wmi everywhere even though it is only used on Windows.
     'wmi==1.4.9',
@@ -203,9 +183,9 @@ except ImportError:
 
 
 SETUP['product']['name'] = 'chevah-compat'
-SETUP['folders']['source'] = u'chevah/compat'
-SETUP['repository']['name'] = u'compat'
-SETUP['repository']['github'] = u'https://github.com/chevah/compat'
+SETUP['folders']['source'] = 'chevah/compat'
+SETUP['repository']['name'] = 'compat'
+SETUP['repository']['github'] = 'https://github.com/chevah/compat'
 SETUP['scame'] = options
 SETUP['test']['package'] = 'chevah.compat.tests'
 SETUP['test']['elevated'] = 'elevated'
@@ -213,7 +193,7 @@ SETUP['test']['nose_options'] = ['--with-randomly']
 SETUP['test']['coverator_url'] = 'http://coverator.chevah.com:8080'
 SETUP['buildbot']['server'] = 'buildbot.chevah.com'
 SETUP['buildbot']['web_url'] = 'https://buildbot.chevah.com:10443'
-SETUP['pypi']['index_url'] = 'http://pypi.chevah.com/simple'
+SETUP['pypi']['index_url'] = os.environ['PIP_INDEX']
 
 
 def _set_umask(mask):
@@ -267,10 +247,10 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=0):
                         actual = chandle.read(8)
                     if expect == actual:
                         return success
-                except IOError:
+                except OSError:
                     pass
             if not quiet:
-                print ('Compiling', fullname.encode('utf-8'), '...')
+                print('Compiling', fullname.encode('utf-8'), '...')
             try:
                 ok = py_compile.compile(fullname, None, dfile, True)
             except py_compile.PyCompileError as err:
@@ -278,7 +258,7 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=0):
                     print('Compiling', fullname.encode('utf-8'), '...')
                 print(err.msg.encode('utf-8'))
                 success = 0
-            except IOError, e:
+            except OSError as e:
                 print('Sorry', e)
                 success = 0
             else:
@@ -492,66 +472,3 @@ def test_ci2(args):
     exit_code = call_task('test_python', args=args)
 
     return exit_code
-
-
-@task
-@consume_args
-def test_py3(args):
-    """
-    Run checks for py3 compatibility.
-    """
-    from pylint.lint import Run
-    from nose.core import main as nose_main
-    arguments = [
-        '--py3k',
-        # See https://github.com/PyCQA/pylint/issues/1564
-        '-d exception-message-attribute',
-        SETUP['folders']['source'],
-        ]
-    linter = Run(arguments, exit=False)
-    stats = linter.linter.stats
-    errors = (
-        stats['info'] + stats['error'] + stats['refactor'] +
-        stats['fatal'] + stats['convention'] + stats['warning']
-        )
-    if errors:
-        print('Pylint failed')
-        sys.exit(1)
-
-    print('Compiling in Py3 ...', end='')
-    command = ['python3', '-m', 'compileall', '-q', 'chevah']
-    pave.execute(command, output=sys.stdout)
-    print('done')
-
-    sys.argv = sys.argv[:1]
-    pave.python_command_normal.extend(['-3'])
-
-    captured_warnings = []
-
-    def capture_warning(
-        message, category, filename,
-        lineno=None, file=None, line=None
-            ):
-        if not filename.startswith('chevah'):
-            # Not our code.
-            return
-        line = (message.message, filename, lineno)
-        if line in captured_warnings:
-            # Don't include duplicate warnings.
-            return
-        captured_warnings.append(line)
-
-    warnings.showwarning = capture_warning
-
-    sys.args = ['nose', 'chevah.compat.tests.normal'] + args
-    runner = nose_main(exit=False)
-    if not runner.success:
-        print('Test failed')
-        sys.exit(1)
-    if not captured_warnings:
-        sys.exit(0)
-
-    print('\nCaptured warnings\n')
-    for warning, filename, line in captured_warnings:
-        print('%s:%s %s' % (filename, line, warning))
-    sys.exit(1)

@@ -57,7 +57,7 @@ def stop_reactor():
         return
 
     def stop_reactor():
-        '''Helper for calling stop from withing the thread.'''
+        '''Helper for calling stop from within the thread.'''
         _reactor.stop()
 
     _reactor.callFromThread(stop_reactor)
