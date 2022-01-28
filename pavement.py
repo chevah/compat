@@ -383,8 +383,8 @@ def test_ci2(args):
         skip_coverage = True
 
     if skip_coverage:
-        os.environ[b'CODECOV_TOKEN'] = ''
-    if os.environ.get(b'CODECOV_TOKEN', ''):
+        os.environ['CODECOV_TOKEN'] = ''
+    if os.environ.get('CODECOV_TOKEN', ''):
         print('Running tests with coverage')
     else:
         print('Running tests WITHOUT coverage.')
@@ -395,10 +395,6 @@ def test_ci2(args):
     else:
         args = [args]
     test_type = env.get('TEST_TYPE', 'normal')
-
-    if test_type == 'py3':
-        os.environ[b'CODECOV_TOKEN'] = ''
-        return call_task('test_py3', args=args)
 
     exit_code = call_task('test_python', args=args)
 
