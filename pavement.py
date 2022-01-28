@@ -394,7 +394,6 @@ def test_ci2(args):
         args = []
     else:
         args = [args]
-    test_type = env.get('TEST_TYPE', 'normal')
 
     exit_code = call_task('test_python', args=args)
 
