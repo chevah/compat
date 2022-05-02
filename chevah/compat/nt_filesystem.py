@@ -248,6 +248,15 @@ class NTFilesystem(PosixFilesystemBase):
             raise OSError(
                 errno.EINVAL, message.encode('utf-8'), path.encode('utf-8'))
 
+    def isAbsolutePath(self, path):
+        """
+        See `ILocalFilesystem`.
+        """
+        if path.startswith('\\\\'):
+            return True
+
+        return os.path.isabs(path)
+
     def getSegmentsFromRealPath(self, path):
         """
         See `ILocalFilesystem`.

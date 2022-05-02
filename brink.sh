@@ -87,7 +87,7 @@ PYTHON_VERSION='not.defined.yet'
 PYTHON_PLATFORM='unknown-os-and-arch'
 PYTHON_NAME='python2.7'
 BINARY_DIST_URI='https://github.com/chevah/python-package/releases/download'
-PIP_INDEX='https://pypi.org/simple'
+PIP_INDEX_URL='https://pypi.org/simple'
 BASE_REQUIREMENTS=''
 
 #
@@ -138,6 +138,10 @@ clean_build() {
     delete_folder ${DIST_FOLDER}
     echo "Removing publish..."
     delete_folder 'publish'
+    echo "Removing node_modules..."
+    delete_folder node_modules
+    echo "Removing web build"
+    delete_folder chevah/server/static/build/
 
     # In some case pip hangs with a build folder in temp and
     # will not continue until it is manually removed.
@@ -258,6 +262,7 @@ update_path_variables() {
     export CHEVAH_OS=${OS}
     export CHEVAH_ARCH=${ARCH}
     export CHEVAH_CACHE=${CACHE_FOLDER}
+    export PIP_INDEX_URL=${PIP_INDEX_URL}
 
 }
 
@@ -315,8 +320,8 @@ pip_install() {
     ${PYTHON_BIN} -m \
         pip install \
             --trusted-host bin.chevah.com \
-            --trusted-host deag.chevah.com \
-            --index-url=$PIP_INDEX \
+            --trusted-host pypi-internal.chevah.com \
+            --index-url=$PIP_INDEX_URL \
             --build=${BUILD_FOLDER}/pip-build \
             $1
 
@@ -809,17 +814,6 @@ detect_os() {
             ;;
         "amd64"|"x86_64")
             ARCH="x64"
-            case "$OS" in
-                win)
-                    # 32bit build on Windows 2016, 64bit otherwise.
-                    # Should work with a l10n pack too (tested with French).
-                    win_ver=$(systeminfo.exe | head -n 3 | tail -n 1 \
-                        | cut -d ":" -f 2)
-                    if [[ "$win_ver" =~ "Microsoft Windows Server 2016" ]]; then
-                        ARCH="x86"
-                    fi
-                    ;;
-            esac
             ;;
         "aarch64")
             ARCH="arm64"

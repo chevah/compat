@@ -419,6 +419,11 @@ class ILocalFilesystem(Interface):
         `path` is a ChevahPath and can be a relative path of the home folder.
         """
 
+    def isAbsolutePath(path):
+        """
+        Return True if path points to an asbolute path.
+        """
+
     def isFile(segments):
         """
         Return True if segments points to a file.

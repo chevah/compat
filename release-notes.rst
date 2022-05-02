@@ -2,6 +2,14 @@ Release notes for chevah.compat
 ===============================
 
 
+0.64.0 - 2022-05-02
+-------------------
+
+* Add `ILocalFilesystem.isAbsolutePath` API.
+* Add `conditionals.onOSVersion` helper.
+* Disable PAM for macOS.
+
+
 0.63.0 - 2021-08-09
 -------------------
 

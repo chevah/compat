@@ -353,6 +353,10 @@ class PosixFilesystemBase(object):
 
         return absolute_path
 
+    def isAbsolutePath(self, path):
+        '''See `ILocalFilesystem`.'''
+        return os.path.isabs(path)
+
     def isFolder(self, segments):
         '''See `ILocalFilesystem`.'''
         try:

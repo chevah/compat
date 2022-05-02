@@ -16,6 +16,19 @@ from chevah.compat import process_capabilities
 from chevah.compat.testing.testcase import ChevahTestCase
 
 
+_SUPPORTED_OS_FAMILIES = [
+    'posix',
+    'nt',
+    ]
+
+_SUPPORTED_OS_NAMES = [
+    'linux',
+    'windows',
+    'aix',
+    'osx',
+    ]
+
+
 def skipOnCondition(callback, message):
     """
     Helper to decorate skip class or methods based on callback results.
@@ -55,8 +68,11 @@ def onOSFamily(family):
     """
     Run test only if current os is from `family`.
     """
+    if family not in _SUPPORTED_OS_FAMILIES:
+        raise AssertionError('Unknow os family: %s' % (family,))
+
     def check_os_family():
-        return process_capabilities.os_family != family.lower()
+        return process_capabilities.os_family != family
 
     return skipOnCondition(
         check_os_family, 'OS family "%s" not available.' % family)
@@ -71,11 +87,26 @@ def onOSName(name):
     else:
         name = [item.lower() for item in name]
 
+    for os_name in name:
+        if os_name not in _SUPPORTED_OS_NAMES:
+            raise AssertionError('Unknow os name: %s' % (os_name,))
+
     def check_os_name():
         return process_capabilities.os_name not in name
 
     return skipOnCondition(
         check_os_name, 'OS name "%s" not available.' % name)
+
+
+def onOSVersion(versions):
+    """
+    Run test only if current os vesrsion or is in one from `versions` list.
+    """
+    def check_os_version():
+        return process_capabilities.os_version not in versions
+
+    return skipOnCondition(
+        check_os_name, 'OS version "%s" not available.' % versions)
 
 
 def onCIName(name):
