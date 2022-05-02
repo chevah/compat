@@ -106,7 +106,7 @@ def onOSVersion(versions):
         return process_capabilities.os_version not in versions
 
     return skipOnCondition(
-        check_os_name, 'OS version "%s" not available.' % versions)
+        check_os_version, 'OS version "%s" not available.' % versions)
 
 
 def onCIName(name):
