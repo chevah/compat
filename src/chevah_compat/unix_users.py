@@ -396,8 +396,9 @@ class UnixUsers(CompatUsers):
             try:
                 from pam import authenticate as pam_authenticate
                 self._pam_authenticate = pam_authenticate
-            except ImportError:
+            except (ImportError, AssertionError):
                 # We set this to false to not check it again.
+                # On macOS we get AssertionError when failing to load.
                 self._pam_authenticate = False
 
         return self._pam_authenticate
