@@ -2039,6 +2039,65 @@ class TestLocalFilesystemNT(DefaultFilesystemTestCase):
 
         self.assertEqual(initial.mode, after.mode)
 
+    def test_isAbsolutePath(self):
+        """
+        """
+        # Traditional DOS paths.
+        self.assertIsTrue(
+            self.filesystem.isAbsolutePath('c:'))
+        self.assertIsTrue(
+            self.filesystem.isAbsolutePath('c:/'))
+        self.assertIsTrue(
+            self.filesystem.isAbsolutePath('c:\\'))
+        self.assertIsTrue(
+            self.filesystem.isAbsolutePath('c:/some/path'))
+        self.assertIsTrue(
+            self.filesystem.isAbsolutePath('c:\\some\\path'))
+
+        # UNC paths are always absolute.
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            '\\\\system07\\C$\\'))
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            '\\\\.\\UNC\\Server\\Foo.txt'))
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            '\\\\?\\UNC\\Server\\Share\\Foo.txt'))
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            '\\\\.\\Volume{b75e2c83-0000-0000-0000-602f00000000}\\Foo.txt'))
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            '\\\\?\\Volume{b75e2c83-0000-0000-0000-602f00000000}\\Foo.txt'))
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            r'\\.\C:\Test\Foo.txt'))
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            r'\\?\C:\Test\Foo.txt'))
+
+        # Using forward slashes will handled it as relative path.
+        self.assertIsFalse(self.filesystem.isAbsolutePath(
+            '//system07/share-name'))
+
+        # Normal relative path.
+        self.assertIsFalse(self.filesystem.isAbsolutePath(
+            'some/path'))
+        self.assertIsFalse(self.filesystem.isAbsolutePath(
+            r'win\path'))
+        self.assertIsFalse(self.filesystem.isAbsolutePath(
+            r'.\win\path'))
+        self.assertIsFalse(self.filesystem.isAbsolutePath(
+            r'..\win\path'))
+
+        # Crazy Windows API
+        # A relative path from the current directory of the C: drive.
+        self.assertIsFalse(self.filesystem.isAbsolutePath(
+            r'C:Projects\apilibrary\apilibrary.sln'))
+
+        # They look like absolute, but they are default drive,
+        # so we consider them relative.
+        # On WIndows API this is defined as
+        # An absolute path from the root of the current drive.
+        self.assertIsFalse(
+            self.filesystem.isAbsolutePath(r'\default-drive\path'))
+        self.assertIsFalse(
+            self.filesystem.isAbsolutePath('/default/drive/path'))
+
 
 @conditionals.onOSFamily('posix')
 class TestLocalFilesystemUnix(DefaultFilesystemTestCase):
@@ -2085,6 +2144,15 @@ class TestLocalFilesystemUnix(DefaultFilesystemTestCase):
         after = self.filesystem.getAttributes(segments)
 
         self.assertNotEqual(initial.mode, after.mode)
+
+    def test_isAbsolutePath(self):
+        """
+        Only paths starting with forward slash are absolute on Unix.
+        """
+        self.assertIsTrue(self.filesystem.isAbsolutePath('/some/path'))
+        self.assertIsFalse(self.filesystem.isAbsolutePath('some/path'))
+        self.assertIsFalse(self.filesystem.isAbsolutePath(r'c:\win\path'))
+        self.assertIsFalse(self.filesystem.isAbsolutePath(r'\\win-share\path'))
 
 
 class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
@@ -2329,6 +2397,9 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([], segments)
 
+        segments = self.unlocked_filesystem.getSegmentsFromRealPath('c:')
+        self.assertEqual(['C'], segments)
+
         # A drive path.
         path = u'c:\\'
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
@@ -2365,10 +2436,21 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         self.assertEqual(
             ['UNC', 'server-name', 'Path on', 'server'], segments)
 
+        # Long UNC with doth for remote server.
+        path = '\\\\.\\UNC\\server-name\\Path on\\server'
+        segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
+        self.assertEqual(
+            ['UNC', 'server-name', 'Path on', 'server'], segments)
+
         # Long UNC for local files.
         path = '\\\\?\\c:\\Temp\\Other path'
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([u'c', u'Temp', u'Other path'], segments)
+
+        # Long UNC with dot for local files.
+        path = '\\\\.\\c:\\Temp\\Other path'
+        segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
+        self.assertEqual(['c', 'Temp', 'Other path'], segments)
 
     @conditionals.onOSFamily('nt')
     def test_getRealPathFromSegments_fix_bad_path_nt(self):

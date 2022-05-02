@@ -138,7 +138,7 @@ jobs:
         ./brink.sh deps
         chown -R chevah .
 
-    - uses: twisted/python-info-action@v1
+    - uses: chevah/python-info-action@v1
       with:
         python-path: /home/chevah/$CHEVAH_REPO/build-$CHEVAH_REPO/bin/python
 

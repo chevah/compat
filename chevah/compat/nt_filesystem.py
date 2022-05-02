@@ -251,8 +251,27 @@ class NTFilesystem(PosixFilesystemBase):
     def isAbsolutePath(self, path):
         """
         See `ILocalFilesystem`.
+
+        More info about Windows paths at:
+        https://docs.microsoft.com/en-us/dotnet/standard/io/file-path-formats
         """
         if path.startswith('\\\\'):
+            return True
+
+        if len(path) == 1:
+            # Single drive.
+            return True
+
+        if path[0] in ['\\', '/']:
+            # Relative path to the current drive.
+            # Windows call it absolute.
+            # We consider it relative.
+            return False
+
+        if path.startswith('\\\\'):
+            return True
+
+        if len(path) == 2 and path[1] == ':':
             return True
 
         return os.path.isabs(path)
@@ -288,6 +307,10 @@ class NTFilesystem(PosixFilesystemBase):
         head = True
 
         if path.startswith('\\\\?\\'):
+            # We have a long UNC and we normalize.
+            path = path[4:]
+
+        if path.startswith('\\\\.\\'):
             # We have a long UNC and we normalize.
             path = path[4:]
 

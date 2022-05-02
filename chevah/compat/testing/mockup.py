@@ -59,9 +59,15 @@ class SanitizeNameMixin(object):
         """
         Return name sanitized for current OS.
         """
+        from chevah.compat.testing.testcase import ChevahTestCase
         os_name = process_capabilities.os_name
+        os_version = ChevahTestCase.os_version
         if os_name in ['aix', 'hpux', 'freebsd', 'openbsd']:
             return _sanitize_name_legacy_unix(name).decode('utf-8')
+        elif os_version in ['osx-10.16']:
+            # It looks like macOS 11 can't handle full Unix group names.
+            macosname = _sanitize_name_legacy_unix(name).decode('utf-8')
+            return macosname.replace('_', 'Z')
         elif os_name == 'windows':
             return _sanitize_name_windows(name).decode('utf-8')
 
