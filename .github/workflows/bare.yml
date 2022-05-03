@@ -160,7 +160,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ windows-2019, windows-2022 ]
+        # For now the Windows-2022 VM from Github can't run our build.
+        # To be fixed in a separate PR.
+        runs-on: [ windows-2019 ]
     runs-on: ${{ matrix.runs-on }}
 
     steps:

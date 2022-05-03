@@ -153,12 +153,6 @@ class NTFilesystem(PosixFilesystemBase):
         lever API for accessing the filesystem.'''
         return path
 
-    def getAbsolutePath(self, path):
-        """
-        Always use unicode on Windows.
-        """
-        return os.path.abspath(path)
-
     def _getLockedPathFromSegments(self, segments):
         '''
         Return a path for segments making sure the resulting path is not
@@ -276,6 +270,12 @@ class NTFilesystem(PosixFilesystemBase):
 
         return os.path.isabs(path)
 
+    def _getAbsolutePath(self, path):
+        """
+        Return the absolute path.
+        """
+        return os.path.join(os.getcwd(), os.path.normpath(path))
+
     def getSegmentsFromRealPath(self, path):
         """
         See `ILocalFilesystem`.
@@ -292,10 +292,10 @@ class NTFilesystem(PosixFilesystemBase):
 
         path = text_type(path)
 
-        target = os.path.abspath(path.replace('/', '\\')).lower()
+        target = self._getAbsolutePath(path.replace('/', '\\')).lower()
         for virtual_segments, real_path in self._avatar.virtual_folders:
             real_path = real_path.replace('/', '\\').lower()
-            virtual_root = os.path.abspath(real_path)
+            virtual_root = self._getAbsolutePath(real_path)
             if not target.startswith(virtual_root):
                 # Not a virtual folder.
                 continue
@@ -306,16 +306,12 @@ class NTFilesystem(PosixFilesystemBase):
 
         head = True
 
-        if path.startswith('\\\\?\\'):
-            # We have a long UNC and we normalize.
-            path = path[4:]
-
-        if path.startswith('\\\\.\\'):
-            # We have a long UNC and we normalize.
+        if path.startswith('\\\\?\\') or path.startswith('\\\\.\\'):
+            # We have a UNC in device path format and we normalize.
             path = path[4:]
 
         if self._avatar.lock_in_home_folder:
-            path = os.path.abspath(path)
+            path = self._getAbsolutePath(path)
             self._checkChildPath(self._getRootPath(), path)
             # Locked filesystems have no drive.
             tail = path[len(self._getRootPath()):]
@@ -325,13 +321,13 @@ class NTFilesystem(PosixFilesystemBase):
             if path.startswith('\\\\'):
                 # We have a network share.
                 drive = u'UNC'
-                tail = os.path.abspath(path[1:])
+                tail = os.path.normpath(path[2:])
             elif path.startswith('UNC\\'):
                 # We have a network share cropped from a long UNC.
                 drive = u'UNC'
-                tail = os.path.abspath(path[3:])
+                tail = os.path.normpath(path[4:])
             else:
-                path = os.path.abspath(path)
+                path = self._getAbsolutePath(path)
                 # For unlocked filesystem, we use 'c' as default drive.
                 drive, root_tail = os.path.splitdrive(path)
                 if not drive:

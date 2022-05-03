@@ -1906,10 +1906,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertEqual(2, after.modified)
 
 
-@conditionals.onOSFamily('nt')
-class TestLocalFilesystemNT(DefaultFilesystemTestCase):
+class LocalFilesystemNTMixin(object):
     """
-    Test for default local filesystem with special behavior for Windows.
+    Shared tests for Windows path handling.
     """
 
     def test_rename_file_read_only(self):
@@ -2041,6 +2040,7 @@ class TestLocalFilesystemNT(DefaultFilesystemTestCase):
 
     def test_isAbsolutePath(self):
         """
+        Unit test for detecting which Windows path is absolute.
         """
         # Traditional DOS paths.
         self.assertIsTrue(
@@ -2070,6 +2070,10 @@ class TestLocalFilesystemNT(DefaultFilesystemTestCase):
         self.assertIsTrue(self.filesystem.isAbsolutePath(
             r'\\?\C:\Test\Foo.txt'))
 
+        # Just the share root.
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            '\\\\Server\\Share'))
+
         # Using forward slashes will handled it as relative path.
         self.assertIsFalse(self.filesystem.isAbsolutePath(
             '//system07/share-name'))
@@ -2097,6 +2101,66 @@ class TestLocalFilesystemNT(DefaultFilesystemTestCase):
             self.filesystem.isAbsolutePath(r'\default-drive\path'))
         self.assertIsFalse(
             self.filesystem.isAbsolutePath('/default/drive/path'))
+
+
+class TestLocalFilesystemNTnonDevicePath(
+        DefaultFilesystemTestCase, LocalFilesystemNTMixin):
+    """
+    Test for default local filesystem with special behavior for Windows.
+
+    Running with current working directory which is not defined as a
+    device path.
+
+    os.getcwd() -> C:\\Some\\path
+    """
+    _prev_os_getcwd = ''
+
+    @classmethod
+    def setUpClass(cls):
+        if cls.os_family != 'nt':
+            raise cls.skipTest('Only on Windows.')
+        cls._prev_os_getcwd = os.getcwd()
+        if cls._prev_os_getcwd.startswith('\\\\'):
+            # We have a device path, so force using a non-device path
+            os.chdir(cls._prev_os_getcwd[4:])
+        super(TestLocalFilesystemNTnonDevicePath, cls).setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            super(TestLocalFilesystemNTnonDevicePath, cls).tearDownClass()
+        finally:
+            os.chdir(cls._prev_os_getcwd)
+
+
+class TestLocalFilesystemNTDevicePath(
+        DefaultFilesystemTestCase, LocalFilesystemNTMixin):
+    """
+    Test for default local filesystem with special behavior for Windows.
+
+    Running with current working directory which is defined as a
+    device path.
+    os.getcwd() -> \\\\?\\C:\\Some\\path
+    """
+    _prev_os_getcwd = ''
+
+    @classmethod
+    def setUpClass(cls):
+        if cls.os_family != 'nt':
+            raise cls.skipTest('Only on Windows.')
+
+        cls._prev_os_getcwd = os.getcwd()
+        if not cls._prev_os_getcwd.startswith('\\\\'):
+            # We have a device path, so force using a non-device path
+            os.chdir('\\\\?\\' + cls._prev_os_getcwd)
+        super(TestLocalFilesystemNTDevicePath, cls).setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            super(TestLocalFilesystemNTDevicePath, cls).tearDownClass()
+        finally:
+            os.chdir(cls._prev_os_getcwd)
 
 
 @conditionals.onOSFamily('posix')
@@ -2398,7 +2462,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         self.assertEqual([], segments)
 
         segments = self.unlocked_filesystem.getSegmentsFromRealPath('c:')
-        self.assertEqual(['C'], segments)
+        self.assertEqual(['c'], segments)
 
         # A drive path.
         path = u'c:\\'
