@@ -8,6 +8,11 @@ Release notes for chevah.compat
 * Add `ILocalFilesystem.isAbsolutePath` API.
 * Add `conditionals.onOSVersion` helper.
 * Disable PAM for macOS.
+* Fix handling for path on Windows when the current working directory is a
+  drive path \\?\c:\some\drive-path
+* Make sure the temporary path for the `LocalTestFilesystem` is always
+  accessible event for avatar that are locked inside their home folder
+  and don't have access to the global temporary directory.
 
 
 0.63.0 - 2021-08-09

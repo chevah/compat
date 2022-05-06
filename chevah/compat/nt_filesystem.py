@@ -273,6 +273,9 @@ class NTFilesystem(PosixFilesystemBase):
     def _getAbsolutePath(self, path):
         """
         Return the absolute path.
+
+        The stdlib os.path.abspath goes crazy when the current
+        working directory is a drive path (\\\\?\\C:\\some-drive-path)
         """
         return os.path.join(os.getcwd(), os.path.normpath(path))
 

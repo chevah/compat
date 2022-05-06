@@ -101,7 +101,7 @@ class FilesystemTestingHelpers(object):
 
 class FilesystemTestMixin(FilesystemTestingHelpers):
     """
-    Common tests for filesystem for all OSes..
+    Common tests for filesystem for all OSes.
     """
 
     def test_getSegments_upper_paths(self):
