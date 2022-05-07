@@ -1911,6 +1911,16 @@ class LocalFilesystemNTMixin(object):
     Shared tests for Windows path handling in an unlocked filesystem.
     """
 
+    def test_temp_segments(self):
+        """
+        The temporary segments are the default Windows OS segments
+        """
+        result = self.filesystem.temp_segments
+
+        # We assume that all tests run from drive C
+        # and were we check that the temp segments are for an absolute path.
+        self.assertEqual('C', result[0])
+
     def test_rename_file_read_only(self):
         """
         On Windows, it will rename the file even if it has the read only
@@ -2136,16 +2146,6 @@ class TestLocalFilesystemNTnonDevicePath(
         finally:
             os.chdir(cls._prev_os_getcwd)
 
-    def test_temp_segments(self):
-        """
-        The temporary segments are the default Windows OS segments
-        """
-        result = self.filesystem.temp_segments
-
-        # We assume that all tests run from drive C
-        # and were we check that the temp segments are for an absolute path.
-        self.assertEqual('c', result[0])
-
 
 class TestLocalFilesystemNTDevicePath(
         DefaultFilesystemTestCase, LocalFilesystemNTMixin):
@@ -2175,17 +2175,6 @@ class TestLocalFilesystemNTDevicePath(
             super(TestLocalFilesystemNTDevicePath, cls).tearDownClass()
         finally:
             os.chdir(cls._prev_os_getcwd)
-
-    def test_temp_segments(self):
-        """
-        The temporary segments are the default Windows OS segments
-        """
-        result = self.filesystem.temp_segments
-
-        # We assume that all tests run from drive C
-        # and were we check that the temp segments are for an absolute path.
-        self.assertEqual('UNC', result[0])
-        self.assertEqual('c', result[1])
 
 
 @conditionals.onOSFamily('posix')

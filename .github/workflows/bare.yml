@@ -184,6 +184,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Public coverage
+      if: ${{ !cancelled() }}
       run: sh ./brink.sh codecov_publish
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
