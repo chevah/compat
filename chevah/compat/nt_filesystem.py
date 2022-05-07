@@ -262,9 +262,6 @@ class NTFilesystem(PosixFilesystemBase):
             # We consider it relative.
             return False
 
-        if path.startswith('\\\\'):
-            return True
-
         if len(path) == 2 and path[1] == ':':
             return True
 

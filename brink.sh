@@ -737,7 +737,6 @@ detect_os() {
                             check_linux_glibc
                         fi
                         set_os_if_not_generic "ubuntu" $os_version_chevah
-                        set_os_if_not_generic "lnx" ""
                         ;;
                     alpine)
                         os_version_raw="$VERSION_ID"
