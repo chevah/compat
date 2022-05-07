@@ -1908,7 +1908,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
 class LocalFilesystemNTMixin(object):
     """
-    Shared tests for Windows path handling.
+    Shared tests for Windows path handling in an unlocked filesystem.
     """
 
     def test_rename_file_read_only(self):
@@ -2136,6 +2136,16 @@ class TestLocalFilesystemNTnonDevicePath(
         finally:
             os.chdir(cls._prev_os_getcwd)
 
+    def test_temp_segments(self):
+        """
+        The temporary segments are the default Windows OS segments
+        """
+        result = self.filesystem.temp_segments
+
+        # We assume that all tests run from drive C
+        # and were we check that the temp segments are for an absolute path.
+        self.assertEqual('c', result[0])
+
 
 class TestLocalFilesystemNTDevicePath(
         DefaultFilesystemTestCase, LocalFilesystemNTMixin):
@@ -2165,6 +2175,17 @@ class TestLocalFilesystemNTDevicePath(
             super(TestLocalFilesystemNTDevicePath, cls).tearDownClass()
         finally:
             os.chdir(cls._prev_os_getcwd)
+
+    def test_temp_segments(self):
+        """
+        The temporary segments are the default Windows OS segments
+        """
+        result = self.filesystem.temp_segments
+
+        # We assume that all tests run from drive C
+        # and were we check that the temp segments are for an absolute path.
+        self.assertEqual('UNC', result[0])
+        self.assertEqual('c', result[1])
 
 
 @conditionals.onOSFamily('posix')
@@ -2759,6 +2780,13 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
 
         with self.assertRaises(CompatError):
             self.locked_filesystem.getSegmentsFromRealPath('..\\..\\outside')
+
+    def test_temp_segments(self):
+        """
+        The temporary segments are inside the locked path.
+        """
+        result = self.locked_filesystem.temp_segments
+        self.assertEqual(['__chevah_test_temp__'], result)
 
     @conditionals.onCapability('symbolic_link', True)
     def test_exists_outside_link(self):
