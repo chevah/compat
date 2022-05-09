@@ -81,6 +81,10 @@ jobs:
         sed -i s@^#baseurl=http://mirror.centos.org/\$contentdir/\$releasever/@baseurl=https://vault.centos.org/8.2.2004/@ /etc/yum.repos.d/*.repo
         yum -y upgrade
 
+    - name: Amazon Linux 2022 setup
+      if: matrix.container == 'amazonlinux:2022'
+      run: yum -y install libxcrypt-compat
+
     - name: Yum-based setup
       if: startsWith(matrix.container, 'centos') || startsWith(matrix.container, 'amazon') || startsWith(matrix.container, 'oracle')
       run: yum -y install git tar which sudo
