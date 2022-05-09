@@ -319,8 +319,6 @@ pip_install() {
     rm -rf ${BUILD_FOLDER}/pip-build
     ${PYTHON_BIN} -m \
         pip install \
-            --trusted-host bin.chevah.com \
-            --trusted-host pypi-internal.chevah.com \
             --index-url=$PIP_INDEX_URL \
             --build=${BUILD_FOLDER}/pip-build \
             $1
@@ -734,6 +732,9 @@ detect_os() {
                         # 04 or first two digits are uneven, use generic build.
                         if [ ${os_version_chevah%%04} == ${os_version_chevah} \
                             -o $(( ${os_version_chevah:0:2} % 2 )) -ne 0 ]; then
+                            check_linux_glibc
+                        elif [ ${os_version_chevah} == "2204" ]; then
+                            # OpenSSL 3.0.x not supported by cryptography 3.3.x.
                             check_linux_glibc
                         fi
                         set_os_if_not_generic "ubuntu" $os_version_chevah
