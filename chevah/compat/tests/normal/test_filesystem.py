@@ -221,14 +221,12 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         segments = self.filesystem.temp_segments
         self.assertTrue(self.filesystem.isFolder(segments))
 
+    @conditionals.onOSFamily('nt')
     def test_temp_segments_location_nt(self):
         """
         On Windows for non impersonated account, the temporary folder
         is located inside the user temporary folder and not on c:\temp.
         """
-        if os.name != 'nt':
-            raise self.skipTest()
-
         self.assertNotEqual(
             [u'c', u'temp'], self.filesystem.temp_segments[0:2])
 
@@ -2390,6 +2388,33 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         with self.assertRaises(OSError):
             self.unlocked_filesystem.createFolder(['new-root-element'])
 
+    # This test applies only for windows as the root folder is a meta
+    # folder containing the Local drives.
+    @conditionals.onOSFamily('nt')
+    def test_iterateFolderContent_root_nt(self):
+        """
+        When listing the content for Windows _root_ folder, all local drives
+        are returned as an iterator.
+
+        For us on Windows, _root_ folder is something similar to
+        "My Computer".
+        """
+        result = self.unlocked_filesystem.iterateFolderContent([])
+        # Make sure we have an iterator and not an iterable.
+        content = [next(result)] + list(result)
+
+        # All windows should contain drive C.
+        self.assertContains('C', content)
+
+        parent_content = self.unlocked_filesystem.iterateFolderContent(['..'])
+        self.assertEqual(content, list(parent_content))
+
+        parent_content = self.unlocked_filesystem.iterateFolderContent(['.'])
+        self.assertEqual(content, list(parent_content))
+
+    # This test applies only for windows as the root folder is a meta
+    # folder containing the Local drives.
+    @conditionals.onOSFamily('nt')
     def test_getFolderContent_root_nt(self):
         """
         When listing the content for Windows _root_ folder, all local drives
@@ -2398,10 +2423,6 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         For us on Windows, _root_ folder is something similar to
         "My Computer".
         """
-        # This test applies only for windows as the root folder is a meta
-        # folder containing the Local drives.
-        if os.name != 'nt':
-            raise self.skipTest()
         content = self.unlocked_filesystem.getFolderContent([])
         self.assertTrue(len(content) > 0)
         self.assertContains(u'C', content)
@@ -2412,12 +2433,11 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         parent_content = self.unlocked_filesystem.getFolderContent(['.'])
         self.assertEqual(content, parent_content)
 
+    @conditionals.onOSFamily('nt')
     def test_getFolderContent_root_child_nt(self):
         """
         Check getting folder content for a drive on Windows.
         """
-        if os.name != 'nt':
-            raise self.skipTest()
         content = self.unlocked_filesystem.getFolderContent(['c'])
         self.assertTrue(len(content) > 0)
         self.assertTrue(u'Program Files' in content)
@@ -2443,13 +2463,11 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
             self.unlocked_filesystem.getSegmentsFromRealPath(absolute_path))
         self.assertEqual(absolute_segments, relative_segments)
 
+    @conditionals.onOSFamily('posix')
     def test_getSegmentsFromRealPath_unix(self):
         """
         Check getting real OS path for Unix.
         """
-        if os.name != 'posix':
-            raise self.skipTest()
-
         path = u''
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([], segments)
@@ -2702,13 +2720,12 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
             [u'..', u'a', u'..', u'b'])
         self.assertEqual(_p(u'b'), path)
 
+    @conditionals.onOSFamily('nt')
     def test_getRealPathFromSegments_fix_bad_path_nt(self):
         """
         When Unix folder separators are used for Windows path, the
         filesystem will convert them without any errors or warnings.
         """
-        if os.name != 'nt':
-            raise self.skipTest()
         avatar = DefaultAvatar()
         avatar.home_folder_path = 'c:/Temp'
         avatar.root_folder_path = avatar.home_folder_path

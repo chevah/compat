@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.64.1 - 2022-05-26
+-------------------
+
+* Fix iterateFolderContent on Windows for unlocked accounts when listing the
+  root.
+
+
 0.64.0 - 2022-05-02
 -------------------
 

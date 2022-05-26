@@ -555,6 +555,13 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        if not self._lock_in_home and segments in [[], ['.'], ['..']]:
+            drives = [
+                self._getPlaceholderAttributes([drive])
+                for drive in self._getAllDrives()
+                ]
+            return iter(drives)
+
         try:
             return super(NTFilesystem, self).iterateFolderContent(segments)
         except OSError as error:
@@ -581,27 +588,32 @@ class NTFilesystem(PosixFilesystemBase):
             '''If we are locked in home folder just go with the normal way,
             otherwise if empty folder, parent or current folder is requested,
             just show the ROOT.'''
-            if self._lock_in_home or segments not in [[], ['.'], ['..']]:
-                try:
-                    return super(NTFilesystem, self).getFolderContent(segments)
-                except OSError as error:
-                    if error.errno == errno.EINVAL:
-                        # When path is not a folder EINVAL is raised instead of
-                        # the more specific ENOTDIR.
-                        self._requireFolder(segments)
-                    raise error
+            if not self._lock_in_home and segments in [[], ['.'], ['..']]:
+                return self._getAllDrives()
 
-            # Get Windows drives.
-            raw_drives = win32api.GetLogicalDriveStrings()
-            drives = [
-                drive for drive in raw_drives.split("\000") if drive]
-            result = []
-            for drive in drives:
-                if win32file.GetDriveType(drive) == LOCAL_DRIVE:
-                    drive = drive.strip(':\\')
-                    drive = drive.decode(self.INTERNAL_ENCODING)
-                    result.append(drive)
-            return result
+            try:
+                return super(NTFilesystem, self).getFolderContent(segments)
+            except OSError as error:
+                if error.errno == errno.EINVAL:
+                    # When path is not a folder EINVAL is raised instead of
+                    # the more specific ENOTDIR.
+                    self._requireFolder(segments)
+                raise error
+
+    def _getAllDrives(self):
+        """
+        Return the list of all drives.
+        """
+        raw_drives = win32api.GetLogicalDriveStrings()
+        drives = [
+            drive for drive in raw_drives.split("\000") if drive]
+        result = []
+        for drive in drives:
+            if win32file.GetDriveType(drive) == LOCAL_DRIVE:
+                drive = drive.strip(':\\')
+                drive = drive.decode(self.INTERNAL_ENCODING)
+                result.append(drive)
+        return result
 
     def createFolder(self, segments, recursive=False):
         '''See `ILocalFilesystem`.'''

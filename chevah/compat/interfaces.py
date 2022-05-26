@@ -516,7 +516,7 @@ class ILocalFilesystem(Interface):
 
     def iterateFolderContent(segments):
         """
-        Return an iterator for the name of each direct child of folder.
+        Return an iterator with the IFileAttributes of each direct child.
         """
 
     def getStatus(segments):
