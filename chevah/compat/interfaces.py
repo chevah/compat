@@ -421,7 +421,7 @@ class ILocalFilesystem(Interface):
 
     def isAbsolutePath(path):
         """
-        Return True if path points to an asbolute path.
+        Return True if path points to an absolute path.
         """
 
     def isFile(segments):
