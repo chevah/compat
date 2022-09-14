@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+unreleased
+-------------------
+
+
+* `temp_segments` on Windows now works for locked filesyste,
+
+
 0.64.2 - 2022-09-14
 -------------------
 

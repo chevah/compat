@@ -127,11 +127,17 @@ class NTFilesystem(PosixFilesystemBase):
         # impersonated account don't have access to it.
         if not isinstance(self._avatar, NTDefaultAvatar):
             return [u'c', u'temp']
+
+        if self.avatar.lock_in_home_folder:
+            # Similar to posix_filesystem
+            temp_path = os.path.join(
+                self.avatar.home_folder_path, '__chevah_test_temp__')
         else:
             # Default tempfile.gettempdir() return path with short names,
             # due to win32api.GetTempPath().
-            return self.getSegmentsFromRealPath(
-                win32api.GetLongPathName(win32api.GetTempPath()))
+            temp_path = win32api.GetLongPathName(win32api.GetTempPath())
+
+        return self.getSegmentsFromRealPath(temp_path)
 
     @property
     def installation_segments(self):
