@@ -2404,16 +2404,16 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         """
         result = self.unlocked_filesystem.iterateFolderContent([])
         # Make sure we have an iterator and not an iterable.
-        content = [next(result)] + list(result)
+        members = [next(result)] + list(result)
 
         # All windows should contain drive C.
-        self.assertContains('C', content)
+        self.assertContains('C', [c.name for c in members])
 
         parent_content = self.unlocked_filesystem.iterateFolderContent(['..'])
-        self.assertEqual(content, list(parent_content))
+        self.assertEqual(members, list(parent_content))
 
         parent_content = self.unlocked_filesystem.iterateFolderContent(['.'])
-        self.assertEqual(content, list(parent_content))
+        self.assertEqual(members, list(parent_content))
 
     # This test applies only for windows as the root folder is a meta
     # folder containing the Local drives.
