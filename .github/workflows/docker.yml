@@ -41,15 +41,17 @@ jobs:
           - alpine:3.14
           - amazonlinux:2018.03
           - amazonlinux:2
+          - amazonlinux:2022
           # CentOS 5.11 setup was saved as an image pushed to Docker Hub. See
           # the Overview section at https://hub.docker.com/r/proatria/centos.
           - proatria/centos:5.11-chevah1
           - centos:6.10
           - centos:7
           - centos:8.2.2004
-          - centos:8
+          - oraclelinux:8
           - ubuntu:14.04
           - ubuntu:16.04
+          - ubuntu:22.04
 
     # ubuntu-latest is GitHub's newest well-suported Linux distro.
     runs-on: ubuntu-latest
@@ -79,8 +81,12 @@ jobs:
         sed -i s@^#baseurl=http://mirror.centos.org/\$contentdir/\$releasever/@baseurl=https://vault.centos.org/8.2.2004/@ /etc/yum.repos.d/*.repo
         yum -y upgrade
 
+    - name: Amazon Linux 2022 setup
+      if: matrix.container == 'amazonlinux:2022'
+      run: yum -y install libxcrypt-compat
+
     - name: Yum-based setup
-      if: startsWith(matrix.container, 'centos') || startsWith(matrix.container, 'amazon')
+      if: startsWith(matrix.container, 'centos') || startsWith(matrix.container, 'amazon') || startsWith(matrix.container, 'oracle')
       run: yum -y install git tar which sudo
 
     - name: Ubuntu setup
@@ -138,7 +144,7 @@ jobs:
         ./brink.sh deps
         chown -R chevah .
 
-    - uses: twisted/python-info-action@v1
+    - uses: chevah/python-info-action@v1
       with:
         python-path: /home/chevah/$CHEVAH_REPO/build-$CHEVAH_REPO/bin/python
 

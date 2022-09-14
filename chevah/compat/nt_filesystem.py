@@ -127,11 +127,17 @@ class NTFilesystem(PosixFilesystemBase):
         # impersonated account don't have access to it.
         if not isinstance(self._avatar, NTDefaultAvatar):
             return [u'c', u'temp']
+
+        if self.avatar.lock_in_home_folder:
+            # Similar to posix_filesystem
+            temp_path = os.path.join(
+                self.avatar.home_folder_path, '__chevah_test_temp__')
         else:
             # Default tempfile.gettempdir() return path with short names,
             # due to win32api.GetTempPath().
-            return self.getSegmentsFromRealPath(
-                win32api.GetLongPathName(win32api.GetTempPath()))
+            temp_path = win32api.GetLongPathName(win32api.GetTempPath())
+
+        return self.getSegmentsFromRealPath(temp_path)
 
     @property
     def installation_segments(self):
@@ -152,12 +158,6 @@ class NTFilesystem(PosixFilesystemBase):
         '''Return the encoded representation of the path, use in the lower
         lever API for accessing the filesystem.'''
         return path
-
-    def getAbsolutePath(self, path):
-        """
-        Always use unicode on Windows.
-        """
-        return os.path.abspath(path)
 
     def _getLockedPathFromSegments(self, segments):
         '''
@@ -248,6 +248,43 @@ class NTFilesystem(PosixFilesystemBase):
             raise OSError(
                 errno.EINVAL, message.encode('utf-8'), path.encode('utf-8'))
 
+    def isAbsolutePath(self, path):
+        """
+        See `ILocalFilesystem`.
+
+        More info about Windows paths at:
+        https://docs.microsoft.com/en-us/dotnet/standard/io/file-path-formats
+        """
+        if not path:
+            return False
+
+        if path.startswith('\\\\'):
+            return True
+
+        if len(path) == 1:
+            # Single drive.
+            return True
+
+        if path[0] in ['\\', '/']:
+            # Relative path to the current drive.
+            # Windows call it absolute.
+            # We consider it relative.
+            return False
+
+        if len(path) == 2 and path[1] == ':':
+            return True
+
+        return os.path.isabs(path)
+
+    def _getAbsolutePath(self, path):
+        """
+        Return the absolute path.
+
+        The stdlib os.path.abspath goes crazy when the current
+        working directory is a drive path (\\\\?\\C:\\some-drive-path)
+        """
+        return os.path.join(os.getcwd(), os.path.normpath(path))
+
     def getSegmentsFromRealPath(self, path):
         """
         See `ILocalFilesystem`.
@@ -264,10 +301,10 @@ class NTFilesystem(PosixFilesystemBase):
 
         path = text_type(path)
 
-        target = os.path.abspath(path.replace('/', '\\')).lower()
+        target = self._getAbsolutePath(path.replace('/', '\\')).lower()
         for virtual_segments, real_path in self._avatar.virtual_folders:
             real_path = real_path.replace('/', '\\').lower()
-            virtual_root = os.path.abspath(real_path)
+            virtual_root = self._getAbsolutePath(real_path)
             if not target.startswith(virtual_root):
                 # Not a virtual folder.
                 continue
@@ -278,12 +315,12 @@ class NTFilesystem(PosixFilesystemBase):
 
         head = True
 
-        if path.startswith('\\\\?\\'):
-            # We have a long UNC and we normalize.
+        if path.startswith('\\\\?\\') or path.startswith('\\\\.\\'):
+            # We have a UNC in device path format and we normalize.
             path = path[4:]
 
         if self._avatar.lock_in_home_folder:
-            path = os.path.abspath(path)
+            path = self._getAbsolutePath(path)
             self._checkChildPath(self._getRootPath(), path)
             # Locked filesystems have no drive.
             tail = path[len(self._getRootPath()):]
@@ -293,13 +330,13 @@ class NTFilesystem(PosixFilesystemBase):
             if path.startswith('\\\\'):
                 # We have a network share.
                 drive = u'UNC'
-                tail = os.path.abspath(path[1:])
+                tail = os.path.normpath(path[2:])
             elif path.startswith('UNC\\'):
                 # We have a network share cropped from a long UNC.
                 drive = u'UNC'
-                tail = os.path.abspath(path[3:])
+                tail = os.path.normpath(path[4:])
             else:
-                path = os.path.abspath(path)
+                path = self._getAbsolutePath(path)
                 # For unlocked filesystem, we use 'c' as default drive.
                 drive, root_tail = os.path.splitdrive(path)
                 if not drive:
@@ -527,6 +564,13 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        if not self._lock_in_home and segments in [[], ['.'], ['..']]:
+            drives = [
+                self._getPlaceholderAttributes([drive])
+                for drive in self._getAllDrives()
+                ]
+            return iter(drives)
+
         try:
             return super(NTFilesystem, self).iterateFolderContent(segments)
         except OSError as error:
@@ -553,27 +597,32 @@ class NTFilesystem(PosixFilesystemBase):
             '''If we are locked in home folder just go with the normal way,
             otherwise if empty folder, parent or current folder is requested,
             just show the ROOT.'''
-            if self._lock_in_home or segments not in [[], ['.'], ['..']]:
-                try:
-                    return super(NTFilesystem, self).getFolderContent(segments)
-                except OSError as error:
-                    if error.errno == errno.EINVAL:
-                        # When path is not a folder EINVAL is raised instead of
-                        # the more specific ENOTDIR.
-                        self._requireFolder(segments)
-                    raise error
+            if not self._lock_in_home and segments in [[], ['.'], ['..']]:
+                return self._getAllDrives()
 
-            # Get Windows drives.
-            raw_drives = win32api.GetLogicalDriveStrings()
-            drives = [
-                drive for drive in raw_drives.split("\000") if drive]
-            result = []
-            for drive in drives:
-                if win32file.GetDriveType(drive) == LOCAL_DRIVE:
-                    drive = drive.strip(':\\')
-                    drive = drive.decode(self.INTERNAL_ENCODING)
-                    result.append(drive)
-            return result
+            try:
+                return super(NTFilesystem, self).getFolderContent(segments)
+            except OSError as error:
+                if error.errno == errno.EINVAL:
+                    # When path is not a folder EINVAL is raised instead of
+                    # the more specific ENOTDIR.
+                    self._requireFolder(segments)
+                raise error
+
+    def _getAllDrives(self):
+        """
+        Return the list of all drives.
+        """
+        raw_drives = win32api.GetLogicalDriveStrings()
+        drives = [
+            drive for drive in raw_drives.split("\000") if drive]
+        result = []
+        for drive in drives:
+            if win32file.GetDriveType(drive) == LOCAL_DRIVE:
+                drive = drive.strip(':\\')
+                drive = drive.decode(self.INTERNAL_ENCODING)
+                result.append(drive)
+        return result
 
     def createFolder(self, segments, recursive=False):
         '''See `ILocalFilesystem`.'''

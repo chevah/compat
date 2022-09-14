@@ -195,8 +195,13 @@ class PosixFilesystemBase(object):
     @property
     def temp_segments(self):
         '''See `ILocalFilesystem`.'''
-        import tempfile
-        temporary_folder = tempfile.gettempdir()
+        if self.avatar.lock_in_home_folder:
+            temporary_folder = os.path.join(
+                self.avatar.home_folder_path, '__chevah_test_temp__')
+        else:
+            # Go with general temporary directory.
+            import tempfile
+            temporary_folder = tempfile.gettempdir()
         return self.getSegmentsFromRealPath(temporary_folder)
 
     def getRealPathFromSegments(self, segments, include_virtual=True):
@@ -352,6 +357,10 @@ class PosixFilesystemBase(object):
             absolute_path = absolute_path.decode(self.INTERNAL_ENCODING)
 
         return absolute_path
+
+    def isAbsolutePath(self, path):
+        '''See `ILocalFilesystem`.'''
+        return os.path.isabs(path)
 
     def isFolder(self, segments):
         '''See `ILocalFilesystem`.'''

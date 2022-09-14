@@ -419,6 +419,11 @@ class ILocalFilesystem(Interface):
         `path` is a ChevahPath and can be a relative path of the home folder.
         """
 
+    def isAbsolutePath(path):
+        """
+        Return True if path points to an absolute path.
+        """
+
     def isFile(segments):
         """
         Return True if segments points to a file.
@@ -511,7 +516,7 @@ class ILocalFilesystem(Interface):
 
     def iterateFolderContent(segments):
         """
-        Return an iterator for the name of each direct child of folder.
+        Return an iterator with the IFileAttributes of each direct child.
         """
 
     def getStatus(segments):
