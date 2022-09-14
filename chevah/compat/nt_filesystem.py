@@ -249,6 +249,9 @@ class NTFilesystem(PosixFilesystemBase):
         More info about Windows paths at:
         https://docs.microsoft.com/en-us/dotnet/standard/io/file-path-formats
         """
+        if not path:
+            return False
+
         if path.startswith('\\\\'):
             return True
 

@@ -2084,6 +2084,9 @@ class LocalFilesystemNTMixin(object):
         self.assertIsTrue(self.filesystem.isAbsolutePath(
             '\\\\Server\\Share'))
 
+        # Empty path is not absolute.
+        self.assertIsFalse(self.filesystem.isAbsolutePath(''))
+
         # Using forward slashes will handled it as relative path.
         self.assertIsFalse(self.filesystem.isAbsolutePath(
             '//system07/share-name'))

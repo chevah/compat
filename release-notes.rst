@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.64.2 - 2022-09-14
+-------------------
+
+* `isAbsolutePath` returns False for an empty string instead of raising an error.
+
+
 0.64.1 - 2022-05-26
 -------------------
 
