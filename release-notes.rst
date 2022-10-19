@@ -1,6 +1,11 @@
 Release notes for chevah.compat
 ===============================
 
+0.64.4 - 2022-10-17
+-------------------
+
+* The `getGroupForUser` was fixed to work with secondary domains.
+
 
 0.64.3 - 2022-09-14
 -------------------

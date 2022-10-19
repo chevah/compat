@@ -146,10 +146,13 @@ class NTUsers(CompatUsers):
         Create the local profile for specified `username`.
         """
         try:
-            primary_domain_controller, name = self._parseUPN(username)
+            with self.executeAsUser(username, token):
+                # We need to run as the user, for the case in which the
+                # user in not in the primary domain.
+                primary_domain_controller, name = self._parseUPN(username)
 
-            user_info_4 = win32net.NetUserGetInfo(
-                primary_domain_controller, name, 4)
+                user_info_4 = win32net.NetUserGetInfo(
+                    primary_domain_controller, name, 4)
 
             profile_path = user_info_4['profile']
             # LoadUserProfile doesn't like an empty string.
@@ -200,17 +203,23 @@ class NTUsers(CompatUsers):
         if not groups:
             raise ValueError('Groups for validation can\'t be empty.')
 
-        primary_domain_controller, name = self._parseUPN(username)
+        with self.executeAsUser(username, token):
+            # We run these operations as the user, for the case in which the
+            # user is in secondary domain.
+            # Here `primary_domain_controller` can be the primary domain for the
+            # secondary domain :)
+            primary_domain_controller, name = self._parseUPN(username)
 
-        for group in groups:
-            try:
-                group_sid, group_domain, group_type = (
-                    win32security.LookupAccountName(
-                        primary_domain_controller, group))
-            except (win32security.error, pywintypes.error):
-                continue
-            if win32security.CheckTokenMembership(token, group_sid):
-                return group
+            for group in groups:
+                try:
+                    group_sid, group_domain, group_type = (
+                        win32security.LookupAccountName(
+                            primary_domain_controller, group))
+                except (win32security.error, pywintypes.error):
+                    continue
+                if win32security.CheckTokenMembership(token, group_sid):
+                    return group
+
         return None
 
     def authenticateWithUsernameAndPassword(self, username, password):
