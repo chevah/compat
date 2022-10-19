@@ -38,7 +38,8 @@ jobs:
       fail-fast: false
       matrix:
         container:
-          - alpine:3.14
+          - alpine:3.12
+          - alpine:3.16
           - amazonlinux:2018.03
           - amazonlinux:2
           - amazonlinux:2022
@@ -49,8 +50,9 @@ jobs:
           - centos:7
           - centos:8.2.2004
           - oraclelinux:8
+          - rockylinux:9
           - ubuntu:14.04
-          - ubuntu:16.04
+          - ubuntu:18.04
           - ubuntu:22.04
 
     # ubuntu-latest is GitHub's newest well-suported Linux distro.
