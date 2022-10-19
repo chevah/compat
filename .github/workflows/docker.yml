@@ -88,7 +88,7 @@ jobs:
       run: yum -y install libxcrypt-compat
 
     - name: Yum-based setup
-      if: startsWith(matrix.container, 'centos') || startsWith(matrix.container, 'amazon') || startsWith(matrix.container, 'oracle')
+      if: startsWith(matrix.container, 'centos') || startsWith(matrix.container, 'amazon') || startsWith(matrix.container, 'oracle') || startsWith(matrix.container, 'rocky')
       run: yum -y install git tar which sudo
 
     - name: Ubuntu setup
