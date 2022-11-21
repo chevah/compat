@@ -434,7 +434,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         Check getGroupForUser on Unix.
         """
-        if os.name != 'posix':
+        if self.os_name != 'linux':
             raise self.skipTest()
 
         groups = [u'other-non-group', TEST_ACCOUNT_GROUP, u'here-we-go']

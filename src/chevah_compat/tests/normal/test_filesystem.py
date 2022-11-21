@@ -98,7 +98,7 @@ class FilesystemTestingHelpers(object):
 
 class FilesystemTestMixin(FilesystemTestingHelpers):
     """
-    Common tests for filesystem for all OSes..
+    Common tests for filesystem for all OSes.
     """
 
     def test_getSegments_upper_paths(self):
@@ -218,14 +218,12 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         segments = self.filesystem.temp_segments
         self.assertTrue(self.filesystem.isFolder(segments))
 
+    @conditionals.onOSFamily('nt')
     def test_temp_segments_location_nt(self):
         """
         On Windows for non impersonated account, the temporary folder
         is located inside the user temporary folder and not on c:\temp.
         """
-        if os.name != 'nt':
-            raise self.skipTest()
-
         self.assertNotEqual(
             [u'c', u'temp'], self.filesystem.temp_segments[0:2])
 
@@ -1886,11 +1884,20 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertEqual(2, after.modified)
 
 
-@conditionals.onOSFamily('nt')
-class TestLocalFilesystemNT(DefaultFilesystemTestCase):
+class LocalFilesystemNTMixin(object):
     """
-    Test for default local filesystem with special behavior for Windows.
+    Shared tests for Windows path handling in an unlocked filesystem.
     """
+
+    def test_temp_segments(self):
+        """
+        The temporary segments are the default Windows OS segments
+        """
+        result = self.filesystem.temp_segments
+
+        # We assume that all tests run from drive C
+        # and were we check that the temp segments are for an absolute path.
+        self.assertEqual('C', result[0])
 
     def test_rename_file_read_only(self):
         """
@@ -2019,6 +2026,137 @@ class TestLocalFilesystemNT(DefaultFilesystemTestCase):
 
         self.assertEqual(initial.mode, after.mode)
 
+    def test_isAbsolutePath(self):
+        """
+        Unit test for detecting which Windows path is absolute.
+        """
+        # Traditional DOS paths.
+        self.assertIsTrue(
+            self.filesystem.isAbsolutePath('c'))
+        self.assertIsTrue(
+            self.filesystem.isAbsolutePath('c:'))
+        self.assertIsTrue(
+            self.filesystem.isAbsolutePath('c:/'))
+        self.assertIsTrue(
+            self.filesystem.isAbsolutePath('c:\\'))
+        self.assertIsTrue(
+            self.filesystem.isAbsolutePath('c:/some/path'))
+        self.assertIsTrue(
+            self.filesystem.isAbsolutePath('c:\\some\\path'))
+
+        # UNC paths are always absolute.
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            '\\\\system07\\C$\\'))
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            '\\\\.\\UNC\\Server\\Foo.txt'))
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            '\\\\?\\UNC\\Server\\Share\\Foo.txt'))
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            '\\\\.\\Volume{b75e2c83-0000-0000-0000-602f00000000}\\Foo.txt'))
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            '\\\\?\\Volume{b75e2c83-0000-0000-0000-602f00000000}\\Foo.txt'))
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            r'\\.\C:\Test\Foo.txt'))
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            r'\\?\C:\Test\Foo.txt'))
+
+        # Just the share root.
+        self.assertIsTrue(self.filesystem.isAbsolutePath(
+            '\\\\Server\\Share'))
+
+        # Empty path is not absolute.
+        self.assertIsFalse(self.filesystem.isAbsolutePath(''))
+
+        # Using forward slashes will handled it as relative path.
+        self.assertIsFalse(self.filesystem.isAbsolutePath(
+            '//system07/share-name'))
+
+        # Normal relative path.
+        self.assertIsFalse(self.filesystem.isAbsolutePath(
+            'some/path'))
+        self.assertIsFalse(self.filesystem.isAbsolutePath(
+            r'win\path'))
+        self.assertIsFalse(self.filesystem.isAbsolutePath(
+            r'.\win\path'))
+        self.assertIsFalse(self.filesystem.isAbsolutePath(
+            r'..\win\path'))
+
+        # Crazy Windows API
+        # A relative path from the current directory of the C: drive.
+        self.assertIsFalse(self.filesystem.isAbsolutePath(
+            r'C:Projects\apilibrary\apilibrary.sln'))
+
+        # They look like absolute, but they are default drive,
+        # so we consider them relative.
+        # On WIndows API this is defined as
+        # An absolute path from the root of the current drive.
+        self.assertIsFalse(
+            self.filesystem.isAbsolutePath(r'\default-drive\path'))
+        self.assertIsFalse(
+            self.filesystem.isAbsolutePath('/default/drive/path'))
+
+
+class TestLocalFilesystemNTnonDevicePath(
+        DefaultFilesystemTestCase, LocalFilesystemNTMixin):
+    """
+    Test for default local filesystem with special behavior for Windows.
+
+    Running with current working directory which is not defined as a
+    device path.
+
+    os.getcwd() -> C:\\Some\\path
+    """
+    _prev_os_getcwd = ''
+
+    @classmethod
+    def setUpClass(cls):
+        if cls.os_family != 'nt':
+            raise cls.skipTest('Only on Windows.')
+        cls._prev_os_getcwd = os.getcwd()
+        if cls._prev_os_getcwd.startswith('\\\\'):  # noqa:cover
+            # We have a device path, so force using a non-device path
+            # Most of the time, tests are executed from a process
+            # that already has a DOS path and not a device path.
+            os.chdir(cls._prev_os_getcwd[4:])
+        super(TestLocalFilesystemNTnonDevicePath, cls).setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            super(TestLocalFilesystemNTnonDevicePath, cls).tearDownClass()
+        finally:
+            os.chdir(cls._prev_os_getcwd)
+
+
+class TestLocalFilesystemNTDevicePath(
+        DefaultFilesystemTestCase, LocalFilesystemNTMixin):
+    """
+    Test for default local filesystem with special behavior for Windows.
+
+    Running with current working directory which is defined as a
+    device path.
+    os.getcwd() -> \\\\?\\C:\\Some\\path
+    """
+    _prev_os_getcwd = ''
+
+    @classmethod
+    def setUpClass(cls):
+        if cls.os_family != 'nt':
+            raise cls.skipTest('Only on Windows.')
+
+        cls._prev_os_getcwd = os.getcwd()
+        if not cls._prev_os_getcwd.startswith('\\\\'):
+            # We have a device path, so force using a non-device path
+            os.chdir('\\\\?\\' + cls._prev_os_getcwd)
+        super(TestLocalFilesystemNTDevicePath, cls).setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            super(TestLocalFilesystemNTDevicePath, cls).tearDownClass()
+        finally:
+            os.chdir(cls._prev_os_getcwd)
+
 
 @conditionals.onOSFamily('posix')
 class TestLocalFilesystemUnix(DefaultFilesystemTestCase):
@@ -2065,6 +2203,15 @@ class TestLocalFilesystemUnix(DefaultFilesystemTestCase):
         after = self.filesystem.getAttributes(segments)
 
         self.assertNotEqual(initial.mode, after.mode)
+
+    def test_isAbsolutePath(self):
+        """
+        Only paths starting with forward slash are absolute on Unix.
+        """
+        self.assertIsTrue(self.filesystem.isAbsolutePath('/some/path'))
+        self.assertIsFalse(self.filesystem.isAbsolutePath('some/path'))
+        self.assertIsFalse(self.filesystem.isAbsolutePath(r'c:\win\path'))
+        self.assertIsFalse(self.filesystem.isAbsolutePath(r'\\win-share\path'))
 
 
 class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
@@ -2224,6 +2371,33 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         with self.assertRaises(OSError):
             self.unlocked_filesystem.createFolder(['new-root-element'])
 
+    # This test applies only for windows as the root folder is a meta
+    # folder containing the Local drives.
+    @conditionals.onOSFamily('nt')
+    def test_iterateFolderContent_root_nt(self):
+        """
+        When listing the content for Windows _root_ folder, all local drives
+        are returned as an iterator.
+
+        For us on Windows, _root_ folder is something similar to
+        "My Computer".
+        """
+        result = self.unlocked_filesystem.iterateFolderContent([])
+        # Make sure we have an iterator and not an iterable.
+        members = [next(result)] + list(result)
+
+        # All windows should contain drive C.
+        self.assertContains('C', [c.name for c in members])
+
+        parent_content = self.unlocked_filesystem.iterateFolderContent(['..'])
+        self.assertEqual(members, list(parent_content))
+
+        parent_content = self.unlocked_filesystem.iterateFolderContent(['.'])
+        self.assertEqual(members, list(parent_content))
+
+    # This test applies only for windows as the root folder is a meta
+    # folder containing the Local drives.
+    @conditionals.onOSFamily('nt')
     def test_getFolderContent_root_nt(self):
         """
         When listing the content for Windows _root_ folder, all local drives
@@ -2232,10 +2406,6 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         For us on Windows, _root_ folder is something similar to
         "My Computer".
         """
-        # This test applies only for windows as the root folder is a meta
-        # folder containing the Local drives.
-        if os.name != 'nt':
-            raise self.skipTest()
         content = self.unlocked_filesystem.getFolderContent([])
         self.assertTrue(len(content) > 0)
         self.assertContains(u'C', content)
@@ -2246,12 +2416,11 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         parent_content = self.unlocked_filesystem.getFolderContent(['.'])
         self.assertEqual(content, parent_content)
 
+    @conditionals.onOSFamily('nt')
     def test_getFolderContent_root_child_nt(self):
         """
         Check getting folder content for a drive on Windows.
         """
-        if os.name != 'nt':
-            raise self.skipTest()
         content = self.unlocked_filesystem.getFolderContent(['c'])
         self.assertTrue(len(content) > 0)
         self.assertTrue(u'Program Files' in content)
@@ -2277,13 +2446,11 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
             self.unlocked_filesystem.getSegmentsFromRealPath(absolute_path))
         self.assertEqual(absolute_segments, relative_segments)
 
+    @conditionals.onOSFamily('posix')
     def test_getSegmentsFromRealPath_unix(self):
         """
         Check getting real OS path for Unix.
         """
-        if os.name != 'posix':
-            raise self.skipTest()
-
         path = u''
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([], segments)
@@ -2308,6 +2475,9 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         path = u''
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([], segments)
+
+        segments = self.unlocked_filesystem.getSegmentsFromRealPath('c:')
+        self.assertEqual(['c'], segments)
 
         # A drive path.
         path = u'c:\\'
@@ -2345,10 +2515,21 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         self.assertEqual(
             ['UNC', 'server-name', 'Path on', 'server'], segments)
 
+        # Long UNC with doth for remote server.
+        path = '\\\\.\\UNC\\server-name\\Path on\\server'
+        segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
+        self.assertEqual(
+            ['UNC', 'server-name', 'Path on', 'server'], segments)
+
         # Long UNC for local files.
         path = '\\\\?\\c:\\Temp\\Other path'
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
         self.assertEqual([u'c', u'Temp', u'Other path'], segments)
+
+        # Long UNC with dot for local files.
+        path = '\\\\.\\c:\\Temp\\Other path'
+        segments = self.unlocked_filesystem.getSegmentsFromRealPath(path)
+        self.assertEqual(['c', 'Temp', 'Other path'], segments)
 
     @conditionals.onOSFamily('nt')
     def test_getRealPathFromSegments_fix_bad_path_nt(self):
@@ -2522,13 +2703,12 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
             [u'..', u'a', u'..', u'b'])
         self.assertEqual(_p(u'b'), path)
 
+    @conditionals.onOSFamily('nt')
     def test_getRealPathFromSegments_fix_bad_path_nt(self):
         """
         When Unix folder separators are used for Windows path, the
         filesystem will convert them without any errors or warnings.
         """
-        if os.name != 'nt':
-            raise self.skipTest()
         avatar = DefaultAvatar()
         avatar.home_folder_path = 'c:/Temp'
         avatar.root_folder_path = avatar.home_folder_path
@@ -2589,6 +2769,13 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
 
         with self.assertRaises(CompatError):
             self.locked_filesystem.getSegmentsFromRealPath('..\\..\\outside')
+
+    def test_temp_segments(self):
+        """
+        The temporary segments are inside the locked path.
+        """
+        result = self.locked_filesystem.temp_segments
+        self.assertEqual(['__chevah_test_temp__'], result)
 
     @conditionals.onCapability('symbolic_link', True)
     def test_exists_outside_link(self):

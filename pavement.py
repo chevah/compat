@@ -138,11 +138,11 @@ SETUP['test']['package'] = 'chevah_compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = [
     '--with-randomly',
-    '--with-timer',
-    '--with-run-reporter',
-    '--with-memory-usage',
+    #'--with-timer',
+    #'--with-run-reporter',
+    #'--with-memory-usage',
     ]
-SETUP['pypi']['index_url'] = os.environ['PIP_INDEX']
+SETUP['pypi']['index_url'] = os.environ['PIP_INDEX_URL']
 
 
 def _set_umask(mask):

@@ -2,6 +2,39 @@ Release notes for chevah.compat
 ===============================
 
 
+0.64.3 - 2022-09-14
+-------------------
+
+
+* `temp_segments` on Windows now works for locked filesystems,
+
+
+0.64.2 - 2022-09-14
+-------------------
+
+* `isAbsolutePath` returns False for an empty string instead of raising an error.
+
+
+0.64.1 - 2022-05-26
+-------------------
+
+* Fix iterateFolderContent on Windows for unlocked accounts when listing the
+  root.
+
+
+0.64.0 - 2022-05-02
+-------------------
+
+* Add `ILocalFilesystem.isAbsolutePath` API.
+* Add `conditionals.onOSVersion` helper.
+* Disable PAM for macOS.
+* Fix handling for path on Windows when the current working directory is a
+  drive path \\?\c:\some\drive-path
+* Make sure the temporary path for the `LocalTestFilesystem` is always
+  accessible event for avatar that are locked inside their home folder
+  and don't have access to the global temporary directory.
+
+
 0.63.0 - 2021-08-09
 -------------------
 

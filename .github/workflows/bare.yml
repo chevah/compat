@@ -50,7 +50,7 @@ jobs:
     - name: Deps
       run: ./brink.sh deps
 
-    - uses: twisted/python-info-action@v1
+    - uses: chevah/python-info-action@v1
       with:
         python-path: build-compat/bin/python
 
@@ -64,7 +64,7 @@ jobs:
 
     - name: Tmate debug on failure
       if: failure() && env.TMATE_DEBUG == 'yes'
-      uses: mxschmitt/action-tmate@v3
+      uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
 
@@ -103,7 +103,7 @@ jobs:
 
     - name: Tmate debug on failure
       if: failure() && env.TMATE_DEBUG == 'yes'
-      uses: mxschmitt/action-tmate@v3
+      uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
 
@@ -114,7 +114,11 @@ jobs:
 
 
   macos-unicode-path:
-    runs-on: macos-10.15
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ macos-10.15 ]
+    runs-on: ${{ matrix.runs-on }}
     steps:
     - uses: actions/checkout@v2
 
@@ -123,7 +127,7 @@ jobs:
       with:
         path: |
           build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-unicode
 
     - name: Deps
       run: ./brink.sh deps
@@ -139,7 +143,7 @@ jobs:
 
     - name: Tmate debug on failure
       if: failure() && env.TMATE_DEBUG == 'yes'
-      uses: mxschmitt/action-tmate@v3
+      uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
 
@@ -152,12 +156,50 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
 
-  windows:
-    runs-on: ${{ matrix.runs-on }}
+  macos-ascii-path:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ windows-2019, windows-2016 ]
+        runs-on: [ macos-12 ]
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Cache build
+      uses: actions/cache@v2
+      with:
+        path: |
+          build-compat
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-ascii
+
+    - name: Deps
+      run: ./brink.sh deps
+
+    - name: Test
+      run: ./brink.sh test_ci2
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Tmate debug on failure
+      if: failure() && env.TMATE_DEBUG == 'yes'
+      uses: chevah/action-tmate@v3
+      with:
+        limit-access-to-actor: true
+
+    - name: Publish cov
+      run: ./brink.sh codecov_publish
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        # For now the Windows-2022 VM from Github can't run our build.
+        # To be fixed in a separate PR.
+        runs-on: [ windows-2019, windows-2022 ]
+    runs-on: ${{ matrix.runs-on }}
 
     steps:
     - uses: actions/checkout@v2
@@ -178,6 +220,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Public coverage
+      if: ${{ !cancelled() }}
       run: sh ./brink.sh codecov_publish
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

@@ -663,7 +663,7 @@ class TestChevahTestCase(ChevahTestCase):
         """
         raise AssertionError('Should not be called.')
 
-    @conditionals.onOSFamily('posiX')
+    @conditionals.onOSFamily('posix')
     def test_onOSFamily_posix(self):
         """
         Run test only on posix.
@@ -671,7 +671,7 @@ class TestChevahTestCase(ChevahTestCase):
         if os.name != 'posix':
             raise AssertionError('This should be called only on posix.')
 
-    @conditionals.onOSFamily('Nt')
+    @conditionals.onOSFamily('nt')
     def test_onOSFamily_nt(self):
         """
         Run test only on NT. This is the complement of previous test.
@@ -679,7 +679,7 @@ class TestChevahTestCase(ChevahTestCase):
         if os.name != 'nt':
             raise AssertionError('This should be called only on NT.')
 
-    @conditionals.onOSName('linuX')
+    @conditionals.onOSName('linux')
     def test_onOSName_linux(self):
         """
         Run test only on Linux.
@@ -687,7 +687,7 @@ class TestChevahTestCase(ChevahTestCase):
         if not sys.platform.startswith('linux'):
             raise AssertionError('This should be called only on Linux.')
 
-    @conditionals.onOSName(['Linux', 'aix'])
+    @conditionals.onOSName(['linux', 'aix'])
     def test_onOSName_linux_aix(self):
         """
         Run test only on Linux and AIX.
@@ -854,7 +854,7 @@ class TestChevahTestCase(ChevahTestCase):
         self.assertEqual([True], self.top_stack_called)
 
 
-@conditionals.onOSFamily('posiX')
+@conditionals.onOSFamily('posix')
 class TestClassConditionalsPosix(ChevahTestCase):
     """
     Conditionals also work on classes.

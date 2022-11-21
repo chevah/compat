@@ -23,6 +23,12 @@ def runElevatedTest():
         # and since is not a supported OS we skip the tests.
         return False
 
+    if CompatTestCase.os_version == 'osx-10.15':
+        # On latest macOS we have issues creating the groups.
+        # We kind of stop supporting macOS for system users,
+        # so we don't care about elevated tests.
+        return False
+
     if not process_capabilities.impersonate_local_account:
         return False
 
@@ -35,7 +41,7 @@ def runElevatedTest():
 def setup_package():
     # Don't run these tests if we can not access privileged OS part.
     if not runElevatedTest():
-        raise CompatTestCase.skipTest()
+        raise CompatTestCase.skipTest('Not running elevated tests')
 
     # Initialize the testing OS.
     try:
