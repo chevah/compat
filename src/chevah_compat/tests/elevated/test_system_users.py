@@ -307,7 +307,6 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         Check PAM authentication.
         """
-        from pam import authenticate
         result = system_users.pamWithUsernameAndPassword(
             username=TEST_ACCOUNT_USERNAME,
             password=TEST_ACCOUNT_PASSWORD,

@@ -23,6 +23,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
 
 env:
   TMATE_DEBUG: 'no'
@@ -213,16 +216,16 @@ jobs:
 
     - name: Deps
       run: |
-        sh ./brink.sh deps
-        ./lib/python Scripts/pywin32_postinstall.py --install
+        ./brink.sh deps
+        ./build-compat/lib/python.exe Scripts/pywin32_postinstall.py --install
 
     - name: Test
-      run: sh ./brink.sh test_ci2
+      run: ./brink.sh test_ci2
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Public coverage
       if: ${{ !cancelled() }}
-      run: sh ./brink.sh codecov_publish
+      run: ./brink.sh codecov_publish
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
