@@ -212,7 +212,9 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}
 
     - name: Deps
-      run: sh ./brink.sh deps
+      run: |
+        sh ./brink.sh deps
+        ./lib/python Scripts/pywin32_postinstall.py --install
 
     - name: Test
       run: sh ./brink.sh test_ci2
