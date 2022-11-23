@@ -387,12 +387,6 @@ class UnixUsers(CompatUsers):
         if self._pam_authenticate is None:
             # Runtime PAM support was not checked yet.
 
-            from chevah_compat import process_capabilities
-            if process_capabilities.os_name == 'hpux':
-                # Ctypes and pam are broken on HPUX.
-                self._pam_authenticate = False
-                return self._pam_authenticate
-
             try:
                 from pam import authenticate as pam_authenticate
                 self._pam_authenticate = pam_authenticate
