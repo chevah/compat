@@ -196,8 +196,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # For now the Windows-2022 VM from Github can't run our build.
-        # To be fixed in a separate PR.
+        # FIXME:
+        # Add back windows-2019
         runs-on: [ windows-2019, windows-2022 ]
     runs-on: ${{ matrix.runs-on }}
 
@@ -218,6 +218,12 @@ jobs:
       run: sh ./brink.sh test_ci2
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Tmate debug on failure
+      if: failure() && env.TMATE_DEBUG == 'yes'
+      uses: chevah/action-tmate@v3
+      with:
+        limit-access-to-actor: true
 
     - name: Public coverage
       if: ${{ !cancelled() }}
