@@ -11,6 +11,7 @@ from six.moves import range
 from contextlib import contextmanager
 from winioctlcon import FSCTL_GET_REPARSE_POINT
 import errno
+import msvcrt
 import ntsecuritycon
 import os
 import pywintypes
@@ -978,3 +979,42 @@ class NTFilesystem(PosixFilesystemBase):
                 if group_sid == sid:
                     return True
         return False
+
+
+    def openFile(self, segments, flags, mode):
+        """
+        See `ILocalFilesystem`.
+        """
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
+        path_encoded = self.getEncodedPath(path)
+
+        self._requireFile(segments)
+        with self._convertToOSError(path), self._impersonateUser():
+            # FIXME: todo
+            return os.open(path_encoded, flags, mode)
+
+    def openFileForReading(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
+        path_encoded = self.getEncodedPath(path)
+
+        self._requireFile(segments)
+        with self._convertToOSError(path), self._impersonateUser():
+
+            handle = win32file.CreateFile(
+                path_encoded,
+                win32file.GENERIC_READ,
+                win32file.FILE_SHARE_DELETE | win32file.FILE_SHARE_READ,
+                None,
+                win32file.OPEN_EXISTING,
+                0,
+                None,
+                )
+
+            # detach the handle
+            detached_handle = handle.Detach()
+            fd = msvcrt.open_osfhandle(
+                detached_handle, os.O_RDONLY)
+            return os.fdopen(fd, 'rb')

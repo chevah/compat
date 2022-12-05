@@ -1,6 +1,13 @@
 Release notes for chevah.compat
 ===============================
 
+0.65.0 - 2022-12-05
+-------------------
+
+* Don't lock the file on Windows when opened for reading.
+  This is valid for both `openForReading`` method and for the generic
+  `open` method.
+
 
 0.64.3 - 2022-09-14
 -------------------
