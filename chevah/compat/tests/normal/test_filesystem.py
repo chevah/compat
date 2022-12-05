@@ -1734,6 +1734,29 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             if a_file:
                 a_file.close()
 
+    def test_openFile_read_no_delete_lock(self):
+        """
+        A file opened only for reading will not be locked for delete
+        operations.
+        """
+        _, segments = mk.fs.makePathInTemp()
+        mk.fs.writeFileContent(segments=segments, content='something-\N{sun}')
+        fd = None
+        try:
+            fd = self.filesystem.openFile(
+                segments,
+                flags=self.filesystem.OPEN_READ_ONLY,
+                mode=0,
+                )
+
+            self.filesystem.deleteFile(segments)
+
+            content = os.read(fd, 100)
+            self.assertEqual(b'something-\xe2\x98\x89', content)
+        finally:
+            if fd:
+                os.close(fd)
+
     def test_openFileForWriting_ascii(self):
         """
         Check opening a file for writing in plain/ascii/str mode.

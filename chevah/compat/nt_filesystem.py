@@ -980,17 +980,22 @@ class NTFilesystem(PosixFilesystemBase):
                     return True
         return False
 
-
     def openFile(self, segments, flags, mode):
         """
         See `ILocalFilesystem`.
+
+        `mode` is ignored on Windows.
         """
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
         with self._convertToOSError(path), self._impersonateUser():
-            # FIXME: todo
+            if flags & self.OPEN_READ_ONLY == self.OPEN_READ_ONLY:
+                # For read only mode, we use our custom code to open without
+                # a lock.
+                return self._openRead(path_encoded)
+
             return os.open(path_encoded, flags, mode)
 
     def openFileForReading(self, segments):
@@ -1002,19 +1007,23 @@ class NTFilesystem(PosixFilesystemBase):
 
         self._requireFile(segments)
         with self._convertToOSError(path), self._impersonateUser():
-
-            handle = win32file.CreateFile(
-                path_encoded,
-                win32file.GENERIC_READ,
-                win32file.FILE_SHARE_DELETE | win32file.FILE_SHARE_READ,
-                None,
-                win32file.OPEN_EXISTING,
-                0,
-                None,
-                )
-
-            # detach the handle
-            detached_handle = handle.Detach()
-            fd = msvcrt.open_osfhandle(
-                detached_handle, os.O_RDONLY)
+            fd = self._openRead(path_encoded)
             return os.fdopen(fd, 'rb')
+
+    def _openRead(self, path):
+        """
+        """
+        handle = win32file.CreateFile(
+            path,
+            win32file.GENERIC_READ,
+            win32file.FILE_SHARE_DELETE | win32file.FILE_SHARE_READ,
+            None,
+            win32file.OPEN_EXISTING,
+            0,
+            None,
+            )
+
+        # detach the handle
+        detached_handle = handle.Detach()
+        return msvcrt.open_osfhandle(
+            detached_handle, os.O_RDONLY)
