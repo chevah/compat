@@ -1,6 +1,13 @@
 Release notes for chevah.compat
 ===============================
 
+
+0.65.1 - 2022-12-05
+-------------------
+
+* Fix `openFile` when used in write-only mode.
+
+
 0.65.0 - 2022-12-05
 -------------------
 

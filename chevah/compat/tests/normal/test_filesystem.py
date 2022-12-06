@@ -1738,9 +1738,12 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         A file opened only for reading will not be locked for delete
         operations.
+
+        The file is opened in binary mode.
         """
+        content = 'first-line\nmore-lines\r\nsomething-\N{sun}'
         _, segments = mk.fs.makePathInTemp()
-        mk.fs.writeFileContent(segments=segments, content='something-\N{sun}')
+        mk.fs.writeFileContent(segments=segments, content=content)
         fd = None
         try:
             fd = self.filesystem.openFile(
@@ -1751,11 +1754,55 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
             self.filesystem.deleteFile(segments)
 
-            content = os.read(fd, 100)
-            self.assertEqual(b'something-\xe2\x98\x89', content)
+            result = os.read(fd, 100)
+            self.assertEqual(content.encode('utf-8'), result)
         finally:
             if fd:
                 os.close(fd)
+
+    @conditionals.onOSFamily('nt')
+    def test_fdRead_os_error(self):
+        """
+        This is a low-level Windows tests.
+
+        Under normal update, this function should never fail as we have some
+        higher API guards.
+
+        This tests is here to make sure that if it fails, it raises a generic
+        OSError.
+        """
+        with self.assertRaises(OSError):
+            self.filesystem._fdRead('no/such/path')
+
+    def test_openFile_write_only(self):
+        """
+        A file opened only for write will not allow reading.
+
+        Initial content is reset.
+
+        The file is written in binary mode.
+        """
+        content = 'first-line\nmore-lines\r\nsomething-\N{sun}'
+        segments = self.fileInTemp(content='initial-value')
+        fd = None
+        try:
+            fd = self.filesystem.openFile(
+                segments,
+                flags=self.filesystem.OPEN_WRITE_ONLY,
+                mode=0,
+                )
+
+            os.write(fd, content.encode('utf-8'))
+
+            # File can't be read.
+            self.assertRaises(OSError, os.read, fd, 1)
+
+        finally:
+            if fd:
+                os.close(fd)
+
+        # Just check the result after close.
+        self.assertEqual(content, mk.fs.getFileContent(segments))
 
     def test_openFileForWriting_ascii(self):
         """

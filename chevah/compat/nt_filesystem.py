@@ -991,7 +991,10 @@ class NTFilesystem(PosixFilesystemBase):
 
         self._requireFile(segments)
         with self._convertToOSError(path), self._impersonateUser():
-            if flags & self.OPEN_READ_ONLY == self.OPEN_READ_ONLY:
+            if (
+                flags & self.OPEN_READ_ONLY == self.OPEN_READ_ONLY
+                and flags & self.OPEN_WRITE_ONLY != self.OPEN_WRITE_ONLY
+                    ):
                 # For read only mode, we use our custom code to open without
                 # a lock.
                 return self._fdRead(path_encoded)
@@ -1016,18 +1019,24 @@ class NTFilesystem(PosixFilesystemBase):
 
         Returns a file descriptor.
         """
-        handle = win32file.CreateFileW(
-            path,
-            win32file.GENERIC_READ,
-            win32file.FILE_SHARE_DELETE | win32file.FILE_SHARE_READ,
-            None,
-            win32file.OPEN_EXISTING,
-            0,
-            None,
-            )
+        try:
+            handle = win32file.CreateFileW(
+                path,
+                win32file.GENERIC_READ,
+                win32file.FILE_SHARE_DELETE | win32file.FILE_SHARE_READ,
+                None,
+                win32file.OPEN_EXISTING,
+                0,
+                None,
+                )
 
-        # Windows has its file handling mechanism.
-        # We only want to generic POSIX fd.
-        detached_handle = handle.Detach()
-        return msvcrt.open_osfhandle(
-            detached_handle, os.O_RDONLY)
+            # Windows has its file handling mechanism.
+            # We only want to generic POSIX fd.
+            detached_handle = handle.Detach()
+            return msvcrt.open_osfhandle(
+                detached_handle, os.O_RDONLY)
+        except pywintypes.error as error:
+            raise OSError(
+                error.winerror,
+                error.strerror,
+                path.encode('utf-8'))
