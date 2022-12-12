@@ -1680,8 +1680,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
             self.assertEqual(content, a_file.read().decode('utf-8'))
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
     def test_openFileForReading_empty(self):
         """
@@ -1696,8 +1695,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
             self.assertEqual(b'', a_file.read())
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
     def test_openFileForReading_no_write(self):
         """
@@ -1712,8 +1710,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             with self.assertRaises(IOError):
                 a_file.write('something')
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
     def test_openFileForReading_no_delete_lock(self):
         """
@@ -1731,8 +1728,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             content = a_file.read(100)
             self.assertEqual(b'something-\xe2\x98\x89', content)
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
     def test_openFile_read_no_delete_lock(self):
         """
@@ -1996,8 +1992,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
             self.assertEqual(content_str, a_file.read())
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
     def test_setAttributes_owner_and_group(self):
         """
@@ -3053,8 +3048,7 @@ class TestLocalFilesystemLockedUNC(CompatTestCase, FilesystemTestMixin):
             self.addCleanup(mk.fs.deleteFile, outside_segments)
             a_file.write(content.encode('utf-8'))
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
         result = mk.fs.getFileContent(outside_segments)
         self.assertEqual(content, result)
