@@ -175,7 +175,9 @@ try:
             return config
 
     options = CompatScameOptions()
-    options.max_line_length = 80
+    # Looks like there is a bug in `scame`
+    # so we need max_line + 1 here.
+    options.max_line_length = 81
     options.progress = True
 
     options.scope = {

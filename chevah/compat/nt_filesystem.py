@@ -994,6 +994,7 @@ class NTFilesystem(PosixFilesystemBase):
             if (
                 flags & self.OPEN_READ_ONLY == self.OPEN_READ_ONLY
                 and flags & self.OPEN_WRITE_ONLY != self.OPEN_WRITE_ONLY
+                and flags & self.OPEN_READ_WRITE != self.OPEN_READ_WRITE
                     ):
                 # For read only mode, we use our custom code to open without
                 # a lock.
