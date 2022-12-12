@@ -1753,6 +1753,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
                 )
 
             self.filesystem.deleteFile(segments)
+            self.assertFalse(self.filesystem.exists(segments))
 
             result = os.read(fd, 100)
             self.assertEqual(content.encode('utf-8'), result)
@@ -1763,12 +1764,12 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
     @conditionals.onOSFamily('nt')
     def test_fdRead_os_error(self):
         """
-        This is a low-level Windows tests.
+        This is a low-level Windows test.
 
         Under normal update, this function should never fail as we have some
         higher API guards.
 
-        This tests is here to make sure that if it fails, it raises a generic
+        This test is here to make sure that if it fails, it raises a generic
         OSError.
         """
         with self.assertRaises(OSError):
@@ -1803,6 +1804,48 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         # Just check the result after close.
         self.assertEqual(content, mk.fs.getFileContent(segments))
+
+    def test_openFile_read_and_write(self):
+        """
+        A file opened for read and write will not have the
+        content reset or truncated.
+
+        The file is locked for delete.
+
+        The file is written in binary mode.
+        """
+        content = 'first-line\nmore-lines\r\nsomething-\N{sun}'
+        segments = self.fileInTemp(content=content)
+        fd = None
+        try:
+            fd = self.filesystem.openFile(
+                segments,
+                flags=self.filesystem.OPEN_READ_WRITE,
+                mode=0)
+
+            # File can be read, and pointer is at start
+            result = os.read(fd, 15)
+            self.assertEqual(b'first-line\nmore', result)
+
+            # File can be written
+            os.write(fd, b'UPDATE')
+
+            # On Windows, the file is locked for delele due to the write access.
+            if self.os_family == 'nt':
+                self.assertRaises(
+                    OSError,
+                    self.filesystem.deleteFile, segments)
+
+        finally:
+            if fd:
+                os.close(fd)
+
+        # The write is in the middle of the file.
+        # All the previous content is kept, with the exception of the
+        # updated part.
+        self.assertEqual(
+            'first-line\nmoreUPDATE\r\nsomething-\N{sun}',
+            mk.fs.getFileContent(segments))
 
     def test_openFileForWriting_ascii(self):
         """
