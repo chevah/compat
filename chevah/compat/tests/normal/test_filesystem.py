@@ -1900,8 +1900,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
                 a_file.read()
 
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
     def test_openFileForWriting_truncate(self):
         """
@@ -1955,8 +1954,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             new_test_content = a_file.read().decode('utf-8')
             self.assertEqual(new_test_content, content + new_content)
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
         if self.os_family == 'posix':
             # It will not overwrite the permissions for existing files.
