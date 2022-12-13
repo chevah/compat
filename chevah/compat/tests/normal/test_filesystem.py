@@ -1671,7 +1671,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Raise OSError when trying to open a file that doens't exist for reading.
         """
-        segments = ['no', 'such', 'file.txt']
+        segments = ['z', 'no', 'such', 'file.txt']
         path = self.filesystem.getRealPathFromSegments(segments)
 
         with self.assertRaises(OSError) as context:

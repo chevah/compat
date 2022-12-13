@@ -360,7 +360,7 @@ class NTFilesystem(PosixFilesystemBase):
         return segments
 
     @contextmanager
-    def _windowsToOSError(self, segments):
+    def _windowsToOSError(self, segments=None, path=None):
         """
         Convert WindowsError and pywintypes.error to OSError.
         """
@@ -377,7 +377,8 @@ class NTFilesystem(PosixFilesystemBase):
                 encoded_filename,
                 )
         except pywintypes.error as error:
-            path = self.getRealPathFromSegments(segments)
+            if path is None:
+                path = self.getRealPathFromSegments(segments)
             raise OSError(
                 error.winerror,
                 error.strerror,
@@ -1020,7 +1021,7 @@ class NTFilesystem(PosixFilesystemBase):
 
         Returns a file descriptor.
         """
-        try:
+        with self._windowsToOSError(path=path):
             handle = win32file.CreateFileW(
                 path,
                 win32file.GENERIC_READ,
@@ -1036,8 +1037,3 @@ class NTFilesystem(PosixFilesystemBase):
             detached_handle = handle.Detach()
             return msvcrt.open_osfhandle(
                 detached_handle, os.O_RDONLY)
-        except pywintypes.error as error:
-            raise OSError(
-                error.winerror,
-                error.strerror,
-                path.encode('utf-8'))
