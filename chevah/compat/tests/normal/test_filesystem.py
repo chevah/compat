@@ -1862,7 +1862,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             # File can be written
             os.write(fd, b'UPDATE')
 
-            # On Windows, the file is locked for delele due to the write access.
+            # On Windows, the file is locked for deletion, due to write access.
             if self.os_family == 'nt':
                 self.assertRaises(
                     OSError,
