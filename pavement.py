@@ -99,6 +99,7 @@ BUILD_PACKAGES = [
     'mock',
 
     'coverage==4.5.4',
+    'pluggy==0.13.1',
     'diff_cover==3.0.1',
     'codecov==2.1.7',
 
