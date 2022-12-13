@@ -1671,15 +1671,15 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Raise OSError when trying to open a file that doens't exist for reading.
         """
-        segments = ['z', 'no', 'such', 'file.txt']
+        segments = ['c', 'no', 'such', 'file.txt']
         path = self.filesystem.getRealPathFromSegments(segments)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.openFileForReading(segments)
 
-        self.assertEqual(errno.ENOENT, context.exception.errno)
         details = '[Errno 2] No such file or directory: ' + path
         self.assertStartsWith(details, force_unicode(context.exception))
+        self.assertEqual(errno.ENOENT, context.exception.errno)
 
     def test_openFileForReading_already_opened(self):
         """
