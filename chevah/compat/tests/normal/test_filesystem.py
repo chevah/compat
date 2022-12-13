@@ -1667,6 +1667,42 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertEqual(test_size, size)
 
+    def test_openFileForReading_not_found(self):
+        """
+        Raise OSError when trying to open a file that doens't exist for reading.
+        """
+        segments = ['no', 'such', 'file.txt']
+        path = self.filesystem.getRealPathFromSegments(segments)
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForReading(segments)
+
+        self.assertEqual(errno.ENOENT, context.exception.errno)
+        details = '[Errno 2] No such file or directory: ' + path
+        self.assertStartsWith(details, force_unicode(context.exception))
+
+    def test_openFileForReading_already_opened(self):
+        """
+        The same file can be opened for reading multiple times.
+        Each handler has a separate cursor.
+        """
+        segments = self.fileInTemp(content='something-\N{sun}')
+        file_1 = None
+        file_2 = None
+        try:
+            file_1 = self.filesystem.openFileForReading(segments)
+            file_2 = self.filesystem.openFileForReading(segments)
+
+            content = file_1.read(11)
+            self.assertEqual(b'something-\xe2', content)
+
+            content = file_2.read(12)
+            self.assertEqual(b'something-\xe2\x98', content)
+
+        finally:
+            file_1.close()
+            file_2.close()
+
     def test_openFileForReading_unicode(self):
         """
         Check reading in Unicode.

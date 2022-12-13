@@ -99,7 +99,7 @@ BUILD_PACKAGES = [
     'mock',
 
     'coverage==4.5.4',
-    'diff_cover==0.9.11',
+    'diff_cover==3.0.1',
     'codecov==2.1.7',
 
     # used for remote debugging.
