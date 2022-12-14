@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+0.65.3 - 2022-12-14
+-------------------
+
+* `openFile` and `openFileForReading` now raise a standard error when file
+  is not found.
+
+
 0.65.2 - 2022-12-12
 -------------------
 
