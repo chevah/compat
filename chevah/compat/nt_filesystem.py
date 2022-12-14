@@ -379,9 +379,20 @@ class NTFilesystem(PosixFilesystemBase):
         except pywintypes.error as error:
             if path is None:
                 path = self.getRealPathFromSegments(segments)
+
+            error_code = error.winerror
+            error_message = error.strerror
+
+            if error_code == 3:
+                # winerror for file not found has code 3 and a different
+                # mesage.
+                # We conver it to the unix message.
+                error_code = 2
+                error_message = 'No such file or directory'
+
             raise OSError(
-                error.winerror,
-                error.strerror,
+                error_code,
+                error_message,
                 path.encode('utf-8'))
 
     def readLink(self, segments):
