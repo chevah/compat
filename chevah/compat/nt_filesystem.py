@@ -1040,13 +1040,22 @@ class NTFilesystem(PosixFilesystemBase):
 
         Returns a file descriptor.
         """
+        desired_access = win32file.GENERIC_READ
+        share_mode = (
+            win32file.FILE_SHARE_DELETE |
+            win32file.FILE_SHARE_WRITE |
+            win32file.FILE_SHARE_READ
+            )
+        security_attributes=None
+        creation_disposition = win32file.OPEN_EXISTING
+
         with self._windowsToOSError(path=path):
             handle = win32file.CreateFileW(
                 path,
-                win32file.GENERIC_READ,
-                win32file.FILE_SHARE_DELETE | win32file.FILE_SHARE_READ,
-                None,
-                win32file.OPEN_EXISTING,
+                desired_access,
+                share_mode,
+                security_attributes,
+                creation_disposition,
                 0,
                 None,
                 )

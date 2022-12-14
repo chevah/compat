@@ -1,6 +1,12 @@
 Release notes for chevah.compat
 ===============================
 
+0.65.5 - 2022-12-14
+-------------------
+
+* `openFile` and `openFileForReading` can now open for reading a file that
+  is already open for writing.
+
 
 0.65.4 - 2022-12-14
 -------------------

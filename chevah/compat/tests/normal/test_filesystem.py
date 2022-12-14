@@ -1717,6 +1717,28 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             file_1.close()
             file_2.close()
 
+    def test_openFileForReading_already_opened_for_write(self):
+        """
+        It can read a file that is currently open for write.
+        """
+        segments = self.fileInTemp(content='something-\N{sun}')
+        file_read = None
+        file_write = None
+        try:
+            file_write = self.filesystem.openFileForWriting(segments)
+            file_write.write(b'some-new-content')
+            file_write.flush()
+
+            # We open the file while write is still ongoing (not closed).
+            file_read = self.filesystem.openFileForReading(segments)
+
+            content = file_read.read(100)
+            self.assertEqual(b'some-new-content', content)
+
+        finally:
+            file_read.close()
+            file_write.close()
+
     def test_openFileForReading_unicode(self):
         """
         Check reading in Unicode.
