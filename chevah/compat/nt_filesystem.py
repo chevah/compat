@@ -384,12 +384,11 @@ class NTFilesystem(PosixFilesystemBase):
             error_message = error.strerror
 
             if error_code == 3:
-                # winerror for file not found has code 3 and a different
-                # mesage.
-                # We convert it to the unix code.
+                # winerror for file not found when parent path is not found
+                # has code 3.
+                # We convert it to the generic code 2.
                 # Later the message is also converted to unix format.
                 error_code = 2
-                error_message = 'No such file or directory'
 
             if error_code == 2:
                 # winerror for file not found can have code 2 but has
@@ -397,6 +396,7 @@ class NTFilesystem(PosixFilesystemBase):
                 # "The system cannot find the file specified"
                 # We convert it to the unix message.
                 error_code = 2
+                error_message = 'No such file or directory'
 
             raise OSError(
                 error_code,
