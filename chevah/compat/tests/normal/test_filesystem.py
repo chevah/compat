@@ -1669,7 +1669,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
     def test_openFileForReading_parent_not_found(self):
         """
-        Raise OSError when trying to open a file that doens't exist for reading.
+        Raise OSError when trying to open a file that doens't exist for reading,
+        since the parent directory doesn't exists.
         """
         segments = ['c', 'no', 'such', 'file.txt']
         path = self.filesystem.getRealPathFromSegments(segments)
@@ -1681,9 +1682,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertStartsWith(details, force_unicode(context.exception))
         self.assertEqual(errno.ENOENT, context.exception.errno)
 
-    def test_openFileForReading_parent_not_found(self):
+    def test_openFileForReading_file_not_found(self):
         """
-        Raise OSError when trying to open a file that doens't exist for reading.
+        Raise OSError when trying to open a file that doens't exist for reading,
+        even when the parent directory exists.
         """
         segments = ['c', 'no-such-file-in-root-drive.txt']
         path = self.filesystem.getRealPathFromSegments(segments)

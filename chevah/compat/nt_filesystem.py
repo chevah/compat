@@ -1046,7 +1046,7 @@ class NTFilesystem(PosixFilesystemBase):
             win32file.FILE_SHARE_WRITE |
             win32file.FILE_SHARE_READ
             )
-        security_attributes=None
+        security_attributes = None
         creation_disposition = win32file.OPEN_EXISTING
 
         with self._windowsToOSError(path=path):
