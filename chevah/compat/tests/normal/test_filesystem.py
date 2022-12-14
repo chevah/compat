@@ -1667,11 +1667,25 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertEqual(test_size, size)
 
-    def test_openFileForReading_not_found(self):
+    def test_openFileForReading_parent_not_found(self):
         """
         Raise OSError when trying to open a file that doens't exist for reading.
         """
         segments = ['c', 'no', 'such', 'file.txt']
+        path = self.filesystem.getRealPathFromSegments(segments)
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForReading(segments)
+
+        details = '[Errno 2] No such file or directory: ' + path
+        self.assertStartsWith(details, force_unicode(context.exception))
+        self.assertEqual(errno.ENOENT, context.exception.errno)
+
+    def test_openFileForReading_parent_not_found(self):
+        """
+        Raise OSError when trying to open a file that doens't exist for reading.
+        """
+        segments = ['c', 'no-such-file-in-root-drive.txt']
         path = self.filesystem.getRealPathFromSegments(segments)
 
         with self.assertRaises(OSError) as context:

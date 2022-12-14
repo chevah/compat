@@ -386,9 +386,17 @@ class NTFilesystem(PosixFilesystemBase):
             if error_code == 3:
                 # winerror for file not found has code 3 and a different
                 # mesage.
-                # We conver it to the unix message.
+                # We convert it to the unix code.
+                # Later the message is also converted to unix format.
                 error_code = 2
                 error_message = 'No such file or directory'
+
+            if error_code == 2:
+                # winerror for file not found can have code 2 but has
+                # a different message.
+                # "The system cannot find the file specified"
+                # We convert it to the unix message.
+                error_code = 2
 
             raise OSError(
                 error_code,
