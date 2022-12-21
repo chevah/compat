@@ -1669,7 +1669,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
     def test_openFileForReading_parent_not_found(self):
         """
-        Raise OSError when trying to open a file that doens't exist for reading,
+        Raise OSError when trying to open a file that doesn't exist for reading,
         since the parent directory doesn't exists.
         """
         segments = ['c', 'no', 'such', 'file.txt']
@@ -1684,7 +1684,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
     def test_openFileForReading_file_not_found(self):
         """
-        Raise OSError when trying to open a file that doens't exist for reading,
+        Raise OSError when trying to open a file that doesn't exist for reading,
         even when the parent directory exists.
         """
         segments = ['c', 'no-such-file-in-root-drive.txt']
@@ -1721,7 +1721,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
     def test_openFileForReading_already_opened_for_write(self):
         """
-        It can read a file that is currently open for write.
+        It can read a file that is currently open for writing.
         """
         segments = self.fileInTemp(content='something-\N{sun}')
         file_read = None
