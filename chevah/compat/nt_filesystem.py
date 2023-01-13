@@ -11,6 +11,7 @@ from six.moves import range
 from contextlib import contextmanager
 from winioctlcon import FSCTL_GET_REPARSE_POINT
 import errno
+import msvcrt
 import ntsecuritycon
 import os
 import pywintypes
@@ -359,7 +360,7 @@ class NTFilesystem(PosixFilesystemBase):
         return segments
 
     @contextmanager
-    def _windowsToOSError(self, segments):
+    def _windowsToOSError(self, segments=None, path=None):
         """
         Convert WindowsError and pywintypes.error to OSError.
         """
@@ -376,10 +377,30 @@ class NTFilesystem(PosixFilesystemBase):
                 encoded_filename,
                 )
         except pywintypes.error as error:
-            path = self.getRealPathFromSegments(segments)
+            if path is None:
+                path = self.getRealPathFromSegments(segments)
+
+            error_code = error.winerror
+            error_message = error.strerror
+
+            if error_code == 3:
+                # winerror for file not found when parent path is not found
+                # has code 3.
+                # We convert it to the generic code 2.
+                # Later the message is also converted to unix format.
+                error_code = 2
+
+            if error_code == 2:
+                # winerror for file not found can have code 2 but has
+                # a different message.
+                # "The system cannot find the file specified"
+                # We convert it to the unix message.
+                error_code = 2
+                error_message = 'No such file or directory'
+
             raise OSError(
-                error.winerror,
-                error.strerror,
+                error_code,
+                error_message,
                 path.encode('utf-8'))
 
     def readLink(self, segments):
@@ -978,3 +999,69 @@ class NTFilesystem(PosixFilesystemBase):
                 if group_sid == sid:
                     return True
         return False
+
+    def openFile(self, segments, flags, mode):
+        """
+        See `ILocalFilesystem`.
+
+        `mode` is ignored on Windows.
+        """
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
+        path_encoded = self.getEncodedPath(path)
+
+        self._requireFile(segments)
+        with self._convertToOSError(path), self._impersonateUser():
+            if (
+                flags & self.OPEN_READ_ONLY == self.OPEN_READ_ONLY
+                and flags & self.OPEN_WRITE_ONLY != self.OPEN_WRITE_ONLY
+                and flags & self.OPEN_READ_WRITE != self.OPEN_READ_WRITE
+                    ):
+                # For read only mode, we use our custom code to open without
+                # a lock.
+                return self._fdRead(path_encoded)
+
+            return os.open(path_encoded, flags, mode)
+
+    def openFileForReading(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
+        path = self.getRealPathFromSegments(segments, include_virtual=False)
+        path_encoded = self.getEncodedPath(path)
+
+        self._requireFile(segments)
+        with self._convertToOSError(path), self._impersonateUser():
+            fd = self._fdRead(path_encoded)
+            return os.fdopen(fd, 'rb')
+
+    def _fdRead(self, path):
+        """
+        Do the low-level Windows file open.
+
+        Returns a file descriptor.
+        """
+        desired_access = win32file.GENERIC_READ
+        share_mode = (
+            win32file.FILE_SHARE_DELETE |
+            win32file.FILE_SHARE_WRITE |
+            win32file.FILE_SHARE_READ
+            )
+        security_attributes = None
+        creation_disposition = win32file.OPEN_EXISTING
+
+        with self._windowsToOSError(path=path):
+            handle = win32file.CreateFileW(
+                path,
+                desired_access,
+                share_mode,
+                security_attributes,
+                creation_disposition,
+                0,
+                None,
+                )
+
+            # Windows has its file handling mechanism.
+            # We only want to generic POSIX fd.
+            detached_handle = handle.Detach()
+            return msvcrt.open_osfhandle(
+                detached_handle, os.O_RDONLY)

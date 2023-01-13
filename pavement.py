@@ -99,7 +99,8 @@ BUILD_PACKAGES = [
     'mock',
 
     'coverage==4.5.4',
-    'diff_cover==0.9.11',
+    'pluggy==0.13.1',
+    'diff_cover==3.0.1',
     'codecov==2.1.7',
 
     # used for remote debugging.
@@ -163,10 +164,21 @@ try:
                 if test_value is not None:
                     return test_value
 
-            return getattr(self, option)
+            config = getattr(self, option)
+
+            if (
+                (path.endswith('.yml') or path.endswith('.yaml'))
+                and option == 'max_line_length'
+                    ):
+                # We allow long lines in yaml files.
+                return 1000
+
+            return config
 
     options = CompatScameOptions()
-    options.max_line_length = 80
+    # Looks like there is a bug in `scame`
+    # so we need max_line + 1 here.
+    options.max_line_length = 81
     options.progress = True
 
     options.scope = {
@@ -175,6 +187,7 @@ try:
             'example/',
             'README.rst',
             'chevah/compat/',
+            '.github/',
             ],
         'exclude': [],
         }

@@ -1,6 +1,46 @@
 Release notes for chevah.compat
 ===============================
 
+0.65.5 - 2022-12-14
+-------------------
+
+* `openFile` and `openFileForReading` can now open for reading a file that
+  is already open for writing.
+
+
+0.65.4 - 2022-12-14
+-------------------
+
+* `openFile` and `openFileForReading` now raise a standard error when the
+  file is not found.
+
+
+0.65.3 - 2022-12-14
+-------------------
+
+* `openFile` and `openFileForReading` now raise a standard error when the
+  parent path for a file is not found.
+
+
+0.65.2 - 2022-12-12
+-------------------
+
+* Fix `openFile` when used in read-write mode.
+
+
+0.65.1 - 2022-12-05
+-------------------
+
+* Fix `openFile` when used in write-only mode.
+
+
+0.65.0 - 2022-12-05
+-------------------
+
+* Don't lock the file on Windows when opened for reading.
+  This is valid for both `openForReading`` method and for the generic
+  `open` method.
+
 
 0.64.3 - 2022-09-14
 -------------------
