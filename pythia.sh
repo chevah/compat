@@ -22,21 +22,22 @@
 # * CHEVAH_ARCH - CPU type of the current OS
 #
 # The build directory is used from CHEVAH_BUILD env,
-# then read from brink.conf as CHEVAH_BUILD_DIR,
+# then read from pythia.conf as CHEVAH_BUILD_DIR,
 # and will use a default value if not defined there.
 #
 # The cache directory is read the CHEVAH_CACHE env,
-# and then read from brink.conf as CHEVAH_CACHE_DIR,
+# and then read from pythia.conf as CHEVAH_CACHE_DIR,
 # and will use a default value if not defined.
 #
-# You can define your own `execute_venv` function in brink.conf with the
+# You can define your own `execute_venv` function in pythia.conf with the
 # command used to execute Python inside the newly virtual environment.
 #
 
-# Script initialization.
-set -o nounset
-set -o errexit
-set -o pipefail
+# Bash checks
+set -o nounset    # always check if variables exist
+set -o errexit    # always exit on error
+set -o errtrace   # trap errors in functions as well
+set -o pipefail   # don't ignore exit codes when piping output
 
 # Initialize default value.
 COMMAND=${1-''}
@@ -81,29 +82,29 @@ LOCAL_PYTHON_BINARY_DIST=""
 OS='not-detected-yet'
 ARCH='not-detected-yet'
 
-# Initialize default values from brink.conf
+# Initialize default values from pythia.conf
 PYTHON_CONFIGURATION='NOT-YET-DEFINED'
 PYTHON_VERSION='not.defined.yet'
 PYTHON_PLATFORM='unknown-os-and-arch'
-PYTHON_NAME='python2.7'
-BINARY_DIST_URI='https://github.com/chevah/python-package/releases/download'
+PYTHON_NAME='python3.8'
+BINARY_DIST_URI='https://github.com/chevah/pythia/releases/download'
 PIP_INDEX_URL='https://pypi.org/simple'
 BASE_REQUIREMENTS=''
 
 #
 # Check that we have a pavement.py file in the current dir.
-# If not, we are out of the source's root dir and brink.sh won't work.
+# If not, we are out of the source's root dir and pythia.sh won't work.
 #
 check_source_folder() {
     if [ ! -e pavement.py ]; then
         (>&2 echo 'No "pavement.py" file found in current folder.')
-        (>&2 echo 'Make sure you are running "brink.sh" from a source folder.')
+        (>&2 echo 'Make sure you are running "pythia.sh" from a source folder.')
         exit 8
     fi
 }
 
 # Called to trigger the entry point in the virtual environment.
-# Can be overwritten in brink.conf
+# Can be overwritten in pythia.conf
 execute_venv() {
     ${PYTHON_BIN} $PYTHON3_CHECK -c 'from paver.tasks import main; main()' "$@"
 }
@@ -121,13 +122,13 @@ update_venv() {
     exit_code=$?
     set -e
     if [ $exit_code -ne 0 ]; then
-        (>&2 echo 'Failed to run the initial "./brink.sh deps" command.')
+        (>&2 echo 'Failed to run the initial "./pythia.sh deps" command.')
         exit 7
     fi
 }
 
 # Load repo specific configuration.
-source brink.conf
+source pythia.conf
 
 
 clean_build() {
@@ -138,10 +139,6 @@ clean_build() {
     delete_folder ${DIST_FOLDER}
     echo "Removing publish..."
     delete_folder 'publish'
-    echo "Removing node_modules..."
-    delete_folder node_modules
-    echo "Removing web build"
-    delete_folder chevah/server/static/build/
 
     # In some case pip hangs with a build folder in temp and
     # will not continue until it is manually removed.
@@ -157,8 +154,6 @@ clean_build() {
 
 _clean_pyc() {
     echo "Cleaning pyc files ..."
-    # AIX's find complains if there are no matching files when using +.
-    [ $(uname) == AIX ] && touch ./dummy_file_for_AIX.pyc
     # Faster than '-exec rm {} \;' and supported in most OS'es,
     # details at https://www.in-ulm.de/~mascheck/various/find/#xargs
     find ./ -name '*.pyc' -exec rm {} +
@@ -457,7 +452,7 @@ copy_python() {
             # We have a cached distributable.
             # Check if is at the right version.
             local cache_ver_file
-            cache_ver_file=${python_distributable}/lib/PYTHON_PACKAGE_VERSION
+            cache_ver_file=${python_distributable}/lib/PYTHIA_VERSION
             cache_version='UNVERSIONED'
             if [ -f $cache_ver_file ]; then
                 cache_version=`cat $cache_ver_file | cut -d - -f 1`
@@ -486,9 +481,9 @@ copy_python() {
         WAS_PYTHON_JUST_INSTALLED=1
     else
         # We have a Python, but we are not sure if is the right version.
-        local version_file=${BUILD_FOLDER}/lib/PYTHON_PACKAGE_VERSION
+        local version_file=${BUILD_FOLDER}/lib/PYTHIA_VERSION
 
-        # If we are upgrading the cache from an unversioned Python,
+        # If we are upgrading the cache from Python 2,
         # cat fails if this file is missing, so we create it blank.
         touch $version_file
         python_installed_version=`cat $version_file | cut -d - -f 1`
@@ -539,8 +534,7 @@ install_dependencies(){
 # Check version of current OS to see if it is supported.
 # If it's too old, exit with a nice informative message.
 # If it's supported, return through eval the version numbers to be used for
-# naming the package, for example: '8' for RHEL 8.2, '2004' for Ubuntu 20.04,
-# '314' for Alpine Linux 3.14, '71' for AIX 7.1, '114' for Solaris 11.4.
+# naming the package, for example: '8' for RHEL 8.2, '2004' for Ubuntu 20.04.
 #
 check_os_version() {
     # First parameter should be the human-readable name for the current OS.
@@ -588,7 +582,7 @@ check_os_version() {
         if [ "$OS" = "Linux" ]; then
             # For old and/or unsupported Linux distros there's a second chance!
             (>&2 echo "the generic Linux runtime is used, if possible.")
-            check_linux_glibc
+            check_linux_libc
         else
             (>&2 echo "there is currently no support.")
             exit 13
@@ -601,16 +595,42 @@ check_os_version() {
 
 #
 # For old unsupported Linux distros (some with no /etc/os-release) and for other
-# unsupported Linux distros (eg. Arch), we check if the system is glibc-based.
+# unsupported Linux distros, we check if the system is based on glibc or musl.
 # If so, we use a generic code path that builds everything statically,
-# including OpenSSL, thus only requiring glibc 2.X, where X differs by arch.
+# including OpenSSL, thus only requiring glibc or musl.
 #
-check_linux_glibc() {
+check_linux_libc() {
+    local ldd_output_file=".chevah_libc_version"
+    set +o errexit
+
+    command -v ldd > /dev/null
+    if [ $? -ne 0 ]; then
+        (>&2 echo "No ldd binary found, can't check for glibc!")
+        exit 18
+    fi
+
+    ldd --version > $ldd_output_file 2>&1
+    egrep "GNU libc|GLIBC" $ldd_output_file > /dev/null
+    if [ $? -eq 0 ]; then
+        check_glibc_version
+    else
+        egrep ^"musl libc" $ldd_output_file > /dev/null
+        if [ $? -eq 0 ]; then
+            check_musl_version
+        else
+            (>&2 echo "Unknown libc reported by ldd... Unsupported Linux.")
+            rm $ldd_output_file
+            exit 19
+        fi
+    fi
+
+    set -o errexit
+}
+
+check_glibc_version(){
     local glibc_version
     local glibc_version_array
     local supported_glibc2_version
-    # Output to a file to avoid "write error: Broken pipe" with grep/head.
-    local ldd_output_file=".chevah_glibc_version"
 
     # Supported minimum minor glibc 2.X versions for various arches.
     # For x64, we build on CentOS 5.11 (Final) with glibc 2.5.
@@ -631,21 +651,6 @@ check_linux_glibc() {
 
     echo "No specific runtime for the current distribution / version / arch."
     echo "Minimum glibc version for this arch: 2.${supported_glibc2_version}."
-
-    set +o errexit
-
-    command -v ldd > /dev/null
-    if [ $? -ne 0 ]; then
-        (>&2 echo "No ldd binary found, can't check for glibc!")
-        exit 18
-    fi
-
-    ldd --version > $ldd_output_file
-    egrep "GNU\ libc|GLIBC" $ldd_output_file > /dev/null
-    if [ $? -ne 0 ]; then
-        (>&2 echo "No glibc reported by ldd... Unsupported Linux libc?")
-        exit 19
-    fi
 
     # Tested with glibc 2.5/2.11.3/2.12/2.23/2.28-31 and eglibc 2.13/2.19.
     glibc_version=$(head -n 1 $ldd_output_file | rev | cut -d\  -f1 | rev)
@@ -672,25 +677,63 @@ check_linux_glibc() {
         echo "All is good. Detected glibc version: ${glibc_version}."
     fi
 
-    set -o errexit
-
-    # glibc 2 detected, we set $OS for a generic Linux build.
+    # Supported glibc version detected, set $OS for a generic glibc Linux build.
     OS="lnx"
 }
 
+check_musl_version(){
+    local musl_version
+    local musl_version_array
+    local supported_musl11_version=24
+
+    echo "No specific runtime for the current distribution / version / arch."
+    echo "Minimum musl version for this arch: 1.1.${supported_musl11_version}."
+
+    # Tested with musl 1.1.24/1.2.2.
+    musl_version=$(egrep ^Version $ldd_output_file | cut -d\  -f2)
+    rm $ldd_output_file
+
+    if [[ $musl_version =~ [^[:digit:]\.] ]]; then
+        (>&2 echo "Musl version should only have numbers and periods, but:")
+        (>&2 echo "    \$musl_version=$musl_version")
+        exit 25
+    fi
+
+    IFS=. read -a musl_version_array <<< "$musl_version"
+
+    if [ ${musl_version_array[0]} -lt 1 -o ${musl_version_array[1]} -lt 1 ];then
+        (>&2 echo "Only musl 1.1 or greater supported! Detected: $musl_version")
+        exit 26
+    fi
+
+    # Decrement supported_musl11_version if building against an older musl.
+    if [ ${musl_version_array[0]} -eq 1 -a ${musl_version_array[1]} -eq 1 \
+        -a ${musl_version_array[2]} -lt ${supported_musl11_version} ]; then
+        (>&2 echo "NOT good. Detected version is older: ${musl_version}!")
+        exit 27
+    else
+        echo "All is good. Detected musl version: ${musl_version}."
+    fi
+
+    # Supported musl version detected, set $OS for a generic musl Linux build.
+    OS="lnx_musl"
+}
+
 #
-# For glibc-based Linux distros, after checking if current version is
-# supported with check_os_version(), $OS might already be set to "lnx"
-# if current version is too old, through check_linux_glibc().
+# For Linux distros with a supported libc, after checking if current version is
+# supported with check_os_version(), $OS might be set to something like "lnx"
+# if current version is too old, through check_linux_libc() and its subroutines.
 #
 set_os_if_not_generic() {
     local distro_name="$1"
     local distro_version="$2"
 
-    if [ "$OS" != "lnx" ]; then
+    if [ "${OS#lnx}" = "$OS" ]; then
+        # $OS doesn't start with lnx, not a generic Linux build.
         OS="${distro_name}${distro_version}"
     fi
 }
+
 
 #
 # Detect OS and ARCH for the current system.
@@ -709,7 +752,7 @@ detect_os() {
             if [ ! -f /etc/os-release ]; then
                 # No /etc/os-release file present, so we don't support this
                 # distro, but check for glibc, the generic build should work.
-                check_linux_glibc
+                check_linux_libc
             else
                 source /etc/os-release
                 linux_distro="$ID"
@@ -717,11 +760,16 @@ detect_os() {
                 # Some rolling-release distros (eg. Arch Linux) have
                 # no VERSION_ID here, so don't count on it unconditionally.
                 case "$linux_distro" in
-                    rhel|centos|ol)
+                    rhel|centos|almalinux|rocky|ol)
                         os_version_raw="$VERSION_ID"
                         check_os_version "Red Hat Enterprise Linux" 8 \
                             "$os_version_raw" os_version_chevah
-                        set_os_if_not_generic "rhel" $os_version_chevah
+                        if [ ${os_version_chevah} == "8" ]; then
+                            set_os_if_not_generic "rhel" $os_version_chevah
+                        else
+                            # OpenSSL 3.0.x not supported by cryptography 3.3.x.
+                            check_linux_libc
+                        fi
                         ;;
                     ubuntu|ubuntu-core)
                         os_version_raw="$VERSION_ID"
@@ -732,23 +780,17 @@ detect_os() {
                         # 04 or first two digits are uneven, use generic build.
                         if [ ${os_version_chevah%%04} == ${os_version_chevah} \
                             -o $(( ${os_version_chevah:0:2} % 2 )) -ne 0 ]; then
-                            check_linux_glibc
+                            check_linux_libc
                         elif [ ${os_version_chevah} == "2204" ]; then
                             # OpenSSL 3.0.x not supported by cryptography 3.3.x.
-                            check_linux_glibc
+                            check_linux_libc
                         fi
                         set_os_if_not_generic "ubuntu" $os_version_chevah
-                        ;;
-                    alpine)
-                        os_version_raw="$VERSION_ID"
-                        check_os_version "$distro_fancy_name" 3.12 \
-                            "$os_version_raw" os_version_chevah
-                        set_os_if_not_generic "alpine" $os_version_chevah
                         ;;
                     *)
                         # Supported distros with unsupported OpenSSL versions or
                         # distros not specifically supported: SLES, Debian, etc.
-                        check_linux_glibc
+                        check_linux_libc
                         ;;
                 esac
             fi
@@ -756,10 +798,7 @@ detect_os() {
         Darwin)
             ARCH=$(uname -m)
             os_version_raw=$(sw_vers -productVersion)
-            # Tested on 10.13, but this works on 10.12 too. Older versions need
-            # "-Wl,-no_weak_imports" in LDFLAGS to avoid runtime issues. More
-            # details at https://github.com/Homebrew/homebrew-core/issues/3727.
-            check_os_version "macOS" 10.12 "$os_version_raw" os_version_chevah
+            check_os_version "macOS" 10.13 "$os_version_raw" os_version_chevah
             # Build a generic package to cover all supported versions.
             OS="macos"
             ;;
@@ -796,12 +835,6 @@ detect_os() {
             check_os_version "Solaris" 11.4 "$os_version_raw" os_version_chevah
             OS="sol${os_version_chevah}"
             ;;
-        AIX)
-            ARCH="ppc$(getconf HARDWARE_BITMODE)"
-            os_version_raw=$(oslevel)
-            check_os_version AIX 7.1 "$os_version_raw" os_version_chevah
-            OS="aix${os_version_chevah}"
-            ;;
         *)
             (>&2 echo "Unsupported operating system: ${OS}.")
             exit 14
@@ -815,18 +848,20 @@ detect_os() {
             ;;
         "amd64"|"x86_64")
             ARCH="x64"
+            case "$OS" in
+                win)
+                    # 32bit build on Windows 2019, 64bit otherwise.
+                    # Should work with a l10n pack too (tested with French).
+                    win_ver=$(systeminfo.exe | head -n 3 | tail -n 1 \
+                        | cut -d ":" -f 2)
+                    if [[ "$win_ver" =~ "Microsoft Windows Server 2019" ]]; then
+                        ARCH="x86"
+                    fi
+                    ;;
+            esac
             ;;
         "aarch64")
             ARCH="arm64"
-            ;;
-        "ppc64")
-            # Python has not been fully tested on AIX when compiled as a 64bit
-            # binary, and has math rounding error problems (at least with XL C).
-            ARCH="ppc"
-            ;;
-        "sparcv9")
-            # We build 32bit binaries on SPARC too. Use "sparc64" for 64bit.
-            ARCH="sparc"
             ;;
     esac
 }
@@ -865,7 +900,7 @@ check_source_folder
 copy_python
 install_dependencies
 
-# Update brink.conf dependencies when running deps.
+# Update pythia.conf dependencies when running deps.
 if [ "$COMMAND" == "deps" ] ; then
     install_base_deps
 fi
