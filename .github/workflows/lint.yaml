@@ -24,7 +24,7 @@ jobs:
 
     - uses: actions/checkout@v2
     - name: Deps
-      run: ./brink.sh deps
+      run: ./pythia.sh deps
 
     - name: Lint
-      run: ./brink.sh lint --all
+      run: ./pythia.sh lint --all

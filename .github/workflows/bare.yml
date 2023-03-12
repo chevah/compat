@@ -51,7 +51,7 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-unicode
 
     - name: Deps
-      run: ./brink.sh deps
+      run: ./pythia.sh deps
 
     - uses: chevah/python-info-action@v1
       with:
@@ -61,7 +61,7 @@ jobs:
       run: mv build-compat build-compat-ț
 
     - name: Test
-      run: ./brink.sh test_ci2
+      run: ./pythia.sh test_ci2
       env:
         CHEVAH_BUILD: build-compat-ț
 
@@ -94,7 +94,7 @@ jobs:
       with:
         path: |
           build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-ascii
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-ascii
 
     - name: Deps
       run: ./brink.sh deps

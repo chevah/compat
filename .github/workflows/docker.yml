@@ -144,7 +144,7 @@ jobs:
     - name: CentOS 5 BINARY_DIST_URI hack
       if: startsWith(matrix.container, 'proatria/centos:5.11')
       run: |
-        sed -i s@^#BINARY_DIST_URI=\'https://bin.chevah.com:20443/production\'@BINARY_DIST_URI=\'http://bin.chevah.com:20080/production\'@ /home/chevah/$CHEVAH_REPO/brink.conf
+        sed -i s@^#BINARY_DIST_URI=\'https://bin.chevah.com:20443/production\'@BINARY_DIST_URI=\'http://bin.chevah.com:20080/production\'@ /home/chevah/$CHEVAH_REPO/pythia.conf
 
     # This action also fails on CentOS 5/6.
     - name: Cache build
@@ -153,12 +153,12 @@ jobs:
       with:
         path: |
           /home/chevah/$CHEVAH_REPO/build-$CHEVAH_REPO
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-${{ matrix.container }}
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-${{ matrix.container }}
 
     - name: Deps
       run: |
         cd /home/chevah/$CHEVAH_REPO
-        ./brink.sh deps
+        ./pythia.sh deps
         chown -R chevah .
 
     - uses: chevah/python-info-action@v1
@@ -168,9 +168,9 @@ jobs:
     - name: Build
       run: |
         cd /home/chevah/$CHEVAH_REPO
-        su chevah -c "./brink.sh build"
+        su chevah -c "./pythia.sh build"
 
     - name: Test
       run: |
         cd /home/chevah/$CHEVAH_REPO
-        su chevah -c "./brink.sh test_ci2"
+        su chevah -c "./pythia.sh test_ci2"
