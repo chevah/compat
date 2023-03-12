@@ -40,8 +40,8 @@ distribution = setup(
     description="Chevah OS Compatibility Layer.",
     long_description=open('README.rst').read(),
     url='http://www.chevah.com',
-    namespace_packages=['chevah'],
-    packages=find_packages('.'),
+    package_dir = {'': 'src'},
+    packages=find_packages('src/'),
     scripts=['scripts/nose_runner.py'],
     classifiers=[
         "Development Status :: 4 - Beta",

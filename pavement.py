@@ -74,10 +74,6 @@ if os.name == 'posix':
 
 # Packages required to use the dev/build system.
 BUILD_PACKAGES = [
-    # Buildbot is used for try scheduler.
-    'buildbot==0.8.11.chevah11',
-    'SQLAlchemy>=1.3.18',
-
     # For Lint and static checkers.
     'scame==0.5.1',
     'pyflakes>=1.5.0',
@@ -220,7 +216,7 @@ SETUP['folders']['source'] = u'chevah/compat'
 SETUP['repository']['name'] = u'compat'
 SETUP['repository']['github'] = u'https://github.com/chevah/compat'
 SETUP['scame'] = options
-SETUP['test']['package'] = 'chevah.compat.tests'
+SETUP['test']['package'] = 'chevah_compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = ['--with-randomly']
 SETUP['test']['coverator_url'] = 'http://coverator.chevah.com:8080'
@@ -333,7 +329,7 @@ def build():
     """
     # Clean previous files.
     pave.fs.deleteFolder([
-        pave.path.build, pave.getPythonLibPath(), 'chevah', 'compat',
+        pave.path.build, pave.getPythonLibPath(), 'chevah_compat',
         ])
 
     # On AIX, pip (setuptools) fails to re-install, so we do some custom
@@ -454,7 +450,7 @@ def test_ci2(args):
     # Show some info about the current environment.
     from OpenSSL import SSL, __version__ as pyopenssl_version
     from coverage.cmdline import main as coverage_main
-    from chevah.compat.testing.testcase import ChevahTestCase
+    from chevah_compat.testing.testcase import ChevahTestCase
 
     print('%s / os_name:%s / os_version:%s / cpu_type:%s / ci_name:%s' % (
         ChevahTestCase.os_family,
@@ -556,7 +552,7 @@ def test_py3(args):
 
     warnings.showwarning = capture_warning
 
-    sys.args = ['nose', 'chevah.compat.tests.normal'] + args
+    sys.args = ['nose', 'chevah_compat.tests.normal'] + args
     runner = nose_main(exit=False)
     if not runner.success:
         print('Test failed')
