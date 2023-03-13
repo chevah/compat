@@ -56,7 +56,7 @@ jobs:
 
     - uses: chevah/python-info-action@v1
       with:
-        python-path: build-compat/bin/python
+        python-path: build-py3/bin/python
 
     - name: Move build to Unicode path
       run: mv build-compat build-compat-ț

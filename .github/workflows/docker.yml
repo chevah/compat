@@ -163,7 +163,7 @@ jobs:
 
     - uses: chevah/python-info-action@v1
       with:
-        python-path: /home/chevah/$CHEVAH_REPO/build-$CHEVAH_REPO/bin/python
+        python-path: /home/chevah/$CHEVAH_REPO/build-py3/bin/python
 
     - name: Build
       run: |
