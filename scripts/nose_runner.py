@@ -37,11 +37,11 @@ def main():
         sys.exit(1)
 
     # Delay import after coverage is started.
-    from chevah.compat.testing.nose_memory_usage import MemoryUsage
-    from chevah.compat.testing.nose_test_timer import TestTimer
-    from chevah.compat.testing.nose_run_reporter import RunReporter
+    from chevah_compat.testing.nose_memory_usage import MemoryUsage
+    from chevah_compat.testing.nose_test_timer import TestTimer
+    from chevah_compat.testing.nose_run_reporter import RunReporter
 
-    from chevah.compat.testing import ChevahTestCase
+    from chevah_compat.testing import ChevahTestCase
 
 
     drop_user = sys.argv[1].encode('utf-8')
