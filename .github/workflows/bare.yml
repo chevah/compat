@@ -36,15 +36,16 @@ jobs:
   ubuntu-2004-unicode-path:
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
+    timeout-minutes: 30
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
 
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Cache build
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           build-compat
@@ -77,11 +78,12 @@ jobs:
 
   ubuntu-1804-ascii-path:
     runs-on: ubuntu-18.04
+    timeout-minutes: 30
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 2
 
@@ -90,7 +92,7 @@ jobs:
       run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-ci'
 
     - name: Cache build
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           build-compat
@@ -122,11 +124,12 @@ jobs:
       matrix:
         runs-on: [ macos-10.15 ]
     runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Cache build
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           build-compat
@@ -165,11 +168,12 @@ jobs:
       matrix:
         runs-on: [ macos-12 ]
     runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Cache build
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           build-compat
@@ -199,16 +203,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # For now the Windows-2022 VM from Github can't run our build.
-        # To be fixed in a separate PR.
-        runs-on: [ windows-2019, windows-2022 ]
+        runs-on: [ 'windows-2019', 'windows-2022' ]
     runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 120
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Cache build
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           build-compat
@@ -223,6 +226,12 @@ jobs:
       run: ./brink.sh test_ci2
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Tmate debug on failure
+      if: failure() && env.TMATE_DEBUG == 'yes'
+      uses: chevah/action-tmate@v3
+      with:
+        limit-access-to-actor: true
 
     - name: Public coverage
       if: ${{ !cancelled() }}

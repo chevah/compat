@@ -87,10 +87,21 @@ try:
                 if test_value is not None:
                     return test_value
 
-            return getattr(self, option)
+            config = getattr(self, option)
+
+            if (
+                (path.endswith('.yml') or path.endswith('.yaml'))
+                and option == 'max_line_length'
+                    ):
+                # We allow long lines in yaml files.
+                return 1000
+
+            return config
 
     options = CompatScameOptions()
-    options.max_line_length = 80
+    # Looks like there is a bug in `scame`
+    # so we need max_line + 1 here.
+    options.max_line_length = 81
     options.progress = True
 
     options.scope = {

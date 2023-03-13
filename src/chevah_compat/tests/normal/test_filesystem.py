@@ -1647,6 +1647,80 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertEqual(test_size, size)
 
+    def test_openFileForReading_parent_not_found(self):
+        """
+        Raise OSError when trying to open a file that doesn't exist for reading,
+        since the parent directory doesn't exists.
+        """
+        segments = ['c', 'no', 'such', 'file.txt']
+        path = self.filesystem.getRealPathFromSegments(segments)
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForReading(segments)
+
+        details = '[Errno 2] No such file or directory: ' + path
+        self.assertStartsWith(details, force_unicode(context.exception))
+        self.assertEqual(errno.ENOENT, context.exception.errno)
+
+    def test_openFileForReading_file_not_found(self):
+        """
+        Raise OSError when trying to open a file that doesn't exist for reading,
+        even when the parent directory exists.
+        """
+        segments = ['c', 'no-such-file-in-root-drive.txt']
+        path = self.filesystem.getRealPathFromSegments(segments)
+
+        with self.assertRaises(OSError) as context:
+            self.filesystem.openFileForReading(segments)
+
+        details = '[Errno 2] No such file or directory: ' + path
+        self.assertStartsWith(details, force_unicode(context.exception))
+        self.assertEqual(errno.ENOENT, context.exception.errno)
+
+    def test_openFileForReading_already_opened(self):
+        """
+        The same file can be opened for reading multiple times.
+        Each handler has a separate cursor.
+        """
+        segments = self.fileInTemp(content='something-\N{sun}')
+        file_1 = None
+        file_2 = None
+        try:
+            file_1 = self.filesystem.openFileForReading(segments)
+            file_2 = self.filesystem.openFileForReading(segments)
+
+            content = file_1.read(11)
+            self.assertEqual(b'something-\xe2', content)
+
+            content = file_2.read(12)
+            self.assertEqual(b'something-\xe2\x98', content)
+
+        finally:
+            file_1.close()
+            file_2.close()
+
+    def test_openFileForReading_already_opened_for_write(self):
+        """
+        It can read a file that is currently open for writing.
+        """
+        segments = self.fileInTemp(content='something-\N{sun}')
+        file_read = None
+        file_write = None
+        try:
+            file_write = self.filesystem.openFileForWriting(segments)
+            file_write.write(b'some-new-content')
+            file_write.flush()
+
+            # We open the file while write is still ongoing (not closed).
+            file_read = self.filesystem.openFileForReading(segments)
+
+            content = file_read.read(100)
+            self.assertEqual(b'some-new-content', content)
+
+        finally:
+            file_read.close()
+            file_write.close()
+
     def test_openFileForReading_unicode(self):
         """
         Check reading in Unicode.
@@ -1660,8 +1734,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
             self.assertEqual(content, a_file.read().decode('utf-8'))
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
     def test_openFileForReading_empty(self):
         """
@@ -1676,8 +1749,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
             self.assertEqual(b'', a_file.read())
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
     def test_openFileForReading_no_write(self):
         """
@@ -1692,8 +1764,138 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             with self.assertRaises(IOError):
                 a_file.write('something')
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
+
+    def test_openFileForReading_no_delete_lock(self):
+        """
+        A file opened only for reading will not be locked for delete
+        operations.
+        """
+        _, segments = mk.fs.makePathInTemp()
+        mk.fs.writeFileContent(segments=segments, content='something-\N{sun}')
+        a_file = None
+        try:
+            a_file = self.filesystem.openFileForReading(segments)
+
+            self.filesystem.deleteFile(segments)
+
+            content = a_file.read(100)
+            self.assertEqual(b'something-\xe2\x98\x89', content)
+        finally:
+            a_file.close()
+
+    def test_openFile_read_no_delete_lock(self):
+        """
+        A file opened only for reading will not be locked for delete
+        operations.
+
+        The file is opened in binary mode.
+        """
+        content = 'first-line\nmore-lines\r\nsomething-\N{sun}'
+        _, segments = mk.fs.makePathInTemp()
+        mk.fs.writeFileContent(segments=segments, content=content)
+        fd = None
+        try:
+            fd = self.filesystem.openFile(
+                segments,
+                flags=self.filesystem.OPEN_READ_ONLY,
+                mode=0,
+                )
+
+            self.filesystem.deleteFile(segments)
+            self.assertFalse(self.filesystem.exists(segments))
+
+            result = os.read(fd, 100)
+            self.assertEqual(content.encode('utf-8'), result)
+        finally:
+            if fd:
+                os.close(fd)
+
+    @conditionals.onOSFamily('nt')
+    def test_fdRead_os_error(self):
+        """
+        This is a low-level Windows test.
+
+        Under normal update, this function should never fail as we have some
+        higher API guards.
+
+        This test is here to make sure that if it fails, it raises a generic
+        OSError.
+        """
+        with self.assertRaises(OSError):
+            self.filesystem._fdRead('no/such/path')
+
+    def test_openFile_write_only(self):
+        """
+        A file opened only for write will not allow reading.
+
+        Initial content is reset.
+
+        The file is written in binary mode.
+        """
+        content = 'first-line\nmore-lines\r\nsomething-\N{sun}'
+        segments = self.fileInTemp(content='initial-value')
+        fd = None
+        try:
+            fd = self.filesystem.openFile(
+                segments,
+                flags=self.filesystem.OPEN_WRITE_ONLY,
+                mode=0,
+                )
+
+            os.write(fd, content.encode('utf-8'))
+
+            # File can't be read.
+            self.assertRaises(OSError, os.read, fd, 1)
+
+        finally:
+            if fd:
+                os.close(fd)
+
+        # Just check the result after close.
+        self.assertEqual(content, mk.fs.getFileContent(segments))
+
+    def test_openFile_read_and_write(self):
+        """
+        A file opened for read and write will not have the
+        content reset or truncated.
+
+        The file is locked for delete.
+
+        The file is written in binary mode.
+        """
+        content = 'first-line\nmore-lines\r\nsomething-\N{sun}'
+        segments = self.fileInTemp(content=content)
+        fd = None
+        try:
+            fd = self.filesystem.openFile(
+                segments,
+                flags=self.filesystem.OPEN_READ_WRITE,
+                mode=0)
+
+            # File can be read, and pointer is at start
+            result = os.read(fd, 15)
+            self.assertEqual(b'first-line\nmore', result)
+
+            # File can be written
+            os.write(fd, b'UPDATE')
+
+            # On Windows, the file is locked for deletion, due to write access.
+            if self.os_family == 'nt':
+                self.assertRaises(
+                    OSError,
+                    self.filesystem.deleteFile, segments)
+
+        finally:
+            if fd:
+                os.close(fd)
+
+        # The write is in the middle of the file.
+        # All the previous content is kept, with the exception of the
+        # updated part.
+        self.assertEqual(
+            'first-line\nmoreUPDATE\r\nsomething-\N{sun}',
+            mk.fs.getFileContent(segments))
 
     def test_openFileForWriting_ascii(self):
         """
@@ -1748,8 +1950,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
                 a_file.read()
 
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
     def test_openFileForWriting_truncate(self):
         """
@@ -1803,8 +2004,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             new_test_content = a_file.read().decode('utf-8')
             self.assertEqual(new_test_content, content + new_content)
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
         if self.os_family == 'posix':
             # It will not overwrite the permissions for existing files.
@@ -1846,8 +2046,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
             self.assertEqual(content_str, a_file.read())
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
     def test_setAttributes_owner_and_group(self):
         """
@@ -2903,8 +3102,7 @@ class TestLocalFilesystemLockedUNC(CompatTestCase, FilesystemTestMixin):
             self.addCleanup(mk.fs.deleteFile, outside_segments)
             a_file.write(content.encode('utf-8'))
         finally:
-            if a_file:
-                a_file.close()
+            a_file.close()
 
         result = mk.fs.getFileContent(outside_segments)
         self.assertEqual(content, result)
