@@ -1,6 +1,10 @@
 """
 This plugin provides memory usage .
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from six.moves import range
 import operator
 
 import nose

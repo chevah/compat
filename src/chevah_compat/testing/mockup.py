@@ -2,6 +2,11 @@
 """
 Module containing helpers for testing the Chevah project.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from six import text_type
+from six.moves import range
 import hashlib
 import os
 import random
@@ -236,7 +241,7 @@ class ChevahCommonsFactory(object):
 
         This is an Unicode with only ascii characters.
         """
-        return 'ascii_StR' + str(self.number())
+        return 'ascii_StR' + text_type(self.number())
 
     def string(self, *args, **kwargs):
         """
@@ -267,7 +272,7 @@ class ChevahCommonsFactory(object):
         """
         The account under which this process is executed.
         """
-        return str(os.environ['USER'])
+        return text_type(os.environ['USER'])
 
     def md5(self, content):
         """
@@ -283,7 +288,7 @@ class ChevahCommonsFactory(object):
         """
         A string unique for this session.
         """
-        base = u'StR' + str(self.number())
+        base = u'StR' + text_type(self.number())
 
         # The minimum length so that we don't truncate the unique string.
         min_length = len(base) + len(TEST_NAME_MARKER)

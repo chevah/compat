@@ -3,6 +3,10 @@
 """
 Assertion helpers for compat testing.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from six import next, text_type
 from contextlib import contextmanager
 import collections
 import time
@@ -102,7 +106,7 @@ class AssertionMixin(object):
         actual_id = getattr(actual_error, 'event_id', None)
         if expected_id != actual_id:
             values = (
-                actual_error, str(expected_id), str(actual_id))
+                actual_error, text_type(expected_id), text_type(actual_id))
             message = u'Error id for %s is not %s, but %s.' % values
             raise AssertionError(message)
 
@@ -111,14 +115,14 @@ class AssertionMixin(object):
         Raise an exception if value is not 'False'.
         """
         if value is not False:
-            raise AssertionError('%s is not False.' % str(value))
+            raise AssertionError('%s is not False.' % text_type(value))
 
     def assertIsTrue(self, value):
         """
         Raise an exception if value is not 'True'.
         """
         if value is not True:
-            raise AssertionError('%s is not True.' % str(value))
+            raise AssertionError('%s is not True.' % text_type(value))
 
     def assertFailureType(self, failure_class, failure_or_deferred):
         '''Raise assertion error if failure is not of required type.'''
@@ -130,7 +134,7 @@ class AssertionMixin(object):
 
         if failure.type is not failure_class:  # noqa:cover
             message = u'Failure %s is not of type %s' % (
-                str(failure), failure_class)
+                text_type(failure), failure_class)
             raise AssertionError(message)
 
     def assertIsEmpty(self, target):

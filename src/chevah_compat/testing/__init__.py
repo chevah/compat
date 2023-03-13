@@ -6,6 +6,11 @@ Package with code that helps with testing.
 
 Here are a few import shortcuts.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
 from chevah_compat import process_capabilities
 from chevah_compat.administration import os_administration
 from chevah_compat.testing.mockup import (

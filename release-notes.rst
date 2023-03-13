@@ -1,6 +1,13 @@
 Release notes for chevah.compat
 ===============================
 
+
+0.70.1 - 2023-03-13
+-------------------
+
+* Release with relaxed dependencies.
+
+
 0.70.0 - 2023-03-12
 -------------------
 
