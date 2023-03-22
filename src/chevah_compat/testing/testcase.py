@@ -1064,7 +1064,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             try:
                 check()
             except AssertionError as error:
-                errors.append(error.message)
+                errors.append(str(error))
 
         if errors:  # noqa:cover
             self._teardown_errors.append(AssertionError(
@@ -1339,7 +1339,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         return mk.fs.pathInTemp(
             cleanup=self.addCleanup, prefix=prefix, suffix=suffix)
 
-    def tempFile(self, content='', prefix='', suffix='', cleanup=True):
+    def tempFile(self, content=b'', prefix='', suffix='', cleanup=True):
         """
         Return (path, segments) for a new file created in temp which is
         auto cleaned.
@@ -1352,7 +1352,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
 
         try:
             opened_file = mk.fs.openFileForWriting(segments)
-            opened_file.write(content.encode('utf-8'))
+            opened_file.write(content)
         finally:
             opened_file.close()
 

@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.70.2 - 2023-03-22
+-------------------
+
+* Write test files with bytes as content.
+
+
 0.70.1 - 2023-03-13
 -------------------
 
