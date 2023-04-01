@@ -2,6 +2,18 @@ Release notes for chevah.compat
 ===============================
 
 
+1.0.4 - 2023-04-01
+------------------
+
+* Fix getFileMD5Sum
+
+
+0.70.3 - 2023-03-27
+-------------------
+
+* Allow testing temp file to be called with Unicode content..
+
+
 0.70.2 - 2023-03-22
 -------------------
 

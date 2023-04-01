@@ -6,11 +6,11 @@ Filesystem helpers for tests.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from six import text_type
 import hashlib
 import os
 import re
 import uuid
+import six
 
 from chevah_compat import LocalFilesystem
 from chevah_compat.testing.constant import TEST_NAME_MARKER
@@ -103,11 +103,12 @@ class LocalTestFilesystem(LocalFilesystem):
 
         Raise AssertionError if file already exists or it can not be created.
         '''
+        if isinstance(content, six.text_type):
+            content = content.encode('utf-8')
         assert not self.isFile(segments), 'File already exists.'
         new_file = self.openFileForWriting(segments, mode=mode)
         if content is None:
             value = b'a'
-            content = ''
             if length > 0:
                 assert length > 10, (
                     'Data length must be greater than 10.')
@@ -121,7 +122,7 @@ class LocalTestFilesystem(LocalFilesystem):
                     new_file.write(value * buffer_size)
                 new_file.write(b'\n')
         else:
-            new_file.write(content.encode('utf-8'))
+            new_file.write(content)
 
         new_file.close()
         assert self.isFile(segments), 'Could not create file'
@@ -225,7 +226,7 @@ class LocalTestFilesystem(LocalFilesystem):
     def createFileInHome(self, segments=None, **args):
         '''Create a file in home folder.'''
         if segments is None:
-            segments = [text_type(uuid.uuid1()) + TEST_NAME_MARKER]
+            segments = [six.text_type(uuid.uuid1()) + TEST_NAME_MARKER]
 
         file_segments = self.home_segments[:]
         file_segments.extend(segments)
@@ -319,12 +320,14 @@ class LocalTestFilesystem(LocalFilesystem):
         return self.getFileSize(file_segments)
 
     def getFileMD5Sum(self, segments):
-        '''Get MD5 checksum.'''
+        """
+        Get MD5 checksum.
+        """
         md5_sum = hashlib.md5()
         chunk_size = 8192
         input_file = self.openFileForReading(segments)
         try:
-            for chunk in iter(lambda: input_file.read(chunk_size), ''):
+            for chunk in iter(lambda: input_file.read(chunk_size), b''):
                 md5_sum.update(chunk)
         finally:
             input_file.close()
