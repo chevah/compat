@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+1.0.5 - 2023-04-02
+------------------
+
+* Add skipOnPY3 for conditionals.
+
+
 1.0.4 - 2023-04-01
 ------------------
 

@@ -6,6 +6,8 @@ Decorators used for testing.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+
+import six
 from functools import wraps
 from nose import SkipTest
 from socket import gethostname
@@ -169,4 +171,14 @@ def onAdminPrivileges(present):
     return skipOnCondition(
         is_normal_user,
         'Administrator privileges not present on "%s".' % (hostname,)
+        )
+
+
+def skipOnPY3():
+    """
+    Skip tests on Python 3 or Python 2 in forward compatibility.
+    """
+    return skipOnCondition(
+        lambda: six.PY3,
+        'Python 2 only test.',
         )
