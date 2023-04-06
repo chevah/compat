@@ -865,9 +865,9 @@ def _get_os_version():
         return process_capabilities.os_name
 
     # We delay the import as it will call lsb_release.
-    import ld
+    import distro
 
-    distro_name = ld.id()
+    distro_name = distro.id()
     if distro_name == 'arch':
         # Arch has no version.
         return 'arch'
@@ -876,7 +876,7 @@ def _get_os_version():
         # Normalize all RHEL variants.
         distro_name = 'rhel'
 
-    distro_version = ld.version().split('.', 1)[0]
+    distro_version = distro.version().split('.', 1)[0]
 
     return '%s-%s' % (distro_name, distro_version)
 

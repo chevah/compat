@@ -11,8 +11,6 @@ from __future__ import division
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from remote_pdb import RemotePdb
-
 from chevah_compat import process_capabilities
 from chevah_compat.administration import os_administration
 from chevah_compat.testing.mockup import (
@@ -118,13 +116,6 @@ TEST_GROUPS = {
         members=[TEST_ACCOUNT_USERNAME],
         ),
     }
-
-
-def rt(port=9999, interface='0.0.0.0'):
-    """
-    Trigger a remote debugging breakpoint
-    """
-    RemotePdb(interface, port).set_trace()
 
 
 def setup_access_control(users, groups):

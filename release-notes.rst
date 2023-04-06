@@ -1,6 +1,14 @@
 Release notes for chevah.compat
 ===============================
 
+
+0.70.1 - 2023-04-06
+-------------------
+
+* Remove support for remote_pdb
+* Use `distro` instead of `ld` to have the same lib in py2 and py3.
+
+
 0.70.0 - 2023-03-12
 -------------------
 
