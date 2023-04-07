@@ -160,7 +160,7 @@ class NTUsers(CompatUsers):
             profile = win32profile.LoadUserProfile(token, profile_info)
             win32profile.UnloadUserProfile(token, profile)
         except (win32security.error, pywintypes.error) as error:
-            (error_id, error_call, error_message) = error
+            (error_id, error_call, error_message) = error.args
             error_text = (
                 u'Failed to create user profile. '
                 u'Make sure you have SeBackupPrivilege and '
@@ -181,7 +181,7 @@ class NTUsers(CompatUsers):
             win32security.LookupAccountName('', username)
             return True
         except (win32security.error, pywintypes.error) as error:
-            (number, name, message) = error
+            (number, name, message) = error.args
             if number == ERROR_NONE_MAPPED:
                 return False
             error_text = u'[%s] %s %s' % (number, name, message)

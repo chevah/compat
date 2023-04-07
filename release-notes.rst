@@ -2,6 +2,13 @@ Release notes for chevah.compat
 ===============================
 
 
+1.0.6 - 2023-04-07
+------------------
+
+* Fix unidecode usage.
+* Many py3 fixes on Windows.
+
+
 1.0.5 - 2023-04-02
 ------------------
 

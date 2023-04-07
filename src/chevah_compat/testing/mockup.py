@@ -39,7 +39,7 @@ def _sanitize_name_legacy_unix(candidate):
 
     By default password is limited to 8 characters without spaces.
     """
-    return unidecode(candidate).replace(' ', '_')[:8].decode('utf-8')
+    return unidecode(candidate).replace(' ', '_')[:8]
 
 
 def _sanitize_name_windows(candidate):
@@ -48,7 +48,7 @@ def _sanitize_name_windows(candidate):
     """
     # FIXME:927:
     # On Windows, we can't delete home folders with unicode names.
-    return unidecode(candidate).decode('utf-8')
+    return unidecode(candidate)
 
 
 class SanitizeNameMixin(object):
@@ -68,7 +68,7 @@ class SanitizeNameMixin(object):
             macosname = _sanitize_name_legacy_unix(name).decode('utf-8')
             return macosname.replace('_', 'Z')
         elif os_name == 'windows':
-            return _sanitize_name_windows(name).decode('utf-8')
+            return _sanitize_name_windows(name)
 
         return name
 

@@ -361,14 +361,10 @@ class NTFilesystem(PosixFilesystemBase):
         try:
             yield
         except WindowsError as error:
-            encoded_filename = None
-            if error.filename:
-                encoded_filename = error.filename.encode('utf-8')
-
             raise OSError(
                 error.errno,
                 error.strerror,
-                encoded_filename,
+                error.filename,
                 )
         except pywintypes.error as error:
             if path is None:
