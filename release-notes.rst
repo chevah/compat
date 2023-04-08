@@ -1,6 +1,11 @@
 Release notes for chevah.compat
 ===============================
 
+1.0.7 - 2023-04-08
+------------------
+
+* More unicode fixed after running more code on Windows.
+
 
 1.0.6 - 2023-04-07
 ------------------

@@ -430,7 +430,7 @@ class NTFilesystem(PosixFilesystemBase):
             raw_reparse_data = win32file.DeviceIoControl(
                 handle, FSCTL_GET_REPARSE_POINT, None, 16 * 1024)
         except pywintypes.error as error:
-            message = b'%s - %s' % (error.winerror, error.strerror)
+            message = '%s - %s' % (error.winerror, error.strerror)
             raise OSError(errno.EINVAL, message, path)
         finally:
             win32file.CloseHandle(handle)
@@ -631,7 +631,6 @@ class NTFilesystem(PosixFilesystemBase):
         for drive in drives:
             if win32file.GetDriveType(drive) == LOCAL_DRIVE:
                 drive = drive.strip(':\\')
-                drive = drive.decode(self.INTERNAL_ENCODING)
                 result.append(drive)
         return result
 
@@ -662,7 +661,7 @@ class NTFilesystem(PosixFilesystemBase):
                         )
                 data = search[0]
         except pywintypes.error as error:
-            message = b'%s - %s' % (error.winerror, error.strerror)
+            message = '%s - %s' % (error.winerror, error.strerror)
             raise OSError(
                 errno.EINVAL,
                 message,
