@@ -28,7 +28,7 @@ class LocalTestFilesystem(LocalFilesystem):
         Create an unique temp folder.
         """
         super(LocalTestFilesystem, self).__init__(avatar=avatar)
-        self._temp_uuid = u'%s%s' % (uuid.uuid4(), TEST_NAME_MARKER)
+        self._temp_uuid = u'%s%s%s' % ('long-name-' * 25, uuid.uuid4(), TEST_NAME_MARKER)
         self.__class__.__temporary_folders__.append(self.temp_segments)
 
     @property
