@@ -319,36 +319,6 @@ class LocalTestFilesystem(LocalFilesystem):
         file_segments.extend(segments)
         return self.getFileSize(file_segments)
 
-    def getFileMD5Sum(self, segments):
-        """
-        Get MD5 checksum.
-        """
-        md5_sum = hashlib.md5()
-        chunk_size = 8192
-        input_file = self.openFileForReading(segments)
-        try:
-            for chunk in iter(lambda: input_file.read(chunk_size), b''):
-                md5_sum.update(chunk)
-        finally:
-            input_file.close()
-        return md5_sum.hexdigest()
-
-    def getFileMD5SumInHome(self, segments):
-        """
-        Get file MD5 sum relative to home folder.
-        """
-        file_segments = self.home_segments[:]
-        file_segments.extend(segments)
-        return self.getFileMD5Sum(file_segments)
-
-    def getFileMD5SumInTemporary(self, segments):
-        """
-        Get file MD5 sum relative to temporary folder.
-        """
-        file_segments = self.temp_segments[:]
-        file_segments.extend(segments)
-        return self.getFileMD5Sum(file_segments)
-
     def isFileInHome(self, segments):
         '''Get isFile relative to home folder.'''
         file_segments = self.home_segments[:]

@@ -274,16 +274,6 @@ class ChevahCommonsFactory(object):
         """
         return text_type(os.environ['USER'])
 
-    def md5(self, content):
-        """
-        Return MD5 digest for `content`.
-
-        Content must by byte string.
-        """
-        md5_sum = hashlib.md5()
-        md5_sum.update(content)
-        return md5_sum.hexdigest()
-
     def getUniqueString(self, length=None):
         """
         A string unique for this session.

@@ -1,6 +1,12 @@
 Release notes for chevah.compat
 ===============================
 
+1.0.8 - 2023-04-UNRELEAED
+--------------------
+
+* Remove getFileMD5Sum and co functions.
+* Remove mk.md5
+
 1.0.7 - 2023-04-08
 ------------------
 
