@@ -21,7 +21,8 @@ coverage:
 flags:
   tests:
     paths:
-      - tests/
+      - src/chevah_server/tests/
+      - src/chevah_server/testing/
 
 comment:
   layout: "header, diff, files"
