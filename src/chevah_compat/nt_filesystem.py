@@ -158,7 +158,9 @@ class NTFilesystem(PosixFilesystemBase):
     def getEncodedPath(cls, path):
         '''Return the encoded representation of the path, use in the lower
         lever API for accessing the filesystem.'''
-        return path
+        if len(path) < 250:
+            return path
+        return u'\\\\?\\' + path
 
     def _getLockedPathFromSegments(self, segments):
         '''
@@ -242,8 +244,7 @@ class NTFilesystem(PosixFilesystemBase):
             # availability.
             return
 
-        path_encoded = self.getEncodedPath(path)
-        letter, _ = os.path.splitdrive(path_encoded)
+        letter, _ = os.path.splitdrive(path)
         if letter.strip(':').lower() not in self._allowed_drive_letters:
             message = u'Bad drive letter "%s" for %s' % (letter, path)
             raise OSError(

@@ -28,7 +28,13 @@ class LocalTestFilesystem(LocalFilesystem):
         Create an unique temp folder.
         """
         super(LocalTestFilesystem, self).__init__(avatar=avatar)
-        self._temp_uuid = u'%s%s%s' % ('long-name-' * 25, uuid.uuid4(), TEST_NAME_MARKER)
+        self._temp_uuid = u'%s%s%s' % (
+            'long-name-' * 25, uuid.uuid4(), TEST_NAME_MARKER)
+
+        if os.name == 'posix':
+            # On linux the limit for ext4 is 255 characters
+            self._temp_uuid = self._temp_uuid[-255:]
+
         self.__class__.__temporary_folders__.append(self.temp_segments)
 
     @property
