@@ -32,22 +32,23 @@ Release notes for chevah.compat
 * Fix getFileMD5Sum
 
 
-0.70.3 - 2023-03-27
+0.70.3 - 2023-04-18
 -------------------
 
-* Allow testing temp file to be called with Unicode content..
+* getFileMD5Sum now always returns unicode.
 
 
-0.70.2 - 2023-03-22
+0.70.2 - 2023-04-18
 -------------------
 
-* Write test files with bytes as content.
+* ChevahTestCase.tempFile can now handle content as both bytes or unicode.
 
 
-0.70.1 - 2023-03-13
+0.70.1 - 2023-04-06
 -------------------
 
-* Release with relaxed dependencies.
+* Remove support for remote_pdb
+* Use `distro` instead of `ld` to have the same lib in py2 and py3.
 
 
 0.70.0 - 2023-03-12

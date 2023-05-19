@@ -5,8 +5,8 @@ Module containing helpers for testing the Chevah project.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from six import text_type
 from six.moves import range
+import six
 import hashlib
 import os
 import random
@@ -278,7 +278,7 @@ class ChevahCommonsFactory(object):
         """
         A string unique for this session.
         """
-        base = u'StR' + text_type(self.number())
+        base = u'StR' + six.text_type(self.number())
 
         # The minimum length so that we don't truncate the unique string.
         min_length = len(base) + len(TEST_NAME_MARKER)

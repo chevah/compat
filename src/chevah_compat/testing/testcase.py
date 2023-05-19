@@ -7,7 +7,8 @@ TestCase used for Chevah project.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-
+import six
+from six.moves import range
 import contextlib
 import inspect
 import threading
@@ -16,7 +17,6 @@ import platform
 import socket
 import sys
 import time
-import six
 
 from bunch import Bunch
 from unittest.mock import patch, Mock
@@ -1350,6 +1350,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
 
         segments = mk.fs.createFileInTemp(prefix=prefix, suffix=suffix)
         path = mk.fs.getRealPathFromSegments(segments)
+
+        if isinstance(content, six.text_type):
+            content = content.encode('utf-8')
 
         if cleanup:
             self.addCleanup(mk.fs.deleteFile, segments)
