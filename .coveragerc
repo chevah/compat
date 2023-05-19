@@ -1,6 +1,6 @@
 [run]
 branch = True
-source = chevah.compat
+source = chevah_compat
 
 [report]
 show_missing = False
@@ -28,6 +28,6 @@ directory = coverage-report
 
 [paths]
 source =
-    chevah/compat
-    */chevah/compat
-    *\chevah\compat
+    src/chevah_compat
+    */chevah_compat
+    *\chevah_compat

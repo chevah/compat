@@ -6,7 +6,7 @@ Filesystem helpers for tests.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from six import text_type
+import six
 import hashlib
 import os
 import re
@@ -221,7 +221,7 @@ class LocalTestFilesystem(LocalFilesystem):
     def createFileInHome(self, segments=None, **args):
         '''Create a file in home folder.'''
         if segments is None:
-            segments = [text_type(uuid.uuid1()) + TEST_NAME_MARKER]
+            segments = [six.text_type(uuid.uuid1()) + TEST_NAME_MARKER]
 
         file_segments = self.home_segments[:]
         file_segments.extend(segments)
@@ -324,7 +324,7 @@ class LocalTestFilesystem(LocalFilesystem):
                 md5_sum.update(chunk)
         finally:
             input_file.close()
-        return md5_sum.hexdigest()
+        return six.text_type(md5_sum.hexdigest())
 
     def getFileMD5SumInHome(self, segments):
         """

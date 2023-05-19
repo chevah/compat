@@ -14,15 +14,24 @@ coverage:
     project:
       default:
         target: auto
-      tests:
-        target: 100%
-        flags: tests
 
-flags:
-  tests:
-    paths:
-      - tests/
 
 comment:
-  layout: "header, diff, files"
+  layout: "header, diff, files, components"
   behavior: default
+
+
+component_management:
+  # default rules that will be inherited by all components
+  default_rules:
+    statuses:
+      - type: project
+        target: 100%
+        branches:
+          - "!main"
+  individual_components:
+    - component_id: component_tests
+      name: tests
+      paths:
+        - src/chevah_compat/tests/**
+        - src/chevah_compat/testing/**
