@@ -41,7 +41,7 @@ distribution = setup(
     long_description=open('README.rst').read(),
     url='http://www.chevah.com',
     package_dir = {'': 'src'},
-    packages=find_packages('src/'),
+    packages=find_packages('src'),
     scripts=['scripts/nose_runner.py'],
     classifiers=[
         "Development Status :: 4 - Beta",
