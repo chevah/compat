@@ -110,7 +110,8 @@ BUILD_PACKAGES = [
     'wmi==1.4.9',
 
     # Used to detect Linux distributions.
-    'ld==0.5.0',
+    # This is test dependency... so not really a run deps.
+    'distro==1.6.0',
 
     # Required for some unicode handling.
     'unidecode',
