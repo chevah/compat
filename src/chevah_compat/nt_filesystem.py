@@ -418,6 +418,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         Return a dict with the link target.
         """
+        path = self.getEncodedPath(path)
         try:
             handle = win32file.CreateFileW(
                 path,
