@@ -763,19 +763,23 @@ class TestChevahTestCase(ChevahTestCase):
         child_segments.append(mk.makeFilename())
         mk.fs.createFolder(child_segments)
 
-    # @conditionals.onCapability('symbolic_link', True)
-    # def DISABLED_cleanup_test_segments_link(self):
-    #     """
-    #     When self.test_segments is defined it will be automatically
-    #     removed, even when it is a symbolic link.
-    #     """
-    #     _, self.test_segments = mk.fs.makePathInTemp(
-    #         prefix='test_cleanup_test_segments_link')
+    @conditionals.onCapability('symbolic_link', True)
+    def test_cleanup_test_segments_link(self):
+        """
+        When self.test_segments is defined it will be automatically
+        removed, even when it is a symbolic link.
+        """
+        # FIXME:
+        # Reenable the test to see why cleanup fails here.
+        raise self.skipTest('FIXME')
 
-    #     mk.fs.makeLink(
-    #         target_segments=mk.fs.temp_segments,
-    #         link_segments=self.test_segments,
-    #         )
+        _, self.test_segments = mk.fs.makePathInTemp(
+            prefix='test_cleanup_test_segments_link')
+
+        mk.fs.makeLink(
+            target_segments=mk.fs.temp_segments,
+            link_segments=self.test_segments,
+            )
 
     def test_assertIsInstance(self):
         """

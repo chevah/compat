@@ -609,7 +609,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         It can create links to a non-existent Windows share.
         """
         path, segments = self.tempPath()
-        if self.os_family == 'windows':
+        if self.os_family == 'nt':
             path = mk.fs.getEncodedPath(path)
 
         # We assume all slaves have the c:\temp folder.
@@ -4319,7 +4319,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         The real members are shadowed by the virtual members.
         """
-        self.maxDiff = None
         sut = self.getFilesystem(virtual_folders=[
             (['non-virtual\N{sun}', 'virtual\N{cloud}'], mk.fs.temp_path),
             (['non-virtual\N{sun}', 'child-file', 'other'], mk.fs.temp_path),
