@@ -485,7 +485,10 @@ class NTFilesystem(PosixFilesystemBase):
                 with self.process_capabilities._elevatePrivileges(
                         win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
                     win32file.CreateSymbolicLink(
-                        link_path, target_path, flags)
+                        self.getEncodedPath(link_path),
+                        self.getEncodedPath(target_path),
+                        flags,
+                        )
             except AdjustPrivilegeException as error:
                 raise OSError(errno.EINVAL, error.message, link_path)
 

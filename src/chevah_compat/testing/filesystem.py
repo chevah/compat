@@ -30,10 +30,10 @@ class LocalTestFilesystem(LocalFilesystem):
         super(LocalTestFilesystem, self).__init__(avatar=avatar)
         self._temp_uuid = u'%s%s%s' % (
             'long-name-' * 25, uuid.uuid4(), TEST_NAME_MARKER)
-        # Make sure we keep the directory below 256.
+        # Make sure we keep the directory below 255.
+        # This is the limit for a single filename in Windows and ext4.
         # Any file created inside will have a longer path.
-        self._temp_uuid = self._temp_uuid[-255:]
-
+        self._temp_uuid = self._temp_uuid[-254:]
         self.__class__.__temporary_folders__.append(self.temp_segments)
 
     @property

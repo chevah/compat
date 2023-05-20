@@ -1365,10 +1365,15 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         return mk.fs.pathInTemp(
             cleanup=self.addCleanup, prefix=prefix, suffix=suffix)
 
-    def tempFile(self, content='', prefix='', suffix='', cleanup=True):
+    def tempFile(
+        self, content='', prefix='', suffix='', cleanup=True,
+        win_encoded=False,
+            ):
         """
         Return (path, segments) for a new file created in temp which is
         auto cleaned.
+
+        When `win_encoded` is True, it will return the low-level Windows path.
         """
         segments = mk.fs.createFileInTemp(prefix=prefix, suffix=suffix)
         path = mk.fs.getRealPathFromSegments(segments)
@@ -1384,6 +1389,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             opened_file.write(content)
         finally:
             opened_file.close()
+
+        if self.os_family == 'nt' and win_encoded:
+            path = mk.fs.getEncodedPath(path)
 
         return (path, segments)
 

@@ -362,7 +362,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Raise an OS error when trying to delete a file using folder API.
         """
-        path, segments = self.tempFile()
+        path, segments = self.tempFile(win_encoded=True)
+
         self.assertTrue(self.filesystem.exists(segments))
 
         with self.assertRaises(OSError) as context:
@@ -2129,7 +2130,7 @@ class LocalFilesystemNTMixin(object):
         self.assertFalse(self.filesystem.exists(self.test_segments))
         self.filesystem.touch(initial_segments)
         path = self.filesystem.getRealPathFromSegments(initial_segments)
-        os.chmod(path, stat.S_IREAD)
+        os.chmod(self.filesystem.getEncodedPath(path), stat.S_IREAD)
 
         self.filesystem.rename(initial_segments, self.test_segments)
 
@@ -2212,7 +2213,7 @@ class LocalFilesystemNTMixin(object):
         child_segments = segments[:]
         child_segments.append(child_name)
         path = self.filesystem.getRealPathFromSegments(child_segments)
-        os.chmod(path, stat.S_IREAD)
+        os.chmod(self.filesystem.getEncodedPath(path), stat.S_IREAD)
 
         self.filesystem.deleteFolder(segments, recursive=True)
 
@@ -2225,7 +2226,7 @@ class LocalFilesystemNTMixin(object):
         """
         segments = mk.fs.createFileInTemp()
         path = self.filesystem.getRealPathFromSegments(segments)
-        os.chmod(path, stat.S_IREAD)
+        os.chmod(self.filesystem.getEncodedPath(path), stat.S_IREAD)
         self.assertTrue(self.filesystem.exists(segments))
 
         self.filesystem.deleteFile(segments)
