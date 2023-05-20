@@ -828,10 +828,11 @@ class NTFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         path = self.getRealPathFromSegments(segments, include_virtual=False)
+        encoded_path = self.getEncodedPath(path)
         try:
-            self._setOwner(path, owner)
+            self._setOwner(encoded_path, owner)
         except CompatException as error:
-            self.raiseFailedToSetOwner(owner, path, error.message)
+            self.raiseFailedToSetOwner(owner, encoded_path, error.message)
 
     def _setOwner(self, path, owner):
         """
@@ -891,27 +892,33 @@ class NTFilesystem(PosixFilesystemBase):
                         owner, path, message)
 
     def getOwner(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         if self._isVirtualPath(segments):
             return 'VirtualOwner'
 
         path = self.getRealPathFromSegments(segments)
+        encoded_path = self.getEncodedPath(path)
 
         with self._impersonateUser():
             try:
                 owner_security = win32security.GetFileSecurity(
-                    path, win32security.OWNER_SECURITY_INFORMATION)
+                    encoded_path, win32security.OWNER_SECURITY_INFORMATION)
                 owner_sid = owner_security.GetSecurityDescriptorOwner()
                 name, domain, type = win32security.LookupAccountSid(
                     None, owner_sid)
                 return name
             except win32net.error as error:
                 raise OSError(
-                    error.winerror, error.strerror, path)
+                    error.winerror, error.strerror, encoded_path)
 
     def addGroup(self, segments, group, permissions=None):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         path = self.getRealPathFromSegments(segments, include_virtual=False)
+        encoded_path = self.getEncodedPath(path)
         try:
             group_sid, group_domain, group_type = (
                 win32security.LookupAccountName(None, group))
@@ -922,7 +929,7 @@ class NTFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 security = win32security.GetFileSecurity(
-                    path, win32security.DACL_SECURITY_INFORMATION)
+                    encoded_path, win32security.DACL_SECURITY_INFORMATION)
                 dacl = security.GetSecurityDescriptorDacl()
                 dacl.AddAccessAllowedAce(
                     win32security.ACL_REVISION,
@@ -930,14 +937,22 @@ class NTFilesystem(PosixFilesystemBase):
                     group_sid)
                 security.SetDacl(True, dacl, False)
                 win32security.SetFileSecurity(
-                    path, win32security.DACL_SECURITY_INFORMATION, security)
+                    encoded_path,
+                    win32security.DACL_SECURITY_INFORMATION,
+                    security,
+                    )
             except win32net.error as error:
                 self.raiseFailedToAddGroup(
-                    group, path, u'%s: %s' % (error.winerror, error.strerror))
+                    group,
+                    encoded_path,
+                    u'%s: %s' % (error.winerror, error.strerror))
 
     def removeGroup(self, segments, group):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         path = self.getRealPathFromSegments(segments, include_virtual=False)
+        encoded_path = self.getEncodedPath(path)
         try:
             group_sid, group_domain, group_type = (
                 win32security.LookupAccountName(None, group))
@@ -950,10 +965,10 @@ class NTFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 security = win32security.GetFileSecurity(
-                    path, win32security.DACL_SECURITY_INFORMATION)
+                    encoded_path, win32security.DACL_SECURITY_INFORMATION)
             except win32net.error as error:
                 raise OSError(
-                    error.winerror, error.strerror, path)
+                    error.winerror, error.strerror, encoded_path)
 
             dacl = security.GetSecurityDescriptorDacl()
             ace_count = dacl.GetAceCount()
@@ -974,7 +989,7 @@ class NTFilesystem(PosixFilesystemBase):
             dacl.DeleteAce(index_ace_to_remove)
             security.SetDacl(True, dacl, False)
             win32security.SetFileSecurity(
-                path, win32security.DACL_SECURITY_INFORMATION, security)
+                encoded_path, win32security.DACL_SECURITY_INFORMATION, security)
         return False
 
     def hasGroup(self, segments, group):
@@ -983,6 +998,7 @@ class NTFilesystem(PosixFilesystemBase):
             return False
 
         path = self.getRealPathFromSegments(segments)
+        encoded_path = self.getEncodedPath(path)
 
         try:
             group_sid, group_domain, group_type = (
@@ -993,10 +1009,10 @@ class NTFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 security = win32security.GetFileSecurity(
-                    path, win32security.DACL_SECURITY_INFORMATION)
+                    encoded_path, win32security.DACL_SECURITY_INFORMATION)
             except win32net.error as error:
                 raise OSError(
-                    error.winerror, error.strerror, path)
+                    error.winerror, error.strerror, encoded_path)
 
             dacl = security.GetSecurityDescriptorDacl()
             ace_count = dacl.GetAceCount()
