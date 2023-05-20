@@ -379,7 +379,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         Raise an OS error when trying to delete a file using folder API,
         event when doing recursive delete.
         """
-        path, segments = self.tempFile()
+        path, segments = self.tempFile(win_encoded=True)
         self.assertTrue(self.filesystem.exists(segments))
 
         with self.assertRaises(OSError) as context:
@@ -1047,7 +1047,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Raise OSError when trying to get folder content for a file.
         """
-        path, segments = self.tempFile()
+        path, segments = self.tempFile(win_encoded=True)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.getFolderContent(segments)
@@ -1119,8 +1119,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Raise OSError when trying to get folder content for a file.
         """
-        segments = self.fileInTemp()
-        path = mk.fs.getRealPathFromSegments(segments)
+        path, segments = self.tempFile(win_encoded=True)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.iterateFolderContent(segments)
@@ -1452,7 +1451,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         overwrite existing files.
         """
         source_segments = ['ignore', 'source']
-        path, segments = self.tempFile()
+        path, segments = self.tempFile(win_encoded=True)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.copyFile(source_segments, segments)
@@ -1486,6 +1485,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         path = mk.fs.getRealPathFromSegments(
             destination_segments + self.test_segments[-1:])
         source_segments = ['bla', self.test_segments[-1]]
+        if self.os_name == 'windows':
+            path = mk.fs.getEncodedPath(path)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.copyFile(source_segments, destination_segments)

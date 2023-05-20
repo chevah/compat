@@ -665,6 +665,7 @@ class NTFilesystem(PosixFilesystemBase):
         http://msdn.microsoft.com/en-us/library/windows/
             desktop/gg258117(v=vs.85).aspx
         """
+        path = self.getEncodedPath(path)
         try:
             with self._impersonateUser():
                 search = win32file.FindFilesW(path)
@@ -731,7 +732,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         Return True if path is a symlink.
         """
-        data = self._getFileData(self.getEncodedPath(path))
+        data = self._getFileData(path)
         is_reparse_point = bool(
             data['attributes'] & FILE_ATTRIBUTE_REPARSE_POINT)
         has_symlink_tag = (data['tag'] == self.IO_REPARSE_TAG_SYMLINK)

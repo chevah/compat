@@ -236,7 +236,8 @@ class PosixFilesystemBase(object):
             # Check for the virtual segments, but also for any ancestor.
             while target_segments:
                 inside_path = os.path.join(self._root_path, *target_segments)
-                if not os.path.lexists(self.getEncodedPath(inside_path)):
+                encoded_path = self.getEncodedPath(inside_path)
+                if not os.path.lexists(encoded_path):
                     target_segments.pop()
                     continue
                 virtual_path = '/' + '/'.join(virtual_segments)
@@ -350,16 +351,19 @@ class PosixFilesystemBase(object):
         raise NotImplementedError('You must implement this method.')
 
     def getAbsoluteRealPath(self, path):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         absolute_path = os.path.abspath(self.getEncodedPath(path))
-
         if not isinstance(absolute_path, text_type):
             absolute_path = absolute_path.decode(self.INTERNAL_ENCODING)
 
         return absolute_path
 
     def isAbsolutePath(self, path):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         return os.path.isabs(path)
 
     def isFolder(self, segments):
