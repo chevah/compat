@@ -158,6 +158,9 @@ class NTFilesystem(PosixFilesystemBase):
     def getEncodedPath(cls, path):
         '''Return the encoded representation of the path, use in the lower
         lever API for accessing the filesystem.'''
+        if path.startswith(u'\\\\?\\'):
+            return path
+
         if len(path) < 250:
             return path
         return u'\\\\?\\' + path

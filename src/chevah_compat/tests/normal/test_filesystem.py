@@ -4319,6 +4319,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         The real members are shadowed by the virtual members.
         """
+        self.maxDiff = None
         sut = self.getFilesystem(virtual_folders=[
             (['non-virtual\N{sun}', 'virtual\N{cloud}'], mk.fs.temp_path),
             (['non-virtual\N{sun}', 'child-file', 'other'], mk.fs.temp_path),
