@@ -608,7 +608,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         It can create links to a non-existent Windows share.
         """
-        path, segments = self.tempPath(win_encoded=True)
+        path, segments = self.tempPath()
+        if self.os_family == 'windows':
+            path = mk.fs.getEncodedPath(path)
+
         # We assume all slaves have the c:\temp folder.
         share_name = 'no such share name-' + mk.string()
         self.filesystem.makeLink(
