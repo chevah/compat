@@ -159,6 +159,7 @@ class NTFilesystem(PosixFilesystemBase):
         '''Return the encoded representation of the path, use in the lower
         lever API for accessing the filesystem.'''
         if path.startswith(u'\\\\?\\'):
+            # This might be already and encoded long path.
             return path
 
         if len(path) < 250:
@@ -421,10 +422,10 @@ class NTFilesystem(PosixFilesystemBase):
         """
         Return a dict with the link target.
         """
-        path = self.getEncodedPath(path)
+        encoded_path = self.getEncodedPath(path)
         try:
             handle = win32file.CreateFileW(
-                path,
+                encoded_path,
                 win32file.GENERIC_READ,
                 win32file.FILE_SHARE_READ,
                 None,
@@ -435,10 +436,10 @@ class NTFilesystem(PosixFilesystemBase):
                 )
         except pywintypes.error as error:
             message = '%s - %s' % (error.winerror, error.strerror)
-            raise OSError(errno.ENOENT, message, path)
+            raise OSError(errno.ENOENT, message, encoded_path)
 
         if handle == win32file.INVALID_HANDLE_VALUE:
-            raise OSError(errno.EINVAL, 'Failed to open symlink', path)
+            raise OSError(errno.EINVAL, 'Failed to open symlink', encoded_path)
 
         try:
             # MAXIMUM_REPARSE_DATA_BUFFER_SIZE = 16384 = (16*1024)
@@ -446,7 +447,7 @@ class NTFilesystem(PosixFilesystemBase):
                 handle, FSCTL_GET_REPARSE_POINT, None, 16 * 1024)
         except pywintypes.error as error:
             message = b'%s - %s' % (error.winerror, error.strerror)
-            raise OSError(errno.EINVAL, message, path)
+            raise OSError(errno.EINVAL, message, encoded_path)
         finally:
             win32file.CloseHandle(handle)
 
@@ -455,7 +456,7 @@ class NTFilesystem(PosixFilesystemBase):
             result = self._parseReparseData(raw_reparse_data)
             result = self._parseSymbolicLinkReparse(result)
         except CompatException as error:
-            raise OSError(errno.EINVAL, error.message, path)
+            raise OSError(errno.EINVAL, error.message, encoded_path)
 
         return result
 
