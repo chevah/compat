@@ -753,6 +753,10 @@ class PosixFilesystemBase(object):
             # On Windows, scandir gets float precision while
             # getAttributes only integer.
             modified = int(modified)
+            # On Windows, path might have long names for local drives.
+            # For compat, we keep the simple format.
+            if path.startswith('\\\\?\\') and path[5] == ':':
+                path = path[4:]
 
         return FileAttributes(
             name=name,
