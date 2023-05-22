@@ -769,10 +769,6 @@ class TestChevahTestCase(ChevahTestCase):
         When self.test_segments is defined it will be automatically
         removed, even when it is a symbolic link.
         """
-        # FIXME:
-        # Reenable the test to see why cleanup fails here.
-        raise self.skipTest('FIXME')
-
         _, self.test_segments = mk.fs.makePathInTemp(
             prefix='test_cleanup_test_segments_link')
 
