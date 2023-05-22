@@ -2,6 +2,12 @@ Release notes for chevah.compat
 ===============================
 
 
+0.71.1 - 2023-05-22
+-------------------
+
+* Fix Add support for long paths in Windows.
+
+
 0.71.0 - 2023-05-20
 -------------------
 

@@ -367,10 +367,13 @@ class PosixFilesystemBase(object):
         return os.path.isabs(path)
 
     def isFolder(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         try:
             return self.getAttributes(segments).is_folder
         except OSError:
+            # On any error, we consider it not a folder.
             return False
 
     def isFile(self, segments):
@@ -754,7 +757,7 @@ class PosixFilesystemBase(object):
             # getAttributes only integer.
             modified = int(modified)
             # On Windows, path might have long names for local drives.
-            # For compat, we keep the simple format.
+            # For compat, we keep the simple format as the end user format.
             if path.startswith('\\\\?\\') and path[5] == ':':
                 path = path[4:]
 

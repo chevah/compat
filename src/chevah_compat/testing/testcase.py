@@ -1282,12 +1282,19 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             if only_marked and member.find(TEST_NAME_MARKER) == -1:
                 continue
             temp_members.append(member)
-            segments = folder_segments[:]
-            segments.append(member)
+            segments = folder_segments[:] + [member]
             if temp_filesystem.isFolder(segments):
                 temp_filesystem.deleteFolder(segments, recursive=True)
-            else:
+                continue
+
+            try:
                 temp_filesystem.deleteFile(segments)
+            except Exception:
+                # FIXME:688:
+                # If this is a link to a broken folder,
+                # it is detected as a file,
+                # but on Windows it is a folder.
+                temp_filesystem.deleteFolder(segments, recursive=True)
 
         return temp_members
 

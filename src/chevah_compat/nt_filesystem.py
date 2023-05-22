@@ -6,7 +6,7 @@ Windows specific implementation of filesystem access.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from six import text_type
+import six
 from six.moves import range
 from contextlib import contextmanager
 from winioctlcon import FSCTL_GET_REPARSE_POINT
@@ -106,12 +106,12 @@ class NTFilesystem(PosixFilesystemBase):
             return u'c:\\'
 
         if self._lock_in_home:
-            path = text_type(self._avatar.home_folder_path)
+            path = six.text_type(self._avatar.home_folder_path)
         else:
             if self._avatar.root_folder_path is None:
-                path = u'c:\\'
+                path = 'c:\\'
             else:
-                path = text_type(self._avatar.root_folder_path)
+                path = six.text_type(self._avatar.root_folder_path)
 
         # Fix folder separators.
         path = path.replace('/', '\\')
@@ -156,14 +156,19 @@ class NTFilesystem(PosixFilesystemBase):
 
     @classmethod
     def getEncodedPath(cls, path):
-        '''Return the encoded representation of the path, use in the lower
-        lever API for accessing the filesystem.'''
+        """
+        Return the encoded representation of the path, use in the lower
+        lever API for accessing the filesystem.
+        """
         if path.startswith(u'\\\\?\\'):
-            # This might be already and encoded long path.
+            # This might be already an encoded long path.
             return path
 
         if len(path) < 250:
             return path
+
+        # An extended-length path, use the Unicode path prefix.
+        # https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
         return u'\\\\?\\' + path
 
     def _getLockedPathFromSegments(self, segments):
@@ -230,7 +235,7 @@ class NTFilesystem(PosixFilesystemBase):
             result = get_path(segments)
 
         self._validateDrivePath(result)
-        return text_type(result)
+        return six.text_type(result)
 
     # Windows allows only 26 drive letters and is case insensitive.
     _allowed_drive_letters = [
@@ -305,7 +310,7 @@ class NTFilesystem(PosixFilesystemBase):
         if path is None or path == u'':
             return segments
 
-        path = text_type(path)
+        path = six.text_type(path)
 
         target = self._getAbsolutePath(path.replace('/', '\\')).lower()
         for virtual_segments, real_path in self._avatar.virtual_folders:
@@ -322,7 +327,8 @@ class NTFilesystem(PosixFilesystemBase):
         head = True
 
         if path.startswith('\\\\?\\') or path.startswith('\\\\.\\'):
-            # We have a UNC in device path format and we normalize.
+            # We have Unicode path or decice device path format.
+            # Get to simple/normalized path format.
             path = path[4:]
 
         if self._avatar.lock_in_home_folder:
@@ -363,6 +369,19 @@ class NTFilesystem(PosixFilesystemBase):
             segments.insert(0, drive)
 
         return segments
+
+    def getAbsoluteRealPath(self, path):
+        """
+        See `ILocalFilesystem`.
+        """
+        absolute_path = super(NTFilesystem, self).getAbsoluteRealPath(path)
+
+        if absolute_path.startswith('\\\\?\\'):
+            # Remove the Unicode path marker, since our compat API uses normal
+            # windows paths, even for long paths.
+            absolute_path = absolute_path[4:]
+
+        return absolute_path
 
     @contextmanager
     def _windowsToOSError(self, segments=None, path=None):
@@ -511,6 +530,9 @@ class NTFilesystem(PosixFilesystemBase):
     def _getStatus(self, path, segments):
         """
         Get the os.stat for `path`.
+
+        `path` is the targeted path and `segments` is the same path, but in
+        segments format.
         """
         path_encoded = self.getEncodedPath(path)
         with self._windowsToOSError(segments):
@@ -557,6 +579,7 @@ class NTFilesystem(PosixFilesystemBase):
 
             path = base_path
             while True:
+                # We go in a loop, reading a possible link or our linked path.
                 try:
                     path = self._readLink(path)['target']
                 except OSError:
