@@ -2,10 +2,16 @@ Release notes for chevah.compat
 ===============================
 
 
+0.71.2 - 2023-05-22
+-------------------
+
+* Fix Unicode path returned on Windows for unlocked avatars.
+
+
 0.71.1 - 2023-05-22
 -------------------
 
-* Fix Add support for long paths in Windows.
+* Fix getAbsoluteReal path Windows not to return a path in long path format.
 
 
 0.71.0 - 2023-05-20
