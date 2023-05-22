@@ -5,9 +5,9 @@ Module containing helpers for testing the Chevah project.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+
 from six.moves import range
 import six
-import hashlib
 import os
 import random
 import string
@@ -241,7 +241,7 @@ class ChevahCommonsFactory(object):
 
         This is an Unicode with only ascii characters.
         """
-        return 'ascii_StR' + text_type(self.number())
+        return 'ascii_StR' + six.text_type(self.number())
 
     def string(self, *args, **kwargs):
         """
@@ -272,7 +272,7 @@ class ChevahCommonsFactory(object):
         """
         The account under which this process is executed.
         """
-        return text_type(os.environ['USER'])
+        return six.text_type(os.environ['USER'])
 
     def getUniqueString(self, length=None):
         """

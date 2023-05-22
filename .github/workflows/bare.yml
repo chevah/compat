@@ -48,8 +48,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-unicode
+          build-py3
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-unicode
 
     - name: Deps
       run: ./pythia.sh deps
@@ -59,12 +59,12 @@ jobs:
         python-path: build-py3/bin/python
 
     - name: Move build to Unicode path
-      run: mv build-compat build-compat-ț
+      run: mv build-py3 build-py3-ț
 
     - name: Test
       run: ./pythia.sh test_ci2
       env:
-        CHEVAH_BUILD: build-compat-ț
+        CHEVAH_BUILD: build-py3-ț
 
     - name: Tmate debug on failure
       if: failure() && env.TMATE_DEBUG == 'yes'
@@ -73,7 +73,7 @@ jobs:
         limit-access-to-actor: true
 
     - name: Move build back to to ascii
-      run: mv build-compat-ț build-compat
+      run: mv build-py3-ț build-py
 
 
   ubuntu-2204-ascii-path:
@@ -95,14 +95,14 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          build-compat
+          build-py3
         key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-ascii
 
     - name: Deps
-      run: ./brink.sh deps
+      run: ./pythia.sh deps
 
     - name: Test
-      run: ./brink.sh test_ci2
+      run: ./pythia.sh test_ci2
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -113,7 +113,7 @@ jobs:
         limit-access-to-actor: true
 
     - name: Publish cov
-      run: ./brink.sh codecov_publish
+      run: ./pythia.sh codecov_publish
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -132,19 +132,19 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-unicode
+          build-py3
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-unicode
 
     - name: Deps
-      run: ./brink.sh deps
+      run: ./pythia.sh deps
 
     - name: Move build to Unicode path
-      run: mv build-compat build-compat-ț
+      run: mv build-py3 build-py3-ț
 
     - name: Test
-      run: ./brink.sh test_ci2
+      run: ./pythia.sh test_ci2
       env:
-        CHEVAH_BUILD: build-compat-ț
+        CHEVAH_BUILD: build-py3-ț
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Tmate debug on failure
@@ -154,10 +154,10 @@ jobs:
         limit-access-to-actor: true
 
     - name: Move build back to to ascii
-      run: mv build-compat-ț build-compat
+      run: mv build-py3-ț build-py3
 
     - name: Publish cov
-      run: ./brink.sh codecov_publish
+      run: ./pythia.sh codecov_publish
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -176,14 +176,14 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-ascii
+          build-py3
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-ascii
 
     - name: Deps
-      run: ./brink.sh deps
+      run: ./pythia.sh deps
 
     - name: Test
-      run: ./brink.sh test_ci2
+      run: ./pythia.sh test_ci2
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -194,7 +194,7 @@ jobs:
         limit-access-to-actor: true
 
     - name: Publish cov
-      run: ./brink.sh codecov_publish
+      run: ./pythia.sh codecov_publish
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -214,16 +214,16 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}
+          build-py3
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}
 
     - name: Deps
       run: |
-        ./brink.sh deps
-        ./build-compat/lib/python.exe Scripts/pywin32_postinstall.py --install
+        ./pythia.sh deps
+        ./build-py3/lib/python.exe Scripts/pywin32_postinstall.py --install
 
     - name: Test
-      run: ./brink.sh test_ci2
+      run: ./pythia.sh test_ci2
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -235,6 +235,6 @@ jobs:
 
     - name: Public coverage
       if: ${{ !cancelled() }}
-      run: ./brink.sh codecov_publish
+      run: ./pythia.sh codecov_publish
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

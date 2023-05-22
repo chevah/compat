@@ -350,8 +350,8 @@ def test_ci2(args):
     """
     # When running in CI mode, we want to get more reports.
     SETUP['test']['nose_options'] += [
-        '--with-run-reporter',
-        '--with-timer',
+        #'--with-run-reporter',
+        #'--with-timer',
         '-v',
         ]
 
