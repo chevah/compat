@@ -2762,7 +2762,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         filesystem will convert them without any errors or warnings.
         """
         avatar = DefaultAvatar()
-        avatar.home_folder_path = 'c:/Temp/some/path'
+        avatar.home_folder_path = u'c:/Temp/some/path'
         avatar.root_folder_path = None
         avatar.lock_in_home_folder = False
 

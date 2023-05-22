@@ -109,12 +109,12 @@ class NTFilesystem(PosixFilesystemBase):
             path = six.text_type(self._avatar.home_folder_path)
         else:
             if self._avatar.root_folder_path is None:
-                path = 'c:\\'
+                path = u'c:\\'
             else:
                 path = six.text_type(self._avatar.root_folder_path)
 
         # Fix folder separators.
-        path = path.replace('/', '\\')
+        path = path.replace(u'/', u'\\')
         return path
 
     @property
@@ -209,17 +209,17 @@ class NTFilesystem(PosixFilesystemBase):
                 result = drive
             else:
                 if drive == u'UNC:\\':
-                    result = '\\' + os.path.normpath(
-                        '\\' + os.path.join(*path_segments))
+                    result = u'\\' + os.path.normpath(
+                        u'\\' + os.path.join(*path_segments))
                 else:
                     result = os.path.normpath(
                         drive + os.path.join(*path_segments))
                     # os.path.normpath can result in an 'out of drive' path.
-                    if result.find(':\\') == -1:
-                        if result.find('\\') == -1:
+                    if result.find(u':\\') == -1:
+                        if result.find(u'\\') == -1:
                             result = result + ':\\'
                         else:
-                            result = result.replace('\\', ':\\', 1)
+                            result = result.replace(u'\\', u':\\', 1)
             return result
 
         if segments is None or len(segments) == 0:
@@ -230,7 +230,7 @@ class NTFilesystem(PosixFilesystemBase):
             segments, include_virtual)
 
         if virtual_path is not None:
-            result = virtual_path.replace('/', '\\')
+            result = virtual_path.replace(u'/', u'\\')
         else:
             result = get_path(segments)
 
