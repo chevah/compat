@@ -103,7 +103,7 @@ class TestAssertionMixin(ChevahTestCase):
             self.assertIsEmpty((1, 2))
 
         self.assertEqual(
-            'Iterable is not empty.\n(1, 2).', context.exception.args[0])
+            u'Iterable is not empty.\n(1, 2).', context.exception.args[0])
 
     def test_assertCompatError_no_CompatError(self):
         """

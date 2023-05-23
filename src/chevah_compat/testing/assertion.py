@@ -145,14 +145,13 @@ class AssertionMixin(object):
             except StopIteration:
                 pass
             else:
-                message = u'Iterable is not empty.\n%s.' % (
-                    repr(target).decode('utf-8'),)
-                raise AssertionError(message.encode('utf-8'))
+                message = u'Iterable is not empty.\n%s.' % (repr(target),)
+                raise AssertionError(message)
             return
 
         if len(target) != 0:
             message = u'Value is not empty.\n%s.' % (target,)
-            raise AssertionError(message.encode('utf-8'))
+            raise AssertionError(message)
 
     def assertIsNotEmpty(self, target):
         """

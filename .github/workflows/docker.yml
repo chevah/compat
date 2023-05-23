@@ -157,3 +157,23 @@ jobs:
       run: |
         cd /home/chevah/$CHEVAH_REPO
         su chevah -c "./brink.sh test_ci2"
+
+  # Helper so that on GitHub repo settings we can configure a single job as
+  # required.
+  docker-required:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: always()
+    needs:
+      - standard
+    steps:
+      - name: Require all successes
+        shell: python3 {0}
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+        run: |
+          import json
+          import os
+          import sys
+          results = json.loads(os.environ["RESULTS"])
+          sys.exit(0 if all(result == "success" for result in results) else 1)

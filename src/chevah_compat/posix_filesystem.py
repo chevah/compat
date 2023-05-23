@@ -7,6 +7,7 @@ Windows has its layer of POSIX compatibility.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+
 from contextlib import contextmanager
 from datetime import date
 import errno
@@ -19,6 +20,7 @@ import struct
 import sys
 import time
 import unicodedata
+import six
 
 
 try:
@@ -28,7 +30,6 @@ try:
 except ImportError:
     from scandir import scandir_python as scandir
 
-from six import text_type
 from zope.interface import implements
 
 from chevah_compat.exceptions import (
@@ -139,7 +140,8 @@ class PosixFilesystemBase(object):
         '''See `ILocalFilesystem`.'''
 
         if not self._avatar:
-            return self._pathSplitRecursive(text_type(os.path.expanduser('~')))
+            return self._pathSplitRecursive(
+                six.text_type(os.path.expanduser('~')))
 
         if self._avatar.root_folder_path is None:
             return self._pathSplitRecursive(self._avatar.home_folder_path)
@@ -181,7 +183,7 @@ class PosixFilesystemBase(object):
         if path is None or path == '' or path == '.':
             return self.home_segments
 
-        if not isinstance(path, text_type):
+        if not isinstance(path, six.text_type):
             path = path.decode(self.INTERNAL_ENCODING)
 
         if not path.startswith('/'):
@@ -236,7 +238,8 @@ class PosixFilesystemBase(object):
             # Check for the virtual segments, but also for any ancestor.
             while target_segments:
                 inside_path = os.path.join(self._root_path, *target_segments)
-                if not os.path.lexists(self.getEncodedPath(inside_path)):
+                encoded_path = self.getEncodedPath(inside_path)
+                if not os.path.lexists(encoded_path):
                     target_segments.pop()
                     continue
                 virtual_path = '/' + '/'.join(virtual_segments)
@@ -350,23 +353,29 @@ class PosixFilesystemBase(object):
         raise NotImplementedError('You must implement this method.')
 
     def getAbsoluteRealPath(self, path):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         absolute_path = os.path.abspath(self.getEncodedPath(path))
-
-        if not isinstance(absolute_path, text_type):
+        if not isinstance(absolute_path, six.text_type):
             absolute_path = absolute_path.decode(self.INTERNAL_ENCODING)
 
         return absolute_path
 
     def isAbsolutePath(self, path):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         return os.path.isabs(path)
 
     def isFolder(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         try:
             return self.getAttributes(segments).is_folder
         except OSError:
+            # On any error, we consider it not a folder.
             return False
 
     def isFile(self, segments):
@@ -749,6 +758,10 @@ class PosixFilesystemBase(object):
             # On Windows, scandir gets float precision while
             # getAttributes only integer.
             modified = int(modified)
+            # On Windows, path might have long names for local drives.
+            # For compat, we keep the simple format as the end user format.
+            if path.startswith('\\\\?\\') and path[5] == ':':
+                path = path[4:]
 
         return FileAttributes(
             name=name,
@@ -773,7 +786,7 @@ class PosixFilesystemBase(object):
         """
         # This is done to allow lazy initialization of process_capabilities.
         from chevah_compat import process_capabilities
-        if not isinstance(name, text_type):
+        if not isinstance(name, six.text_type):
             name = name.decode(self.INTERNAL_ENCODING)
 
         # OSX HFS+ store file as Unicode, but in normalized format.

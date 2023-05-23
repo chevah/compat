@@ -362,7 +362,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Raise an OS error when trying to delete a file using folder API.
         """
-        path, segments = self.tempFile()
+        path, segments = self.tempFile(win_encoded=True)
+
         self.assertTrue(self.filesystem.exists(segments))
 
         with self.assertRaises(OSError) as context:
@@ -378,7 +379,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         Raise an OS error when trying to delete a file using folder API,
         event when doing recursive delete.
         """
-        path, segments = self.tempFile()
+        path, segments = self.tempFile(win_encoded=True)
         self.assertTrue(self.filesystem.exists(segments))
 
         with self.assertRaises(OSError) as context:
@@ -608,6 +609,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         It can create links to a non-existent Windows share.
         """
         path, segments = self.tempPath()
+        if self.os_family == 'nt':
+            path = mk.fs.getEncodedPath(path)
+
         # We assume all slaves have the c:\temp folder.
         share_name = 'no such share name-' + mk.string()
         self.filesystem.makeLink(
@@ -753,7 +757,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Raise an error when path is not a link.
         """
-        path, segments = self.tempFile()
+        path, segments = self.tempFile(win_encoded=True)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.readLink(segments)
@@ -930,7 +934,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         A link to a folder is recognized as both a link and a folder.
         """
-        _, link_segments = mk.fs.makePathInTemp()
+        _, link_segments = mk.fs.makePathInTemp(prefix='target-link-folder')
         mk.fs.makeLink(
             target_segments=mk.fs.temp_segments,
             link_segments=link_segments,
@@ -1046,7 +1050,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Raise OSError when trying to get folder content for a file.
         """
-        path, segments = self.tempFile()
+        path, segments = self.tempFile(win_encoded=True)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.getFolderContent(segments)
@@ -1118,8 +1122,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Raise OSError when trying to get folder content for a file.
         """
-        segments = self.fileInTemp()
-        path = mk.fs.getRealPathFromSegments(segments)
+        path, segments = self.tempFile(win_encoded=True)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.iterateFolderContent(segments)
@@ -1451,7 +1454,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         overwrite existing files.
         """
         source_segments = ['ignore', 'source']
-        path, segments = self.tempFile()
+        path, segments = self.tempFile(win_encoded=True)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.copyFile(source_segments, segments)
@@ -1485,6 +1488,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         path = mk.fs.getRealPathFromSegments(
             destination_segments + self.test_segments[-1:])
         source_segments = ['bla', self.test_segments[-1]]
+        if self.os_name == 'windows':
+            path = mk.fs.getEncodedPath(path)
 
         with self.assertRaises(OSError) as context:
             self.filesystem.copyFile(source_segments, destination_segments)
@@ -2129,7 +2134,7 @@ class LocalFilesystemNTMixin(object):
         self.assertFalse(self.filesystem.exists(self.test_segments))
         self.filesystem.touch(initial_segments)
         path = self.filesystem.getRealPathFromSegments(initial_segments)
-        os.chmod(path, stat.S_IREAD)
+        os.chmod(self.filesystem.getEncodedPath(path), stat.S_IREAD)
 
         self.filesystem.rename(initial_segments, self.test_segments)
 
@@ -2212,7 +2217,7 @@ class LocalFilesystemNTMixin(object):
         child_segments = segments[:]
         child_segments.append(child_name)
         path = self.filesystem.getRealPathFromSegments(child_segments)
-        os.chmod(path, stat.S_IREAD)
+        os.chmod(self.filesystem.getEncodedPath(path), stat.S_IREAD)
 
         self.filesystem.deleteFolder(segments, recursive=True)
 
@@ -2225,7 +2230,7 @@ class LocalFilesystemNTMixin(object):
         """
         segments = mk.fs.createFileInTemp()
         path = self.filesystem.getRealPathFromSegments(segments)
-        os.chmod(path, stat.S_IREAD)
+        os.chmod(self.filesystem.getEncodedPath(path), stat.S_IREAD)
         self.assertTrue(self.filesystem.exists(segments))
 
         self.filesystem.deleteFile(segments)
@@ -2757,7 +2762,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         filesystem will convert them without any errors or warnings.
         """
         avatar = DefaultAvatar()
-        avatar.home_folder_path = 'c:/Temp/some/path'
+        avatar.home_folder_path = u'c:/Temp/some/path'
         avatar.root_folder_path = None
         avatar.lock_in_home_folder = False
 
