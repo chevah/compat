@@ -222,9 +222,11 @@ jobs:
         ./pythia.sh build
 
     - name: Test
-      run: ./pythia.sh test_ci2
+      run: |
+        ./pythia.sh test_ci2
+        ./pythia.sh test normal
       env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        CODECOV_TOKEN: enabled
 
     - name: Tmate debug on failure
       if: failure() && env.TMATE_DEBUG == 'yes'

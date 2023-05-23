@@ -1245,8 +1245,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             count = 3000
             base_timeout = 0.02
         elif self.os_name == 'osx':
+            # On GitHub the OSX can be a bit slow.
             count = 32000
-            base_timeout = 0.1
+            base_timeout = 0.3
         elif self.os_name in ['hpux', 'freebsd', 'openbsd']:
             # Some OS/FS does not allow more than 32765 members in a folder
             # and the slave is generally slow.

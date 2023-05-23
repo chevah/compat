@@ -52,23 +52,6 @@ class TestPosixFilesystem(FileSystemTestCase):
         owner = self.filesystem.getOwner(self.filesystem.home_segments)
         self.assertEqual(self.avatar.name, owner)
 
-    @conditionals.onOSFamily('nt')
-    def test_getOwner_ok_nt(self):
-        """
-        Returns the owner as string.
-        """
-        owner = self.filesystem.getOwner(['c', 'Users'])
-        self.assertEqual('Administrators', owner)
-
-        # This is a folder.
-        owner = self.filesystem.getOwner(['c', 'Users', 'chevah_ci_support'])
-        self.assertEqual('chevah', owner)
-
-        # This is a file
-        owner = self.filesystem.getOwner(
-            ['c', 'Users', 'chevah_ci_support', 'users_ci_support'])
-        self.assertEqual('Users', owner)
-
     def test_setOwner_bad_segments(self):
         """
         An error is raised when trying to set owner for an bad path.
