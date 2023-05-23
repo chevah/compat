@@ -142,9 +142,11 @@ SETUP['test']['package'] = 'chevah_compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = [
     '--with-randomly',
-    #'--with-timer',
-    #'--with-run-reporter',
-    #'--with-memory-usage',
+    # FIXME:690:
+    # Add support for extenstions.
+    # '--with-timer',
+    # '--with-run-reporter',
+    # '--with-memory-usage',
     ]
 SETUP['pypi']['index_url'] = os.environ['PIP_INDEX_URL']
 
@@ -361,8 +363,10 @@ def test_ci2(args):
     """
     # When running in CI mode, we want to get more reports.
     SETUP['test']['nose_options'] += [
-        #'--with-run-reporter',
-        #'--with-timer',
+        # FIXME:690:
+        # Add support for extenstions.
+        # '--with-run-reporter',
+        # '--with-timer',
         '-v',
         ]
 

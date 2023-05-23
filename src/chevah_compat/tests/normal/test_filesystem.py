@@ -949,7 +949,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Raise an OSError not found when target does not exists.
         """
-        path, link_segments = mk.fs.makePathInTemp()
+        path, link_segments = self.tempFile(win_encoded=True)
         target_segments = ['c', 'no-such-parent', 'no-child', 'target']
         mk.fs.makeLink(
             target_segments=target_segments,
