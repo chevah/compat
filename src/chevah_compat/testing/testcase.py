@@ -1257,12 +1257,19 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             if only_marked and member.find(TEST_NAME_MARKER) == -1:
                 continue
             temp_members.append(member)
-            segments = folder_segments[:]
-            segments.append(member)
+            segments = folder_segments[:] + [member]
             if temp_filesystem.isFolder(segments):
                 temp_filesystem.deleteFolder(segments, recursive=True)
-            else:
+                continue
+
+            try:
                 temp_filesystem.deleteFile(segments)
+            except Exception:
+                # FIXME:688:
+                # If this is a link to a broken folder,
+                # it is detected as a file,
+                # but on Windows it is a folder.
+                temp_filesystem.deleteFolder(segments, recursive=True)
 
         return temp_members
 
@@ -1340,14 +1347,16 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         return mk.fs.pathInTemp(
             cleanup=self.addCleanup, prefix=prefix, suffix=suffix)
 
-    def tempFile(self, content=b'', prefix='', suffix='', cleanup=True):
+    def tempFile(
+        self, content='', prefix='', suffix='', cleanup=True,
+        win_encoded=False,
+            ):
         """
         Return (path, segments) for a new file created in temp which is
         auto cleaned.
-        """
-        if isinstance(content, six.text_type):
-            content = content.encode('utf-8')
 
+        When `win_encoded` is True, it will return the low-level Windows path.
+        """
         segments = mk.fs.createFileInTemp(prefix=prefix, suffix=suffix)
         path = mk.fs.getRealPathFromSegments(segments)
 
@@ -1362,6 +1371,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             opened_file.write(content)
         finally:
             opened_file.close()
+
+        if self.os_family == 'nt' and win_encoded:
+            path = mk.fs.getEncodedPath(path)
 
         return (path, segments)
 

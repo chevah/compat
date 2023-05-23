@@ -1,17 +1,23 @@
 Scope
 =====
 
+Fixes #ISSUE-ID
+
 Describe the scope of the changes or the problem that these changes wants
 to solve.
+
 
 Changes
 =======
 
 Describe how the problem was fixed.
 
+No need to describe the changes in a human readable way.
+The changes should be easy to understand just by reading the diff.
+If any extra comments are required, add them to the code itself.
 
-List all changes for which an *ideal* solution was not found.
-Describe the current solution.
+List all changes for which an *ideal* solution was not found and compare them
+with the current solution.
 
 What was not yet done and link to the ticket for the still to do work.
 

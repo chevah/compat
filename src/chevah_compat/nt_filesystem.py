@@ -3,6 +3,7 @@
 """
 Windows specific implementation of filesystem access.
 """
+import six
 from contextlib import contextmanager
 from winioctlcon import FSCTL_GET_REPARSE_POINT
 import errno
@@ -100,15 +101,15 @@ class NTFilesystem(PosixFilesystemBase):
             return u'c:\\'
 
         if self._lock_in_home:
-            path = str(self._avatar.home_folder_path)
+            path = six.text_type(self._avatar.home_folder_path)
         else:
             if self._avatar.root_folder_path is None:
                 path = u'c:\\'
             else:
-                path = str(self._avatar.root_folder_path)
+                path = six.text_type(self._avatar.root_folder_path)
 
         # Fix folder separators.
-        path = path.replace('/', '\\')
+        path = path.replace(u'/', u'\\')
         return path
 
     @property
@@ -150,9 +151,20 @@ class NTFilesystem(PosixFilesystemBase):
 
     @classmethod
     def getEncodedPath(cls, path):
-        '''Return the encoded representation of the path, use in the lower
-        lever API for accessing the filesystem.'''
-        return path
+        """
+        Return the encoded representation of the path, use in the lower
+        lever API for accessing the filesystem.
+        """
+        if path.startswith(u'\\\\?\\'):
+            # This might be already an encoded long path.
+            return path
+
+        if len(path) < 250:
+            return path
+
+        # An extended-length path, use the Unicode path prefix.
+        # https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+        return u'\\\\?\\' + path
 
     def _getLockedPathFromSegments(self, segments):
         '''
@@ -192,17 +204,17 @@ class NTFilesystem(PosixFilesystemBase):
                 result = drive
             else:
                 if drive == u'UNC:\\':
-                    result = '\\' + os.path.normpath(
-                        '\\' + os.path.join(*path_segments))
+                    result = u'\\' + os.path.normpath(
+                        u'\\' + os.path.join(*path_segments))
                 else:
                     result = os.path.normpath(
                         drive + os.path.join(*path_segments))
                     # os.path.normpath can result in an 'out of drive' path.
-                    if result.find(':\\') == -1:
-                        if result.find('\\') == -1:
+                    if result.find(u':\\') == -1:
+                        if result.find(u'\\') == -1:
                             result = result + ':\\'
                         else:
-                            result = result.replace('\\', ':\\', 1)
+                            result = result.replace(u'\\', u':\\', 1)
             return result
 
         if segments is None or len(segments) == 0:
@@ -213,12 +225,12 @@ class NTFilesystem(PosixFilesystemBase):
             segments, include_virtual)
 
         if virtual_path is not None:
-            result = virtual_path.replace('/', '\\')
+            result = virtual_path.replace(u'/', u'\\')
         else:
             result = get_path(segments)
 
         self._validateDrivePath(result)
-        return str(result)
+        return six.text_type(result)
 
     # Windows allows only 26 drive letters and is case insensitive.
     _allowed_drive_letters = [
@@ -236,8 +248,7 @@ class NTFilesystem(PosixFilesystemBase):
             # availability.
             return
 
-        path_encoded = self.getEncodedPath(path)
-        letter, _ = os.path.splitdrive(path_encoded)
+        letter, _ = os.path.splitdrive(path)
         if letter.strip(':').lower() not in self._allowed_drive_letters:
             message = u'Bad drive letter "%s" for %s' % (letter, path)
             raise OSError(
@@ -294,7 +305,7 @@ class NTFilesystem(PosixFilesystemBase):
         if path is None or path == u'':
             return segments
 
-        path = str(path)
+        path = six.text_type(path)
 
         target = self._getAbsolutePath(path.replace('/', '\\')).lower()
         for virtual_segments, real_path in self._avatar.virtual_folders:
@@ -311,7 +322,8 @@ class NTFilesystem(PosixFilesystemBase):
         head = True
 
         if path.startswith('\\\\?\\') or path.startswith('\\\\.\\'):
-            # We have a UNC in device path format and we normalize.
+            # We have Unicode path or decice device path format.
+            # Get to simple/normalized path format.
             path = path[4:]
 
         if self._avatar.lock_in_home_folder:
@@ -352,6 +364,19 @@ class NTFilesystem(PosixFilesystemBase):
             segments.insert(0, drive)
 
         return segments
+
+    def getAbsoluteRealPath(self, path):
+        """
+        See `ILocalFilesystem`.
+        """
+        absolute_path = super(NTFilesystem, self).getAbsoluteRealPath(path)
+
+        if absolute_path.startswith('\\\\?\\'):
+            # Remove the Unicode path marker, since our compat API uses normal
+            # windows paths, even for long paths.
+            absolute_path = absolute_path[4:]
+
+        return absolute_path
 
     @contextmanager
     def _windowsToOSError(self, segments=None, path=None):
@@ -407,9 +432,10 @@ class NTFilesystem(PosixFilesystemBase):
         """
         Return a dict with the link target.
         """
+        encoded_path = self.getEncodedPath(path)
         try:
             handle = win32file.CreateFileW(
-                path,
+                encoded_path,
                 win32file.GENERIC_READ,
                 win32file.FILE_SHARE_READ,
                 None,
@@ -420,10 +446,10 @@ class NTFilesystem(PosixFilesystemBase):
                 )
         except pywintypes.error as error:
             message = '%s - %s' % (error.winerror, error.strerror)
-            raise OSError(errno.ENOENT, message, path)
+            raise OSError(errno.ENOENT, message, encoded_path)
 
         if handle == win32file.INVALID_HANDLE_VALUE:
-            raise OSError(errno.EINVAL, 'Failed to open symlink', path)
+            raise OSError(errno.EINVAL, 'Failed to open symlink', encoded_path)
 
         try:
             # MAXIMUM_REPARSE_DATA_BUFFER_SIZE = 16384 = (16*1024)
@@ -440,7 +466,7 @@ class NTFilesystem(PosixFilesystemBase):
             result = self._parseReparseData(raw_reparse_data)
             result = self._parseSymbolicLinkReparse(result)
         except CompatException as error:
-            raise OSError(errno.EINVAL, error.message, path)
+            raise OSError(errno.EINVAL, error.message, encoded_path)
 
         return result
 
@@ -474,7 +500,10 @@ class NTFilesystem(PosixFilesystemBase):
                 with self.process_capabilities._elevatePrivileges(
                         win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
                     win32file.CreateSymbolicLink(
-                        link_path, target_path, flags)
+                        self.getEncodedPath(link_path),
+                        self.getEncodedPath(target_path),
+                        flags,
+                        )
             except AdjustPrivilegeException as error:
                 raise OSError(errno.EINVAL, error.message, link_path)
 
@@ -492,6 +521,9 @@ class NTFilesystem(PosixFilesystemBase):
     def _getStatus(self, path, segments):
         """
         Get the os.stat for `path`.
+
+        `path` is the targeted path and `segments` is the same path, but in
+        segments format.
         """
         path_encoded = self.getEncodedPath(path)
         with self._windowsToOSError(segments):
@@ -538,6 +570,7 @@ class NTFilesystem(PosixFilesystemBase):
 
             path = base_path
             while True:
+                # We go in a loop, reading a possible link or our linked path.
                 try:
                     path = self._readLink(path)['target']
                 except OSError:
@@ -650,6 +683,7 @@ class NTFilesystem(PosixFilesystemBase):
         http://msdn.microsoft.com/en-us/library/windows/
             desktop/gg258117(v=vs.85).aspx
         """
+        path = self.getEncodedPath(path)
         try:
             with self._impersonateUser():
                 search = win32file.FindFilesW(path)
@@ -716,7 +750,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         Return True if path is a symlink.
         """
-        data = self._getFileData(self.getEncodedPath(path))
+        data = self._getFileData(path)
         is_reparse_point = bool(
             data['attributes'] & FILE_ATTRIBUTE_REPARSE_POINT)
         has_symlink_tag = (data['tag'] == self.IO_REPARSE_TAG_SYMLINK)
@@ -808,10 +842,11 @@ class NTFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         path = self.getRealPathFromSegments(segments, include_virtual=False)
+        encoded_path = self.getEncodedPath(path)
         try:
-            self._setOwner(path, owner)
+            self._setOwner(encoded_path, owner)
         except CompatException as error:
-            self.raiseFailedToSetOwner(owner, path, error.message)
+            self.raiseFailedToSetOwner(owner, encoded_path, error.message)
 
     def _setOwner(self, path, owner):
         """
@@ -871,27 +906,33 @@ class NTFilesystem(PosixFilesystemBase):
                         owner, path, message)
 
     def getOwner(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         if self._isVirtualPath(segments):
             return 'VirtualOwner'
 
         path = self.getRealPathFromSegments(segments)
+        encoded_path = self.getEncodedPath(path)
 
         with self._impersonateUser():
             try:
                 owner_security = win32security.GetFileSecurity(
-                    path, win32security.OWNER_SECURITY_INFORMATION)
+                    encoded_path, win32security.OWNER_SECURITY_INFORMATION)
                 owner_sid = owner_security.GetSecurityDescriptorOwner()
                 name, domain, type = win32security.LookupAccountSid(
                     None, owner_sid)
                 return name
             except win32net.error as error:
                 raise OSError(
-                    error.winerror, error.strerror, path)
+                    error.winerror, error.strerror, encoded_path)
 
     def addGroup(self, segments, group, permissions=None):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         path = self.getRealPathFromSegments(segments, include_virtual=False)
+        encoded_path = self.getEncodedPath(path)
         try:
             group_sid, group_domain, group_type = (
                 win32security.LookupAccountName(None, group))
@@ -902,7 +943,7 @@ class NTFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 security = win32security.GetFileSecurity(
-                    path, win32security.DACL_SECURITY_INFORMATION)
+                    encoded_path, win32security.DACL_SECURITY_INFORMATION)
                 dacl = security.GetSecurityDescriptorDacl()
                 dacl.AddAccessAllowedAce(
                     win32security.ACL_REVISION,
@@ -910,14 +951,22 @@ class NTFilesystem(PosixFilesystemBase):
                     group_sid)
                 security.SetDacl(True, dacl, False)
                 win32security.SetFileSecurity(
-                    path, win32security.DACL_SECURITY_INFORMATION, security)
+                    encoded_path,
+                    win32security.DACL_SECURITY_INFORMATION,
+                    security,
+                    )
             except win32net.error as error:
                 self.raiseFailedToAddGroup(
-                    group, path, u'%s: %s' % (error.winerror, error.strerror))
+                    group,
+                    encoded_path,
+                    u'%s: %s' % (error.winerror, error.strerror))
 
     def removeGroup(self, segments, group):
-        '''See `ILocalFilesystem`.'''
+        """
+        See `ILocalFilesystem`.
+        """
         path = self.getRealPathFromSegments(segments, include_virtual=False)
+        encoded_path = self.getEncodedPath(path)
         try:
             group_sid, group_domain, group_type = (
                 win32security.LookupAccountName(None, group))
@@ -930,10 +979,10 @@ class NTFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 security = win32security.GetFileSecurity(
-                    path, win32security.DACL_SECURITY_INFORMATION)
+                    encoded_path, win32security.DACL_SECURITY_INFORMATION)
             except win32net.error as error:
                 raise OSError(
-                    error.winerror, error.strerror, path)
+                    error.winerror, error.strerror, encoded_path)
 
             dacl = security.GetSecurityDescriptorDacl()
             ace_count = dacl.GetAceCount()
@@ -954,7 +1003,7 @@ class NTFilesystem(PosixFilesystemBase):
             dacl.DeleteAce(index_ace_to_remove)
             security.SetDacl(True, dacl, False)
             win32security.SetFileSecurity(
-                path, win32security.DACL_SECURITY_INFORMATION, security)
+                encoded_path, win32security.DACL_SECURITY_INFORMATION, security)
         return False
 
     def hasGroup(self, segments, group):
@@ -963,6 +1012,7 @@ class NTFilesystem(PosixFilesystemBase):
             return False
 
         path = self.getRealPathFromSegments(segments)
+        encoded_path = self.getEncodedPath(path)
 
         try:
             group_sid, group_domain, group_type = (
@@ -973,10 +1023,10 @@ class NTFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 security = win32security.GetFileSecurity(
-                    path, win32security.DACL_SECURITY_INFORMATION)
+                    encoded_path, win32security.DACL_SECURITY_INFORMATION)
             except win32net.error as error:
                 raise OSError(
-                    error.winerror, error.strerror, path)
+                    error.winerror, error.strerror, encoded_path)
 
             dacl = security.GetSecurityDescriptorDacl()
             ace_count = dacl.GetAceCount()

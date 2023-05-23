@@ -766,7 +766,8 @@ class TestChevahTestCase(ChevahTestCase):
         When self.test_segments is defined it will be automatically
         removed, even when it is a symbolic link.
         """
-        _, self.test_segments = mk.fs.makePathInTemp()
+        _, self.test_segments = mk.fs.makePathInTemp(
+            prefix='test_cleanup_test_segments_link')
 
         mk.fs.makeLink(
             target_segments=mk.fs.temp_segments,

@@ -148,8 +148,7 @@ class AssertionMixin(object):
             except StopIteration:
                 pass
             else:
-                message = u'Iterable is not empty.\n%s.' % (
-                    repr(target),)
+                message = u'Iterable is not empty.\n%s.' % (repr(target),)
                 raise AssertionError(message)
             return
 
