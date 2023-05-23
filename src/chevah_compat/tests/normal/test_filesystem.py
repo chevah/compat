@@ -2127,7 +2127,7 @@ class LocalFilesystemNTMixin(object):
         """
         self.test_segments = mk.fs.createFileInTemp()
         handle = self.filesystem.openFileForWriting(self.test_segments)
-        handle.write(mk.ascii())
+        handle.write(mk.ascii().encode('ascii'))
         handle.flush()
         self.addCleanup(lambda: handle.close())
 

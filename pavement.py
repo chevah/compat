@@ -29,7 +29,6 @@ from brink.pavement_commons import (
     test_remote,
     test_normal,
     test_super,
-    test_super_ci,
     )
 from paver.easy import call_task, consume_args, environment, needs, pushd, task
 
@@ -61,7 +60,6 @@ test_python
 test_remote
 test_normal
 test_super
-test_super_ci
 
 try:
     from scame.formatcheck import ScameOptions

@@ -149,7 +149,6 @@ class TestNTProcessCapabilities(CompatTestCase):
         self.assertFalse(self.capabilities.pam)
 
 
-@conditionals.onCIName([CompatTestCase.CI.LOCAL, CompatTestCase.CI.BUILDBOT])
 @conditionals.onAdminPrivileges(False)
 @conditionals.onOSFamily('nt')
 class TestNTProcessCapabilitiesNormalUser(CompatTestCase):

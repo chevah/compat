@@ -52,8 +52,6 @@ class TestPosixFilesystem(FileSystemTestCase):
         owner = self.filesystem.getOwner(self.filesystem.home_segments)
         self.assertEqual(self.avatar.name, owner)
 
-    @conditionals.onCIName(
-        [FileSystemTestCase.CI.LOCAL, FileSystemTestCase.CI.BUILDBOT])
     @conditionals.onOSFamily('nt')
     def test_getOwner_ok_nt(self):
         """
@@ -497,7 +495,7 @@ class TestNTFilesystem(FileSystemTestCase):
                 )
 
         self.assertContains(
-            u'Process does not have', context.exception.strerror)
+            'Process does not have', context.exception.strerror)
 
 
 class TestSymbolicLinks(OSAccountFileSystemTestCase, SymbolicLinksMixin):

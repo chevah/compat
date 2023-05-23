@@ -505,7 +505,8 @@ class NTFilesystem(PosixFilesystemBase):
                         flags,
                         )
             except AdjustPrivilegeException as error:
-                raise OSError(errno.EINVAL, error.message, link_path)
+                message = force_unicode(error.message)
+                raise OSError(errno.EINVAL, message, link_path)
 
     def getStatus(self, segments):
         """

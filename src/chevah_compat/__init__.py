@@ -9,7 +9,6 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 import os
-import sys
 
 if os.name == 'posix':
     from chevah_compat.unix_users import (
@@ -43,7 +42,6 @@ elif os.name == 'nt':
         )
     from chevah_compat.nt_capabilities import NTProcessCapabilities
     from chevah_compat.nt_filesystem import NTFilesystem
-    from chevah_compat.nt_unicode_argv import get_unicode_argv
 
     system_users = NTUsers()
     process_capabilities = NTProcessCapabilities()
@@ -51,10 +49,6 @@ elif os.name == 'nt':
     HasImpersonatedAvatar = NTHasImpersonatedAvatar
     DefaultAvatar = NTDefaultAvatar
     SuperAvatar = NTSuperAvatar
-
-    # Path Unicode sys.argv on Windows.
-    sys.argv = get_unicode_argv()
-
 else:
     raise AssertionError('Operating system "%s" not supported.' % (os.name))
 
