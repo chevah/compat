@@ -217,7 +217,6 @@ jobs:
     - name: Deps
       run: |
         ./pythia.sh deps
-        ./build-py3/lib/python.exe Scripts/pywin32_postinstall.py --install
 
     - name: Test
       run: ./pythia.sh test_ci2
