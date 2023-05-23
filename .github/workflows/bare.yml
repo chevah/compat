@@ -63,7 +63,7 @@ jobs:
 
     - name: Test
       run: |
-        ./brink.sh test_ci2
+        ./pythia.sh test_ci2
       env:
         CHEVAH_BUILD: build-py3-ț
 
