@@ -599,8 +599,13 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertContains(filename, result)
         self.assertTrue(self.filesystem.exists(segments))
         self.assertTrue(self.filesystem.isFolder(segments))
-        result = self.filesystem.getFileSize(segments)
-        self.assertEqual(0, result)
+
+        if self.os_family != 'nt':
+            # On Windows the folder will have a size.
+            # So we skip this check on Windows.
+            result = self.filesystem.getFileSize(segments)
+            self.assertEqual(0, result)
+
         result = self.filesystem.getFileSize(file_segments)
         self.assertEqual(len(data.encode('utf-8')), result)
         self.filesystem.deleteFile(file_segments)
@@ -611,19 +616,17 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         It can create links to a non-existent Windows share.
         """
-        path, segments = self.tempPath()
-        if self.os_family == 'nt':
-            path = mk.fs.getEncodedPath(path)
-
+        path, segments = self.tempPathCleanup(win_encoded=True)
         # We assume all slaves have the c:\temp folder.
         share_name = 'no such share name-' + mk.string()
         self.filesystem.makeLink(
             target_segments=['UNC', '127.0.0.1', share_name],
             link_segments=segments,
             )
-        self.addCleanup(self.filesystem.deleteFolder, segments)
 
-        self.assertTrue(os.path.exists(path))
+        # The link target doens't exist, but the link file is created.
+        # This is why we use `lexists` and not `exists`
+        self.assertTrue(os.path.lexists(path))
         self.assertEqual(
             ['UNC', '127.0.0.1', share_name],
             self.filesystem.readLink(segments))

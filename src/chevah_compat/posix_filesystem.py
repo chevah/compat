@@ -756,6 +756,11 @@ class PosixFilesystemBase(object):
             if path.startswith('\\\\?\\') and path[5] == ':':
                 path = path[4:]
 
+        hardlinks = stats.st_nlink
+        if not hardlinks and os.name == 'nt':
+            # I don't know why on Windows we doing scandir.
+            hardlinks = 1
+
         return FileAttributes(
             name=name,
             path=path,
@@ -765,7 +770,7 @@ class PosixFilesystemBase(object):
             is_link=is_link,
             modified=modified,
             mode=mode,
-            hardlinks=stats.st_nlink,
+            hardlinks=hardlinks,
             uid=stats.st_uid,
             gid=stats.st_gid,
             node_id=inode,
