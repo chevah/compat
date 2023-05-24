@@ -63,7 +63,7 @@ jobs:
         CHEVAH_BUILD: build-py3-ț
 
     - name: Tmate debug on failure
-      if: failure() && env.TMATE_DEBUG == 'yes'
+      if: failure() && env.TMATE_DEBUG == 'no'
       uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
