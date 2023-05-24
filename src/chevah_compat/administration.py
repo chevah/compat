@@ -884,8 +884,8 @@ class OSAdministrationWindows(OSAdministrationUnix):
             win32net.NetUserChangePassword(
                 pdc, user.name, user.password, user.password)
         except Exception:  # pragma: no cover
-            print('Failed to set password "%s" for user "%s" on pdc "%s".' % (
-                user.password, user.name, pdc))
+            print('Failed to set password for user "%s" on pdc "%s".' % (
+                user.name, pdc))
             raise
 
     def deleteUser(self, user):
