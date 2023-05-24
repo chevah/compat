@@ -47,6 +47,9 @@ class TestProcessCapabilitiesPosix(CompatTestCase):
         When running under normal account, we can not create home folders
         on Unix.
         """
+        if self.ci_name == self.CI.GITHUB:
+            raise self.skipTest('GHA always runs as super-admin')
+
         result = self.capabilities.create_home_folder
 
         self.assertFalse(result)
@@ -64,6 +67,9 @@ class TestProcessCapabilitiesPosix(CompatTestCase):
         """
         Check getCurrentPrivilegesDescription.
         """
+        if self.ci_name == self.CI.GITHUB:
+            raise self.skipTest('GHA always runs as super-admin')
+
         text = self.capabilities.getCurrentPrivilegesDescription()
 
         self.assertEqual(u'root capabilities disabled.', text)
@@ -202,6 +208,9 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         Return `absent` for privileges which are attached to current
         process but are not enabled.
         """
+        if self.ci_name == self.CI.GITHUB:
+            raise self.skipTest('GHA always runs as super-admin')
+
         result = self.capabilities._getPrivilegeState(
             win32security.SE_SECURITY_NAME)
 
@@ -212,6 +221,9 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         Return `absent` for privileges which are attached to
         current process but are not enabled by default.
         """
+        if self.ci_name == self.CI.GITHUB:
+            raise self.skipTest('GHA always runs as super-admin')
+
         result = self.capabilities._getPrivilegeState(
             win32security.SE_IMPERSONATE_NAME)
 
@@ -238,6 +250,9 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         """
         Not supported on Windows without elevated permissions.
         """
+        if self.ci_name == self.CI.GITHUB:
+            raise self.skipTest('GHA always runs as super-admin')
+
         symbolic_link = self.capabilities.symbolic_link
 
         self.assertFalse(symbolic_link)
@@ -246,6 +261,9 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         """
         Impersonation is not available when running as a normal user.
         """
+        if self.ci_name == self.CI.GITHUB:
+            raise self.skipTest('GHA always runs as super-admin')
+
         result = self.capabilities.impersonate_local_account
 
         self.assertFalse(result)
@@ -257,13 +275,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         """
         result = self.capabilities.create_home_folder
 
-        if self.ci_name == self.CI.BUILDBOT and self.TEST_LANGUAGE != 'FR':
-            # Only buildbot slaves are setup with "Backup Operators"
-            # group (SE_BACKUP/SE_RESTORE) enabled.
-            # But not the I18N slave.
-            self.assertTrue(result)
-        else:
-            self.assertFalse(result)
+        self.assertFalse(result)
 
     def test_getCurrentPrivilegesDescription(self):
         """
@@ -345,6 +357,9 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
         """
         Returns True for a privilege which is present and is enabled.
         """
+        if self.ci_name == self.CI.GITHUB:
+            raise self.skipTest('GHA always runs as super-admin')
+
         # We use SE_IMPERSONATE privilege as it is enabled by default.
         privilege = win32security.SE_IMPERSONATE_NAME
 

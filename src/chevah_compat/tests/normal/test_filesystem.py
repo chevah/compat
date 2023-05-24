@@ -368,7 +368,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertEqual(errno.ENOTDIR, context.exception.errno)
         self.assertTrue(self.filesystem.exists(segments))
-        expected = '[Errno 20] Not a directory: ' + path
+        if self.os_family == 'nt':
+            expected = '[Errno 20] The directory name is invalid: ' + path
+        else:
+            expected = '[Errno 20] Not a directory: ' + path
         self.assertEqual(expected, force_unicode(context.exception))
 
     def test_deleteFolder_file_recursive(self):
@@ -384,7 +387,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertEqual(errno.ENOTDIR, context.exception.errno)
         self.assertTrue(self.filesystem.exists(segments))
-        expected = '[Errno 20] Not a directory: ' + path
+        if self.os_family == 'nt':
+            expected = '[Errno 20] The directory name is invalid: ' + path
+        else:
+            expected = '[Errno 20] Not a directory: ' + path
         self.assertEqual(expected, force_unicode(context.exception))
 
     def test_deleteFolder_non_recursive_empty(self):
@@ -963,10 +969,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         if self.TEST_LANGUAGE == 'FR':
             expected_message = (
-                b'Le chemin d\x92acc\xe8s sp\xe9cifi\xe9 est introuvable')
+                'Le chemin d\x92acc\xe8s sp\xe9cifi\xe9 est introuvable')
 
         elif self.os_family == 'nt':
-            expected_message = b'The system cannot find the path specified'
+            expected_message = 'The system cannot find the path specified'
         else:
             expected_message = 'No such file or directory'
         self.assertEqual(errno.ENOENT, error.errno)
@@ -1027,12 +1033,11 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         if self.TEST_LANGUAGE == 'FR':
             expected = (
                 '[Errno 2] Le chemin d\u2019acc\xe8s sp\xe9cifi\xe9 est '
-                'introuvable: ' + path + '\\*.*'
+                'introuvable: ' + path
                 )
         elif self.os_name == 'windows':
             expected = (
-                '[Errno 2] The system cannot find the path specified: '
-                + path + '\\*.*'
+                '[Errno 2] The system cannot find the path specified: ' + path
                 )
         else:
             expected = '[Errno 2] No such file or directory: ' + path
@@ -1049,7 +1054,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             self.filesystem.getFolderContent(segments)
 
         self.assertEqual(errno.ENOTDIR, context.exception.errno)
-        expected = '[Errno 20] Not a directory: ' + path
+        if self.os_family == 'nt':
+            expected = '[Errno 20] The directory name is invalid: ' + path
+        else:
+            expected = '[Errno 20] Not a directory: ' + path
         self.assertEqual(expected, force_unicode(context.exception))
 
     def test_getFolderContent_empty(self):
@@ -1118,23 +1126,15 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         with self.assertRaises(OSError) as context:
             self.filesystem.iterateFolderContent(segments)
 
-        if self.os_family == 'nt':
-            # On Windows, we get a different error.
-            expected_error = errno.EINVAL
-        else:
-            expected_error = errno.ENOTDIR
-
-        self.assertEqual(expected_error, context.exception.errno)
+        self.assertEqual(errno.ENOTDIR, context.exception.errno)
 
         if self.TEST_LANGUAGE == 'FR':
             expected = (
-                '[Errno 22] Nom de r\xe9pertoire non valide: '
-                + path
+                '[Errno 20] Nom de r\xe9pertoire non valide: ' + path
                 )
         elif self.os_name == 'windows':
             expected = (
-                '[Errno 22] The directory name is invalid: '
-                + path
+                '[Errno 20] The directory name is invalid: ' + path
                 )
         else:
             expected = '[Errno 20] Not a directory: ' + path

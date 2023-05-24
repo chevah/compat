@@ -143,6 +143,7 @@ def onAdminPrivileges(present):
         or ChevahTestCase.ci_name not in [
             ChevahTestCase.CI.LOCAL,
             ChevahTestCase.CI.BUILDBOT,
+            ChevahTestCase.CI.GITHUB,
             ]
         )
 

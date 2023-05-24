@@ -457,7 +457,7 @@ class NTFilesystem(PosixFilesystemBase):
                 handle, FSCTL_GET_REPARSE_POINT, None, 16 * 1024)
         except pywintypes.error as error:
             message = '%s - %s' % (error.winerror, error.strerror)
-            raise OSError(errno.EINVAL, message, path)
+            raise OSError(errno.EINVAL, message, encoded_path)
         finally:
             win32file.CloseHandle(handle)
 
@@ -814,7 +814,10 @@ class NTFilesystem(PosixFilesystemBase):
                 else:
                     return os.rmdir(path_encoded)
         except OSError as error:
-            # Windows return a generic EINVAL when path is not a folder.
+            # Sometimes windows return a generic EINVAL when path is not a
+            # folder.
+            # With Python3 we get ENOTDIR but with a different text
+            # message.
             if error.errno == errno.EINVAL:
                 self._requireFolder(segments)
             raise error
