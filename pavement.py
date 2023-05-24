@@ -259,21 +259,6 @@ def build():
     """
     Copy new source code to build folder.
     """
-    if os.name == 'nt':
-        content = """
-python38.zip
-.
-
-# Uncomment to run site.main() automatically
-import site
-lib\site-packages
-"""
-        pave.fs.writeContentToFile(
-            destination=[pave.path.build, 'lib', 'python38._pth'],
-            content=content,
-            )
-
-
 
 @task
 @needs('build', 'test_python')
