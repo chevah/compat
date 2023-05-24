@@ -12,12 +12,7 @@ name: Bare
 on:
   push:
     branches: [ master ]
-    paths:
-    - '**.py'
   pull_request:
-    branches: [ master ]
-    paths:
-    - '**.py'
 
 concurrency:
   group: ci-${{ github.ref }}
