@@ -52,7 +52,7 @@ jobs:
       run: apk add git bash shadow sudo curl
 
     - name: Amazon Linux 2022 setup
-      if: matrix.container == 'amazonlinux:2022'
+      if: matrix.container == 'amazonlinux:2022' || matrix.container == 'rockylinux:9'
       run: yum -y install libxcrypt-compat findutils
 
     - name: Yum-based setup
