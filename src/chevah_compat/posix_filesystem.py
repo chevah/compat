@@ -4,10 +4,6 @@
 Filesystem code used by all operating systems, including Windows as
 Windows has its layer of POSIX compatibility.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
 from contextlib import contextmanager
 from datetime import date
 import errno
@@ -21,16 +17,9 @@ import sys
 import time
 import unicodedata
 import six
+from os import scandir
 
-
-try:
-    # On some systems (AIX/Windows) the public scandir module will fail to
-    # load the C based scandir function. We force it here by direct import.
-    from _scandir import scandir
-except ImportError:
-    from scandir import scandir_python as scandir
-
-from zope.interface import implements
+from zope.interface import implementer
 
 from chevah_compat.exceptions import (
     ChangeUserException,
@@ -92,7 +81,7 @@ class PosixFilesystemBase(object):
         * Windows - INSTALL_FOLDER/ lib/ Lib/       os.py
         * Unix    - INSTALL_FOLDER/ lib/ python2.X/ os.py
         """
-        path = os.path.dirname(os.__file__).decode('utf-8')
+        path = os.path.dirname(os.__file__)
         segments = self.getSegmentsFromRealPath(path)
         return segments[:-2]
 
@@ -131,9 +120,14 @@ class PosixFilesystemBase(object):
 
     @classmethod
     def getEncodedPath(cls, path):
-        '''Return the encoded representation of the path, use in the lower
-        lever API for accessing the filesystem.'''
-        return path.encode(u'utf-8')
+        """
+        Return the encoded representation of the path, use in the lower
+        lever API for accessing the filesystem.
+
+        This is here from py2 and should be removed in the future.
+        On Python 3 the low level API can handle unicode.
+        """
+        return path
 
     @property
     def home_segments(self):
@@ -153,7 +147,7 @@ class PosixFilesystemBase(object):
             raise CompatError(
                 20019,
                 _(
-                    'User home folder "%s" is not withing the root folder '
+                    'User home folder "%s" is not within the root folder '
                     '"%s".' % (
                         self._avatar.home_folder_path,
                         self._avatar.root_folder_path),
@@ -525,12 +519,11 @@ class PosixFilesystemBase(object):
         Raise an OSError when segments is not a file.
         """
         path = self.getRealPathFromSegments(segments)
-        path_encoded = path.encode('utf-8')
         if self.isFolder(segments):
             raise OSError(
                 errno.EISDIR,
-                'Is a directory: %s' % path_encoded,
-                path_encoded,
+                'Is a directory: %s' % path,
+                path,
                 )
 
     def openFile(self, segments, flags, mode):
@@ -763,6 +756,12 @@ class PosixFilesystemBase(object):
             if path.startswith('\\\\?\\') and path[5] == ':':
                 path = path[4:]
 
+        hardlinks = stats.st_nlink
+        if not hardlinks and os.name == 'nt':
+            # I don't know why on Windows we don't get any number
+            # or hardlinks with scandir.
+            hardlinks = 1
+
         return FileAttributes(
             name=name,
             path=path,
@@ -772,7 +771,7 @@ class PosixFilesystemBase(object):
             is_link=is_link,
             modified=modified,
             mode=mode,
-            hardlinks=stats.st_nlink,
+            hardlinks=hardlinks,
             uid=stats.st_uid,
             gid=stats.st_gid,
             node_id=inode,
@@ -1091,11 +1090,11 @@ class PosixFilesystemBase(object):
         return result
 
 
+@implementer(IFileAttributes)
 class FileAttributes(object):
     """
     See: IFileAttributes.
     """
-    implements(IFileAttributes)
 
     def __init__(
             self, name, path, size=0,

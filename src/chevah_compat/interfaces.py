@@ -1,10 +1,8 @@
 # Copyright (c) 2012 Adi Roiban.
 # See LICENSE for details.
-'''Common interfaces used by Chevah products.'''
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import unicode_literals
+"""
+Common interfaces used by Chevah products.
+"""
 
 from zope.interface import Interface, Attribute
 
@@ -354,7 +352,7 @@ class IFilesystemNode(Interface):
 
 
 class ILocalFilesystem(Interface):
-    """
+    r"""
     Portable access to local filesystem.
 
     This is designed to provide a single interface for accessing local files.

@@ -8,6 +8,7 @@ Add this command to the way you execute nose::
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import nose
 from nose.plugins.base import Plugin

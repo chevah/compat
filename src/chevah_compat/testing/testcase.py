@@ -8,7 +8,6 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 import six
-from six.moves import range
 import contextlib
 import inspect
 import threading
@@ -19,7 +18,7 @@ import sys
 import time
 
 from bunch import Bunch
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 from nose import SkipTest
 try:
     from twisted.internet.defer import Deferred
@@ -103,18 +102,11 @@ class TwistedTestCase(TestCase):
     @property
     def _caller_success_member(self):
         """
-        Retrieve the 'success' member from the None test case.
+        Return true if last test run was successful.
         """
-        success = None
-        for i in range(2, 6):
-            try:
-                success = inspect.stack()[i][0].f_locals['success']
-                break
-            except KeyError:
-                success = None
-        if success is None:
-            raise AssertionError('Failed to find "success" attribute.')
-        return success
+        if self._outcome.errors:
+            return False
+        return True
 
     def tearDown(self):
         try:
@@ -242,7 +234,7 @@ class TwistedTestCase(TestCase):
             # When debug is enabled with iterate using a small delay in steps,
             # to have a much better debug output.
             # Otherwise the debug messages will flood the output.
-            print (
+            print(
                 u'delayed: %s\n'
                 u'threads: %s\n'
                 u'writers: %s\n'
@@ -613,7 +605,7 @@ class TwistedTestCase(TestCase):
         raw_name = six.text_type(delayed_call.func)
         raw_name = raw_name.replace('<function ', '')
         raw_name = raw_name.replace('<bound method ', '')
-        return raw_name.split(' ', 1)[0]
+        return raw_name.split(' ', 1)[0].split('.')[-1]
 
     def getDeferredFailure(
             self, deferred, timeout=None, debug=False, prevent_stop=False):
@@ -673,8 +665,7 @@ class TwistedTestCase(TestCase):
             self.fail(
                 "Success result expected on %r, "
                 "found failure result instead:\n%s" % (
-                    deferred, result[0].getBriefTraceback().decode(
-                        'utf-8', errors='replace')))
+                    deferred, result[0].getBriefTraceback()))
         else:
             return result[0]
 
@@ -725,8 +716,7 @@ class TwistedTestCase(TestCase):
                 "Failure of type (%s) expected on %r, "
                 "found type %r instead: %s" % (
                     expectedString, deferred, result[0].type,
-                    result[0].getBriefTraceback().decode(
-                        'utf-8', errors='replace')))
+                    result[0].getBriefTraceback()))
         else:
             return result[0]
 
@@ -1074,7 +1064,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             try:
                 check()
             except AssertionError as error:
-                errors.append(error.message)
+                errors.append(str(error))
 
         if errors:  # noqa:cover
             self._teardown_errors.append(AssertionError(
@@ -1207,22 +1197,6 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     def skipTest(message=''):
         '''Return a SkipTest exception.'''
         return SkipTest(message)
-
-    @property
-    def _caller_success_member(self):
-        '''Retrieve the 'success' member from the test case.'''
-        success_state = None
-        # We search starting with second stack, since first stack is the
-        # current stack and we don't care about it.
-        for level in inspect.stack()[1:]:
-            try:
-                success_state = level[0].f_locals['success']
-                break
-            except KeyError:
-                success_state = None
-        if success_state is None:
-            raise AssertionError('Failed to find "success" attribute.')
-        return success_state
 
     @staticmethod
     def patch(*args, **kwargs):
@@ -1358,19 +1332,32 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
                 "Expecting type %s, but got %s. %s" % (
                     expected_type, type(value), msg))
 
-    def tempPath(self, prefix='', suffix=''):
+    def tempPath(self, prefix='', suffix='', win_encoded=False):
         """
         Return (path, segments) for a path which is not created yet.
         """
-        return mk.fs.makePathInTemp(prefix=prefix, suffix=suffix)
+        path, segments = mk.fs.makePathInTemp(prefix=prefix, suffix=suffix)
 
-    def tempPathCleanup(self, prefix='', suffix=''):
+        if self.os_family == 'nt' and win_encoded:
+            path = mk.fs.getEncodedPath(path)
+
+        return path, segments
+
+    def tempPathCleanup(self, prefix='', suffix='', win_encoded=False):
         """
         Return (path, segments) for a path which is not created yet but which
         will be automatically removed.
         """
-        return mk.fs.pathInTemp(
-            cleanup=self.addCleanup, prefix=prefix, suffix=suffix)
+        path, segments = mk.fs.pathInTemp(
+            cleanup=self.addCleanup,
+            prefix=prefix,
+            suffix=suffix,
+            )
+
+        if self.os_family == 'nt' and win_encoded:
+            path = mk.fs.getEncodedPath(path)
+
+        return path, segments
 
     def tempFile(
         self, content='', prefix='', suffix='', cleanup=True,

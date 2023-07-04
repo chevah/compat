@@ -1,11 +1,6 @@
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
 '''Test system users portable code code.'''
-from __future__ import with_statement
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
 import os
 import sys
 
@@ -84,7 +79,7 @@ class TestSystemUsers(SystemUsersTestCase):
             username=TEST_ACCOUNT_USERNAME)
 
         self.assertEqual(u'/home/%s' % TEST_ACCOUNT_USERNAME, home_folder)
-        self.assertIsInstance(text_type, home_folder)
+        self.assertIsInstance(str, home_folder)
 
     def test_getHomeFolder_no_capabilities(self):
         """
@@ -108,7 +103,7 @@ class TestSystemUsers(SystemUsersTestCase):
             username=TEST_ACCOUNT_USERNAME)
 
         self.assertEqual(u'/Users/%s' % TEST_ACCOUNT_USERNAME, home_folder)
-        self.assertIsInstance(text_type, home_folder)
+        self.assertIsInstance(str, home_folder)
 
     def test_getHomeFolder_non_existing_user(self):
         """
@@ -168,7 +163,7 @@ class TestSystemUsers(SystemUsersTestCase):
 
         self.assertContains(
             test_user.name.lower(), home_folder.lower())
-        self.assertIsInstance(text_type, home_folder)
+        self.assertIsInstance(str, home_folder)
         self.addCleanup(os_administration.deleteUser, test_user)
 
     @conditionals.onOSFamily('nt')
@@ -183,7 +178,7 @@ class TestSystemUsers(SystemUsersTestCase):
         home_folder = system_users.getHomeFolder(username)
 
         self.assertContains(username.lower(), home_folder.lower())
-        self.assertIsInstance(text_type, home_folder)
+        self.assertIsInstance(str, home_folder)
 
     @conditionals.onOSFamily('nt')
     @conditionals.onCapability('get_home_folder', True)
@@ -219,7 +214,7 @@ class TestSystemUsers(SystemUsersTestCase):
 
             self.assertContains(
                 test_user.name.lower(), self.home_folder.lower())
-            self.assertIsInstance(text_type, self.home_folder)
+            self.assertIsInstance(str, self.home_folder)
             self.assertTrue(mk.fs.isFolder(expected_home_segments))
         finally:
             os_administration.deleteUser(test_user)
@@ -401,8 +396,8 @@ class TestSystemUsers(SystemUsersTestCase):
             import pwd
             import grp
             uid, gid = os.geteuid(), os.getegid()
-            impersonated_username = pwd.getpwuid(uid)[0].decode('utf-8')
-            impersonated_groupname = grp.getgrgid(gid)[0].decode('utf-8')
+            impersonated_username = pwd.getpwuid(uid)[0]
+            impersonated_groupname = grp.getgrgid(gid)[0]
             impersonated_groups = os.getgroups()
             self.assertEqual(test_user.name, impersonated_username)
             self.assertEqual(TEST_ACCOUNT_GROUP, impersonated_groupname)

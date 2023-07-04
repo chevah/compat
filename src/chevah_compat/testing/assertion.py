@@ -49,6 +49,9 @@ class AssertionMixin(object):
     The assertions from here should not overwrite anything.
     """
 
+    def assertItemsEqual(self, first, second, message=None):
+        return self.assertCountEqual(first, second, message)
+
     @classmethod
     def assertTempIsClean(cls):
         """
@@ -59,7 +62,7 @@ class AssertionMixin(object):
         if members:
             message = u'Temporary folder is not clean. %s' % (
                 u', '.join(members))
-            raise AssertionError(message.encode('utf-8'))
+            raise AssertionError(message)
 
     @classmethod
     def assertWorkingFolderIsClean(cls):
@@ -71,7 +74,7 @@ class AssertionMixin(object):
         if members:
             message = u'Working folder is not clean. %s' % (
                 u', '.join(members))
-            raise AssertionError(message.encode('utf-8'))
+            raise AssertionError(message)
 
     def assertIteratorItemsEqual(self, expected, actual):
         """
@@ -98,14 +101,14 @@ class AssertionMixin(object):
         if not isinstance(actual_error, CompatError):
             values = (actual_error, type(actual_error))
             message = u'Error %s not CompatError but %s' % values
-            raise AssertionError(message.encode('utf-8'))
+            raise AssertionError(message)
 
         actual_id = getattr(actual_error, 'event_id', None)
         if expected_id != actual_id:
             values = (
                 actual_error, text_type(expected_id), text_type(actual_id))
             message = u'Error id for %s is not %s, but %s.' % values
-            raise AssertionError(message.encode('utf-8'))
+            raise AssertionError(message)
 
     def assertIsFalse(self, value):
         """
@@ -132,7 +135,7 @@ class AssertionMixin(object):
         if failure.type is not failure_class:  # noqa:cover
             message = u'Failure %s is not of type %s' % (
                 text_type(failure), failure_class)
-            raise AssertionError(message.encode('utf-8'))
+            raise AssertionError(message)
 
     def assertIsEmpty(self, target):
         """
@@ -164,7 +167,7 @@ class AssertionMixin(object):
                 pass
             else:
                 message = u'Iterable is empty.\n%s.' % target
-                raise AssertionError(message.encode('utf-8'))
+                raise AssertionError(message)
             return
 
         if len(target) == 0:
@@ -177,7 +180,7 @@ class AssertionMixin(object):
         if token not in source:
             message = u'%s does not contains %s.' % (
                 repr(source), repr(token))
-            raise AssertionError(message.encode('utf-8'))
+            raise AssertionError(message)
 
     def assertNotContains(self, token, source):
         """
@@ -185,7 +188,7 @@ class AssertionMixin(object):
         """
         if token in source:
             message = u'%s contains %s.' % (repr(source), repr(token))
-            raise AssertionError(message.encode('utf-8'))
+            raise AssertionError(message)
 
     def assertTextContains(self, pattern, source):
         """
@@ -194,7 +197,7 @@ class AssertionMixin(object):
         if pattern not in pattern:
             message = u'%s not contained in\n%s.' % (
                 repr(pattern), repr(source))
-            raise AssertionError(message.encode('utf-8'))
+            raise AssertionError(message)
 
     def assertStartsWith(self, start, source):
         """
@@ -203,7 +206,7 @@ class AssertionMixin(object):
         if not source.startswith(start):
             message = u'%s does not starts with %s' % (
                 repr(source), repr(start))
-            raise AssertionError(message.encode('utf-8'))
+            raise AssertionError(message)
 
     def assertEndsWith(self, end, source):
         """
@@ -211,7 +214,7 @@ class AssertionMixin(object):
         """
         if not source.endswith(end):
             message = u'%s does not end with %s' % (repr(source), repr(end))
-            raise AssertionError(message.encode('utf-8'))
+            raise AssertionError(message)
 
     def assertProvides(self, interface, obj):
         self.assertTrue(

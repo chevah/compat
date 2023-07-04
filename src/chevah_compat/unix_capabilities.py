@@ -3,13 +3,7 @@
 """
 Provides information about capabilities for a process on Unix.
 """
-from __future__ import with_statement
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-import platform
-
-from zope.interface import implements
+from zope.interface import implementer
 
 from chevah_compat.capabilities import BaseProcessCapabilities
 from chevah_compat.exceptions import ChangeUserException
@@ -18,10 +12,10 @@ from chevah_compat.interfaces import IProcessCapabilities
 from chevah_compat.unix_users import _ExecuteAsUser
 
 
+@implementer(IProcessCapabilities)
 class UnixProcessCapabilities(BaseProcessCapabilities):
     '''Container for Unix capabilities detection.'''
 
-    implements(IProcessCapabilities)
 
     @property
     def impersonate_local_account(self):
@@ -87,8 +81,8 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
             return False
 
         if self.os_name == 'linux':
-            distro_name = platform.linux_distribution(
-                supported_dists=platform._supported_dists + ('alpine',))[0]
+            import distro
+            distro_name = distro.id()
             if distro_name == 'alpine':
                 return False
 

@@ -23,6 +23,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
 
 env:
   TMATE_DEBUG: 'no'
@@ -45,24 +48,24 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-unicode
+          build-py3
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-unicode
 
     - name: Deps
-      run: ./brink.sh deps
+      run: ./pythia.sh deps
 
     - uses: chevah/python-info-action@v1
       with:
-        python-path: build-compat/bin/python
+        python-path: build-py3/bin/python
 
     - name: Move build to Unicode path
-      run: mv build-compat build-compat-ț
+      run: mv build-py3 build-py3-ț
 
     - name: Test
       run: |
-        ./brink.sh test_ci2
+        ./pythia.sh test_ci2
       env:
-        CHEVAH_BUILD: build-compat-ț
+        CHEVAH_BUILD: build-py3-ț
 
     - name: Tmate debug on failure
       if: failure() && env.TMATE_DEBUG == 'yes'
@@ -71,7 +74,7 @@ jobs:
         limit-access-to-actor: true
 
     - name: Move build back to to ascii
-      run: mv build-compat-ț build-compat
+      run: mv build-py3-ț build-py
 
 
   ubuntu-2204-ascii-path:
@@ -93,14 +96,14 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-ascii
+          build-py3
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-ascii
 
     - name: Deps
-      run: ./brink.sh deps
+      run: ./pythia.sh deps
 
     - name: Test
-      run: ./brink.sh test_ci2
+      run: ./pythia.sh test_ci2
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -111,7 +114,7 @@ jobs:
         limit-access-to-actor: true
 
     - name: Publish cov
-      run: ./brink.sh codecov_publish
+      run: ./pythia.sh codecov_publish
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -130,19 +133,19 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-unicode
+          build-py3
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-unicode
 
     - name: Deps
-      run: ./brink.sh deps
+      run: ./pythia.sh deps
 
     - name: Move build to Unicode path
-      run: mv build-compat build-compat-ț
+      run: mv build-py3 build-py3-ț
 
     - name: Test
-      run: ./brink.sh test_ci2
+      run: ./pythia.sh test_ci2
       env:
-        CHEVAH_BUILD: build-compat-ț
+        CHEVAH_BUILD: build-py3-ț
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Tmate debug on failure
@@ -152,10 +155,10 @@ jobs:
         limit-access-to-actor: true
 
     - name: Move build back to to ascii
-      run: mv build-compat-ț build-compat
+      run: mv build-py3-ț build-py3
 
     - name: Publish cov
-      run: ./brink.sh codecov_publish
+      run: ./pythia.sh codecov_publish
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -174,14 +177,16 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-ascii
+          build-py3
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-ascii
 
     - name: Deps
-      run: ./brink.sh deps
+      run: |
+        ./pythia.sh deps
+        ./pythia.sh build
 
     - name: Test
-      run: ./brink.sh test_ci2
+      run: ./pythia.sh test_ci2
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -192,7 +197,7 @@ jobs:
         limit-access-to-actor: true
 
     - name: Publish cov
-      run: ./brink.sh codecov_publish
+      run: ./pythia.sh codecov_publish
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -208,26 +213,41 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          build-compat
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}
+          build-py3
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}
 
     - name: Deps
-      run: sh ./brink.sh deps
+      run: |
+        ./pythia.sh deps
+        ./pythia.sh build
 
-    - name: Test
-      run: sh ./brink.sh test_ci2
+    # FIXME:691:
+    # We should have just a single test step here to run all the tests in one
+    # go.
+    # Not sure why on Windows the normal tests are not discovered by default.
+    - name: Test normal
+      run: |
+        ./pythia.sh test normal
       env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        CODECOV_TOKEN: enabled
+        USER: runneradmin
+
+    - name: Test elevated
+      run: |
+        ./pythia.sh test elevated
+      env:
+        CODECOV_TOKEN: enabled
+        USER: runneradmin
 
     - name: Tmate debug on failure
-      if: failure() && env.TMATE_DEBUG == 'yes'
+      if: failure() && env.TMATE_DEBUG == 'no'
       uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
 
     - name: Public coverage
       if: ${{ !cancelled() }}
-      run: sh ./brink.sh codecov_publish
+      run: ./pythia.sh codecov_publish
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 

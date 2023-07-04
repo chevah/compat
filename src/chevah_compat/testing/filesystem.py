@@ -7,7 +7,6 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 import six
-import hashlib
 import os
 import re
 import uuid
@@ -108,32 +107,37 @@ class LocalTestFilesystem(LocalFilesystem):
 
         Raise AssertionError if file already exists or it can not be created.
         '''
+        if isinstance(content, six.text_type):
+            content = content.encode('utf-8')
         assert not self.isFile(segments), 'File already exists.'
         new_file = self.openFileForWriting(segments, mode=mode)
         if content is None:
-            value = 'a'
-            content = ''
+            value = b'a'
             if length > 0:
                 assert length > 10, (
                     'Data length must be greater than 10.')
                 length = length - 3
                 buffer_size = 1024 * 1024
-                new_file.write('\r\n')
+                new_file.write(b'\r\n')
                 while length > 0:
                     length = length - buffer_size
                     if length < 0:
                         buffer_size = buffer_size + length
                     new_file.write(value * buffer_size)
-                new_file.write('\n')
+                new_file.write(b'\n')
         else:
-            new_file.write(content.encode('utf-8'))
+            new_file.write(content)
 
         new_file.close()
         assert self.isFile(segments), 'Could not create file'
 
     def createFileInTemp(self, content=None, prefix=u'', suffix=u'',
                          length=0):
-        '''Create a file in the temporary folder.'''
+        """
+        Create a file in the temporary folder.
+
+        `content` is Unicode str.
+        """
         temp_segments = self.temp_segments
 
         filename = self._makeFilename(prefix=prefix, suffix=suffix)
@@ -318,34 +322,6 @@ class LocalTestFilesystem(LocalFilesystem):
         file_segments = self.temp_segments[:]
         file_segments.extend(segments)
         return self.getFileSize(file_segments)
-
-    def getFileMD5Sum(self, segments):
-        '''Get MD5 checksum.'''
-        md5_sum = hashlib.md5()
-        chunk_size = 8192
-        input_file = self.openFileForReading(segments)
-        try:
-            for chunk in iter(lambda: input_file.read(chunk_size), ''):
-                md5_sum.update(chunk)
-        finally:
-            input_file.close()
-        return six.text_type(md5_sum.hexdigest())
-
-    def getFileMD5SumInHome(self, segments):
-        """
-        Get file MD5 sum relative to home folder.
-        """
-        file_segments = self.home_segments[:]
-        file_segments.extend(segments)
-        return self.getFileMD5Sum(file_segments)
-
-    def getFileMD5SumInTemporary(self, segments):
-        """
-        Get file MD5 sum relative to temporary folder.
-        """
-        file_segments = self.temp_segments[:]
-        file_segments.extend(segments)
-        return self.getFileMD5Sum(file_segments)
 
     def isFileInHome(self, segments):
         '''Get isFile relative to home folder.'''

@@ -5,9 +5,9 @@ Module containing helpers for testing the Chevah project.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+
 from six.moves import range
 import six
-import hashlib
 import os
 import random
 import string
@@ -16,7 +16,6 @@ import uuid
 from unidecode import unidecode
 
 try:
-    from twisted.internet import address
     from twisted.internet.protocol import Factory
     from twisted.internet.tcp import Port
 except ImportError:  # pragma: no cover
@@ -40,7 +39,7 @@ def _sanitize_name_legacy_unix(candidate):
 
     By default password is limited to 8 characters without spaces.
     """
-    return unidecode(candidate).replace(' ', '_')[:8].decode('utf-8')
+    return unidecode(candidate).replace(' ', '_')[:8]
 
 
 def _sanitize_name_windows(candidate):
@@ -49,7 +48,7 @@ def _sanitize_name_windows(candidate):
     """
     # FIXME:927:
     # On Windows, we can't delete home folders with unicode names.
-    return unidecode(candidate).decode('utf-8')
+    return unidecode(candidate)
 
 
 class SanitizeNameMixin(object):
@@ -63,13 +62,13 @@ class SanitizeNameMixin(object):
         os_name = process_capabilities.os_name
         os_version = ChevahTestCase.os_version
         if os_name in ['aix', 'hpux', 'freebsd', 'openbsd']:
-            return _sanitize_name_legacy_unix(name).decode('utf-8')
+            return _sanitize_name_legacy_unix(name)
         elif os_version in ['osx-10.16']:
             # It looks like macOS 11 can't handle full Unix group names.
-            macosname = _sanitize_name_legacy_unix(name).decode('utf-8')
+            macosname = _sanitize_name_legacy_unix(name)
             return macosname.replace('_', 'Z')
         elif os_name == 'windows':
-            return _sanitize_name_windows(name).decode('utf-8')
+            return _sanitize_name_windows(name)
 
         return name
 
@@ -239,8 +238,10 @@ class ChevahCommonsFactory(object):
     def ascii(self):
         """
         Return a unique (per session) ASCII string.
+
+        This is an Unicode with only ascii characters.
         """
-        return b'ascii_StR' + six.text_type(self.number()).encode('utf-8')
+        return 'ascii_StR' + six.text_type(self.number())
 
     def string(self, *args, **kwargs):
         """
@@ -272,16 +273,6 @@ class ChevahCommonsFactory(object):
         The account under which this process is executed.
         """
         return six.text_type(os.environ['USER'])
-
-    def md5(self, content):
-        """
-        Return MD5 digest for `content`.
-
-        Content must by byte string.
-        """
-        md5_sum = hashlib.md5()
-        md5_sum.update(content)
-        return six.text_type(md5_sum.hexdigest())
 
     def getUniqueString(self, length=None):
         """
@@ -336,27 +327,6 @@ class ChevahCommonsFactory(object):
         '''Return a random valid filename.'''
         name = str(self.number()) + TEST_NAME_MARKER
         return prefix + name + ('a' * (length - len(name))) + suffix
-
-    def makeIPv4Address(self, host='127.0.0.1', port=None, protocol='TCP'):
-        """
-        Creates an IPv4 address.
-        """
-        if port is None:
-            port = random.randrange(20000, 30000)
-
-        ipv4 = address.IPv4Address(protocol, host, port)
-        return ipv4
-
-    def makeIPv6Address(
-            self, host='0:0:0:0:0:0:0:1', port=None, protocol='TCP'):
-        """
-        Creates an IPv6 address.
-        """
-        if port is None:
-            port = random.randrange(20000, 30000)
-
-        ipv4 = address.IPv6Address(protocol, host, port)
-        return ipv4
 
     def FilesystemOsAvatar(self, user, home_folder_path=None):
         """

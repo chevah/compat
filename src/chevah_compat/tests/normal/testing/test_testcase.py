@@ -3,9 +3,6 @@
 """
 Tests for ChevahTestCase.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 import os
 import sys
 import time
@@ -336,7 +333,7 @@ class TestTwistedTestCase(ChevahTestCase):
             self._assertReactorIsClean()
 
         self.assertEqual(
-            u'Reactor is not clean. delayed calls: much_later',
+            'Reactor is not clean. delayed calls: much_later',
             context.exception.args[0],
             )
         # Cancel and remove it so that the general test will not fail.
@@ -377,7 +374,7 @@ class TestTwistedTestCase(ChevahTestCase):
 
         self.assertContains(
             'Reactor is not clean. threadpoool queue:',
-            context.exception.message)
+            context.exception.args[0])
 
         # It will auto-clean the pool, so calling it again will not fail.
         self._assertReactorIsClean()

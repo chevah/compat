@@ -38,16 +38,11 @@ jobs:
       fail-fast: false
       matrix:
         container:
-          - alpine:3.14
-          - amazonlinux:2018.03
+          - alpine:3.18
           - amazonlinux:2
           - amazonlinux:2022
-          # CentOS 5.11 setup was saved as an image pushed to Docker Hub. See
-          # the Overview section at https://hub.docker.com/r/proatria/centos.
-          - proatria/centos:5.11-chevah1
-          - centos:6.10
-          - centos:7
           - centos:8.2.2004
+          - centos-stream9-fips
           - oraclelinux:8
           - ubuntu:14.04
           - ubuntu:16.04
@@ -65,21 +60,6 @@ jobs:
       run: |
         apk upgrade -U
         apk add git bash shadow sudo curl
-
-    - name: CentOS 6.10 setup
-      if: matrix.container == 'centos:6.10'
-      run: |
-        sed -i s/^mirrorlist=/#mirrorlist=/ /etc/yum.repos.d/*.repo
-        sed -i s@^#baseurl=http://mirror.centos.org/centos/\$releasever/@baseurl=http://vault.centos.org/6.10/@ /etc/yum.repos.d/*.repo
-        yum -y upgrade
-
-    # OpenSSL got updated in 8.3 from 1.1.1c to 1.1.1g.
-    - name: CentOS 8.2 setup
-      if: matrix.container == 'centos:8.2.2004'
-      run: |
-        sed -i s/^mirrorlist=/#mirrorlist=/ /etc/yum.repos.d/*.repo
-        sed -i s@^#baseurl=http://mirror.centos.org/\$contentdir/\$releasever/@baseurl=https://vault.centos.org/8.2.2004/@ /etc/yum.repos.d/*.repo
-        yum -y upgrade
 
     - name: Amazon Linux 2022 setup
       if: matrix.container == 'amazonlinux:2022'
@@ -121,14 +101,6 @@ jobs:
         git reset --hard ${{ github.event.after }}
         git log -1 --format='%H'
 
-    # The old curl on CentOS 5 has cert check issues with GitHub's SNI.
-    # Also with Let's Encrypt certificates, lately.
-    # So download the runtime over HTTP from backup server.
-    - name: CentOS 5 BINARY_DIST_URI hack
-      if: startsWith(matrix.container, 'proatria/centos:5.11')
-      run: |
-        sed -i s@^#BINARY_DIST_URI=\'https://bin.chevah.com:20443/production\'@BINARY_DIST_URI=\'http://bin.chevah.com:20080/production\'@ /home/chevah/$CHEVAH_REPO/brink.conf
-
     # This action also fails on CentOS 5/6.
     - name: Cache build
       uses: actions/cache@v3
@@ -136,27 +108,27 @@ jobs:
       with:
         path: |
           /home/chevah/$CHEVAH_REPO/build-$CHEVAH_REPO
-        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('brink.conf') }}-${{ matrix.container }}
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-${{ matrix.container }}
 
     - name: Deps
       run: |
         cd /home/chevah/$CHEVAH_REPO
-        ./brink.sh deps
+        ./pythia.sh deps
         chown -R chevah .
 
     - uses: chevah/python-info-action@v1
       with:
-        python-path: /home/chevah/$CHEVAH_REPO/build-$CHEVAH_REPO/bin/python
+        python-path: /home/chevah/$CHEVAH_REPO/build-py3/bin/python
 
     - name: Build
       run: |
         cd /home/chevah/$CHEVAH_REPO
-        su chevah -c "./brink.sh build"
+        su chevah -c "./pythia.sh build"
 
     - name: Test
       run: |
         cd /home/chevah/$CHEVAH_REPO
-        su chevah -c "./brink.sh test_ci2"
+        su chevah -c "./pythia.sh test_ci2"
 
   # Helper so that on GitHub repo settings we can configure a single job as
   # required.

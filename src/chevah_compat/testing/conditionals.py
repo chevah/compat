@@ -6,11 +6,12 @@ Decorators used for testing.
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+
+import six
 from functools import wraps
 from nose import SkipTest
 from socket import gethostname
 from unittest import TestCase
-import sys
 
 from chevah_compat import process_capabilities
 from chevah_compat.testing.testcase import ChevahTestCase
@@ -109,22 +110,6 @@ def onOSVersion(versions):
         check_os_version, 'OS version "%s" not available.' % versions)
 
 
-def onCIName(name):
-    """
-    Run tests only if current CI is `name` or is in one from `name` list.
-    """
-    if not isinstance(name, list) and not isinstance(name, tuple):
-        name = [name.lower()]
-    else:
-        name = [item.lower() for item in name]
-
-    def check_ci_name():
-        return ChevahTestCase.ci_name not in name
-
-    return skipOnCondition(
-        check_ci_name, 'CI "%s" not available.' % name)
-
-
 def onCapability(name, value):
     """
     Run test only if capability with `name` equals `value`.
@@ -158,6 +143,7 @@ def onAdminPrivileges(present):
         or ChevahTestCase.ci_name not in [
             ChevahTestCase.CI.LOCAL,
             ChevahTestCase.CI.BUILDBOT,
+            ChevahTestCase.CI.GITHUB,
             ]
         )
 
@@ -178,6 +164,6 @@ def skipOnPY3():
     Skip tests on Python 3 or Python 2 in forward compatibility.
     """
     return skipOnCondition(
-        lambda: sys.flags.py3k_warning,
+        lambda: six.PY3,
         'Python 2 only test.',
         )

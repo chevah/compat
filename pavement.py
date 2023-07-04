@@ -3,18 +3,12 @@
 """
 Build script for chevah-compat.
 """
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    )
 import compileall
 import imp
 import os
 import py_compile
 import struct
 import sys
-import warnings
 
 from brink.pavement_commons import (
     buildbot_list,
@@ -41,7 +35,6 @@ from paver.easy import call_task, consume_args, environment, needs, pushd, task
 if os.name == 'nt':
     # Use shorter temp folder on Windows.
     import tempfile
-    import win32api
 
     # Create the short temp.
     tempfile.tempdir = "c:\\temp"
@@ -49,75 +42,6 @@ if os.name == 'nt':
         os.mkdir(tempfile.tempdir)
     except OSError:
         pass
-
-    # Create default temp.
-    if not os.path.exists(win32api.GetTempPath()):
-        os.mkdir(win32api.GetTempPath())
-
-
-# Keep run_packages in sync with setup.py.
-# These are the hard dependencies needed by the library itself.
-RUN_PACKAGES = [
-    'zope.interface==5.4.0+chevah.2',
-    'six==1.15.0',
-    ]
-
-if os.name == 'posix':
-    RUN_PACKAGES.extend([
-        'python-daemon==1.5.5',
-        # This is required as any other version will try to also update pip.
-        'lockfile==0.9.1',
-        'pam==0.1.4.c3',
-        # Required for loading PAM libs on AIX.
-        'arpy==1.1.1.c2',
-        ])
-
-# Packages required to use the dev/build system.
-BUILD_PACKAGES = [
-    # For Lint and static checkers.
-    'scame==0.5.1',
-    'pyflakes>=1.5.0',
-    'chevah-js-linter==2.4.0',
-    'pycodestyle==2.3.1',
-    'pylint==1.9.4',
-    'astroid==1.6.6',
-    # These are build packages, but are needed for testing the documentation.
-    'sphinx==1.6.3',
-    # Docutils is required for RST parsing and for Sphinx.
-    'markupsafe==1.0',
-    'docutils==0.12.c1',
-
-    # Packages required to run the test suite.
-    # Never version of nose, hangs on closing some tests
-    # due to some thread handling.
-    'nose==1.3.0.chevah13',
-    'nose-randomly==1.2.5',
-    'mock',
-
-    'coverage==4.5.4',
-    'pluggy==0.13.1',
-    'diff_cover==3.0.1',
-    'codecov==2.1.7',
-
-    # used for remote debugging.
-    'remote_pdb==1.2.0',
-
-    # Twisted is optional, but we have it here for complete tests.
-    'Twisted==20.3.0+chevah.5',
-    'service_identity==18.1.0',
-
-    # We install wmi everywhere even though it is only used on Windows.
-    'wmi==1.4.9',
-
-    # Used to detect Linux distributions.
-    # This is test dependency... so not really a run deps.
-    'distro==1.6.0',
-
-    # Required for some unicode handling.
-    'unidecode',
-
-    'bunch',
-    ]
 
 # Make pylint shut up.
 buildbot_list
@@ -147,9 +71,9 @@ try:
         test_options = {}
 
         def get(self, option, path):
-            tests_path = os.path.join('chevah', 'compat', 'tests')
-            testing_path = os.path.join('chevah', 'compat', 'testing')
-            admin_path = os.path.join('chevah', 'compat', 'administration.py')
+            tests_path = os.path.join('chevah_compat', 'tests')
+            testing_path = os.path.join('chevah_compat', 'testing')
+            admin_path = os.path.join('chevah_compat', 'administration.py')
             if (
                 tests_path in path or
                 testing_path in path or
@@ -183,23 +107,20 @@ try:
             'pavement.py',
             'example/',
             'README.rst',
-            'chevah/compat/',
-            '.github/',
+            'src/chevah_compat/',
             ],
         'exclude': [],
         }
 
     options.towncrier = {
-        'enabled': True,
+        'enabled': False,
         'fragments_directory': None,
         'excluded_fragments': 'readme.rst',
         }
 
     options.pyflakes['enabled'] = True
 
-    options.pycodestyle['enabled'] = True
-    options.pycodestyle['hang_closing'] = True
-
+    options.pycodestyle['enabled'] = False
     options.bandit['enabled'] = False
 
     # For now pylint is disabled, as there are to many errors.
@@ -213,17 +134,21 @@ except ImportError:
 
 
 SETUP['product']['name'] = 'chevah-compat'
-SETUP['folders']['source'] = u'chevah/compat'
-SETUP['repository']['name'] = u'compat'
-SETUP['repository']['github'] = u'https://github.com/chevah/compat'
+SETUP['folders']['source'] = 'src/chevah_compat'
+SETUP['repository']['name'] = 'compat'
+SETUP['repository']['github'] = 'https://github.com/chevah/compat'
 SETUP['scame'] = options
 SETUP['test']['package'] = 'chevah_compat.tests'
 SETUP['test']['elevated'] = 'elevated'
-SETUP['test']['nose_options'] = ['--with-randomly']
-SETUP['test']['coverator_url'] = 'http://coverator.chevah.com:8080'
-SETUP['buildbot']['server'] = 'buildbot.chevah.com'
-SETUP['buildbot']['web_url'] = 'https://buildbot.chevah.com:10443'
-SETUP['pypi']['index_url'] = 'https://bin.chevah.com:20443/pypi/simple'
+SETUP['test']['nose_options'] = [
+    '--with-randomly',
+    # FIXME:690:
+    # Add support for extenstions.
+    # '--with-timer',
+    # '--with-run-reporter',
+    # '--with-memory-usage',
+    ]
+SETUP['pypi']['index_url'] = os.environ['PIP_INDEX_URL']
 
 
 def _set_umask(mask):
@@ -277,10 +202,10 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=0):
                         actual = chandle.read(8)
                     if expect == actual:
                         return success
-                except IOError:
+                except OSError:
                     pass
             if not quiet:
-                print ('Compiling', fullname.encode('utf-8'), '...')
+                print('Compiling', fullname.encode('utf-8'), '...')
             try:
                 ok = py_compile.compile(fullname, None, dfile, True)
             except py_compile.PyCompileError as err:
@@ -288,7 +213,7 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=0):
                     print('Compiling', fullname.encode('utf-8'), '...')
                 print(err.msg.encode('utf-8'))
                 success = 0
-            except IOError, e:
+            except OSError as e:
                 print('Sorry', e)
                 success = 0
             else:
@@ -313,12 +238,18 @@ def deps():
     """
     Install all dependencies.
     """
-    print('Installing dependencies to %s...' % (pave.path.build,))
-    packages = RUN_PACKAGES + BUILD_PACKAGES
+    print('Installing dependencies to ', pave.path.build)
+    dev_mode = []
+
+    env_ci = os.environ.get('CI', '').strip()
+    if env_ci.lower() != 'true':
+        dev_mode = ['-e']
+    else:
+        print('Installing in non-dev mode.')
 
     pave.pip(
         command='install',
-        arguments=packages,
+        arguments=dev_mode + ['.[dev]'],
         )
 
 
@@ -328,31 +259,20 @@ def build():
     """
     Copy new source code to build folder.
     """
-    # Clean previous files.
-    pave.fs.deleteFolder([
-        pave.path.build, pave.getPythonLibPath(), 'chevah_compat',
-        ])
+    if os.name == 'nt':
+        content = """
+python38.zip
+.
 
-    # On AIX, pip (setuptools) fails to re-install, so we do some custom
-    # cleaning as a workaround.
-    members = pave.fs.listFolder(pave.fs.join([
-        pave.path.build, pave.getPythonLibPath()]))
-    for member in members:
-        # We are looking for folder like chevah_compat-0.45.1-py2.7.egg-info.
-        if member.startswith('chevah_compat-') and member.endswith('-info'):
-            pave.fs.deleteFolder([
-                pave.path.build, pave.getPythonLibPath(), member,
-                ])
-            break
+# Uncomment to run site.main() automatically
+import site
+lib\site-packages
+"""
+        pave.fs.writeContentToFile(
+            destination=[pave.path.build, 'lib', 'python38._pth'],
+            content=content,
+            )
 
-    pave.fs.deleteFolder([pave.path.build, 'setup-build'])
-
-    build_target = pave.fs.join([pave.path.build, 'setup-build'])
-    sys.argv = ['setup.py', '-q', 'build', '--build-base', build_target]
-    print("Building in " + build_target)
-    # Importing setup will trigger executing commands from sys.argv.
-    import setup
-    setup.distribution.run_command('install')
 
 
 @task
@@ -443,8 +363,10 @@ def test_ci2(args):
     """
     # When running in CI mode, we want to get more reports.
     SETUP['test']['nose_options'] += [
-        '--with-run-reporter',
-        '--with-timer',
+        # FIXME:690:
+        # Add support for extenstions.
+        # '--with-run-reporter',
+        # '--with-timer',
         '-v',
         ]
 
@@ -482,8 +404,8 @@ def test_ci2(args):
         skip_coverage = True
 
     if skip_coverage:
-        os.environ[b'CODECOV_TOKEN'] = ''
-    if os.environ.get(b'CODECOV_TOKEN', ''):
+        os.environ['CODECOV_TOKEN'] = ''
+    if os.environ.get('CODECOV_TOKEN', ''):
         print('Running tests with coverage')
     else:
         print('Running tests WITHOUT coverage.')
@@ -493,75 +415,7 @@ def test_ci2(args):
         args = []
     else:
         args = [args]
-    test_type = env.get('TEST_TYPE', 'normal')
-
-    if test_type == 'py3':
-        os.environ[b'CODECOV_TOKEN'] = ''
-        return call_task('test_py3', args=args)
 
     exit_code = call_task('test_python', args=args)
 
     return exit_code
-
-
-@task
-@consume_args
-def test_py3(args):
-    """
-    Run checks for py3 compatibility.
-    """
-    from pylint.lint import Run
-    from nose.core import main as nose_main
-    arguments = [
-        '--py3k',
-        # See https://github.com/PyCQA/pylint/issues/1564
-        '-d exception-message-attribute',
-        SETUP['folders']['source'],
-        ]
-    linter = Run(arguments, exit=False)
-    stats = linter.linter.stats
-    errors = (
-        stats['info'] + stats['error'] + stats['refactor'] +
-        stats['fatal'] + stats['convention'] + stats['warning']
-        )
-    if errors:
-        print('Pylint failed')
-        sys.exit(1)
-
-    print('Compiling in Py3 ...', end='')
-    command = ['python3', '-m', 'compileall', '-q', 'chevah']
-    pave.execute(command, output=sys.stdout)
-    print('done')
-
-    sys.argv = sys.argv[:1]
-    pave.python_command_normal.extend(['-3'])
-
-    captured_warnings = []
-
-    def capture_warning(
-        message, category, filename,
-        lineno=None, file=None, line=None
-            ):
-        if not filename.startswith('chevah'):
-            # Not our code.
-            return
-        line = (message.message, filename, lineno)
-        if line in captured_warnings:
-            # Don't include duplicate warnings.
-            return
-        captured_warnings.append(line)
-
-    warnings.showwarning = capture_warning
-
-    sys.args = ['nose', 'chevah_compat.tests.normal'] + args
-    runner = nose_main(exit=False)
-    if not runner.success:
-        print('Test failed')
-        sys.exit(1)
-    if not captured_warnings:
-        sys.exit(0)
-
-    print('\nCaptured warnings\n')
-    for warning, filename, line in captured_warnings:
-        print('%s:%s %s' % (filename, line, warning))
-    sys.exit(1)

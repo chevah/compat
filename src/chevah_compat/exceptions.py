@@ -3,11 +3,6 @@
 """
 Exceptions used in chevah_compat package.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
-
 
 class CompatException(Exception):
     """
@@ -18,7 +13,7 @@ class CompatException(Exception):
 
     def __repr__(self):
         result = u'CompatException %s' % (self.message)
-        return result.encode('utf-8')
+        return result
 
 
 class ChangeUserException(CompatException):
@@ -44,8 +39,8 @@ class CompatError(Exception):
 
     def __repr__(self):
         result = u'CompatError %s - %s' % (
-            text_type(self.event_id), self.message)
-        return result.encode('utf-8')
+            str(self.event_id), self.message)
+        return result
 
     def __str__(self):
         return self.__repr__()

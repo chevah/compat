@@ -1,6 +1,38 @@
 Release notes for chevah.compat
 ===============================
 
+1.0.8 - 2023-05-23
+--------------------
+
+* Remove getFileMD5Sum and co functions.
+* Remove mk.md5
+* Add initial support for long file names.
+
+
+1.0.7 - 2023-04-08
+------------------
+
+* More unicode fixed after running more code on Windows.
+
+
+1.0.6 - 2023-04-07
+------------------
+
+* Fix unidecode usage.
+* Many py3 fixes on Windows.
+
+
+1.0.5 - 2023-04-02
+------------------
+
+* Add skipOnPY3 for conditionals.
+
+
+1.0.4 - 2023-04-01
+------------------
+
+* Fix getFileMD5Sum
+
 
 0.71.2 - 2023-05-22
 -------------------

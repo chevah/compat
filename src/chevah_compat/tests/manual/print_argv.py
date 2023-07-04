@@ -10,9 +10,6 @@ Like::
 Make sure you call build command before calling this so that build folder
 is updated.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 import sys
 import os
 print('Before import (for module import is already called)')

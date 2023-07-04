@@ -3,13 +3,8 @@
 """
 Adapter for working with NT users.
 """
-from __future__ import with_statement
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
 from win32com.shell import shell, shellcon
-from zope.interface import implements
+from zope.interface import implementer
 import pywintypes
 import pythoncom
 import win32net
@@ -56,12 +51,11 @@ class MissingProfileFolderException(Exception):
     """
 
 
+@implementer(IOSUsers)
 class NTUsers(CompatUsers):
     """
     Container for NT users specific methods.
     """
-
-    implements(IOSUsers)
 
     def getCurrentUserName(self):
         """
@@ -92,8 +86,8 @@ class NTUsers(CompatUsers):
             else:
                 return self._getHomeFolder(username, token)
         except MissingProfileFolderException:
-                self.raiseFailedToGetHomeFolder(
-                    username, u'Failed to get home folder path.')
+            self.raiseFailedToGetHomeFolder(
+                username, u'Failed to get home folder path.')
 
     def _getHomeFolder(self, username, token):
         """
@@ -166,7 +160,7 @@ class NTUsers(CompatUsers):
             profile = win32profile.LoadUserProfile(token, profile_info)
             win32profile.UnloadUserProfile(token, profile)
         except (win32security.error, pywintypes.error) as error:
-            (error_id, error_call, error_message) = error
+            (error_id, error_call, error_message) = error.args
             error_text = (
                 u'Failed to create user profile. '
                 u'Make sure you have SeBackupPrivilege and '
@@ -187,7 +181,7 @@ class NTUsers(CompatUsers):
             win32security.LookupAccountName('', username)
             return True
         except (win32security.error, pywintypes.error) as error:
-            (number, name, message) = error
+            (number, name, message) = error.args
             if number == ERROR_NONE_MAPPED:
                 return False
             error_text = u'[%s] %s %s' % (number, name, message)
@@ -328,9 +322,8 @@ class _ExecuteAsUser(object):
         return False
 
 
+@implementer(IHasImpersonatedAvatar)
 class NTHasImpersonatedAvatar(object):
-
-    implements(IHasImpersonatedAvatar)
 
     @property
     def use_impersonation(self):
@@ -362,6 +355,7 @@ def get_current_username():
     return buffer.value
 
 
+@implementer(IFileSystemAvatar)
 class NTDefaultAvatar(NTHasImpersonatedAvatar):
     """
     Avatar for the default account.
@@ -370,9 +364,6 @@ class NTDefaultAvatar(NTHasImpersonatedAvatar):
     It has full access to the filesystem.
     It does not uses impersonation.
     """
-
-    implements(IFileSystemAvatar)
-
     root_folder_path = u'c:\\'
     home_folder_path = u'c:\\'
     lock_in_home_folder = False

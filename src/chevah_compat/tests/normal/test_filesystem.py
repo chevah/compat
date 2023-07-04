@@ -3,9 +3,6 @@
 """
 Tests for portable filesystem access.
 """
-from __future__ import absolute_import, division, unicode_literals
-from six import text_type
-
 from datetime import date
 import errno
 import os
@@ -371,7 +368,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertEqual(errno.ENOTDIR, context.exception.errno)
         self.assertTrue(self.filesystem.exists(segments))
-        expected = '[Errno 20] Not a directory: ' + path
+        if self.os_family == 'nt':
+            expected = '[Errno 20] The directory name is invalid: ' + path
+        else:
+            expected = '[Errno 20] Not a directory: ' + path
         self.assertEqual(expected, force_unicode(context.exception))
 
     def test_deleteFolder_file_recursive(self):
@@ -387,7 +387,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertEqual(errno.ENOTDIR, context.exception.errno)
         self.assertTrue(self.filesystem.exists(segments))
-        expected = '[Errno 20] Not a directory: ' + path
+        if self.os_family == 'nt':
+            expected = '[Errno 20] The directory name is invalid: ' + path
+        else:
+            expected = '[Errno 20] Not a directory: ' + path
         self.assertEqual(expected, force_unicode(context.exception))
 
     def test_deleteFolder_non_recursive_empty(self):
@@ -496,7 +499,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         Can be used for linking a file.
         """
         content = mk.string()
-        _, segments = self.tempFile(content=content.encode('utf-8'))
+        _, segments = self.tempFile(content=content)
         link_segments = segments[:]
         link_segments[-1] = '%s-link' % segments[-1]
 
@@ -596,8 +599,14 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertContains(filename, result)
         self.assertTrue(self.filesystem.exists(segments))
         self.assertTrue(self.filesystem.isFolder(segments))
-        result = self.filesystem.getFileSize(segments)
-        self.assertEqual(0, result)
+
+        if self.os_family != 'nt':
+            # On Windows the folder will have a size,
+            # but the size is different based on folder history.
+            # So we skip this check on Windows.
+            result = self.filesystem.getFileSize(segments)
+            self.assertEqual(0, result)
+
         result = self.filesystem.getFileSize(file_segments)
         self.assertEqual(len(data.encode('utf-8')), result)
         self.filesystem.deleteFile(file_segments)
@@ -608,19 +617,17 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         It can create links to a non-existent Windows share.
         """
-        path, segments = self.tempPath()
-        if self.os_family == 'nt':
-            path = mk.fs.getEncodedPath(path)
-
+        path, segments = self.tempPathCleanup(win_encoded=True)
         # We assume all slaves have the c:\temp folder.
         share_name = 'no such share name-' + mk.string()
         self.filesystem.makeLink(
             target_segments=['UNC', '127.0.0.1', share_name],
             link_segments=segments,
             )
-        self.addCleanup(self.filesystem.deleteFolder, segments)
 
-        self.assertTrue(os.path.exists(path))
+        # The link target doens't exist, but the link file is created.
+        # This is why we use `lexists` and not `exists`
+        self.assertTrue(os.path.lexists(path))
         self.assertEqual(
             ['UNC', '127.0.0.1', share_name],
             self.filesystem.readLink(segments))
@@ -919,7 +926,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         A link to a file is recognized as both a link and a file.
         """
-        self.test_segments = mk.fs.createFileInTemp(content=b'blala')
+        self.test_segments = mk.fs.createFileInTemp(content='blala')
         link_segments = self.makeLink(self.test_segments)
 
         attributes = self.filesystem.getAttributes(link_segments)
@@ -952,13 +959,12 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         Raise an OSError not found when target does not exists.
         """
-        path, link_segments = mk.fs.makePathInTemp()
+        path, link_segments = self.tempPathCleanup(win_encoded=True)
         target_segments = ['c', 'no-such-parent', 'no-child', 'target']
         mk.fs.makeLink(
             target_segments=target_segments,
             link_segments=link_segments,
             )
-        self.addCleanup(mk.fs.deleteFile, link_segments)
 
         error = self.assertRaises(
             OSError,
@@ -966,18 +972,15 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             )
 
         if self.TEST_LANGUAGE == 'FR':
-            expected_path = path
             expected_message = (
-                b'Le chemin d\x92acc\xe8s sp\xe9cifi\xe9 est introuvable')
+                'Le chemin d\x92acc\xe8s sp\xe9cifi\xe9 est introuvable')
 
         elif self.os_family == 'nt':
-            expected_path = path
-            expected_message = b'The system cannot find the path specified'
+            expected_message = 'The system cannot find the path specified'
         else:
-            expected_path = path.encode('utf-8')
-            expected_message = b'No such file or directory'
+            expected_message = 'No such file or directory'
         self.assertEqual(errno.ENOENT, error.errno)
-        self.assertEqual(expected_path, error.filename)
+        self.assertEqual(path, error.filename)
         self.assertEqual(expected_message, error.strerror)
 
     def test_getStatus_file(self):
@@ -1034,12 +1037,11 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         if self.TEST_LANGUAGE == 'FR':
             expected = (
                 '[Errno 2] Le chemin d\u2019acc\xe8s sp\xe9cifi\xe9 est '
-                'introuvable: ' + path + '\\*.*'
+                'introuvable: ' + path
                 )
         elif self.os_name == 'windows':
             expected = (
-                '[Errno 2] The system cannot find the path specified: '
-                + path + '\\*.*'
+                '[Errno 2] The system cannot find the path specified: ' + path
                 )
         else:
             expected = '[Errno 2] No such file or directory: ' + path
@@ -1056,7 +1058,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             self.filesystem.getFolderContent(segments)
 
         self.assertEqual(errno.ENOTDIR, context.exception.errno)
-        expected = '[Errno 20] Not a directory: ' + path
+        if self.os_family == 'nt':
+            expected = '[Errno 20] The directory name is invalid: ' + path
+        else:
+            expected = '[Errno 20] Not a directory: ' + path
         self.assertEqual(expected, force_unicode(context.exception))
 
     def test_getFolderContent_empty(self):
@@ -1086,10 +1091,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         content = self.filesystem.getFolderContent(self.test_segments)
 
         self.assertIsNotEmpty(content)
-        self.assertTrue(isinstance(content[0], text_type))
+        self.assertTrue(isinstance(content[0], str))
         self.assertItemsEqual([folder_name, file_name], content)
 
-    @conditionals.skipOnPY3()
     def test_iterateFolderContent_not_found(self):
         """
         Raise OSError when trying to get folder for a non existent path.
@@ -1117,7 +1121,6 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertEqual(expected, force_unicode(context.exception))
 
-    @conditionals.skipOnPY3()
     def test_iterateFolderContent_file(self):
         """
         Raise OSError when trying to get folder content for a file.
@@ -1127,29 +1130,20 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         with self.assertRaises(OSError) as context:
             self.filesystem.iterateFolderContent(segments)
 
-        if self.os_family == 'nt':
-            # On Windows, we get a different error.
-            expected_error = errno.EINVAL
-        else:
-            expected_error = errno.ENOTDIR
-
-        self.assertEqual(expected_error, context.exception.errno)
+        self.assertEqual(errno.ENOTDIR, context.exception.errno)
 
         if self.TEST_LANGUAGE == 'FR':
             expected = (
-                '[Errno 22] Nom de r\xe9pertoire non valide: '
-                + path
+                '[Errno 20] Nom de r\xe9pertoire non valide: ' + path
                 )
         elif self.os_name == 'windows':
             expected = (
-                '[Errno 22] The directory name is invalid: '
-                + path
+                '[Errno 20] The directory name is invalid: ' + path
                 )
         else:
             expected = '[Errno 20] Not a directory: ' + path
         self.assertEqual(expected, force_unicode(context.exception))
 
-    @conditionals.skipOnPY3()
     def test_iterateFolderContent_empty(self):
         """
         Return empty iterator for empty folders.
@@ -1160,7 +1154,6 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertIteratorItemsEqual([], result)
 
-    @conditionals.skipOnPY3()
     def test_iterateFolderContent_non_empty(self):
         """
         Return folder content as list of Unicode names.
@@ -1170,7 +1163,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         folder_name = mk.makeFilename(prefix='folder-')
         file_segments = base_segments + [file_name]
         folder_segments = base_segments + [folder_name]
-        mk.fs.createFile(file_segments, content=b'123456789')
+        mk.fs.createFile(file_segments, content='123456789')
         mk.fs.createFolder(folder_segments)
 
         content = self.filesystem.iterateFolderContent(base_segments)
@@ -1192,7 +1185,6 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertEqual(9, file_attributes.size)
         self.assertAlmostEqual(self.now(), file_attributes.modified, delta=5)
 
-    @conditionals.skipOnPY3()
     @conditionals.onCapability('symbolic_link', True)
     def test_iterateFolderContent_broken_links(self):
         """
@@ -1205,7 +1197,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         file_segments = base_segments + [file_name]
         folder_segments = base_segments + [folder_name]
         link_segments = base_segments + [link_name]
-        mk.fs.createFile(file_segments, content=b'123456789')
+        mk.fs.createFile(file_segments, content='123456789')
         mk.fs.createFolder(folder_segments)
 
         mk.fs.makeLink(
@@ -1240,26 +1232,13 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertAlmostEqual(self.now(), link_attributes.modified, delta=5)
 
     @attr('slow')
-    @conditionals.skipOnPY3()
     def test_iterateFolderContent_big(self):
         """
         It will not block on listing folders with many members.
 
         On some systems, this test takes more than 1 minute.
         """
-        final_error = None
-        for _ in range(3):  # pragma: no branch
-            try:
-                self._iterateFolderContent_big()
-                # All good. Stop trying.
-                return
-            except AssertionError as error:
-                final_error = error
-                # Run cleanup and try again.
-                self.callCleanup()
-
-        # We tried 3 times and still got a failure.
-        raise final_error  # noqa:cover
+        self._iterateFolderContent_big()
 
     def _iterateFolderContent_big(self):
         """
@@ -1269,8 +1248,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             count = 3000
             base_timeout = 0.02
         elif self.os_name == 'osx':
+            # On GitHub the OSX can be a bit slow.
             count = 32000
-            base_timeout = 0.1
+            base_timeout = 0.3
         elif self.os_name in ['hpux', 'freebsd', 'openbsd']:
             # Some OS/FS does not allow more than 32765 members in a folder
             # and the slave is generally slow.
@@ -1280,7 +1260,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             count = 5000
             base_timeout = 0.1
         else:
-            count = 45000
+            count = 40000
             base_timeout = 0.1
 
         if self.os_name == 'windows':
@@ -1299,6 +1279,10 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
                 sys.stdout.write('+')
                 sys.stdout.flush()
 
+        # Show progress.
+        sys.stdout.write('-SLOW-')
+        sys.stdout.flush()
+
         # We check that doing a direct listing will take a long time.
         with self.assertRaises(AssertionError):
             with self.assertExecutionTime(base_timeout):
@@ -1306,7 +1290,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertEqual(count, len(result))
 
         # Show progress.
-        sys.stdout.write('+')
+        sys.stdout.write('-FAST-')
         sys.stdout.flush()
 
         # Getting the iterator will not take long.
@@ -1372,7 +1356,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             self.filesystem.openFileForWriting(self.test_segments)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
+        self.assertEqual(path, context.exception.filename)
         details = '[Errno 21] Is a directory: ' + path
         self.assertStartsWith(details, force_unicode(context.exception))
 
@@ -1388,9 +1372,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
                 self.test_segments)
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
-        self.assertEqual(path.encode('utf-8'), context.exception.filename)
+        self.assertEqual(path, context.exception.filename)
         details = '[Errno 21] Is a directory: ' + path
-        self.assertStartsWith(details, force_unicode(context.exception))
+        self.assertStartsWith(details, str(context.exception))
 
     def test_touch_no_parent(self):
         """
@@ -2147,7 +2131,7 @@ class LocalFilesystemNTMixin(object):
         """
         self.test_segments = mk.fs.createFileInTemp()
         handle = self.filesystem.openFileForWriting(self.test_segments)
-        handle.write(mk.ascii())
+        handle.write(mk.ascii().encode('ascii'))
         handle.flush()
         self.addCleanup(lambda: handle.close())
 
@@ -2648,7 +2632,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         content = self.unlocked_filesystem.getFolderContent(['c'])
         self.assertTrue(len(content) > 0)
         self.assertTrue(u'Program Files' in content)
-        self.assertTrue(isinstance(content[0], text_type))
+        self.assertTrue(isinstance(content[0], str))
 
     def test_getSegmentsFromRealPath_none(self):
         """
@@ -2884,7 +2868,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         Test conversion of segments to a real path.
         """
         def _p(*path):
-            return text_type(
+            return str(
                 os.path.join(self.locked_avatar.root_folder_path, *path))
 
         path = self.locked_filesystem.getRealPathFromSegments([])
@@ -3102,7 +3086,7 @@ class TestLocalFilesystemLockedUNC(CompatTestCase, FilesystemTestMixin):
         cls.locked_avatar = DefaultAvatar()
         cls._share_name = 'TestLocalFilesystemLockedUNC ' + mk.string()
         cls.addWindowsShare('c:\\temp', cls._share_name)
-        unc = '\\\\127.0.0.1\%s' % (cls._share_name)
+        unc = '\\\\127.0.0.1\\%s' % (cls._share_name)
         cls.locked_avatar.root_folder_path = unc
         cls.locked_avatar.home_folder_path = unc
         cls.locked_avatar.lock_in_home_folder = True
@@ -3478,7 +3462,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result = sut.getSegmentsFromRealPath('e:/other/path/child/')
         self.assertEqual(['base', 'child'], result)
 
-        result = sut.getSegmentsFromRealPath('e:/other\path\child/')
+        result = sut.getSegmentsFromRealPath('e:/other\\path\\child/')
         self.assertEqual(['base', 'child'], result)
 
         result = sut.getSegmentsFromRealPath(
@@ -3781,7 +3765,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         virtual_path, virtual_segments = self.tempFolder('virtual')
         mk.fs.createFolder(virtual_segments + ['child-folder\N{sun}'])
         mk.fs.createFile(
-            virtual_segments + ['child-file\N{cloud}'], content=b'123456789')
+            virtual_segments + ['child-file\N{cloud}'], content='123456789')
 
         sut = self.getFilesystem(virtual_folders=[
             (['some\N{cloud}', 'other-base\N{sun}'], virtual_path),
@@ -3837,7 +3821,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         virtual_path, virtual_segments = self.tempFolder('virtual')
         mk.fs.createFolder(virtual_segments + ['child-folder\N{sun}'])
         mk.fs.createFile(
-            virtual_segments + ['child-file\N{cloud}'], content=b'123456789')
+            virtual_segments + ['child-file\N{cloud}'], content='123456789')
 
         sut = self.getFilesystem(virtual_folders=[
             (['some\N{cloud}', 'base\N{sun}'], virtual_path),
@@ -3875,7 +3859,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         virtual_path, virtual_segments = self.tempFolder('virtual')
         mk.fs.createFolder(virtual_segments + ['child-folder\N{sun}'])
         mk.fs.createFile(
-            virtual_segments + ['child-file\N{cloud}'], content=b'123456789')
+            virtual_segments + ['child-file\N{cloud}'], content='123456789')
 
         sut = self.getFilesystem(virtual_folders=[
             (['some\N{cloud}', 'other-base\N{sun}'], virtual_path),
@@ -4064,7 +4048,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         It can't open file to virtual paths or its parents, but can open
         files inside the virtual root.
         """
-        _, segments = self.tempFile(content=b'1234')
+        _, segments = self.tempFile(content='1234')
         sut = self.getFilesystem(virtual_folders=[
             (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path)
             ])
@@ -4096,7 +4080,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         It can't open file to virtual paths or its parents, but can open
         files inside the virtual root.
         """
-        _, segments = self.tempFile(content=b'1234')
+        _, segments = self.tempFile(content='1234')
         sut = self.getFilesystem(virtual_folders=[
             (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path)
             ])
@@ -4124,7 +4108,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         It can't open file to virtual paths or its parents, but can open
         files inside the virtual root.
         """
-        _, segments = self.tempFile(content=b'1234')
+        _, segments = self.tempFile(content='1234')
         sut = self.getFilesystem(virtual_folders=[
             (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path)
             ])
@@ -4152,7 +4136,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         It can't open file to virtual paths or its parents, but can open
         files inside the virtual root.
         """
-        _, segments = self.tempFile(content=b'1234')
+        _, segments = self.tempFile(content='1234')
         sut = self.getFilesystem(virtual_folders=[
             (['virtual-\N{cloud}', 'base\N{sun}'], mk.fs.temp_path)
             ])
@@ -4182,7 +4166,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         """
         virtual_path, virtual_segments = self.tempFolder('virtual')
         mk.fs.createFile(
-            virtual_segments + ['child-file\N{sun}'], content=b'blalata')
+            virtual_segments + ['child-file\N{sun}'], content='blalata')
 
         sut = self.getFilesystem(virtual_folders=[
             (['some', 'base'], virtual_path),
@@ -4220,7 +4204,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         self.assertItemsEqual(['child-folder', 'child-file\N{sun}'], result)
 
-    @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_member(self):
         """
         It can list a virtual folder as member of a parent folder.
@@ -4280,7 +4263,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             expected[1].node_id = 0
         self.assertIteratorItemsEqual(expected, result)
 
-    @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_no_match(self):
         """
         It will ignore the virtual folders if they don't overlay to the
@@ -4311,7 +4293,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             expected[1].node_id = 0
         self.assertIteratorItemsEqual(expected, result)
 
-    @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_mix(self):
         """
         It can list a virtual folder as member of a parent folder mixed
@@ -4361,7 +4342,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             expected[1].node_id = 0
         self.assertIteratorItemsEqual(expected, result)
 
-    @conditionals.skipOnPY3()
     def test_iterateFolderContent_virtual_overlap(self):
         """
         When iterating over a folder with virtual members,
@@ -4385,7 +4365,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             ],
             result)
 
-    @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_deep_member(self):
         """
         It will list a deep virtual folder as a normal folder.
@@ -4422,7 +4401,6 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         result = sut.iterateFolderContent(['\N{sun}base', 'deep\N{cloud}'])
         self.assertIteratorItemsEqual(expected, result)
 
-    @conditionals.skipOnPY3()
     def test_getFolderContent_virtual_case(self):
         """
         On Windows the segments are case insensitive, while on the other

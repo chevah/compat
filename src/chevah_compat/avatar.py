@@ -3,22 +3,17 @@
 """
 An account as used by Chevah services.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
-from zope.interface import implements
+from zope.interface import implementer
 
 from chevah_compat import HasImpersonatedAvatar
 from chevah_compat.interfaces import IFileSystemAvatar
 
 
+@implementer(IFileSystemAvatar)
 class FilesystemAvatar(HasImpersonatedAvatar):
     '''
     See `IFileSystemAvatar`.
     '''
-
-    implements(IFileSystemAvatar)
 
     def __init__(
         self, name, home_folder_path, root_folder_path=None,
@@ -32,11 +27,11 @@ class FilesystemAvatar(HasImpersonatedAvatar):
         self._lock_in_home_folder = lock_in_home_folder
         self._virtual_folders = virtual_folders
 
-        if not isinstance(self._home_folder_path, text_type):
+        if not isinstance(self._home_folder_path, str):
             raise RuntimeError('home_folder_path should be text.')
 
         if self._root_folder_path:
-            if not isinstance(self._root_folder_path, text_type):
+            if not isinstance(self._root_folder_path, str):
                 raise RuntimeError('root_folder_path should be text.')
 
     @property

@@ -3,12 +3,6 @@
 """
 Tests for the testing infrastructure.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six import text_type
-import sys
-
 from chevah_compat.testing.mockup import ChevahCommonsFactory
 from chevah_compat.testing import ChevahTestCase, mk
 
@@ -28,7 +22,7 @@ class TestFactory(ChevahTestCase):
             mk.string(),
             mk.string(),
             )
-        self.assertIsInstance(text_type, mk.string())
+        self.assertIsInstance(str, mk.string())
 
     def test_number(self):
         """
@@ -60,13 +54,9 @@ class TestFactory(ChevahTestCase):
 
     def assertUnicodeDecodeError(self, exception):
         """
-        Check the error message on py2 and py3.
+        Check the error message for Unicode decode error.
         """
-        if sys.flags.py3k_warning:
-            expected = 'invalid start byte'
-        else:
-            expected = 'ordinal not in range(128)'
-
+        expected = 'invalid start byte'
         self.assertEndsWith(expected, exception.reason)
 
     def test_bytes_string_conversion_utf8_default(self):
@@ -181,35 +171,3 @@ class TestFactory(ChevahTestCase):
         result = mk.getTestUser(u'no-such-user-ever')
 
         self.assertIsNone(result)
-
-    def test_makeIPv4Address_default(self):
-        """
-        Will return an TCP IPv4 localhost address with a random port.
-        """
-        result = mk.makeIPv4Address()
-
-        self.assertEqual('TCP', result.type)
-        self.assertEqual('127.0.0.1', result.host)
-        self.assertGreater(result.port, 20000)
-        self.assertLess(result.port, 30000)
-
-    def test_makeIPv4Address_port(self):
-        """
-        Will return an TCP localhost address with the requested port.
-        """
-        result = mk.makeIPv4Address(port=1234)
-
-        self.assertEqual('TCP', result.type)
-        self.assertEqual('127.0.0.1', result.host)
-        self.assertEqual(result.port, 1234)
-
-    def test_makeIPv6Address_default(self):
-        """
-        Will return an TCP IPV6 localhost address with a random port.
-        """
-        result = mk.makeIPv6Address()
-
-        self.assertEqual('TCP', result.type)
-        self.assertEqual('0:0:0:0:0:0:0:1', result.host)
-        self.assertGreater(result.port, 20000)
-        self.assertLess(result.port, 30000)

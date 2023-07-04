@@ -71,6 +71,8 @@ class MemoryUsage(Plugin):
             test_id, memory_usage = sorted_usage[index]
             stream.writeln("%0.4f: %s" % (memory_usage, test_id))
 
+        stream.writeln("\nMax RSS: %s" % self.getPeakMemoryUsage())
+
 
 if __name__ == '__main__':
     nose.main(addplugins=[MemoryUsage()])

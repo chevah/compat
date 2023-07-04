@@ -3,13 +3,6 @@
 """
 Adapter for working with Unix users.
 """
-from __future__ import with_statement
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-# On Python2.7 grp module does no accept bytes so we use the codecs module
-# to convert Unicode to native str.
-import codecs
 import crypt
 import grp
 import os
@@ -21,7 +14,7 @@ try:
 except ImportError:
     HAS_SHADOW_SUPPORT = False
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from chevah_compat.compat_users import CompatUsers
 from chevah_compat.exceptions import ChangeUserException
@@ -36,12 +29,12 @@ from chevah_compat.interfaces import (
     )
 
 
-def _get_euid_and_egid(username_encoded):
+def _get_euid_and_egid(username):
     """
     Return a tuple of (euid, egid) for username.
     """
     try:
-        pwnam = pwd.getpwnam(username_encoded)
+        pwnam = pwd.getpwnam(username)
     except KeyError:
         raise ChangeUserException(_(u'User does not exists.'))
 
@@ -53,9 +46,8 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
     Change current process effective user and group.
     """
     if username:
-        username_encoded = username.encode('utf-8')
         try:
-            pwnam = pwd.getpwnam(username_encoded)
+            pwnam = pwd.getpwnam(username)
         except KeyError:
             raise ChangeUserException(u'User does not exists.')
         euid = pwnam.pw_uid
@@ -65,7 +57,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
             raise ChangeUserException(
                 'You need to pass euid when username is not passed.')
         pwnam = pwd.getpwuid(euid)
-        username_encoded = pwnam.pw_name
+        username = pwnam.pw_name
 
     uid, gid = os.geteuid(), os.getegid()
     if uid == euid and gid == egid:
@@ -79,7 +71,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
 
         # Make sure to set user euid as the last action. Otherwise we will no
         # longer have permissions to change egid.
-        os.initgroups(username_encoded, egid)
+        os.initgroups(username, egid)
         os.setegid(egid)
         os.seteuid(euid)
     except OSError:
@@ -104,12 +96,11 @@ def _verifyCrypt(password, crypted_password):
     return False
 
 
+@implementer(IOSUsers)
 class UnixUsers(CompatUsers):
     """
     Container for Unix users specific methods.
     """
-
-    implements(IOSUsers)
 
     # Lazy loaded method to pam authenticate.
     _pam_authenticate = None
@@ -124,9 +115,7 @@ class UnixUsers(CompatUsers):
     def getHomeFolder(self, username, token=None):
         '''Get home folder for local (or NIS) user.'''
         try:
-            username_encoded = username.encode('utf-8')
-            home_folder = pwd.getpwnam(
-                username_encoded).pw_dir.decode('utf-8')
+            home_folder = pwd.getpwnam(username).pw_dir
             return home_folder.rstrip('/')
         except KeyError:
             self.raiseFailedToGetHomeFolder(
@@ -140,7 +129,6 @@ class UnixUsers(CompatUsers):
         if not username:
             return False
 
-        username = username.encode('utf-8')
         try:
             pwd.getpwnam(username)
         except KeyError:
@@ -159,16 +147,14 @@ class UnixUsers(CompatUsers):
         if not groups:
             raise ValueError('Groups for validation can\'t be empty.')
 
-        username_encode = username.encode('utf-8')
         for group in groups:
-            group_name = codecs.encode(group, 'utf-8')
             try:
-                group_struct = grp.getgrnam(group_name)
+                group_struct = grp.getgrnam(group)
             except KeyError:
                 continue
 
             try:
-                user_struct = pwd.getpwnam(username_encode)
+                user_struct = pwd.getpwnam(username)
             except KeyError:
                 # Unknown user.
                 return None
@@ -177,7 +163,7 @@ class UnixUsers(CompatUsers):
                 # Match on group ID.
                 return group
 
-            if username_encode in group_struct.gr_mem:
+            if username in group_struct.gr_mem:
                 # Match on group name.
                 return group
 
@@ -225,10 +211,6 @@ class UnixUsers(CompatUsers):
             # PAM is not supported.
             return False
 
-        # On Python2.7/OSX PAM require str not bytes.
-        username = codecs.encode(username, 'utf-8')
-        password = codecs.encode(password, 'utf-8')
-
         with self._executeAsAdministrator():
             # FIXME:3059:
             # PAM can be used without admin right but I have no idea why
@@ -264,14 +246,13 @@ class UnixUsers(CompatUsers):
 
     def getPrimaryGroup(self, username):
         '''Return get primary group for avatar.'''
-        username_encode = username.encode('utf-8')
         try:
-            user_struct = pwd.getpwnam(username_encode)
+            user_struct = pwd.getpwnam(username)
             group_struct = grp.getgrgid(user_struct.pw_gid)
         except KeyError:
             self.raiseFailedToGetPrimaryGroup(username)
         group_name = group_struct.gr_name
-        return group_name.decode('utf-8')
+        return group_name
 
     def _executeAsAdministrator(self):
         '''Returns a context manager for running under administrator user.
@@ -290,8 +271,8 @@ class UnixUsers(CompatUsers):
         """
         from chevah_compat import process_capabilities
 
-        username = username.encode('utf-8')
-        password = password.encode('utf-8')
+        username = username
+        password = password
 
         try:
             # Crypted password should be readable to all users.
@@ -336,8 +317,8 @@ class UnixUsers(CompatUsers):
         if not HAS_SHADOW_SUPPORT:
             return None
 
-        username = username.encode('utf-8')
-        password = password.encode('utf-8')
+        username = username
+        password = password
 
         try:
             with self._executeAsAdministrator():
@@ -406,18 +387,12 @@ class UnixUsers(CompatUsers):
         if self._pam_authenticate is None:
             # Runtime PAM support was not checked yet.
 
-            from chevah_compat import process_capabilities
-            if process_capabilities.os_name == 'hpux':
-                # Ctypes and pam are broken on HPUX.
-                self._pam_authenticate = False
-                return self._pam_authenticate
-
             try:
                 from pam import authenticate as pam_authenticate
                 self._pam_authenticate = pam_authenticate
             except (ImportError, AssertionError):
                 # We set this to false to not check it again.
-                # On macOS we get AssertionError.
+                # On macOS we get AssertionError when failing to load.
                 self._pam_authenticate = False
 
         return self._pam_authenticate
@@ -430,7 +405,7 @@ class _ExecuteAsUser(object):
         '''Initialize the context manager.'''
         if username is not None:
             try:
-                pwnam = pwd.getpwnam(username.encode('utf-8'))
+                pwnam = pwd.getpwnam(username)
             except KeyError:
                 raise ChangeUserException(_(u'User does not exists.'))
             euid = pwnam.pw_uid
@@ -452,9 +427,8 @@ class _ExecuteAsUser(object):
         return False
 
 
+@implementer(IHasImpersonatedAvatar)
 class UnixHasImpersonatedAvatar(object):
-
-    implements(IHasImpersonatedAvatar)
 
     _euid = None
     _egid = None
@@ -479,12 +453,13 @@ class UnixHasImpersonatedAvatar(object):
 
         # Create cached values if not initialized.
         if not (self._euid and self._egid):
-            username_encoded = self.name.encode('utf-8')
-            (self._euid, self._egid) = _get_euid_and_egid(username_encoded)
+            (self._euid, self._egid) = _get_euid_and_egid(self.name)
 
         return _ExecuteAsUser(euid=self._euid, egid=self._egid)
 
 
+
+@implementer(IFileSystemAvatar)
 class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
     """
     Avatar for the default account.
@@ -493,9 +468,6 @@ class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
     It has full access to the filesystem.
     It does not use impersonation.
     """
-
-    implements(IFileSystemAvatar)
-
     home_folder_path = '/'
     root_folder_path = '/'
     lock_in_home_folder = False
@@ -518,12 +490,11 @@ class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
         return pwd.getpwuid(os.getuid()).pw_name
 
 
+@implementer(IFileSystemAvatar)
 class UnixSuperAvatar(UnixHasImpersonatedAvatar):
     """
     Avatar for the super account on Unix aka root.
     """
-
-    implements(IFileSystemAvatar)
 
     home_folder_path = u'/root'
     root_folder_path = '/'

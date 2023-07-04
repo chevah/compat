@@ -3,18 +3,6 @@
 """
 Any methods from here is a sign of bad design.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-import sys
-
-if sys.version_info[0] == 3:
-    unicode_type = str
-else:
-    unicode_type = unicode  # pylint: disable=unicode-builtin
-
 
 def _(string):
     '''Placeholder for future gettext integration.'''
@@ -44,18 +32,18 @@ def force_unicode(value):
     """
     def str_or_repr(value):
 
-        if isinstance(value, unicode_type):
+        if isinstance(value, str):
             return value
 
         try:
-            return unicode_type(value, encoding='utf-8')
+            return str(value, encoding='utf-8')
         except Exception:
             """
             Not UTF-8 encoded value.
             """
 
         try:
-            return unicode_type(value, encoding='windows-1252')
+            return str(value, encoding='windows-1252')
         except Exception:
             """
             Not Windows encoded value.
@@ -63,26 +51,26 @@ def force_unicode(value):
 
         str_value = str(value)
         try:
-            return unicode_type(str_value, encoding='utf-8', errors='replace')
+            return str(str_value, encoding='utf-8', errors='replace')
         except UnicodeDecodeError:
             """
             Not UTF-8 encoded value.
             """
 
         try:
-            return unicode_type(
+            return str(
                 str_value, encoding='windows-1252', errors='replace')
         except UnicodeDecodeError:
             pass
 
         # No luck with str, try repr()
-        return unicode_type(
+        return str(
             repr(value), encoding='windows-1252', errors='replace')
 
     if value is None:
         return u'None'
 
-    if isinstance(value, unicode_type):
+    if isinstance(value, str):
         return value
 
     if isinstance(value, EnvironmentError):

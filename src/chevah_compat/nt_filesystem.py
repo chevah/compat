@@ -3,11 +3,7 @@
 """
 Windows specific implementation of filesystem access.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 import six
-from six.moves import range
 from contextlib import contextmanager
 from winioctlcon import FSCTL_GET_REPARSE_POINT
 import errno
@@ -20,7 +16,7 @@ import win32file
 import win32net
 import win32security
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from chevah_compat.exceptions import (
     AdjustPrivilegeException,
@@ -72,14 +68,13 @@ ERROR_PATH_NOT_FOUND = 3
 ERROR_DIRECTORY = 267
 
 
+@implementer(ILocalFilesystem)
 class NTFilesystem(PosixFilesystemBase):
     """
     Implementation if ILocalFilesystem for local NT filesystems.
 
     This builds on top of PosixFilesystem.
     """
-
-    implements(ILocalFilesystem)
     system_users = NTUsers()
     process_capabilities = NTProcessCapabilities()
 
@@ -186,7 +181,7 @@ class NTFilesystem(PosixFilesystemBase):
             return self._root_path
 
     def getRealPathFromSegments(self, segments, include_virtual=True):
-        '''See `ILocalFilesystem`.
+        r'''See `ILocalFilesystem`.
         * []
           * lock : root_path
           * unlock: COMPUTER
@@ -297,7 +292,7 @@ class NTFilesystem(PosixFilesystemBase):
         return os.path.join(os.getcwd(), os.path.normpath(path))
 
     def getSegmentsFromRealPath(self, path):
-        """
+        r"""
         See `ILocalFilesystem`.
 
         It supports
@@ -391,14 +386,10 @@ class NTFilesystem(PosixFilesystemBase):
         try:
             yield
         except WindowsError as error:
-            encoded_filename = None
-            if error.filename:
-                encoded_filename = error.filename.encode('utf-8')
-
             raise OSError(
                 error.errno,
                 error.strerror,
-                encoded_filename,
+                error.filename,
                 )
         except pywintypes.error as error:
             if path is None:
@@ -465,7 +456,7 @@ class NTFilesystem(PosixFilesystemBase):
             raw_reparse_data = win32file.DeviceIoControl(
                 handle, FSCTL_GET_REPARSE_POINT, None, 16 * 1024)
         except pywintypes.error as error:
-            message = b'%s - %s' % (error.winerror, error.strerror)
+            message = '%s - %s' % (error.winerror, error.strerror)
             raise OSError(errno.EINVAL, message, encoded_path)
         finally:
             win32file.CloseHandle(handle)
@@ -514,7 +505,8 @@ class NTFilesystem(PosixFilesystemBase):
                         flags,
                         )
             except AdjustPrivilegeException as error:
-                raise OSError(errno.EINVAL, error.message, link_path)
+                message = force_unicode(error.message)
+                raise OSError(errno.EINVAL, message, link_path)
 
     def getStatus(self, segments):
         """
@@ -673,7 +665,6 @@ class NTFilesystem(PosixFilesystemBase):
         for drive in drives:
             if win32file.GetDriveType(drive) == LOCAL_DRIVE:
                 drive = drive.strip(':\\')
-                drive = drive.decode(self.INTERNAL_ENCODING)
                 result.append(drive)
         return result
 
@@ -705,7 +696,7 @@ class NTFilesystem(PosixFilesystemBase):
                         )
                 data = search[0]
         except pywintypes.error as error:
-            message = b'%s - %s' % (error.winerror, error.strerror)
+            message = '%s - %s' % (error.winerror, error.strerror)
             raise OSError(
                 errno.EINVAL,
                 message,
@@ -823,7 +814,10 @@ class NTFilesystem(PosixFilesystemBase):
                 else:
                     return os.rmdir(path_encoded)
         except OSError as error:
-            # Windows return a generic EINVAL when path is not a folder.
+            # Sometimes windows return a generic EINVAL when path is not a
+            # folder.
+            # With Python3 we get ENOTDIR but with a different text
+            # message.
             if error.errno == errno.EINVAL:
                 self._requireFolder(segments)
             raise error

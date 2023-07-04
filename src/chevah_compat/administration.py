@@ -17,13 +17,8 @@ Default groups and users have a maximum length of 9. Check `lsattr -El sys0`
 for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six.moves import range
 from contextlib import contextmanager
 import os
-import codecs
 import random
 import socket
 import subprocess
@@ -104,7 +99,6 @@ class OSAdministrationUnix(object):
         Get unix group entry, retrying if group is not available yet.
         """
         import grp
-        name_encoded = codecs.encode(name, 'utf-8')
 
         # Try to get the group in list of all groups.
         group_found = False
@@ -112,21 +106,21 @@ class OSAdministrationUnix(object):
             if group_found:
                 break
             for group in grp.getgrall():
-                if group[0] == name_encoded:
+                if group[0] == name:
                     group_found = True
                     break
             time.sleep(0.1)
 
         if not group_found:
             raise AssertionError('Failed to get group from all: %s' % (
-                name_encoded))
+                name))
 
         # Now we find the group in list of all groups, but
         # we need to make sure it is also available to be
         # retrieved by name.
         for iterator in range(1000):
             try:
-                return grp.getgrnam(name_encoded)
+                return grp.getgrnam(name)
             except KeyError:
                 # Group not ready yet.
                 pass
@@ -134,7 +128,7 @@ class OSAdministrationUnix(object):
 
         raise AssertionError(
             'Group found in all, but not available by name %s' % (
-                name_encoded))
+                name))
 
     def _addGroup_aix(self, group):
         group_name = group.name.encode('utf-8')
@@ -297,18 +291,17 @@ class OSAdministrationUnix(object):
         Get Unix user entry, retrying if user is not available yet.
         """
         import pwd
-        name_encoded = name.encode('utf-8')
         error = None
         for iterator in range(1000):
             try:
-                user = pwd.getpwnam(name_encoded)
+                user = pwd.getpwnam(name)
                 return user
             except (KeyError, OSError) as e:
                 error = e
                 pass
             time.sleep(0.2)
         raise AssertionError(
-            'Could not get user %s: %s' % (name_encoded, error))
+            'Could not get user %s: %s' % (name, error))
 
     def _addUser_aix(self, user):
         # AIX will only allow creating users with shells from
@@ -458,7 +451,7 @@ class OSAdministrationUnix(object):
             )
         salt = ''.join(random.choice(ALPHABET) for i in range(8))
         shadow_password = crypt.crypt(
-            user.password.encode('utf-8'),
+            user.password,
             '$1$' + salt + '$',
             )
 
@@ -481,7 +474,7 @@ class OSAdministrationUnix(object):
             )
         salt = ''.join(random.choice(ALPHABET) for i in range(2))
         passwd_password = crypt.crypt(
-            user.password.encode('utf-8'), salt)
+            user.password, salt)
         self._changeUnixEntry(
             segments=segments,
             name=user.name,
@@ -761,7 +754,7 @@ class OSAdministrationUnix(object):
 
                 opened_file.write((new_line + '\n').encode('utf-8'))
         finally:
-                opened_file.close()
+            opened_file.close()
 
         if exists:
             self._replaceFile(temp_segments, segments)
@@ -891,8 +884,8 @@ class OSAdministrationWindows(OSAdministrationUnix):
             win32net.NetUserChangePassword(
                 pdc, user.name, user.password, user.password)
         except Exception:  # pragma: no cover
-            print('Failed to set password "%s" for user "%s" on pdc "%s".' % (
-                user.password, user.name, pdc))
+            print('Failed to set password for user "%s" on pdc "%s".' % (
+                user.name, pdc))
             raise
 
     def deleteUser(self, user):
@@ -931,11 +924,11 @@ class OSAdministrationWindows(OSAdministrationUnix):
         # We need to look for a way to delete home folders with unicode
         # names.
         command = u'rmdir /S /Q "%s"' % profile_folder_path
-        result = subprocess.call(command.encode('utf-8'), shell=True)
+        result = subprocess.call(command, shell=True)
         if result != 0:  # pragma: no cover
             message = u'Unable to remove folder [%s]: %s\n%s.' % (
                 result, profile_folder_path, command)
-            raise AssertionError(message.encode('utf-8'))
+            raise AssertionError(message)
 
     def deleteGroup(self, group):
         """
