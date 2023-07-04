@@ -1,6 +1,11 @@
 Release notes for chevah.compat
 ===============================
 
+0.71.3 - 2023-07-04
+-------------------
+
+* Fix test case with win_encode argument.
+
 
 0.71.2 - 2023-05-22
 -------------------

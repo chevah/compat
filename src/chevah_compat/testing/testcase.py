@@ -1358,19 +1358,32 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
                 "Expecting type %s, but got %s. %s" % (
                     expected_type, type(value), msg))
 
-    def tempPath(self, prefix='', suffix=''):
+    def tempPath(self, prefix='', suffix='', win_encoded=False):
         """
         Return (path, segments) for a path which is not created yet.
         """
-        return mk.fs.makePathInTemp(prefix=prefix, suffix=suffix)
+        path, segments = mk.fs.makePathInTemp(prefix=prefix, suffix=suffix)
 
-    def tempPathCleanup(self, prefix='', suffix=''):
+        if self.os_family == 'nt' and win_encoded:
+            path = mk.fs.getEncodedPath(path)
+
+        return path, segments
+
+    def tempPathCleanup(self, prefix='', suffix='', win_encoded=False):
         """
         Return (path, segments) for a path which is not created yet but which
         will be automatically removed.
         """
-        return mk.fs.pathInTemp(
-            cleanup=self.addCleanup, prefix=prefix, suffix=suffix)
+        path, segments = mk.fs.pathInTemp(
+            cleanup=self.addCleanup,
+            prefix=prefix,
+            suffix=suffix,
+            )
+
+        if self.os_family == 'nt' and win_encoded:
+            path = mk.fs.getEncodedPath(path)
+
+        return path, segments
 
     def tempFile(
         self, content='', prefix='', suffix='', cleanup=True,
