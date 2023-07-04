@@ -758,7 +758,8 @@ class PosixFilesystemBase(object):
 
         hardlinks = stats.st_nlink
         if not hardlinks and os.name == 'nt':
-            # I don't know why on Windows we doing scandir.
+            # I don't know why on Windows we don't get any number
+            # or hardlinks with scandir.
             hardlinks = 1
 
         return FileAttributes(
