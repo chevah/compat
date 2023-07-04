@@ -9,12 +9,7 @@ name: Docker
 on:
   push:
     branches: [ master ]
-    paths:
-    - '**.py'
   pull_request:
-    branches: [ master ]
-    paths:
-    - '**.py'
 
 
 concurrency:
@@ -41,11 +36,9 @@ jobs:
           - alpine:3.18
           - amazonlinux:2
           - amazonlinux:2022
-          - centos:8.2.2004
-          - centos-stream9-fips
           - oraclelinux:8
-          - ubuntu:14.04
-          - ubuntu:16.04
+          - rockylinux:9
+          - ubuntu:18.04
           - ubuntu:22.04
 
     # ubuntu-latest is GitHub's newest well-suported Linux distro.
@@ -54,19 +47,16 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
 
-    # On Alpine, OpenSSL must be updated to latest version for python-package.
     - name: Alpine setup
       if: startsWith(matrix.container, 'alpine')
-      run: |
-        apk upgrade -U
-        apk add git bash shadow sudo curl
+      run: apk add git bash shadow sudo curl
 
     - name: Amazon Linux 2022 setup
-      if: matrix.container == 'amazonlinux:2022'
-      run: yum -y install libxcrypt-compat
+      if: matrix.container == 'amazonlinux:2022' || matrix.container == 'rockylinux:9'
+      run: yum -y install libxcrypt-compat findutils
 
     - name: Yum-based setup
-      if: startsWith(matrix.container, 'centos') || startsWith(matrix.container, 'amazon') || startsWith(matrix.container, 'oracle')
+      if: startsWith(matrix.container, 'rocky') || startsWith(matrix.container, 'amazon') || startsWith(matrix.container, 'oracle')
       run: yum -y install git tar which sudo
 
     - name: Ubuntu setup

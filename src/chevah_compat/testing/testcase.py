@@ -104,7 +104,7 @@ class TwistedTestCase(TestCase):
         """
         Return true if last test run was successful.
         """
-        if self._outcome.errors:
+        if self._outcome.result.errors:
             return False
         return True
 
