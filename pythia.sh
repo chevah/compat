@@ -324,7 +324,6 @@ pip_install() {
     ${PYTHON_BIN} -m \
         pip install \
             --index-url=$PIP_INDEX_URL \
-            --build=${BUILD_FOLDER}/pip-build \
             $1
 
     exit_code=$?
