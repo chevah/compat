@@ -601,7 +601,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertTrue(self.filesystem.isFolder(segments))
 
         if self.os_family != 'nt':
-            # On Windows the folder will have a size.
+            # On Windows the folder will have a size,
+            # but the size is different based on folder history.
             # So we skip this check on Windows.
             result = self.filesystem.getFileSize(segments)
             self.assertEqual(0, result)

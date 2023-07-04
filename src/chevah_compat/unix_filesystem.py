@@ -85,8 +85,6 @@ class UnixFilesystem(PosixFilesystemBase):
         while tail and head != u'/':
             head, tail = os.path.split(tail)
             if tail != u'':
-                if not isinstance(tail, str):
-                    tail = tail
                 segments.insert(0, tail)
             tail = head
         return segments
