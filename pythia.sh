@@ -324,6 +324,7 @@ pip_install() {
     ${PYTHON_BIN} -m \
         pip install \
             --index-url=$PIP_INDEX_URL \
+            --build=${BUILD_FOLDER}/pip-build \
             $1
 
     exit_code=$?
@@ -538,6 +539,7 @@ install_dependencies(){
         exit 0
     fi
 
+    update_venv
 }
 
 
@@ -838,6 +840,15 @@ install_dependencies
 if [ "$COMMAND" == "deps" ] ; then
     install_base_deps
 fi
+
+case $COMMAND in
+    test_ci|test_py3)
+        PYTHON3_CHECK='-3'
+        ;;
+    *)
+        PYTHON3_CHECK=''
+        ;;
+esac
 
 set +e
 execute_venv "$@"
