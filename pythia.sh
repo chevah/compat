@@ -83,9 +83,9 @@ OS="not-detected-yet"
 ARCH="not-detected-yet"
 
 # Initialize default values, some are overwritten from pythia.conf.
-PYTHON_NAME="not.yet.defined"
 PYTHON_CONFIGURATION="NOT-YET-DEFINED"
-PYTHON_VERSION="not.defined.yet"
+PYTHON_NAME="not-yet-determined"
+PYTHON_VERSION="not-determined-yet"
 PYTHON_PLATFORM="unknown-os-and-arch"
 BINARY_DIST_URI="https://github.com/chevah/pythia/releases/download"
 PIP_INDEX_URL="https://pypi.org/simple"
@@ -107,7 +107,7 @@ check_source_folder() {
 # Called to trigger the entry point in the virtual environment.
 # Can be overwritten in pythia.conf
 execute_venv() {
-    "$PYTHON_BIN" -c "from paver.tasks import main; main()" "$@"
+    "$PYTHON_BIN" -X utf8 -c "from paver.tasks import main; main()" "$@"
 }
 
 
@@ -189,7 +189,7 @@ delete_folder() {
     local target="$1"
     # On Windows, we use internal command prompt for maximum speed.
     # See: https://stackoverflow.com/a/6208144/539264
-    if [ "$OS" = "win" ]; then
+    if [ "$OS" = "windows" ]; then
         if [ -d "$target" ]; then
             cmd //c "del /f/s/q $target > nul"
             cmd //c "rmdir /s/q $target"
@@ -225,7 +225,7 @@ execute() {
 update_path_variables() {
     resolve_python_version
 
-    if [ "$OS" = "win" ] ; then
+    if [ "$OS" = "windows" ] ; then
         PYTHON_BIN="/lib/python.exe"
         PYTHON_LIB="/lib/Lib/"
     else
@@ -293,12 +293,15 @@ resolve_python_version() {
         candidate="${version_configuration_array[$i]}"
         candidate_platform="$(echo "$candidate" | cut -d"@" -f1)"
         candidate_version="$(echo "$candidate" | cut -d"@" -f2)"
+        candidate_name="$(echo "$candidate_version" | cut -d"." -f1-2)"
         if [ "$candidate_platform" = "default" ]; then
-            # On first pass, we set the default version.
+            # On first pass, we set the default version and name.
             PYTHON_VERSION="$candidate_version"
+            PYTHON_NAME="python${candidate_name}"
         elif [ -z "${PYTHON_PLATFORM%"$candidate_platform"*}" ]; then
-            # If matching a specific platform, we overwrite the default version.
+            # If matching a specific platform, we overwrite the defaults.
             PYTHON_VERSION="$candidate_version"
+            PYTHON_NAME="python${candidate_name}"
         fi
     done
 }
@@ -308,7 +311,7 @@ resolve_python_version() {
 # Install base package.
 #
 install_base_deps() {
-    echo "::groups::Installing base requirements:" "${BASE_REQUIREMENTS[@]}"
+    echo "::group::Installing base requirements:" "${BASE_REQUIREMENTS[@]}"
 
     set +e
     # There is a bug in pip/setuptools when using custom build folders.
@@ -365,7 +368,7 @@ get_binary_dist() {
     local dist_name="$1"
     local remote_base_url="$2"
 
-    echo "Getting $dist_name from $remote_base_url..."
+    echo "Getting $dist_name from $remote_base_url ..."
 
     tar_gz_file="$dist_name".tar.gz
     tar_file="$dist_name".tar
@@ -393,7 +396,7 @@ test_version_exists() {
     local remote_base_url="$1"
     local target_file="python-$PYTHON_VERSION-$OS-$ARCH.tar.gz"
 
-    echo "Checking $remote_base_url/$PYTHON_VERSION/$target_file..."
+    echo "Checking $remote_base_url/$PYTHON_VERSION/$target_file ..."
     "${ONLINETEST_CMD[@]}" "$remote_base_url"/"$PYTHON_VERSION"/"$target_file"
     return $?
 }
@@ -736,7 +739,7 @@ detect_os() {
     case "$OS" in
         MINGW*|MSYS*)
             ARCH="$(uname -m)"
-            OS="win"
+            OS="windows"
             ;;
         Linux)
             ARCH="$(uname -m)"
