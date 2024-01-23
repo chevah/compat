@@ -22,7 +22,7 @@ from unittest.mock import patch, Mock
 from nose import SkipTest
 try:
     from twisted.internet.defer import Deferred
-    from twisted.internet.posixbase import (
+    from twisted.internet._signals import (
         _SocketWaker, _UnixWaker, _SIGCHLDWaker
         )
     from twisted.python.failure import Failure
