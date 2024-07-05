@@ -1,6 +1,12 @@
 Release notes for chevah.compat
 ===============================
 
+1.1.1 - 2024-07-05
+------------------
+
+* Fix long path handling in Windows for Windows Share paths.
+
+
 1.1.0 - 2024-01-22
 ------------------
 

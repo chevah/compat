@@ -16,6 +16,7 @@ import time
 from nose.plugins.attrib import attr
 
 from chevah_compat import DefaultAvatar, FileAttributes, LocalFilesystem
+from chevah_compat.posix_filesystem import _win_getEncodedPath
 from chevah_compat.avatar import FilesystemApplicationAvatar
 from chevah_compat.exceptions import CompatError
 from chevah_compat.helpers import force_unicode
@@ -284,6 +285,60 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         expected = '[Errno 3] Message \u2609 day: other-path'
         self.assertEqual(expected, force_unicode(context.exception))
+
+    def test_win_getEncodedPath_already_UNC(self):
+        """
+        Does nothing if the path is already UNC.
+        """
+        self.assertEqual(
+            r'\\?\C:\Some Path\here',
+            _win_getEncodedPath(r'\\?\C:\Some Path\here'),
+            )
+        self.assertEqual(
+            r'\\?\UNC\share.server.org\share name\file here.txt',
+            _win_getEncodedPath(
+                r'\\?\UNC\share.server.org\share name\file here.txt'),
+            )
+
+        long_name = mk.string(length=1000)
+        self.assertEqual(
+            r'\\?\C:\Some Path\here' + long_name,
+            _win_getEncodedPath(r'\\?\C:\Some Path\here' + long_name),
+            )
+        self.assertEqual(
+            r'\\?\UNC\share.server.org\share name\a' + long_name,
+            _win_getEncodedPath(
+                r'\\?\UNC\share.server.org\share name\a' + long_name),
+            )
+
+    def test_win_getEncodedPath_short(self):
+        """
+        Does nothing if the path is short.
+        """
+        self.assertEqual(
+            r'C:\Some Path\here',
+            _win_getEncodedPath(r'C:\Some Path\here'),
+            )
+        self.assertEqual(
+            r'\\share.server.org\share name\file here.txt',
+            _win_getEncodedPath(
+                r'\\share.server.org\share name\file here.txt'),
+            )
+
+    def test_win_getEncodedPath_long(self):
+        """
+        It add the Windows long path marker for long paths.
+        """
+        long_name = mk.string(length=1000)
+        self.assertEqual(
+            r'\\?\C:\Some Path\a' + long_name,
+            _win_getEncodedPath(r'C:\Some Path\a' + long_name),
+            )
+        self.assertEqual(
+            r'\\?\UNC\share.server.org\share name\a' + long_name,
+            _win_getEncodedPath(
+                r'\\share.server.org\share name\a' + long_name),
+            )
 
     def test_deleteFile_folder(self):
         """
