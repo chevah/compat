@@ -244,6 +244,8 @@ def deps():
     env_ci = os.environ.get('CI', '').strip()
     if env_ci.lower() != 'true':
         dev_mode = ['-e']
+        pave.fs.deleteFile([
+            pave.path.build, pave.getPythonLibPath(), 'chevah-compat.egg-link'])
     else:
         print('Installing in non-dev mode.')
 

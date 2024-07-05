@@ -1012,7 +1012,12 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             try:
                 function(*args, **kwargs)
             except Exception as error:  # noqa:cover
-                self._teardown_errors.append(error)
+                self._teardown_errors.append(
+                    error,
+                    function,
+                    args,
+                    kwargs,
+                    )
 
         self.__cleanup__ = []
 
