@@ -37,10 +37,10 @@ jobs:
     steps:
 
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Cache build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           build-py3
@@ -79,7 +79,7 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 2
 
@@ -88,7 +88,7 @@ jobs:
       run: git log -1 --pretty=format:"%s" ${{ toJSON(github.event.after) }} | grep -v 'skip-ci'
 
     - name: Cache build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           build-py3
@@ -122,10 +122,10 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Cache build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           build-py3
@@ -166,10 +166,10 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Cache build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           build-py3
@@ -202,10 +202,10 @@ jobs:
     timeout-minutes: 120
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Cache build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           build-py3
