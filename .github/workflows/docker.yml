@@ -34,7 +34,6 @@ jobs:
       matrix:
         container:
           - alpine:3.16
-          - amazonlinux:2
           - amazonlinux:2022
           - oraclelinux:8
           - rockylinux:9
