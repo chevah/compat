@@ -22,7 +22,7 @@ from unittest.mock import patch, Mock
 from nose import SkipTest
 try:
     from twisted.internet.defer import Deferred
-    from twisted.internet.posixbase import (
+    from twisted.internet._signals import (
         _SocketWaker, _UnixWaker, _SIGCHLDWaker
         )
     from twisted.python.failure import Failure
@@ -1012,7 +1012,12 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             try:
                 function(*args, **kwargs)
             except Exception as error:  # noqa:cover
-                self._teardown_errors.append(error)
+                self._teardown_errors.append(
+                    error,
+                    function,
+                    args,
+                    kwargs,
+                    )
 
         self.__cleanup__ = []
 

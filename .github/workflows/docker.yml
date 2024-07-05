@@ -33,13 +33,12 @@ jobs:
       fail-fast: false
       matrix:
         container:
-          - alpine:3.18
-          - amazonlinux:2
+          - alpine:3.16
           - amazonlinux:2022
           - oraclelinux:8
           - rockylinux:9
-          - ubuntu:18.04
           - ubuntu:22.04
+          - ubuntu:24.04
 
     # ubuntu-latest is GitHub's newest well-suported Linux distro.
     runs-on: ubuntu-latest
@@ -93,7 +92,7 @@ jobs:
 
     # This action also fails on CentOS 5/6.
     - name: Cache build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       if: matrix.container != 'proatria/centos:5.11-chevah1' && matrix.container != 'centos:6.10'
       with:
         path: |
