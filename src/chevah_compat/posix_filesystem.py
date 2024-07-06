@@ -1166,7 +1166,7 @@ def _win_getEncodedPath(path):
     # An extended-length path, use the Unicode path prefix.
     # https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
     if path.startswith('\\'):
-        # \\?\UNC\server.name\share
+        # \\server.name\share -> \\?\UNC\server.name\share
         return u'\\\\?\\UNC\\' + path[2:]
     else:
         # \\?\C:\some\path
