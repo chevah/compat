@@ -1167,7 +1167,7 @@ def _win_getEncodedPath(path):
     # https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
     if path.startswith('\\\\'):
         # \\server.name\share -> \\?\UNC\server.name\share
-        return r'\\?\UNC\' + path[2:]
+        return '\\\\?\\UNC\\' + path[2:]
     else:
         # C:\some\path -> \\?\C:\some\path
         return '\\\\?\\' + path

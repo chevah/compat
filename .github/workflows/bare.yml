@@ -22,9 +22,6 @@ defaults:
   run:
     shell: bash
 
-env:
-  TMATE_DEBUG: 'no'
-
 
 jobs:
 
@@ -63,7 +60,7 @@ jobs:
         CHEVAH_BUILD: build-py3-ț
 
     - name: Tmate debug on failure
-      if: failure() && env.TMATE_DEBUG == 'yes'
+      if: ${{ !cancelled() && runner.debug }}
       uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
@@ -103,7 +100,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Tmate debug on failure
-      if: failure() && env.TMATE_DEBUG == 'yes'
+      if: ${{ !cancelled() && runner.debug }}
       uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
@@ -144,7 +141,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Tmate debug on failure
-      if: failure() && env.TMATE_DEBUG == 'yes'
+      if: ${{ !cancelled() && runner.debug }}
       uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
@@ -168,7 +165,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Tmate debug on failure
-      if: failure() && env.TMATE_DEBUG == 'yes'
+      if: ${{ !cancelled() && runner.debug }}
       uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
@@ -217,7 +214,7 @@ jobs:
         USER: runneradmin
 
     - name: Tmate debug on failure
-      if: failure() && env.TMATE_DEBUG == 'no'
+      if: ${{ !cancelled() && runner.debug }}
       uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
