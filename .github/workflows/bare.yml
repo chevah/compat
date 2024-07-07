@@ -114,7 +114,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
 
-  macos-unicode-path:
+  macos-m1-unicode-path:
     strategy:
       fail-fast: false
       matrix:
@@ -238,8 +238,7 @@ jobs:
     needs:
       - ubuntu-2004-unicode-path
       - ubuntu-2204-ascii-path
-      - macos-unicode-path
-      - macos-ascii-path
+      - macos-m1-unicode-path
       - windows
     steps:
       - name: Require all successes
