@@ -233,6 +233,9 @@ jobs:
       CHEVAH_REPO: compat
       USER: chevah
       CHEVAH_CONTAINER: yes
+    defaults:
+      run:
+        shell: sh
     strategy:
       fail-fast: false
       matrix:
