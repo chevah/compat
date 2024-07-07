@@ -351,7 +351,7 @@ def test_ci2(args):
     # When running in CI mode, we want to get more reports.
     SETUP['test']['nose_options'] += [
         # FIXME:690:
-        # Add support for extenstions.
+        # Add support for extensions.
         # '--with-run-reporter',
         # '--with-timer',
         '-v',

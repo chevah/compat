@@ -16,7 +16,6 @@ import struct
 import sys
 import time
 import unicodedata
-import six
 from os import scandir
 
 from zope.interface import implementer
@@ -135,7 +134,7 @@ class PosixFilesystemBase(object):
 
         if not self._avatar:
             return self._pathSplitRecursive(
-                six.text_type(os.path.expanduser('~')))
+                str(os.path.expanduser('~')))
 
         if self._avatar.root_folder_path is None:
             return self._pathSplitRecursive(self._avatar.home_folder_path)
@@ -177,7 +176,7 @@ class PosixFilesystemBase(object):
         if path is None or path == '' or path == '.':
             return self.home_segments
 
-        if not isinstance(path, six.text_type):
+        if not isinstance(path, str):
             path = path.decode(self.INTERNAL_ENCODING)
 
         if not path.startswith('/'):
@@ -351,7 +350,7 @@ class PosixFilesystemBase(object):
         See `ILocalFilesystem`.
         """
         absolute_path = os.path.abspath(self.getEncodedPath(path))
-        if not isinstance(absolute_path, six.text_type):
+        if not isinstance(absolute_path, str):
             absolute_path = absolute_path.decode(self.INTERNAL_ENCODING)
 
         return absolute_path
@@ -785,7 +784,7 @@ class PosixFilesystemBase(object):
         """
         # This is done to allow lazy initialization of process_capabilities.
         from chevah_compat import process_capabilities
-        if not isinstance(name, six.text_type):
+        if not isinstance(name, str):
             name = name.decode(self.INTERNAL_ENCODING)
 
         # OSX HFS+ store file as Unicode, but in normalized format.
@@ -1150,3 +1149,25 @@ class FileAttributes(object):
 
     def __repr__(self):
         return u"%s:%s:%s" % (self.__class__, id(self), self.__dict__)
+
+
+def _win_getEncodedPath(path):
+    """
+    Return the encoded representation of the path, use in the lower
+    lever API for accessing the filesystem.
+    """
+    if path.startswith('\\\\?\\'):
+        # This might be already an encoded long path.
+        return path
+
+    if len(path) < 250:
+        return path
+
+    # An extended-length path, use the Unicode path prefix.
+    # https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+    if path.startswith('\\\\'):
+        # \\server.name\share -> \\?\UNC\server.name\share
+        return '\\\\?\\UNC\\' + path[2:]
+    else:
+        # C:\some\path -> \\?\C:\some\path
+        return '\\\\?\\' + path

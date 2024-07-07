@@ -27,7 +27,7 @@ from chevah_compat.helpers import force_unicode
 from chevah_compat.interfaces import ILocalFilesystem
 from chevah_compat.nt_capabilities import NTProcessCapabilities
 from chevah_compat.nt_users import NTDefaultAvatar, NTUsers
-from chevah_compat.posix_filesystem import PosixFilesystemBase
+from chevah_compat.posix_filesystem import PosixFilesystemBase, _win_getEncodedPath
 
 
 #: https://msdn.microsoft.com/en-us/library/windows/desktop/aa364939.aspx
@@ -82,6 +82,9 @@ class NTFilesystem(PosixFilesystemBase):
     OPEN_WRITE_ONLY = os.O_WRONLY | os.O_BINARY
     OPEN_READ_WRITE = os.O_RDWR | os.O_BINARY
     OPEN_APPEND = os.O_APPEND | os.O_BINARY
+
+    # This is here to make it easier to test this on Linux.
+    getEncodedPath = staticmethod(_win_getEncodedPath)
 
     @property
     def _lock_in_home(self):
@@ -148,23 +151,6 @@ class NTFilesystem(PosixFilesystemBase):
         path = os.path.dirname(os.__file__)
         segments = self.getSegmentsFromRealPath(path)
         return segments[:-2]
-
-    @classmethod
-    def getEncodedPath(cls, path):
-        """
-        Return the encoded representation of the path, use in the lower
-        lever API for accessing the filesystem.
-        """
-        if path.startswith(u'\\\\?\\'):
-            # This might be already an encoded long path.
-            return path
-
-        if len(path) < 250:
-            return path
-
-        # An extended-length path, use the Unicode path prefix.
-        # https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
-        return u'\\\\?\\' + path
 
     def _getLockedPathFromSegments(self, segments):
         '''

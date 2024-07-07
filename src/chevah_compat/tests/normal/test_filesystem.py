@@ -16,6 +16,7 @@ import time
 from nose.plugins.attrib import attr
 
 from chevah_compat import DefaultAvatar, FileAttributes, LocalFilesystem
+from chevah_compat.posix_filesystem import _win_getEncodedPath
 from chevah_compat.avatar import FilesystemApplicationAvatar
 from chevah_compat.exceptions import CompatError
 from chevah_compat.helpers import force_unicode
@@ -284,6 +285,60 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         expected = '[Errno 3] Message \u2609 day: other-path'
         self.assertEqual(expected, force_unicode(context.exception))
+
+    def test_win_getEncodedPath_already_UNC(self):
+        """
+        Does nothing if the path is already UNC.
+        """
+        self.assertEqual(
+            r'\\?\C:\Some Path\here',
+            _win_getEncodedPath(r'\\?\C:\Some Path\here'),
+            )
+        self.assertEqual(
+            r'\\?\UNC\share.server.org\share name\file here.txt',
+            _win_getEncodedPath(
+                r'\\?\UNC\share.server.org\share name\file here.txt'),
+            )
+
+        long_name = mk.string(length=1000)
+        self.assertEqual(
+            r'\\?\C:\Some Path\here' + long_name,
+            _win_getEncodedPath(r'\\?\C:\Some Path\here' + long_name),
+            )
+        self.assertEqual(
+            r'\\?\UNC\share.server.org\share name\a' + long_name,
+            _win_getEncodedPath(
+                r'\\?\UNC\share.server.org\share name\a' + long_name),
+            )
+
+    def test_win_getEncodedPath_short(self):
+        """
+        Does nothing if the path is short.
+        """
+        self.assertEqual(
+            r'C:\Some Path\here',
+            _win_getEncodedPath(r'C:\Some Path\here'),
+            )
+        self.assertEqual(
+            r'\\share.server.org\share name\file here.txt',
+            _win_getEncodedPath(
+                r'\\share.server.org\share name\file here.txt'),
+            )
+
+    def test_win_getEncodedPath_long(self):
+        """
+        It add the Windows long path marker for long paths.
+        """
+        long_name = mk.string(length=1000)
+        self.assertEqual(
+            r'\\?\C:\Some Path\a' + long_name,
+            _win_getEncodedPath(r'C:\Some Path\a' + long_name),
+            )
+        self.assertEqual(
+            r'\\?\UNC\share.server.org\share name\a' + long_name,
+            _win_getEncodedPath(
+                r'\\share.server.org\share name\a' + long_name),
+            )
 
     def test_deleteFile_folder(self):
         """
@@ -2794,6 +2849,55 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
 
         self.assertTrue(self.unlocked_filesystem.exists(self.test_segments))
         self.assertTrue(self.unlocked_filesystem.isLink(self.test_segments))
+
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('symbolic_link', True)
+    def test_share_long_path(self):
+        """
+        It can handle long paths for Windows Shares.
+        """
+        _, segments = mk.fs.makePathInTemp(
+            prefix='test_share_long_path-',
+            suffix='-123456789' * 20,
+            )
+        file_name = segments[-1]
+        # Make sure path does not exists.
+        result = self.unlocked_filesystem.exists(segments)
+        self.assertFalse(result)
+        # We assume all slaves have the c:\temp folder.
+        share_name = 'share name-' + mk.string()
+        self.makeWindowsShare(path='c:\\temp', name=share_name)
+
+        # Run a first test with local, non Windows Share paths.
+        self.assertFalse(self.unlocked_filesystem.exists(segments))
+        data = b'something-' * 1000
+        stream = self.unlocked_filesystem.openFileForWriting(segments)
+        stream.write(data)
+        stream.close()
+        stream = self.unlocked_filesystem.openFileForReading(segments)
+        result = stream.read()
+        stream.close()
+        self.assertEqual(data, result)
+        self.assertTrue(self.unlocked_filesystem.exists(segments))
+        self.unlocked_filesystem.deleteFile(segments)
+        self.assertFalse(self.unlocked_filesystem.exists(segments))
+
+        # Run the test with Windows Share paths
+        segments = self.unlocked_filesystem.getSegmentsFromRealPath(
+            '\\\\localhost\\{}\{}'.format(share_name, file_name)
+        )
+        self.assertFalse(self.unlocked_filesystem.exists(segments))
+        data = b'something-' * 1000
+        stream = self.unlocked_filesystem.openFileForWriting(segments)
+        stream.write(data)
+        stream.close()
+        stream = self.unlocked_filesystem.openFileForReading(segments)
+        result = stream.read()
+        stream.close()
+        self.assertEqual(data, result)
+        self.assertTrue(self.unlocked_filesystem.exists(segments))
+        self.unlocked_filesystem.deleteFile(segments)
+        self.assertFalse(self.unlocked_filesystem.exists(segments))
 
 
 class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
