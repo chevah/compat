@@ -2850,6 +2850,37 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         self.assertTrue(self.unlocked_filesystem.exists(self.test_segments))
         self.assertTrue(self.unlocked_filesystem.isLink(self.test_segments))
 
+    @conditionals.onOSFamily('nt')
+    @conditionals.onCapability('symbolic_link', True)
+    def test_share_long_path(self):
+        """
+        It can handle long paths for Windows Shares.
+        """
+        path, segments = mk.fs.makePathInTemp(
+            prefix='test_share_long_path-',
+            suffix='-123456789' * 30,
+            )
+        # Make sure path does not exists.
+        result = self.unlocked_filesystem.exists(segments)
+        self.assertFalse(result)
+        # We assume all slaves have the c:\temp folder.
+        share_name = 'share name-' + mk.string()
+        self.makeWindowsShare(path='c:\\temp', name=share_name)
+
+        data = b'something-' * 1000
+        stream = self.unlocked_filesystem.openFileForWriting(segments)
+        stream.write(data)
+        stream.close()
+
+        stream = self.unlocked_filesystem.openFileForReading(segments)
+        result = stream.read()
+        stream.close()
+        self.assertEqual(data, result)
+
+        self.assertTrue(self.unlocked_filesystem.exists(segments))
+        self.unlocked_filesystem.deleteFile(segments)
+        self.assertFalse(self.unlocked_filesystem.exists(segments))
+
 
 class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
     """

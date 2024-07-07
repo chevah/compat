@@ -1151,7 +1151,7 @@ class FileAttributes(object):
         return u"%s:%s:%s" % (self.__class__, id(self), self.__dict__)
 
 
-def _win_getEncodedPath(path):
+def _win_getEncodedPath(self, path):
     """
     Return the encoded representation of the path, use in the lower
     lever API for accessing the filesystem.
