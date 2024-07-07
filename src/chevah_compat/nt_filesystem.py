@@ -84,7 +84,7 @@ class NTFilesystem(PosixFilesystemBase):
     OPEN_APPEND = os.O_APPEND | os.O_BINARY
 
     # This is here to make it easier to test this on Linux.
-    getEncodedPath = _win_getEncodedPath
+    getEncodedPath = staticmethod(_win_getEncodedPath)
 
     @property
     def _lock_in_home(self):

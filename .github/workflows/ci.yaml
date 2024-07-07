@@ -7,7 +7,7 @@
 # When running a tmate debug session you might need to increase the
 # timeout-minutes for each build.
 
-name: Bare
+name: CI
 
 on:
   push:
@@ -225,10 +225,108 @@ jobs:
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  docker:
+
+    name: docker-${{ matrix.container }}
+    container: ${{ matrix.container }}
+    env:
+      CHEVAH_REPO: compat
+      USER: chevah
+      CHEVAH_CONTAINER: yes
+    strategy:
+      fail-fast: false
+      matrix:
+        container:
+          - alpine:3.16
+          - amazonlinux:2022
+          - oraclelinux:8
+          - rockylinux:9
+          - ubuntu:22.04
+          - ubuntu:24.04
+
+    # ubuntu-latest is GitHub's newest well-suported Linux distro.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
+    - name: Alpine setup
+      if: startsWith(matrix.container, 'alpine')
+      run: apk add git bash shadow sudo curl
+
+    - name: Amazon Linux 2022 setup
+      if: matrix.container == 'amazonlinux:2022' || matrix.container == 'rockylinux:9'
+      run: yum -y install libxcrypt-compat findutils
+
+    - name: Yum-based setup
+      if: startsWith(matrix.container, 'rocky') || startsWith(matrix.container, 'amazon') || startsWith(matrix.container, 'oracle')
+      run: yum -y install git tar which sudo
+
+    - name: Ubuntu setup
+      if: startsWith(matrix.container, 'ubuntu')
+      run: |
+        apt-get update
+        apt-get dist-upgrade -y
+        apt-get install -y git curl sudo
+
+    # On a Docker container, everything runs as root by default.
+    - name: Chevah user setup
+      run: |
+        useradd -g adm -s /bin/bash -m chevah
+        echo '%adm    ALL=NOPASSWD: ALL' > /etc/sudoers
+
+    # GHA's checkout action fails on CentOS 5/6, issue same commands manually.
+    # This fails when opening a new PR, but works starting with second commit.
+    - name: Clone sources independently
+      run: |
+        cd /home/chevah/
+        git init $CHEVAH_REPO
+        cd $CHEVAH_REPO
+        # Cleanup the repo.
+        git rev-parse --symbolic-full-name --verify --quiet HEAD || true
+        git rev-parse --symbolic-full-name --branches || true
+        git remote remove origin || true
+        # Update repo token.
+        git remote add origin https://github.com/chevah/$CHEVAH_REPO
+        git fetch --no-tags --prune origin
+        # Prepare the code.
+        git clean -f
+        git reset --hard ${{ github.event.after }}
+        git log -1 --format='%H'
+
+    # This action also fails on CentOS 5/6.
+    - name: Cache build
+      uses: actions/cache@v4
+      if: matrix.container != 'proatria/centos:5.11-chevah1' && matrix.container != 'centos:6.10'
+      with:
+        path: |
+          /home/chevah/$CHEVAH_REPO/build-$CHEVAH_REPO
+        key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-${{ matrix.container }}
+
+    - name: Deps
+      run: |
+        cd /home/chevah/$CHEVAH_REPO
+        ./pythia.sh deps
+        chown -R chevah .
+
+    - uses: chevah/python-info-action@v1
+      with:
+        python-path: /home/chevah/$CHEVAH_REPO/build-py3/bin/python
+
+    - name: Build
+      run: |
+        cd /home/chevah/$CHEVAH_REPO
+        su chevah -c "./pythia.sh build"
+
+    - name: Test
+      run: |
+        cd /home/chevah/$CHEVAH_REPO
+        su chevah -c "./pythia.sh test_ci2"
+
 
   # Helper so that on GitHub repo settings we can configure a single job as
   # required.
-  bare-required:
+  ci-required:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: always()
@@ -237,6 +335,7 @@ jobs:
       - ubuntu-2204-ascii-path
       - macos-m1-unicode-path
       - windows
+      - docker
     steps:
       - name: Require all successes
         shell: python3 {0}
