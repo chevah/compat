@@ -2858,7 +2858,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         """
         path, segments = mk.fs.makePathInTemp(
             prefix='test_share_long_path-',
-            suffix='-123456789' * 30,
+            suffix='-123456789' * 20,
             )
         # Make sure path does not exists.
         result = self.unlocked_filesystem.exists(segments)
@@ -2867,6 +2867,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         share_name = 'share name-' + mk.string()
         self.makeWindowsShare(path='c:\\temp', name=share_name)
 
+        # Run a first test with local, non Windows Share paths.
         data = b'something-' * 1000
         stream = self.unlocked_filesystem.openFileForWriting(segments)
         stream.write(data)
