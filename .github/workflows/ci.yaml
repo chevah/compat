@@ -324,6 +324,16 @@ jobs:
         su chevah -c "./pythia.sh test_ci2"
 
 
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Deps
+      run: ./pythia.sh deps
+
+    - name: Lint
+      run: ./pythia.sh lint --all
+
   # Helper so that on GitHub repo settings we can configure a single job as
   # required.
   ci-required:
@@ -336,6 +346,7 @@ jobs:
       - macos-m1-unicode-path
       - windows
       - docker
+      - static-checks
     steps:
       - name: Require all successes
         shell: python3 {0}
