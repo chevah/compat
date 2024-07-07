@@ -2856,10 +2856,11 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         """
         It can handle long paths for Windows Shares.
         """
-        path, segments = mk.fs.makePathInTemp(
+        _, segments = mk.fs.makePathInTemp(
             prefix='test_share_long_path-',
             suffix='-123456789' * 20,
             )
+        file_name = segments[-1]
         # Make sure path does not exists.
         result = self.unlocked_filesystem.exists(segments)
         self.assertFalse(result)
@@ -2868,16 +2869,32 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         self.makeWindowsShare(path='c:\\temp', name=share_name)
 
         # Run a first test with local, non Windows Share paths.
+        self.assertFalse(self.unlocked_filesystem.exists(segments))
         data = b'something-' * 1000
         stream = self.unlocked_filesystem.openFileForWriting(segments)
         stream.write(data)
         stream.close()
-
         stream = self.unlocked_filesystem.openFileForReading(segments)
         result = stream.read()
         stream.close()
         self.assertEqual(data, result)
+        self.assertTrue(self.unlocked_filesystem.exists(segments))
+        self.unlocked_filesystem.deleteFile(segments)
+        self.assertFalse(self.unlocked_filesystem.exists(segments))
 
+        # Run the test with Windows Share paths
+        segments = self.unlocked_filesystem.getSegmentsFromRealPath(
+            '\\\\localhost\\{}\{}'.format(share_name, file_name)
+        )
+        self.assertFalse(self.unlocked_filesystem.exists(segments))
+        data = b'something-' * 1000
+        stream = self.unlocked_filesystem.openFileForWriting(segments)
+        stream.write(data)
+        stream.close()
+        stream = self.unlocked_filesystem.openFileForReading(segments)
+        result = stream.read()
+        stream.close()
+        self.assertEqual(data, result)
         self.assertTrue(self.unlocked_filesystem.exists(segments))
         self.unlocked_filesystem.deleteFile(segments)
         self.assertFalse(self.unlocked_filesystem.exists(segments))
