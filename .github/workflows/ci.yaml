@@ -207,7 +207,7 @@ jobs:
     # Not sure why on Windows the normal tests are not discovered by default.
     - name: Test normal
       run: |
-        ./pythia.sh test_ci2 normal
+        ./pythia.sh test -vs normal
       env:
         CODECOV_TOKEN: enabled
         USER: runneradmin
