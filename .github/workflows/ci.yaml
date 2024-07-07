@@ -53,17 +53,17 @@ jobs:
     - name: Move build to Unicode path
       run: mv build-py3 build-py3-ț
 
-    - name: Test
-      run: |
-        ./pythia.sh test_ci2
-      env:
-        CHEVAH_BUILD: build-py3-ț
-
     - name: Tmate debug on failure
       if: ${{ !cancelled() && runner.debug }}
       uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
+
+    - name: Test
+      run: |
+        ./pythia.sh test_ci2
+      env:
+        CHEVAH_BUILD: build-py3-ț
 
     - name: Move build back to to ascii
       run: mv build-py3-ț build-py
@@ -94,16 +94,16 @@ jobs:
     - name: Deps
       run: ./pythia.sh deps
 
-    - name: Test
-      run: ./pythia.sh test_ci2
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
     - name: Tmate debug on failure
       if: ${{ !cancelled() && runner.debug }}
       uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
+
+    - name: Test
+      run: ./pythia.sh test_ci2
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Publish cov
       run: ./pythia.sh codecov_publish
@@ -134,17 +134,17 @@ jobs:
     - name: Move build to Unicode path
       run: mv build-py3 build-py3-ț
 
-    - name: Test
-      run: ./pythia.sh test_ci2
-      env:
-        CHEVAH_BUILD: build-py3-ț
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
     - name: Tmate debug on failure
       if: ${{ !cancelled() && runner.debug }}
       uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
+
+    - name: Test
+      run: ./pythia.sh test_ci2
+      env:
+        CHEVAH_BUILD: build-py3-ț
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Move build back to to ascii
       run: mv build-py3-ț build-py3
@@ -159,16 +159,16 @@ jobs:
         ./pythia.sh deps
         ./pythia.sh build
 
-    - name: Test
-      run: ./pythia.sh test_ci2
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
     - name: Tmate debug on failure
       if: ${{ !cancelled() && runner.debug }}
       uses: chevah/action-tmate@v3
       with:
         limit-access-to-actor: true
+
+    - name: Test
+      run: ./pythia.sh test_ci2
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Publish cov
       run: ./pythia.sh codecov_publish
@@ -195,29 +195,29 @@ jobs:
         ./pythia.sh deps
         ./pythia.sh build
 
+    - name: Tmate debug on failure
+      if: ${{ !cancelled() && runner.debug }}
+      uses: chevah/action-tmate@v3
+      with:
+        limit-access-to-actor: true
+
     # FIXME:691:
     # We should have just a single test step here to run all the tests in one
     # go.
     # Not sure why on Windows the normal tests are not discovered by default.
     - name: Test normal
       run: |
-        ./pythia.sh test normal
+        ./pythia.sh test_ci2 normal
       env:
         CODECOV_TOKEN: enabled
         USER: runneradmin
 
     - name: Test elevated
       run: |
-        ./pythia.sh test elevated
+        ./pythia.sh test_ci2 elevated
       env:
         CODECOV_TOKEN: enabled
         USER: runneradmin
-
-    - name: Tmate debug on failure
-      if: ${{ !cancelled() && runner.debug }}
-      uses: chevah/action-tmate@v3
-      with:
-        limit-access-to-actor: true
 
     - name: Public coverage
       if: ${{ !cancelled() }}
