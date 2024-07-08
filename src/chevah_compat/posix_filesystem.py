@@ -4,6 +4,7 @@
 Filesystem code used by all operating systems, including Windows as
 Windows has its layer of POSIX compatibility.
 """
+
 from contextlib import contextmanager
 from datetime import date
 import errno
@@ -24,7 +25,7 @@ from chevah_compat.exceptions import (
     ChangeUserException,
     CompatError,
     CompatException,
-    )
+)
 from chevah_compat.interfaces import IFileAttributes
 from chevah_compat.helpers import _, NoOpContext
 
@@ -50,7 +51,7 @@ class PosixFilesystemBase(object):
     OPEN_EXCLUSIVE = os.O_EXCL
     OPEN_TRUNCATE = os.O_TRUNC
 
-    INTERNAL_ENCODING = u'utf-8'
+    INTERNAL_ENCODING = 'utf-8'
 
     # Windows specific constants, placed here to help with unit testing
     # of Windows specific data.
@@ -96,9 +97,11 @@ class PosixFilesystemBase(object):
         except ChangeUserException:
             raise CompatError(
                 1006,
-                _(u'Could not switch process to local account "%s".' % (
-                    self._avatar.name)),
-                )
+                _(
+                    'Could not switch process to local account "%s".'
+                    % (self._avatar.name)
+                ),
+            )
 
     def _pathSplitRecursive(self, path):
         """
@@ -130,11 +133,10 @@ class PosixFilesystemBase(object):
 
     @property
     def home_segments(self):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
 
         if not self._avatar:
-            return self._pathSplitRecursive(
-                str(os.path.expanduser('~')))
+            return self._pathSplitRecursive(str(os.path.expanduser('~')))
 
         if self._avatar.root_folder_path is None:
             return self._pathSplitRecursive(self._avatar.home_folder_path)
@@ -147,13 +149,15 @@ class PosixFilesystemBase(object):
                 20019,
                 _(
                     'User home folder "%s" is not within the root folder '
-                    '"%s".' % (
+                    '"%s".'
+                    % (
                         self._avatar.home_folder_path,
-                        self._avatar.root_folder_path),
-                    ),
-                )
+                        self._avatar.root_folder_path,
+                    )
+                ),
+            )
 
-        path = self._avatar.home_folder_path[len(root_lower):]
+        path = self._avatar.home_folder_path[len(root_lower) :]
         return self._pathSplitRecursive(path)
 
     def getPath(self, segments):
@@ -161,10 +165,10 @@ class PosixFilesystemBase(object):
         See `ILocalFilesystem`.
         """
         if segments == []:
-            return u'/'
+            return '/'
 
-        normalized_path = posixpath.normpath(u'/'.join(segments))
-        return u'/' + u'/'.join(self._pathSplitRecursive(normalized_path))
+        normalized_path = posixpath.normpath('/'.join(segments))
+        return '/' + '/'.join(self._pathSplitRecursive(normalized_path))
 
     def getSegments(self, path):
         """
@@ -181,7 +185,7 @@ class PosixFilesystemBase(object):
 
         if not path.startswith('/'):
             # Resolve relative path.
-            home_path = u'/' + u'/'.join(self.home_segments) + u'/'
+            home_path = '/' + '/'.join(self.home_segments) + '/'
             path = home_path + path
 
         normalize_path = posixpath.normpath(path)
@@ -189,18 +193,20 @@ class PosixFilesystemBase(object):
 
     @property
     def temp_segments(self):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         if self.avatar.lock_in_home_folder:
             temporary_folder = os.path.join(
-                self.avatar.home_folder_path, '__chevah_test_temp__')
+                self.avatar.home_folder_path, '__chevah_test_temp__'
+            )
         else:
             # Go with general temporary directory.
             import tempfile
+
             temporary_folder = tempfile.gettempdir()
         return self.getSegmentsFromRealPath(temporary_folder)
 
     def getRealPathFromSegments(self, segments, include_virtual=True):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         raise NotImplementedError('You must implement this method.')
 
     def _areEqual(self, first, second):
@@ -211,6 +217,7 @@ class PosixFilesystemBase(object):
             return True
 
         from chevah_compat import process_capabilities
+
         if process_capabilities.os_name not in ['windows', 'osx']:
             # On Linux and Unix we do strict case.
             return False
@@ -239,7 +246,8 @@ class PosixFilesystemBase(object):
                 raise CompatError(
                     1005,
                     'Virtual path "%s" overlaps an existing file or '
-                    'folder at "%s".' % (virtual_path, inside_path,))
+                    'folder at "%s".' % (virtual_path, inside_path),
+                )
 
     def _getVirtualPathFromSegments(self, segments, include_virtual):
         """
@@ -253,32 +261,31 @@ class PosixFilesystemBase(object):
         for virtual_segments, real_path in self._avatar.virtual_folders:
             if segments_length < len(virtual_segments):
                 # Not the virtual folder of a descended of it.
-                if (
-                    not include_virtual and
-                    self._areEqual(
-                        segments, virtual_segments[:segments_length])
-                        ):
+                if not include_virtual and self._areEqual(
+                    segments, virtual_segments[:segments_length]
+                ):
                     # But this is a parent of a virtual segment and we
                     # don't allow that.
                     raise CompatError(
-                        1007, 'Modifying a virtual path is not allowed.')
+                        1007, 'Modifying a virtual path is not allowed.'
+                    )
 
                 continue
 
-            if (
-                not include_virtual and
-                self._areEqual(segments, virtual_segments)
-                    ):
+            if not include_virtual and self._areEqual(
+                segments, virtual_segments
+            ):
                 # This is a virtual root, but we don't allow it.
                 raise CompatError(
-                    1007, 'Modifying a virtual path is not allowed.')
+                    1007, 'Modifying a virtual path is not allowed.'
+                )
 
-            base_segments = segments[:len(virtual_segments)]
+            base_segments = segments[: len(virtual_segments)]
             if not self._areEqual(base_segments, virtual_segments):
                 # Base does not match
                 continue
 
-            tail_segments = segments[len(virtual_segments):]
+            tail_segments = segments[len(virtual_segments) :]
             return os.path.join(real_path, *tail_segments)
 
         # At this point we don't have a match for a virtual folder, but
@@ -321,7 +328,8 @@ class PosixFilesystemBase(object):
             partial_virtual = True
 
             if not self._areEqual(
-                    virtual_segments, segments[:len(virtual_segments)]):
+                virtual_segments, segments[: len(virtual_segments)]
+            ):
                 # This is not a mapping for this virtual path.
                 continue
 
@@ -342,7 +350,7 @@ class PosixFilesystemBase(object):
         return False
 
     def getSegmentsFromRealPath(self, path):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         raise NotImplementedError('You must implement this method.')
 
     def getAbsoluteRealPath(self, path):
@@ -372,7 +380,7 @@ class PosixFilesystemBase(object):
             return False
 
     def isFile(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         try:
             return self.getAttributes(segments).is_file
         except OSError:
@@ -385,7 +393,7 @@ class PosixFilesystemBase(object):
         raise NotImplementedError()
 
     def exists(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
 
         try:
             if self._isVirtualPath(segments):
@@ -404,7 +412,7 @@ class PosixFilesystemBase(object):
             return os.path.lexists(path_encoded)
 
     def createFolder(self, segments, recursive=False):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
@@ -423,6 +431,7 @@ class PosixFilesystemBase(object):
         """
         Remove whole directory tree.
         """
+
         def on_error(func, path, exception_info):
             """
             Error handler for ``shutil.rmtree``.
@@ -437,13 +446,13 @@ class PosixFilesystemBase(object):
                 raise
 
             if (
-                func in (os.rmdir, os.remove) and
-                exception_info[1].errno == errno.EACCES
-                    ):
+                func in (os.rmdir, os.remove)
+                and exception_info[1].errno == errno.EACCES
+            ):
                 os.chmod(
                     path,
                     stat.S_IWUSR | stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO,
-                    )
+                )
                 func(path)
             else:
                 raise
@@ -473,9 +482,9 @@ class PosixFilesystemBase(object):
                     # On Windows we might get an permissions error when
                     # file is ready-only.
                     if (
-                        process_capabilities.os_name == 'windows' and
-                        error.errno == errno.EACCES
-                            ):
+                        process_capabilities.os_name == 'windows'
+                        and error.errno == errno.EACCES
+                    ):
                         os.chmod(path_encoded, stat.S_IWRITE)
                         return os.unlink(path_encoded)
 
@@ -486,11 +495,13 @@ class PosixFilesystemBase(object):
                 raise
 
     def rename(self, from_segments, to_segments):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         from_path = self.getRealPathFromSegments(
-            from_segments, include_virtual=False)
+            from_segments, include_virtual=False
+        )
         to_path = self.getRealPathFromSegments(
-            to_segments, include_virtual=False)
+            to_segments, include_virtual=False
+        )
 
         from_path_encoded = self.getEncodedPath(from_path)
         to_path_encoded = self.getEncodedPath(to_path)
@@ -507,11 +518,7 @@ class PosixFilesystemBase(object):
         except EnvironmentError as error:
             if not error.filename:
                 error.filename = self.getEncodedPath(path)
-            raise OSError(
-                error.errno,
-                error.strerror,
-                error.filename,
-                )
+            raise OSError(error.errno, error.strerror, error.filename)
 
     def _requireFile(self, segments):
         """
@@ -519,14 +526,10 @@ class PosixFilesystemBase(object):
         """
         path = self.getRealPathFromSegments(segments)
         if self.isFolder(segments):
-            raise OSError(
-                errno.EISDIR,
-                'Is a directory: %s' % path,
-                path,
-                )
+            raise OSError(errno.EISDIR, 'Is a directory: %s' % path, path)
 
     def openFile(self, segments, flags, mode):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
 
@@ -535,16 +538,13 @@ class PosixFilesystemBase(object):
             return os.open(path_encoded, flags, mode)
 
     def openFileForReading(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
 
         self._requireFile(segments)
         with self._convertToOSError(path), self._impersonateUser():
-            fd = os.open(
-                path_encoded,
-                self.OPEN_READ_ONLY,
-                )
+            fd = os.open(path_encoded, self.OPEN_READ_ONLY)
             return os.fdopen(fd, 'rb')
 
     def openFileForWriting(self, segments, mode=_DEFAULT_FILE_MODE):
@@ -561,16 +561,19 @@ class PosixFilesystemBase(object):
         with self._convertToOSError(path), self._impersonateUser():
             fd = os.open(
                 path_encoded,
-                (self.OPEN_WRITE_ONLY | self.OPEN_CREATE |
-                    self.OPEN_TRUNCATE),
-                mode)
+                (self.OPEN_WRITE_ONLY | self.OPEN_CREATE | self.OPEN_TRUNCATE),
+                mode,
+            )
             return os.fdopen(fd, 'wb')
 
     def openFileForAppending(self, segments, mode=_DEFAULT_FILE_MODE):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
+
         def fail_on_read():
             raise AssertionError(
-                'File opened for appending. Read is not allowed.')
+                'File opened for appending. Read is not allowed.'
+            )
+
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
 
@@ -578,14 +581,14 @@ class PosixFilesystemBase(object):
         with self._convertToOSError(path), self._impersonateUser():
             fd = os.open(
                 path_encoded,
-                (self.OPEN_APPEND | self.OPEN_CREATE |
-                    self.OPEN_WRITE_ONLY),
-                mode)
+                (self.OPEN_APPEND | self.OPEN_CREATE | self.OPEN_WRITE_ONLY),
+                mode,
+            )
             new_file = os.fdopen(fd, 'ab')
             return new_file
 
     def getFileSize(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         if self._isVirtualPath(segments):
             # Virtual path are non-existent in real filesystem but we return
             # a value instead of file not found.
@@ -608,8 +611,7 @@ class PosixFilesystemBase(object):
                 # virtual folder.
                 continue
 
-            if not self._areEqual(
-                    virtual_segments[:segments_length], segments):
+            if not self._areEqual(virtual_segments[:segments_length], segments):
                 continue
 
             child_segments = virtual_segments[segments_length:]
@@ -618,9 +620,8 @@ class PosixFilesystemBase(object):
 
         # Reduce duplicates and convert to attributes..
         return [
-            self._getPlaceholderAttributes(segments + [m])
-            for m in set(result)
-            ]
+            self._getPlaceholderAttributes(segments + [m]) for m in set(result)
+        ]
 
     def getFolderContent(self, segments):
         """
@@ -684,8 +685,7 @@ class PosixFilesystemBase(object):
                 # virtual members.
                 return iter(virtual_members)
 
-            real_first_attributes = self._dirEntryToFileAttributes(
-                first_member)
+            real_first_attributes = self._dirEntryToFileAttributes(first_member)
             first_names = [m.name for m in firsts]
             if real_first_attributes.name not in first_names:
                 firsts.append(real_first_attributes)
@@ -774,7 +774,7 @@ class PosixFilesystemBase(object):
             uid=stats.st_uid,
             gid=stats.st_gid,
             node_id=inode,
-            )
+        )
 
     def _decodeFilename(self, name):
         """
@@ -784,6 +784,7 @@ class PosixFilesystemBase(object):
         """
         # This is done to allow lazy initialization of process_capabilities.
         from chevah_compat import process_capabilities
+
         if not isinstance(name, str):
             name = name.decode(self.INTERNAL_ENCODING)
 
@@ -830,24 +831,14 @@ class PosixFilesystemBase(object):
             uid=stats.st_uid,
             gid=stats.st_gid,
             node_id=stats.st_ino,
-            )
+        )
 
     def _getPlaceholderAttributes(self, segments):
         """
         Return the attributes which can be used for the case when a real
         attribute don't exists for `segments`.
         """
-        modified = time.mktime((
-            date.today().year,
-            1,
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            -1,
-            ))
+        modified = time.mktime((date.today().year, 1, 1, 0, 0, 0, 0, 0, -1))
         return FileAttributes(
             name=segments[-1],
             path=self.getRealPathFromSegments(segments),
@@ -861,29 +852,18 @@ class PosixFilesystemBase(object):
             uid=1,
             gid=1,
             node_id=None,
-            )
+        )
 
     def _getPlaceholderStatus(self):
         """
         Return a placeholder status result.
         """
-        modified = time.mktime((
-            date.today().year,
-            1,
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            -1,
-            ))
+        modified = time.mktime((date.today().year, 1, 1, 0, 0, 0, 0, 0, -1))
 
-        return os.stat_result([
-            0o40555, 0, 0, 0, 1, 1, 0, 1, modified, 0])
+        return os.stat_result([0o40555, 0, 0, 0, 1, 1, 0, 1, modified, 0])
 
     def setAttributes(self, segments, attributes):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
@@ -893,7 +873,8 @@ class PosixFilesystemBase(object):
                 os.chmod(path_encoded, attributes['mode'])
             if 'atime' in attributes and 'mtime' in attributes:
                 os.utime(
-                    path_encoded, (attributes['atime'], attributes['mtime']))
+                    path_encoded, (attributes['atime'], attributes['mtime'])
+                )
 
     def touch(self, segments):
         """
@@ -914,44 +895,47 @@ class PosixFilesystemBase(object):
             destination_segments.append(source_segments[-1])
 
         destination_path = self.getRealPathFromSegments(
-            destination_segments, include_virtual=False)
+            destination_segments, include_virtual=False
+        )
         destination_path_encoded = self.getEncodedPath(destination_path)
 
         if not overwrite and self.exists(destination_segments):
             raise OSError(
-                errno.EEXIST, 'Destination exists', destination_path_encoded)
+                errno.EEXIST, 'Destination exists', destination_path_encoded
+            )
 
         source_path = self.getRealPathFromSegments(
-            source_segments, include_virtual=False)
+            source_segments, include_virtual=False
+        )
         source_path_encoded = self.getEncodedPath(source_path)
 
         with self._impersonateUser():
-            shutil.copyfile(
-                source_path_encoded, destination_path_encoded)
+            shutil.copyfile(source_path_encoded, destination_path_encoded)
 
     def setGroup(self, segments, group, permissions=None):
-        '''Informational method for not using setGroup.'''
-        raise AssertionError(u'Use addGroup for setting a group.')
+        """Informational method for not using setGroup."""
+        raise AssertionError('Use addGroup for setting a group.')
 
-    def raiseFailedToAddGroup(self, group, path, message=u''):
+    def raiseFailedToAddGroup(self, group, path, message=''):
         """
         Helper for raising the exception from a single place.
         """
         raise CompatError(
             1017,
-            _(u'Failed to add group "%s" for "%s". %s' % (
-                group, path, message)),
-            )
+            _('Failed to add group "%s" for "%s". %s' % (group, path, message)),
+        )
 
-    def raiseFailedToSetOwner(self, owner, path, message=u''):
+    def raiseFailedToSetOwner(self, owner, path, message=''):
         """
         Helper for raising the exception from a single place.
         """
         raise CompatError(
             1016,
-            _(u'Failed to set owner to "%s" for "%s". %s' % (
-                owner, path, message)),
-            )
+            _(
+                'Failed to set owner to "%s" for "%s". %s'
+                % (owner, path, message)
+            ),
+        )
 
     def _checkChildPath(self, root, child):
         """
@@ -962,8 +946,9 @@ class PosixFilesystemBase(object):
 
         if not child_strip.startswith(root_strip):
             raise CompatError(
-                1018, u'Path "%s" is outside of locked folder "%s"' % (
-                    child, root))
+                1018,
+                'Path "%s" is outside of locked folder "%s"' % (child, root),
+            )
 
     def _parseReparseData(self, raw_reparse_data):
         """
@@ -1025,8 +1010,8 @@ class PosixFilesystemBase(object):
                 ('print_name_offset', SIZE_USHORT),
                 ('print_name_length', SIZE_USHORT),
                 ('flags', SIZE_ULONG),
-                ],
-            }
+            ]
+        }
 
         if len(raw_reparse_data) < HEADER_SIZE:
             raise CompatException('Reparse buffer to small.')
@@ -1034,8 +1019,7 @@ class PosixFilesystemBase(object):
         result = {}
         # Parse header.
         result['tag'] = struct.unpack('<L', raw_reparse_data[:4])[0]
-        result['length'] = struct.unpack(
-            '<H', raw_reparse_data[4:6])[0]
+        result['length'] = struct.unpack('<H', raw_reparse_data[4:6])[0]
         # Reserved header member is ignored.
         tail = raw_reparse_data[8:]
 
@@ -1065,20 +1049,17 @@ class PosixFilesystemBase(object):
         Return a diction with 'name' and 'target' for `symbolic_link_data` as
         Unicode strings.
         """
-        result = {
-            'name': None,
-            'target': None,
-            }
+        result = {'name': None, 'target': None}
 
         offset = symbolic_link_data['print_name_offset']
         ending = offset + symbolic_link_data['print_name_length']
-        result['name'] = (
-            symbolic_link_data['data'][offset:ending].decode('utf-16'))
+        result['name'] = symbolic_link_data['data'][offset:ending].decode(
+            'utf-16'
+        )
 
         offset = symbolic_link_data['substitute_name_offset']
         ending = offset + symbolic_link_data['substitute_name_length']
-        target_path = (
-            symbolic_link_data['data'][offset:ending].decode('utf-16'))
+        target_path = symbolic_link_data['data'][offset:ending].decode('utf-16')
 
         # Have no idea why we get this marker, but we convert it to
         # long UNC.
@@ -1096,14 +1077,22 @@ class FileAttributes(object):
     """
 
     def __init__(
-            self, name, path, size=0,
-            is_file=False, is_folder=False, is_link=False,
-            modified=0,
-            mode=0, hardlinks=1,
-            uid=None, gid=None,
-            owner=None, group=None,
-            node_id=None,
-            ):
+        self,
+        name,
+        path,
+        size=0,
+        is_file=False,
+        is_folder=False,
+        is_link=False,
+        modified=0,
+        mode=0,
+        hardlinks=1,
+        uid=None,
+        gid=None,
+        owner=None,
+        group=None,
+        node_id=None,
+    ):
         self.name = name
         self.path = path
         self.size = size
@@ -1121,34 +1110,36 @@ class FileAttributes(object):
         self.group = group
 
     def __hash__(self):
-        return hash((
-            self.name,
-            self.path,
-            self.size,
-            self.is_folder,
-            self.is_file,
-            self.is_link,
-            self.modified,
-            self.mode,
-            self.hardlinks,
-            self.uid,
-            self.gid,
-            self.node_id,
-            self.owner,
-            self.group,
-            ))
+        return hash(
+            (
+                self.name,
+                self.path,
+                self.size,
+                self.is_folder,
+                self.is_file,
+                self.is_link,
+                self.modified,
+                self.mode,
+                self.hardlinks,
+                self.uid,
+                self.gid,
+                self.node_id,
+                self.owner,
+                self.group,
+            )
+        )
 
     def __eq__(self, other):
         return (
-            isinstance(other, self.__class__) and
-            self.__dict__ == other.__dict__
-            )
+            isinstance(other, self.__class__)
+            and self.__dict__ == other.__dict__
+        )
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return u"%s:%s:%s" % (self.__class__, id(self), self.__dict__)
+        return '%s:%s:%s' % (self.__class__, id(self), self.__dict__)
 
 
 def _win_getEncodedPath(path):

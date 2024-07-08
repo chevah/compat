@@ -3,6 +3,7 @@
 """
 Filesystem helpers for tests.
 """
+
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
@@ -27,8 +28,11 @@ class LocalTestFilesystem(LocalFilesystem):
         Create an unique temp folder.
         """
         super(LocalTestFilesystem, self).__init__(avatar=avatar)
-        self._temp_uuid = u'%s%s%s' % (
-            'long-name-' * 25, uuid.uuid4(), TEST_NAME_MARKER)
+        self._temp_uuid = '%s%s%s' % (
+            'long-name-' * 25,
+            uuid.uuid4(),
+            TEST_NAME_MARKER,
+        )
         # Make sure we keep the directory below 255.
         # This is the limit for a single filename in Windows and ext4.
         # Any file created inside will have a longer path.
@@ -63,8 +67,9 @@ class LocalTestFilesystem(LocalFilesystem):
 
         if remaining_folders:
             raise AssertionError(
-                'Not all temporary folders were cleaned: %s' % (
-                    remaining_folders))
+                'Not all temporary folders were cleaned: %s'
+                % (remaining_folders)
+            )
 
     def setUpTemporaryFolder(self):
         """
@@ -72,8 +77,9 @@ class LocalTestFilesystem(LocalFilesystem):
         """
         if self.exists(self.temp_segments):
             self.deleteFolder(self.temp_segments, recursive=True)
-            raise AssertionError('Temporary folder already exists at: %s' % (
-                self.temp_segments))
+            raise AssertionError(
+                'Temporary folder already exists at: %s' % (self.temp_segments)
+            )
 
         self.createFolder(self.temp_segments)
 
@@ -101,12 +107,12 @@ class LocalTestFilesystem(LocalFilesystem):
         return self.getRealPathFromSegments(segments)
 
     def createFile(
-        self, segments, length=0, access_time=None, content=None, mode=0o666,
-            ):
-        '''Creates a file.
+        self, segments, length=0, access_time=None, content=None, mode=0o666
+    ):
+        """Creates a file.
 
         Raise AssertionError if file already exists or it can not be created.
-        '''
+        """
         if isinstance(content, six.text_type):
             content = content.encode('utf-8')
         assert not self.isFile(segments), 'File already exists.'
@@ -114,8 +120,7 @@ class LocalTestFilesystem(LocalFilesystem):
         if content is None:
             value = b'a'
             if length > 0:
-                assert length > 10, (
-                    'Data length must be greater than 10.')
+                assert length > 10, 'Data length must be greater than 10.'
                 length = length - 3
                 buffer_size = 1024 * 1024
                 new_file.write(b'\r\n')
@@ -131,8 +136,7 @@ class LocalTestFilesystem(LocalFilesystem):
         new_file.close()
         assert self.isFile(segments), 'Could not create file'
 
-    def createFileInTemp(self, content=None, prefix=u'', suffix=u'',
-                         length=0):
+    def createFileInTemp(self, content=None, prefix='', suffix='', length=0):
         """
         Create a file in the temporary folder.
 
@@ -153,16 +157,17 @@ class LocalTestFilesystem(LocalFilesystem):
         opened_file.write(content.encode('utf-8'))
         opened_file.close()
 
-    def _makeFilename(self, prefix=u'', suffix=u''):
+    def _makeFilename(self, prefix='', suffix=''):
         """
         Return a testing filename.
         """
         # It's required to use a delayed import in order to avoid a
         # circular import reference as factory uses filesystem.
         from chevah_compat.testing import mk
+
         return mk.makeFilename(prefix=prefix, suffix=suffix)
 
-    def makePathInTemp(self, prefix=u'', suffix=u''):
+    def makePathInTemp(self, prefix='', suffix=''):
         """
         Return a (path, segments) that can be created in the temporary folder.
         """
@@ -172,11 +177,12 @@ class LocalTestFilesystem(LocalFilesystem):
         path = os.path.join(self.temp_path, name)
         return (path, segments)
 
-    def pathInTemp(self, cleanup, prefix=u'', suffix=u''):
+    def pathInTemp(self, cleanup, prefix='', suffix=''):
         """
         Return a path and segments pointing to a temp location, which will be
         cleaned up.
         """
+
         def delete(segments):
             if self.isFolder(segments):
                 self.deleteFolder(segments, recursive=True)
@@ -211,7 +217,7 @@ class LocalTestFilesystem(LocalFilesystem):
         cleanup(self.deleteFile, segments)
         return segments
 
-    def createFolderInTemp(self, foldername=None, prefix=u'', suffix=u''):
+    def createFolderInTemp(self, foldername=None, prefix='', suffix=''):
         """
         Create a folder in the temporary folder.
 
@@ -228,7 +234,7 @@ class LocalTestFilesystem(LocalFilesystem):
         return temp_segments
 
     def createFileInHome(self, segments=None, **args):
-        '''Create a file in home folder.'''
+        """Create a file in home folder."""
         if segments is None:
             segments = [six.text_type(uuid.uuid1()) + TEST_NAME_MARKER]
 
@@ -238,7 +244,7 @@ class LocalTestFilesystem(LocalFilesystem):
         return file_segments
 
     def createFolderInHome(self, segments, **args):
-        '''Create a folder in home folder.'''
+        """Create a folder in home folder."""
         folder_segments = self.home_segments[:]
         folder_segments.extend(segments)
         self.createFolder(folder_segments, *args)
@@ -260,11 +266,11 @@ class LocalTestFilesystem(LocalFilesystem):
             if os.name == 'posix':
                 # On Unix it is allowed to clean folder only in these
                 # folders.
-                if (not (
-                        path.startswith('/srv') or
-                        path.startswith('/home') or
-                        path.startswith('/tmp'),
-                        )):
+                if not (
+                    path.startswith('/srv')
+                    or path.startswith('/home')
+                    or path.startswith('/tmp'),
+                ):
                     return False
             if os.name == 'nt':
                 if path == 'c:\\':
@@ -280,7 +286,7 @@ class LocalTestFilesystem(LocalFilesystem):
             return True
 
         if not have_safe_path(path):
-            message = u'Cleaning the folder "%s" is not allowed.' % path
+            message = 'Cleaning the folder "%s" is not allowed.' % path
             raise AssertionError(message.encode('utf-8'))
 
         folder_members = self.getFolderContent(segments)
@@ -304,13 +310,14 @@ class LocalTestFilesystem(LocalFilesystem):
         """
         if not self._avatar:
             raise AssertionError(
-                'Not cleaning home folder for a Filesystem with no avatar.')
+                'Not cleaning home folder for a Filesystem with no avatar.'
+            )
 
         segments = self.home_segments
         return self.cleanFolder(segments=segments)
 
     def getFileSizeInHome(self, segments):
-        '''Get file size relative to home folder.'''
+        """Get file size relative to home folder."""
         file_segments = self.home_segments[:]
         file_segments.extend(segments)
         return self.getFileSize(file_segments)
@@ -324,19 +331,19 @@ class LocalTestFilesystem(LocalFilesystem):
         return self.getFileSize(file_segments)
 
     def isFileInHome(self, segments):
-        '''Get isFile relative to home folder.'''
+        """Get isFile relative to home folder."""
         file_segments = self.home_segments[:]
         file_segments.extend(segments)
         return self.isFile(file_segments)
 
     def isFolderInHome(self, segments):
-        '''Get isFolder relative to home folder.'''
+        """Get isFolder relative to home folder."""
         file_segments = self.home_segments[:]
         file_segments.extend(segments)
         return self.isFolder(file_segments)
 
     def existsInHome(self, segments):
-        '''Get exists relative to home folder.'''
+        """Get exists relative to home folder."""
         file_segments = self.home_segments[:]
         file_segments.extend(segments)
         return self.exists(file_segments)
@@ -373,7 +380,8 @@ class LocalTestFilesystem(LocalFilesystem):
                 new_line = re.sub(
                     pattern.encode('utf-8'),
                     substitution.encode('utf-8'),
-                    new_line)
+                    new_line,
+                )
             altered_lines.append(new_line)
         opened_file.close()
 

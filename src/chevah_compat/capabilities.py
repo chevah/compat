@@ -3,6 +3,7 @@
 """
 Common code for capabilities on all systems.
 """
+
 import os
 import platform
 import sys

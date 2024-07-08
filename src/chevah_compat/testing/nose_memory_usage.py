@@ -1,6 +1,7 @@
 """
 This plugin provides memory usage .
 """
+
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
@@ -29,6 +30,7 @@ class MemoryUsage(Plugin):
         Method to prevent circular import.
         """
         from chevah_compat.testing import ChevahTestCase  # pragma: no cover
+
         return ChevahTestCase.getPeakMemoryUsage()  # pragma: no cover
 
     def configure(self, options, config):
@@ -52,9 +54,8 @@ class MemoryUsage(Plugin):
             return
 
         sorted_usage = sorted(
-            iter(self._memory_usage.items()),
-            key=operator.itemgetter(1),
-            )
+            iter(self._memory_usage.items()), key=operator.itemgetter(1)
+        )
 
         stream.writeln('-' * 70)
         stream.writeln('Memory usage top %s report:\n' % (TOP_COUNT))
@@ -69,9 +70,9 @@ class MemoryUsage(Plugin):
 
         for index in range(tests_count - 1, test_start - 1, -1):
             test_id, memory_usage = sorted_usage[index]
-            stream.writeln("%0.4f: %s" % (memory_usage, test_id))
+            stream.writeln('%0.4f: %s' % (memory_usage, test_id))
 
-        stream.writeln("\nMax RSS: %s" % self.getPeakMemoryUsage())
+        stream.writeln('\nMax RSS: %s' % self.getPeakMemoryUsage())
 
 
 if __name__ == '__main__':

@@ -3,13 +3,13 @@
 """
 Unit tests for simple the simplest avatar.
 """
+
 from chevah_compat.avatar import FilesystemAvatar
 from chevah_compat.interfaces import IFileSystemAvatar
 from chevah_compat.testing import ChevahTestCase, mk
 
 
 class TestFilesystemAvatar(ChevahTestCase):
-
     def test_init_no_arguments(self):
         """
         An error is raised if initialized without arguments.
@@ -32,18 +32,17 @@ class TestFilesystemAvatar(ChevahTestCase):
         """
         with self.assertRaises(RuntimeError):
             FilesystemAvatar(
-                name=u'something',
-                home_folder_path=u'good-path',
+                name='something',
+                home_folder_path='good-path',
                 root_folder_path=b'data',
-                )
+            )
 
     def test_init(self):
         """
         Avatar can be initialized with credentials and home_folder_path.
         """
         name = mk.getUniqueString()
-        avatar = FilesystemAvatar(
-            name=name, home_folder_path=mk.fs.temp_path)
+        avatar = FilesystemAvatar(name=name, home_folder_path=mk.fs.temp_path)
 
         with self.assertRaises(NotImplementedError):
             avatar.use_impersonation
@@ -60,20 +59,20 @@ class TestFilesystemAvatar(ChevahTestCase):
         """
         avatar = FilesystemAvatar(
             name=mk.getUniqueString(),
-            home_folder_path=u'some-path',
-            root_folder_path=u'other-path',
-            token=u'the-token',
+            home_folder_path='some-path',
+            root_folder_path='other-path',
+            token='the-token',
             virtual_folders=(
                 (['base', 'segment'], '/some/real/path'),
                 (['other', 'segment'], 'c:\\other\\path'),
-                )
-            )
+            ),
+        )
 
-        self.assertEqual(u'other-path', avatar.root_folder_path)
+        self.assertEqual('other-path', avatar.root_folder_path)
         with self.assertRaises(AttributeError):
             avatar.root_folder_path = 'something'
 
-        self.assertEqual(u'the-token', avatar.token)
+        self.assertEqual('the-token', avatar.token)
         with self.assertRaises(AttributeError):
             avatar.token = 'something'
 
@@ -81,9 +80,9 @@ class TestFilesystemAvatar(ChevahTestCase):
             (
                 (['base', 'segment'], '/some/real/path'),
                 (['other', 'segment'], 'c:\\other\\path'),
-                ),
+            ),
             avatar.virtual_folders,
-            )
+        )
         with self.assertRaises(AttributeError):
             avatar.virtual_folders = 'something'
 

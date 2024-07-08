@@ -3,6 +3,7 @@
 """
 Adapter for working with NT users.
 """
+
 from win32com.shell import shell, shellcon
 from zope.interface import implementer
 import pywintypes
@@ -12,28 +13,28 @@ import win32profile
 import win32security
 
 from chevah_compat.compat_users import CompatUsers
-from chevah_compat.constants import (
-    CSIDL_FLAG_CREATE,
-    WINDOWS_PRIMARY_GROUP,
-    )
-from chevah_compat.exceptions import (
-    ChangeUserException,
-    )
+from chevah_compat.constants import CSIDL_FLAG_CREATE, WINDOWS_PRIMARY_GROUP
+from chevah_compat.exceptions import ChangeUserException
 from chevah_compat.helpers import NoOpContext
 from chevah_compat.interfaces import (
     IFileSystemAvatar,
     IHasImpersonatedAvatar,
     IOSUsers,
-    )
-from chevah_compat.winerrors import (
-    ERROR_NONE_MAPPED,
-    )
+)
+from chevah_compat.winerrors import ERROR_NONE_MAPPED
+
 # We can not import chevah_compat.process_capabilities as it would
 # create a circular import.
 from chevah_compat.nt_capabilities import NTProcessCapabilities
 
 from ctypes import (
-    windll, c_wchar_p, c_uint, POINTER, byref, create_unicode_buffer)
+    windll,
+    c_wchar_p,
+    c_uint,
+    POINTER,
+    byref,
+    create_unicode_buffer,
+)
 
 advapi32 = windll.advapi32
 GetUserNameW = advapi32.GetUserNameW
@@ -73,26 +74,30 @@ class NTUsers(CompatUsers):
         # insufficient capabilities.
         if not process_capabilities.get_home_folder:
             message = (
-                u'Operating system does not support getting home folder '
-                u'for account "%s".' % username)
+                'Operating system does not support getting home folder '
+                'for account "%s".' % username
+            )
             self.raiseFailedToGetHomeFolder(username, message)
 
         try:
             if token is None:
                 if username != self.getCurrentUserName():
                     self.raiseFailedToGetHomeFolder(
-                        username, u'Invalid username/token combination.')
+                        username, 'Invalid username/token combination.'
+                    )
                 return self._getHomeFolderPath()
             else:
                 return self._getHomeFolder(username, token)
         except MissingProfileFolderException:
             self.raiseFailedToGetHomeFolder(
-                username, u'Failed to get home folder path.')
+                username, 'Failed to get home folder path.'
+            )
 
     def _getHomeFolder(self, username, token):
         """
         Return home folder for specified `username` and `token`.
         """
+
         def _safe_get_home_path():
             try:
                 with self.executeAsUser(username, token):
@@ -126,11 +131,8 @@ class NTUsers(CompatUsers):
             # Force creation of user profile folder if not already
             # existing.
             path = shell.SHGetFolderPath(
-                0,
-                shellcon.CSIDL_PROFILE | CSIDL_FLAG_CREATE,
-                token,
-                0,
-                )
+                0, shellcon.CSIDL_PROFILE | CSIDL_FLAG_CREATE, token, 0
+            )
             return path
         except pythoncom.com_error:
             raise MissingProfileFolderException()
@@ -143,7 +145,8 @@ class NTUsers(CompatUsers):
             primary_domain_controller, name = self._parseUPN(username)
 
             user_info_4 = win32net.NetUserGetInfo(
-                primary_domain_controller, name, 4)
+                primary_domain_controller, name, 4
+            )
 
             profile_path = user_info_4['profile']
             # LoadUserProfile doesn't like an empty string.
@@ -155,17 +158,18 @@ class NTUsers(CompatUsers):
                 'ServerName': primary_domain_controller,
                 'Flags': 0,
                 'ProfilePath': profile_path,
-                }
+            }
 
             profile = win32profile.LoadUserProfile(token, profile_info)
             win32profile.UnloadUserProfile(token, profile)
         except (win32security.error, pywintypes.error) as error:
             (error_id, error_call, error_message) = error.args
             error_text = (
-                u'Failed to create user profile. '
-                u'Make sure you have SeBackupPrivilege and '
-                u'SeRestorePrivilege. (%d: %s - %s)' % (
-                    error_id, error_call, error_message))
+                'Failed to create user profile. '
+                'Make sure you have SeBackupPrivilege and '
+                'SeRestorePrivilege. (%d: %s - %s)'
+                % (error_id, error_call, error_message)
+            )
             self.raiseFailedToGetHomeFolder(username, error_text)
 
     def userExists(self, username):
@@ -184,7 +188,7 @@ class NTUsers(CompatUsers):
             (number, name, message) = error.args
             if number == ERROR_NONE_MAPPED:
                 return False
-            error_text = u'[%s] %s %s' % (number, name, message)
+            error_text = '[%s] %s %s' % (number, name, message)
             self.raiseFailedtoCheckUserExists(username, error_text)
 
     def getGroupForUser(self, username, groups, token):
@@ -192,7 +196,7 @@ class NTUsers(CompatUsers):
         See: IOSUsers
         """
         if not groups:
-            raise ValueError('Groups for validation can\'t be empty.')
+            raise ValueError("Groups for validation can't be empty.")
 
         primary_domain_controller, name = self._parseUPN(username)
 
@@ -200,7 +204,9 @@ class NTUsers(CompatUsers):
             try:
                 group_sid, group_domain, group_type = (
                     win32security.LookupAccountName(
-                        primary_domain_controller, group))
+                        primary_domain_controller, group
+                    )
+                )
             except (win32security.error, pywintypes.error):
                 continue
             if win32security.CheckTokenMembership(token, group_sid):
@@ -248,7 +254,8 @@ class NTUsers(CompatUsers):
 
         if token is None:
             raise ChangeUserException(
-                u'executeAsUser: A valid token is required.')
+                'executeAsUser: A valid token is required.'
+            )
 
         return _ExecuteAsUser(token)
 
@@ -291,7 +298,7 @@ class NTUsers(CompatUsers):
             password,
             win32security.LOGON32_LOGON_NETWORK,
             win32security.LOGON32_PROVIDER_DEFAULT,
-            )
+        )
 
 
 class _ExecuteAsUser(object):
@@ -324,7 +331,6 @@ class _ExecuteAsUser(object):
 
 @implementer(IHasImpersonatedAvatar)
 class NTHasImpersonatedAvatar(object):
-
     @property
     def use_impersonation(self):
         """
@@ -364,8 +370,9 @@ class NTDefaultAvatar(NTHasImpersonatedAvatar):
     It has full access to the filesystem.
     It does not uses impersonation.
     """
-    root_folder_path = u'c:\\'
-    home_folder_path = u'c:\\'
+
+    root_folder_path = 'c:\\'
+    home_folder_path = 'c:\\'
     lock_in_home_folder = False
     token = None
     peer = None

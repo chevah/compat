@@ -3,6 +3,7 @@
 """
 An account as used by Chevah services.
 """
+
 from zope.interface import implementer
 
 from chevah_compat import HasImpersonatedAvatar
@@ -11,15 +12,19 @@ from chevah_compat.interfaces import IFileSystemAvatar
 
 @implementer(IFileSystemAvatar)
 class FilesystemAvatar(HasImpersonatedAvatar):
-    '''
+    """
     See `IFileSystemAvatar`.
-    '''
+    """
 
     def __init__(
-        self, name, home_folder_path, root_folder_path=None,
-        lock_in_home_folder=True, token=None,
+        self,
+        name,
+        home_folder_path,
+        root_folder_path=None,
+        lock_in_home_folder=True,
+        token=None,
         virtual_folders=(),
-            ):
+    ):
         self._name = name
         self._home_folder_path = home_folder_path
         self._root_folder_path = root_folder_path
@@ -66,7 +71,7 @@ class FilesystemAvatar(HasImpersonatedAvatar):
 
     @property
     def name(self):
-        '''Return avatar's name.'''
+        """Return avatar's name."""
         return self._name
 
     @property

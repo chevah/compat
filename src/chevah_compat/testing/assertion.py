@@ -3,6 +3,7 @@
 """
 Assertion helpers for compat testing.
 """
+
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
@@ -30,6 +31,7 @@ class Contains(object):
     """
     Marker class used in tests when something needs to contain a value.
     """
+
     def __init__(self, *value):
         self._values = value
 
@@ -60,8 +62,7 @@ class AssertionMixin(object):
         """
         members = cls.cleanTemporaryFolder()
         if members:
-            message = u'Temporary folder is not clean. %s' % (
-                u', '.join(members))
+            message = 'Temporary folder is not clean. %s' % (', '.join(members))
             raise AssertionError(message)
 
     @classmethod
@@ -72,8 +73,7 @@ class AssertionMixin(object):
         """
         members = cls.cleanWorkingFolder()
         if members:
-            message = u'Working folder is not clean. %s' % (
-                u', '.join(members))
+            message = 'Working folder is not clean. %s' % (', '.join(members))
             raise AssertionError(message)
 
     def assertIteratorItemsEqual(self, expected, actual):
@@ -100,14 +100,17 @@ class AssertionMixin(object):
         """
         if not isinstance(actual_error, CompatError):
             values = (actual_error, type(actual_error))
-            message = u'Error %s not CompatError but %s' % values
+            message = 'Error %s not CompatError but %s' % values
             raise AssertionError(message)
 
         actual_id = getattr(actual_error, 'event_id', None)
         if expected_id != actual_id:
             values = (
-                actual_error, text_type(expected_id), text_type(actual_id))
-            message = u'Error id for %s is not %s, but %s.' % values
+                actual_error,
+                text_type(expected_id),
+                text_type(actual_id),
+            )
+            message = 'Error id for %s is not %s, but %s.' % values
             raise AssertionError(message)
 
     def assertIsFalse(self, value):
@@ -125,7 +128,7 @@ class AssertionMixin(object):
             raise AssertionError('%s is not True.' % text_type(value))
 
     def assertFailureType(self, failure_class, failure_or_deferred):
-        '''Raise assertion error if failure is not of required type.'''
+        """Raise assertion error if failure is not of required type."""
         if isinstance(failure_or_deferred, Failure):
             failure = failure_or_deferred
         else:
@@ -133,8 +136,10 @@ class AssertionMixin(object):
             failure = failure_or_deferred.result
 
         if failure.type is not failure_class:  # noqa:cover
-            message = u'Failure %s is not of type %s' % (
-                text_type(failure), failure_class)
+            message = 'Failure %s is not of type %s' % (
+                text_type(failure),
+                failure_class,
+            )
             raise AssertionError(message)
 
     def assertIsEmpty(self, target):
@@ -148,12 +153,12 @@ class AssertionMixin(object):
             except StopIteration:
                 pass
             else:
-                message = u'Iterable is not empty.\n%s.' % (repr(target),)
+                message = 'Iterable is not empty.\n%s.' % (repr(target),)
                 raise AssertionError(message)
             return
 
         if len(target) != 0:
-            message = u'Value is not empty.\n%s.' % (target,)
+            message = 'Value is not empty.\n%s.' % (target,)
             raise AssertionError(message)
 
     def assertIsNotEmpty(self, target):
@@ -166,7 +171,7 @@ class AssertionMixin(object):
             except AssertionError:
                 pass
             else:
-                message = u'Iterable is empty.\n%s.' % target
+                message = 'Iterable is empty.\n%s.' % target
                 raise AssertionError(message)
             return
 
@@ -178,8 +183,7 @@ class AssertionMixin(object):
         Raise AssertionError if source does not contain `token`.
         """
         if token not in source:
-            message = u'%s does not contains %s.' % (
-                repr(source), repr(token))
+            message = '%s does not contains %s.' % (repr(source), repr(token))
             raise AssertionError(message)
 
     def assertNotContains(self, token, source):
@@ -187,7 +191,7 @@ class AssertionMixin(object):
         Raise AssertionError if source does contain `token`.
         """
         if token in source:
-            message = u'%s contains %s.' % (repr(source), repr(token))
+            message = '%s contains %s.' % (repr(source), repr(token))
             raise AssertionError(message)
 
     def assertTextContains(self, pattern, source):
@@ -195,8 +199,7 @@ class AssertionMixin(object):
         Raise AssertionError if pattern is not found in source.
         """
         if pattern not in pattern:
-            message = u'%s not contained in\n%s.' % (
-                repr(pattern), repr(source))
+            message = '%s not contained in\n%s.' % (repr(pattern), repr(source))
             raise AssertionError(message)
 
     def assertStartsWith(self, start, source):
@@ -204,8 +207,7 @@ class AssertionMixin(object):
         Raise AssertionError if `source` does not starts with `start`.
         """
         if not source.startswith(start):
-            message = u'%s does not starts with %s' % (
-                repr(source), repr(start))
+            message = '%s does not starts with %s' % (repr(source), repr(start))
             raise AssertionError(message)
 
     def assertEndsWith(self, end, source):
@@ -213,25 +215,27 @@ class AssertionMixin(object):
         Raise AssertionError if `source` does not ends with `end`.
         """
         if not source.endswith(end):
-            message = u'%s does not end with %s' % (repr(source), repr(end))
+            message = '%s does not end with %s' % (repr(source), repr(end))
             raise AssertionError(message)
 
     def assertProvides(self, interface, obj):
         self.assertTrue(
             interface.providedBy(obj),
-            'Object %s does not provided interface %s.' % (obj, interface))
+            'Object %s does not provided interface %s.' % (obj, interface),
+        )
         verifyObject(interface, obj)
 
     def assertNotProvides(self, interface, obj):
         self.assertFalse(
             interface.providedBy(obj),
-            'Object %s does not provided interface %s.' % (obj, interface))
+            'Object %s does not provided interface %s.' % (obj, interface),
+        )
 
     def assertImplements(self, interface, klass):
         self.assertTrue(
             interface.implementedBy(klass),
-            u'Class %s does not implements interface %s.' % (
-                klass, interface))
+            'Class %s does not implements interface %s.' % (klass, interface),
+        )
 
     @contextmanager
     def assertExecutionTime(self, seconds):
@@ -242,5 +246,7 @@ class AssertionMixin(object):
         yield
         duration = time.time() - start
         self.assertLess(
-            duration, seconds, 'Took %s. Expecting less than %s' % (
-                duration, seconds,))
+            duration,
+            seconds,
+            'Took %s. Expecting less than %s' % (duration, seconds),
+        )

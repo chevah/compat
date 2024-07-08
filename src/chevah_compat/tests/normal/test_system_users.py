@@ -3,13 +3,10 @@
 """
 Test system users portable code.
 """
+
 import os
 
-from chevah_compat import (
-    DefaultAvatar,
-    system_users,
-    SuperAvatar,
-    )
+from chevah_compat import DefaultAvatar, system_users, SuperAvatar
 from chevah_compat.interfaces import IFileSystemAvatar, IOSUsers
 from chevah_compat.testing import (
     CompatTestCase,
@@ -17,7 +14,7 @@ from chevah_compat.testing import (
     mk,
     TEST_DOMAIN,
     TEST_PDC,
-    )
+)
 
 
 class TestSystemUsers(CompatTestCase):
@@ -36,16 +33,15 @@ class TestSystemUsers(CompatTestCase):
         """
         Check getHomeFolder on Linux and Unix.
         """
-        home_folder = system_users.getHomeFolder(
-            username=mk.username)
+        home_folder = system_users.getHomeFolder(username=mk.username)
 
         # For buildslave, home folder is in srv.
         if mk.username == 'buildslave':
-            self.assertEqual(u'/srv/' + mk.username, home_folder)
+            self.assertEqual('/srv/' + mk.username, home_folder)
         elif self.os_name == 'osx':
-            self.assertEqual(u'/Users/' + mk.username, home_folder)
+            self.assertEqual('/Users/' + mk.username, home_folder)
         else:
-            self.assertEqual(u'/home/' + mk.username, home_folder)
+            self.assertEqual('/home/' + mk.username, home_folder)
 
         self.assertIsInstance(str, home_folder)
 
@@ -55,18 +51,16 @@ class TestSystemUsers(CompatTestCase):
         """
         Check getHomeFolder for Windows.
         """
-        home_folder = system_users.getHomeFolder(
-            username=mk.username)
+        home_folder = system_users.getHomeFolder(username=mk.username)
 
-        self.assertContains(
-            mk.username.lower(), home_folder.lower())
+        self.assertContains(mk.username.lower(), home_folder.lower())
         self.assertIsInstance(str, home_folder)
 
     def test_userExists_not_found(self):
         """
         Return `False` when user does not exists.
         """
-        result = system_users.userExists(u'no-such-user-\N{sun}')
+        result = system_users.userExists('no-such-user-\N{SUN}')
 
         self.assertFalse(result)
 
@@ -105,7 +99,7 @@ class TestSystemUsers(CompatTestCase):
         test_pdc = TEST_PDC
 
         name = mk.string()
-        upn = u'%s@%s' % (name, test_domain)
+        upn = '%s@%s' % (name, test_domain)
 
         (pdc, username) = system_users._parseUPN(upn)
 
@@ -125,7 +119,7 @@ class TestSystemUsers(CompatTestCase):
             'openbsd',
             'osx',
             'windows',
-                ]:
+        ]:
             raise self.skipTest()
 
         from chevah_compat.unix_users import HAS_SHADOW_SUPPORT

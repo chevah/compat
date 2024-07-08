@@ -4,6 +4,7 @@
 """
 Code for portable functions.
 """
+
 from __future__ import with_statement
 from __future__ import print_function
 from __future__ import division
@@ -17,10 +18,8 @@ if os.name == 'posix':
         UnixHasImpersonatedAvatar,
         UnixUsers,
         UnixSuperAvatar,
-        )
-    from chevah_compat.unix_capabilities import (
-        UnixProcessCapabilities,
-        )
+    )
+    from chevah_compat.unix_capabilities import UnixProcessCapabilities
     from chevah_compat.unix_filesystem import UnixFilesystem
 
     system_users = UnixUsers()
@@ -34,13 +33,12 @@ if os.name == 'posix':
     os.environ['CRYPTOGRAPHY_ALLOW_OPENSSL_102'] = 'yes'
 
 elif os.name == 'nt':
-
     from chevah_compat.nt_users import (
         NTDefaultAvatar,
         NTHasImpersonatedAvatar,
         NTUsers,
         NTSuperAvatar,
-        )
+    )
     from chevah_compat.nt_capabilities import NTProcessCapabilities
     from chevah_compat.nt_filesystem import NTFilesystem
 
@@ -54,6 +52,7 @@ else:
     raise AssertionError('Operating system "%s" not supported.' % (os.name))
 
 from chevah_compat.posix_filesystem import FileAttributes  # noqa
+
 # Silence the linter
 FileAttributes
 

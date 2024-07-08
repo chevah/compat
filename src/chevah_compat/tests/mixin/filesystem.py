@@ -3,6 +3,7 @@
 """
 Tests for portable filesystem access.
 """
+
 from chevah_compat.testing import conditionals, mk
 
 
@@ -26,9 +27,8 @@ class SymbolicLinksMixin(object):
         link_segments.append(mk.string())
 
         self.filesystem.makeLink(
-            target_segments=target_segments,
-            link_segments=link_segments,
-            )
+            target_segments=target_segments, link_segments=link_segments
+        )
 
         self.addCleanup(self.filesystem.deleteFile, link_segments)
         self.assertTrue(self.filesystem.isLink(link_segments))
@@ -43,9 +43,8 @@ class SymbolicLinksMixin(object):
         segments.append(mk.string())
 
         self.filesystem.makeLink(
-            target_segments=['z', 'no-such', 'target'],
-            link_segments=segments,
-            )
+            target_segments=['z', 'no-such', 'target'], link_segments=segments
+        )
 
         self.addCleanup(self.filesystem.deleteFile, segments)
         self.assertTrue(self.filesystem.isLink(segments))
@@ -62,4 +61,4 @@ class SymbolicLinksMixin(object):
             mk.fs.makeLink(
                 target_segments=self.filesystem.temp_segments,
                 link_segments=['no-such', 'link'],
-                )
+            )

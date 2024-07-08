@@ -3,10 +3,12 @@
 """
 Module for hosting the Unix specific filesystem access.
 """
+
 import errno
 import grp
 import os
 import pwd
+
 # See: https://github.com/PyCQA/pylint/issues/1565
 import stat  # pylint: disable=bad-python3-import
 
@@ -28,17 +30,18 @@ class UnixFilesystem(PosixFilesystemBase):
 
     If avatar is None it will use the current logged in user.
     """
+
     system_users = UnixUsers()
 
     def _getRootPath(self):
         if not self._avatar:
-            return u'/'
+            return '/'
 
         if self._avatar.lock_in_home_folder:
             return self._avatar.home_folder_path
 
         if self._avatar.root_folder_path is None:
-            return u'/'
+            return '/'
         else:
             return self._avatar.root_folder_path
 
@@ -53,7 +56,7 @@ class UnixFilesystem(PosixFilesystemBase):
         if result is not None:
             return result
 
-        relative_path = u'/' + u'/'.join(segments)
+        relative_path = '/' + '/'.join(segments)
         relative_path = self.getAbsoluteRealPath(relative_path).rstrip('/')
         return str(self._root_path.rstrip('/') + relative_path)
 
@@ -62,7 +65,7 @@ class UnixFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         segments = []
-        if path is None or path == u'':
+        if path is None or path == '':
             return segments
 
         head = True
@@ -74,23 +77,23 @@ class UnixFilesystem(PosixFilesystemBase):
                 # Not a virtual folder.
                 continue
 
-            ancestors = tail[len(real_path):].split('/')
+            ancestors = tail[len(real_path) :].split('/')
             ancestors = [a for a in ancestors if a]
             return virtual_segments + ancestors
 
         if self._avatar.lock_in_home_folder:
             self._checkChildPath(self._root_path, tail)
-            tail = tail[len(self._root_path):]
+            tail = tail[len(self._root_path) :]
 
-        while tail and head != u'/':
+        while tail and head != '/':
             head, tail = os.path.split(tail)
-            if tail != u'':
+            if tail != '':
                 segments.insert(0, tail)
             tail = head
         return segments
 
     def readLink(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         with self._impersonateUser():
             target = os.readlink(path)
@@ -101,20 +104,22 @@ class UnixFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         target_path = self.getRealPathFromSegments(
-            target_segments, include_virtual=False)
+            target_segments, include_virtual=False
+        )
         link_path = self.getRealPathFromSegments(
-            link_segments, include_virtual=False)
+            link_segments, include_virtual=False
+        )
 
         with self._impersonateUser():
             return os.symlink(target_path, link_path)
 
     def setOwner(self, segments, owner):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         try:
             uid = pwd.getpwnam(owner).pw_uid
         except KeyError:
-            self.raiseFailedToSetOwner(owner, path, u'Owner not found.')
+            self.raiseFailedToSetOwner(owner, path, 'Owner not found.')
 
         with self._impersonateUser():
             try:
@@ -123,39 +128,39 @@ class UnixFilesystem(PosixFilesystemBase):
                 self.raiseFailedToSetOwner(owner, path, str(error))
 
     def getOwner(self, segments):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         attributes = self.getAttributes(segments)
         user_struct = pwd.getpwuid(attributes.uid)
         return user_struct.pw_name
 
     def addGroup(self, segments, group, permissions=None):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         try:
             gid = grp.getgrnam(group).gr_gid
         except KeyError:
-            self.raiseFailedToAddGroup(group, path, u'No such group.')
+            self.raiseFailedToAddGroup(group, path, 'No such group.')
         with self._impersonateUser():
             try:
                 return os.chown(path, -1, gid)
             except OSError as error:
                 if error.errno == errno.ENOENT:
-                    self.raiseFailedToAddGroup(group, path, u'No such path.')
+                    self.raiseFailedToAddGroup(group, path, 'No such path.')
                 elif error.errno == errno.EPERM:
-                    self.raiseFailedToAddGroup(group, path, u'Not permitted.')
+                    self.raiseFailedToAddGroup(group, path, 'Not permitted.')
 
     def removeGroup(self, segments, group):
-        '''
+        """
         See `ILocalFilesystem`.
 
         This has no effect on Unix/Linux but raises an error if we are
         touching a virtual root.
-        '''
+        """
         self.getRealPathFromSegments(segments, include_virtual=False)
         return
 
     def hasGroup(self, segments, group):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         attributes = self.getAttributes(segments)
         group_struct = grp.getgrgid(attributes.gid)
         if group_struct.gr_name == group:
@@ -199,9 +204,8 @@ class UnixFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         path = self.getRealPathFromSegments(segments, include_virtual=False)
-        if path == u'/':
-            raise CompatError(
-                1009, 'Deleting Unix root folder is not allowed.')
+        if path == '/':
+            raise CompatError(1009, 'Deleting Unix root folder is not allowed.')
 
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():

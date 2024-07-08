@@ -65,7 +65,7 @@ SETUP['repository']['github'] = 'https://github.com/chevah/compat'
 SETUP['test']['package'] = 'chevah_compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = [
-    '--with-randomly',
+    '--with-randomly'
     # FIXME:690:
     # Add support for extenstions.
     # '--with-timer',
@@ -174,10 +174,7 @@ def deps():
     else:
         print('Installing in non-dev mode.')
 
-    pave.pip(
-        command='install',
-        arguments=dev_mode + ['.[dev]'],
-    )
+    pave.pip(command='install', arguments=dev_mode + ['.[dev]'])
 
 
 @task
@@ -225,9 +222,14 @@ def _generate_coverate_reports():
         cov.load()
         cov.xml_report()
         cov.html_report()
-        print('HTML report file://%s/coverage-report/index.html' % (pave.path.build,))
+        print(
+            'HTML report file://%s/coverage-report/index.html'
+            % (pave.path.build,)
+        )
         print('--------')
-        diff_cover_main(argv=['diff-cover', 'coverage.xml', '--fail-under', '100'])
+        diff_cover_main(
+            argv=['diff-cover', 'coverage.xml', '--fail-under', '100']
+        )
 
 
 @task
@@ -275,7 +277,7 @@ def test_ci2(args):
         # Add support for extensions.
         # '--with-run-reporter',
         # '--with-timer',
-        '-v',
+        '-v'
     ]
 
     # Show some info about the current environment.
@@ -295,15 +297,14 @@ def test_ci2(args):
     )
     print('PYTHON %s on %s with %s' % (sys.version, pave.os_name, pave.cpu))
     print(
-        '%s (%s)' % (SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER)
+        '%s (%s)'
+        % (SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER)
     )
     print('pyOpenSSL %s' % (pyopenssl_version,))
     coverage_main(argv=['--version'])
 
     print('\n#\n# Installed packages\n#')
-    pave.pip(
-        command='freeze',
-    )
+    pave.pip(command='freeze')
 
     env = os.environ.copy()
     args = [env.get('TEST_ARGUMENTS', '')]
@@ -332,6 +333,7 @@ def test_ci2(args):
 
     return exit_code
 
+
 @task
 @consume_args
 def lint(args):
@@ -340,18 +342,15 @@ def lint(args):
     """
     ruff_bin = os.path.join(pave.path.build, 'bin', 'ruff')
     check_result = subprocess.run(
-        [ruff_bin, 'check'],
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-        )
+        [ruff_bin, 'check'], stdout=sys.stdout, stderr=sys.stderr
+    )
 
     format_result = subprocess.run(
-        [ruff_bin, 'format', '--check'],
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-        )
+        [ruff_bin, 'format', '--check'], stdout=sys.stdout, stderr=sys.stderr
+    )
     if check_result.returncode != 0 or format_result != 0:
         sys.exit(1)
+
 
 @task
 @consume_args
@@ -364,13 +363,11 @@ def fix(args):
         [ruff_bin, 'check', '--fix', '--unsafe-fixes'],
         stdout=sys.stdout,
         stderr=sys.stderr,
-        )
+    )
 
     format_result = subprocess.run(
-        [ruff_bin, 'format'],
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-        )
+        [ruff_bin, 'format'], stdout=sys.stdout, stderr=sys.stderr
+    )
 
     if check_result.returncode != 0 or format_result != 0:
         sys.exit(1)

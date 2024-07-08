@@ -6,6 +6,7 @@ Shared code by all users compatibility layer.
 Check chevah/server/static/events/events.json to make sure each CompatError
 has unique ID.
 """
+
 from chevah_compat.exceptions import CompatError
 
 
@@ -33,6 +34,5 @@ class CompatUsers(object):
         """
         Helper for raising the exception with a specific ID.
         """
-        message = u'Failed to check that user "%s" exists. %s' % (
-            username, text)
+        message = 'Failed to check that user "%s" exists. %s' % (username, text)
         raise CompatError(1018, message)

@@ -1,10 +1,11 @@
-'''This plugin provides a list of failed, errors, skiped tests.
+"""This plugin provides a list of failed, errors, skiped tests.
 
 Add this command to the way you execute nose::
 
     --with-run-reporter
 
-'''
+"""
+
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
@@ -15,7 +16,7 @@ from nose.plugins.base import Plugin
 
 
 class RunReporter(Plugin):
-    '''This plugin reports the list of skiped tests.'''
+    """This plugin reports the list of skiped tests."""
 
     name = 'run-reporter'
     score = 1

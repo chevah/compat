@@ -3,6 +3,7 @@
 """
 Decorators used for testing.
 """
+
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
@@ -17,17 +18,9 @@ from chevah_compat import process_capabilities
 from chevah_compat.testing.testcase import ChevahTestCase
 
 
-_SUPPORTED_OS_FAMILIES = [
-    'posix',
-    'nt',
-    ]
+_SUPPORTED_OS_FAMILIES = ['posix', 'nt']
 
-_SUPPORTED_OS_NAMES = [
-    'linux',
-    'windows',
-    'aix',
-    'osx',
-    ]
+_SUPPORTED_OS_NAMES = ['linux', 'windows', 'aix', 'osx']
 
 
 def skipOnCondition(callback, message):
@@ -36,11 +29,11 @@ def skipOnCondition(callback, message):
 
     This case is inspired by Python unittest implementation.
     """
+
     def inner(test_item):
         if not (
-            isinstance(test_item, type) and
-            issubclass(test_item, TestCase)
-                ):
+            isinstance(test_item, type) and issubclass(test_item, TestCase)
+        ):
             # Only raise SkipTest in methods.
             @wraps(test_item)
             def wrapper(*args, **kwargs):
@@ -76,7 +69,8 @@ def onOSFamily(family):
         return process_capabilities.os_family != family
 
     return skipOnCondition(
-        check_os_family, 'OS family "%s" not available.' % family)
+        check_os_family, 'OS family "%s" not available.' % family
+    )
 
 
 def onOSName(name):
@@ -95,19 +89,20 @@ def onOSName(name):
     def check_os_name():
         return process_capabilities.os_name not in name
 
-    return skipOnCondition(
-        check_os_name, 'OS name "%s" not available.' % name)
+    return skipOnCondition(check_os_name, 'OS name "%s" not available.' % name)
 
 
 def onOSVersion(versions):
     """
     Run test only if current os vesrsion or is in one from `versions` list.
     """
+
     def check_os_version():
         return process_capabilities.os_version not in versions
 
     return skipOnCondition(
-        check_os_version, 'OS version "%s" not available.' % versions)
+        check_os_version, 'OS version "%s" not available.' % versions
+    )
 
 
 def onCapability(name, value):
@@ -120,7 +115,8 @@ def onCapability(name, value):
         return capability != value
 
     return skipOnCondition(
-        check_capability, 'Capability "%s" not present.' % name)
+        check_capability, 'Capability "%s" not present.' % name
+    )
 
 
 def onAdminPrivileges(present):
@@ -137,15 +133,16 @@ def onAdminPrivileges(present):
     """
     hostname = gethostname()
     is_running_as_normal = (
-        ChevahTestCase.os_family != 'nt' or
-        ChevahTestCase.os_version in ['nt-5.1', 'nt-5.2']
+        ChevahTestCase.os_family != 'nt'
+        or ChevahTestCase.os_version in ['nt-5.1', 'nt-5.2']
         or ChevahTestCase.TEST_LANGUAGE == 'FR'
-        or ChevahTestCase.ci_name not in [
+        or ChevahTestCase.ci_name
+        not in [
             ChevahTestCase.CI.LOCAL,
             ChevahTestCase.CI.BUILDBOT,
             ChevahTestCase.CI.GITHUB,
-            ]
-        )
+        ]
+    )
 
     def is_normal_user():
         if present:
@@ -155,15 +152,12 @@ def onAdminPrivileges(present):
 
     return skipOnCondition(
         is_normal_user,
-        'Administrator privileges not present on "%s".' % (hostname,)
-        )
+        'Administrator privileges not present on "%s".' % (hostname,),
+    )
 
 
 def skipOnPY3():
     """
     Skip tests on Python 3 or Python 2 in forward compatibility.
     """
-    return skipOnCondition(
-        lambda: six.PY3,
-        'Python 2 only test.',
-        )
+    return skipOnCondition(lambda: six.PY3, 'Python 2 only test.')

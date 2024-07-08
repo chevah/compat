@@ -3,6 +3,7 @@ A simple implementation of the Unix daemon.
 
 Is shows how to pass opened files to the forked process.
 """
+
 from __future__ import absolute_import, unicode_literals, print_function
 import os
 import time
@@ -21,6 +22,7 @@ class DaemonImplementation(Daemon):
     """
     A testing implementation of IDaemon.
     """
+
     _log_fd = None
 
     def onInitialize(self):

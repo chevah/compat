@@ -3,6 +3,7 @@
 """
 Tests for the assertion helpers.
 """
+
 import os
 
 from chevah_compat.exceptions import CompatError
@@ -48,7 +49,7 @@ class TestAssertionMixin(ChevahTestCase):
             self.assertTempIsClean()
 
         message = context.exception.args[0]
-        self.assertStartsWith(u'Temporary folder is not clean.', message)
+        self.assertStartsWith('Temporary folder is not clean.', message)
         self.assertContains(temp_segments[-1], message)
 
         self.assertFalse(mk.fs.exists(temp_segments))
@@ -100,7 +101,8 @@ class TestAssertionMixin(ChevahTestCase):
             self.assertIsEmpty((1, 2))
 
         self.assertEqual(
-            u'Iterable is not empty.\n(1, 2).', context.exception.args[0])
+            'Iterable is not empty.\n(1, 2).', context.exception.args[0]
+        )
 
     def test_assertCompatError_no_CompatError(self):
         """
@@ -109,15 +111,14 @@ class TestAssertionMixin(ChevahTestCase):
         exception = self.assertRaises(
             AssertionError,
             self.assertCompatError,
-            u'123-id',
-            Exception('generic-error')
-            )
+            '123-id',
+            Exception('generic-error'),
+        )
 
         self.assertEqual(
-            "Error generic-error not CompatError but "
-            "<class 'Exception'>",
+            'Error generic-error not CompatError but ' "<class 'Exception'>",
             exception.args[0],
-            )
+        )
 
     def test_assertCompatError_bad_id(self):
         """
@@ -126,15 +127,15 @@ class TestAssertionMixin(ChevahTestCase):
         exception = self.assertRaises(
             AssertionError,
             self.assertCompatError,
-            u'123-id',
-            CompatError(u'456', u'Some details.')
-            )
+            '123-id',
+            CompatError('456', 'Some details.'),
+        )
 
         self.assertEqual(
             'Error id for CompatError 456 - Some details. is not 123-id, '
             'but 456.',
             exception.args[0],
-            )
+        )
 
     def test_assertIteratorItemsEqual_no_iterable(self):
         """
@@ -143,47 +144,37 @@ class TestAssertionMixin(ChevahTestCase):
         sut = [1, 3]
 
         exception = self.assertRaises(
-            AssertionError,
-            self.assertIteratorItemsEqual,
-            [],
-            sut,
-            )
+            AssertionError, self.assertIteratorItemsEqual, [], sut
+        )
 
-        self.assertEqual(
-            'Value is not iterable.',
-            exception.args[0],
-            )
+        self.assertEqual('Value is not iterable.', exception.args[0])
 
     def test_assertIteratorItemsEqual_ok(self):
         """
         Is equal even if elements are in a different order.
         """
         iterator = iter([2])
-        value = [1, b'3', u'a', iterator]
+        value = [1, b'3', 'a', iterator]
         sut = iter(value)
 
-        self.assertIteratorItemsEqual([b'3', 1, u'a', iterator], sut)
+        self.assertIteratorItemsEqual([b'3', 1, 'a', iterator], sut)
 
     def test_assertIteratorItemsEqual_less(self):
         """
         It fails if the values are not equal.
         """
-        value = [1, b'3', u'a']
+        value = [1, b'3', 'a']
         sut = iter(value)
 
         exception = self.assertRaises(
-            AssertionError,
-            self.assertIteratorItemsEqual,
-            [1],
-            sut,
-            )
+            AssertionError, self.assertIteratorItemsEqual, [1], sut
+        )
 
         # The check here is more complicated since the message relies on the
         # assertEqual implementation.
         self.assertStartsWith(
-            "Element counts were not equal:",
-            exception.args[0],
-            )
+            'Element counts were not equal:', exception.args[0]
+        )
 
     def test_assertEqual_unicode_vs_bytestring_in_list(self):
         """
@@ -191,7 +182,7 @@ class TestAssertionMixin(ChevahTestCase):
         a Unicode string vs. a bytestring are equal.
         """
 
-        unicode_list = [u'text']
+        unicode_list = ['text']
         bytes_list = [b'text']
         with self.assertRaises(AssertionError):
             self.assertEqual(unicode_list, bytes_list)
@@ -202,7 +193,7 @@ class TestAssertionMixin(ChevahTestCase):
         a Unicode string vs. a bytestring are equal.
         """
 
-        unicode_list = [[u'text']]
+        unicode_list = [['text']]
         bytes_list = [[b'text']]
         with self.assertRaises(AssertionError):
             self.assertEqual(unicode_list, bytes_list)
@@ -213,7 +204,7 @@ class TestAssertionMixin(ChevahTestCase):
         a Unicode string vs. a bytestring are equal.
         """
 
-        unicode_tuple = (u'text',)
+        unicode_tuple = ('text',)
         bytes_tuple = (b'text',)
         with self.assertRaises(AssertionError):
             self.assertEqual(unicode_tuple, bytes_tuple)
@@ -224,7 +215,7 @@ class TestAssertionMixin(ChevahTestCase):
         a Unicode string vs. a bytestring are equal.
         """
 
-        unicode_set = set([u'text'])
+        unicode_set = set(['text'])
         bytes_set = set([b'text'])
         with self.assertRaises(AssertionError):
             self.assertEqual(unicode_set, bytes_set)
@@ -235,7 +226,7 @@ class TestAssertionMixin(ChevahTestCase):
         a Unicode string vs. a bytestring are equal.
         """
 
-        unicode_dict = {u'key': 'value'}
+        unicode_dict = {'key': 'value'}
         bytes_dict = {b'key': 'value'}
         with self.assertRaises(AssertionError):
             self.assertEqual(unicode_dict, bytes_dict)
@@ -246,7 +237,7 @@ class TestAssertionMixin(ChevahTestCase):
         a Unicode string vs. a bytestring are equal.
         """
 
-        unicode_dict = {'key': u'value'}
+        unicode_dict = {'key': 'value'}
         bytes_dict = {'key': b'value'}
         with self.assertRaises(AssertionError):
             self.assertEqual(unicode_dict, bytes_dict)

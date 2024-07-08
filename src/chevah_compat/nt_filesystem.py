@@ -3,6 +3,7 @@
 """
 Windows specific implementation of filesystem access.
 """
+
 import six
 from contextlib import contextmanager
 from winioctlcon import FSCTL_GET_REPARSE_POINT
@@ -22,12 +23,15 @@ from chevah_compat.exceptions import (
     AdjustPrivilegeException,
     CompatError,
     CompatException,
-    )
+)
 from chevah_compat.helpers import force_unicode
 from chevah_compat.interfaces import ILocalFilesystem
 from chevah_compat.nt_capabilities import NTProcessCapabilities
 from chevah_compat.nt_users import NTDefaultAvatar, NTUsers
-from chevah_compat.posix_filesystem import PosixFilesystemBase, _win_getEncodedPath
+from chevah_compat.posix_filesystem import (
+    PosixFilesystemBase,
+    _win_getEncodedPath,
+)
 
 
 #: https://msdn.microsoft.com/en-us/library/windows/desktop/aa364939.aspx
@@ -55,10 +59,10 @@ FILE_SHARE_PREVENT_OTHERS = 0
 #: Flags used for getStatus.
 #: https://github.com/python/cpython/blob/master/Modules/posixmodule.c#L1511
 FILE_STATUS_FLAGS = (
-    win32file.FILE_ATTRIBUTE_NORMAL |
-    win32file.FILE_FLAG_BACKUP_SEMANTICS |
-    win32file.FILE_FLAG_OPEN_REPARSE_POINT
-    )
+    win32file.FILE_ATTRIBUTE_NORMAL
+    | win32file.FILE_FLAG_BACKUP_SEMANTICS
+    | win32file.FILE_FLAG_OPEN_REPARSE_POINT
+)
 
 # Windows System Error Codes
 #: https://msdn.microsoft.com/en-us/library/windows/desktop/ms681382.aspx
@@ -75,6 +79,7 @@ class NTFilesystem(PosixFilesystemBase):
 
     This builds on top of PosixFilesystem.
     """
+
     system_users = NTUsers()
     process_capabilities = NTProcessCapabilities()
 
@@ -101,18 +106,18 @@ class NTFilesystem(PosixFilesystemBase):
         Return the root path for the filesystem.
         """
         if not self._avatar:
-            return u'c:\\'
+            return 'c:\\'
 
         if self._lock_in_home:
             path = six.text_type(self._avatar.home_folder_path)
         else:
             if self._avatar.root_folder_path is None:
-                path = u'c:\\'
+                path = 'c:\\'
             else:
                 path = six.text_type(self._avatar.root_folder_path)
 
         # Fix folder separators.
-        path = path.replace(u'/', u'\\')
+        path = path.replace('/', '\\')
         return path
 
     @property
@@ -125,12 +130,13 @@ class NTFilesystem(PosixFilesystemBase):
         # folder, which is located in default account temp folder, since
         # impersonated account don't have access to it.
         if not isinstance(self._avatar, NTDefaultAvatar):
-            return [u'c', u'temp']
+            return ['c', 'temp']
 
         if self.avatar.lock_in_home_folder:
             # Similar to posix_filesystem
             temp_path = os.path.join(
-                self.avatar.home_folder_path, '__chevah_test_temp__')
+                self.avatar.home_folder_path, '__chevah_test_temp__'
+            )
         else:
             # Default tempfile.gettempdir() return path with short names,
             # due to win32api.GetTempPath().
@@ -153,21 +159,21 @@ class NTFilesystem(PosixFilesystemBase):
         return segments[:-2]
 
     def _getLockedPathFromSegments(self, segments):
-        '''
+        """
         Return a path for segments making sure the resulting path is not
         outside of the chroot.
-        '''
+        """
         path = os.path.normpath(os.path.join(*segments))
         if path.startswith('..\\'):
             path = path[3:]
-        result = os.path.normpath(self._root_path + u'\\' + path)
+        result = os.path.normpath(self._root_path + '\\' + path)
         if result.lower().startswith(self._root_path.lower()):
             return result.rstrip('\\')
         else:
             return self._root_path
 
     def getRealPathFromSegments(self, segments, include_virtual=True):
-        r'''See `ILocalFilesystem`.
+        r"""See `ILocalFilesystem`.
         * []
           * lock : root_path
           * unlock: COMPUTER
@@ -178,29 +184,32 @@ class NTFilesystem(PosixFilesystemBase):
           * [path1] -> path1:\
           * [path1, path2] -> path1 :\ path2
           * [UNC, server1, path1, path2] -> \\server1\path1\path2
-        '''
+        """
+
         def get_path(segments):
             if self._lock_in_home:
                 return self._getLockedPathFromSegments(segments)
 
-            drive = u'%s:\\' % segments[0]
+            drive = '%s:\\' % segments[0]
             path_segments = segments[1:]
 
             if len(path_segments) == 0:
                 result = drive
             else:
-                if drive == u'UNC:\\':
-                    result = u'\\' + os.path.normpath(
-                        u'\\' + os.path.join(*path_segments))
+                if drive == 'UNC:\\':
+                    result = '\\' + os.path.normpath(
+                        '\\' + os.path.join(*path_segments)
+                    )
                 else:
                     result = os.path.normpath(
-                        drive + os.path.join(*path_segments))
+                        drive + os.path.join(*path_segments)
+                    )
                     # os.path.normpath can result in an 'out of drive' path.
-                    if result.find(u':\\') == -1:
-                        if result.find(u'\\') == -1:
+                    if result.find(':\\') == -1:
+                        if result.find('\\') == -1:
                             result = result + ':\\'
                         else:
-                            result = result.replace(u'\\', u':\\', 1)
+                            result = result.replace('\\', ':\\', 1)
             return result
 
         if segments is None or len(segments) == 0:
@@ -208,10 +217,11 @@ class NTFilesystem(PosixFilesystemBase):
             return self._root_path
 
         virtual_path = self._getVirtualPathFromSegments(
-            segments, include_virtual)
+            segments, include_virtual
+        )
 
         if virtual_path is not None:
-            result = virtual_path.replace(u'/', u'\\')
+            result = virtual_path.replace('/', '\\')
         else:
             result = get_path(segments)
 
@@ -220,10 +230,33 @@ class NTFilesystem(PosixFilesystemBase):
 
     # Windows allows only 26 drive letters and is case insensitive.
     _allowed_drive_letters = [
-        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-        'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-        'u', 'v', 'w', 'x', 'y', 'z',
-        ]
+        'a',
+        'b',
+        'c',
+        'd',
+        'e',
+        'f',
+        'g',
+        'h',
+        'i',
+        'j',
+        'k',
+        'l',
+        'm',
+        'n',
+        'o',
+        'p',
+        'q',
+        'r',
+        's',
+        't',
+        'u',
+        'v',
+        'w',
+        'x',
+        'y',
+        'z',
+    ]
 
     def _validateDrivePath(self, path):
         """
@@ -236,9 +269,10 @@ class NTFilesystem(PosixFilesystemBase):
 
         letter, _ = os.path.splitdrive(path)
         if letter.strip(':').lower() not in self._allowed_drive_letters:
-            message = u'Bad drive letter "%s" for %s' % (letter, path)
+            message = 'Bad drive letter "%s" for %s' % (letter, path)
             raise OSError(
-                errno.EINVAL, message.encode('utf-8'), path.encode('utf-8'))
+                errno.EINVAL, message.encode('utf-8'), path.encode('utf-8')
+            )
 
     def isAbsolutePath(self, path):
         """
@@ -288,7 +322,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         segments = []
 
-        if path is None or path == u'':
+        if path is None or path == '':
             return segments
 
         path = six.text_type(path)
@@ -301,7 +335,7 @@ class NTFilesystem(PosixFilesystemBase):
                 # Not a virtual folder.
                 continue
 
-            ancestors = target[len(real_path):].split('\\')
+            ancestors = target[len(real_path) :].split('\\')
             ancestors = [a for a in ancestors if a]
             return virtual_segments + ancestors
 
@@ -316,29 +350,28 @@ class NTFilesystem(PosixFilesystemBase):
             path = self._getAbsolutePath(path)
             self._checkChildPath(self._getRootPath(), path)
             # Locked filesystems have no drive.
-            tail = path[len(self._getRootPath()):]
+            tail = path[len(self._getRootPath()) :]
             drive = ''
         else:
-
             if path.startswith('\\\\'):
                 # We have a network share.
-                drive = u'UNC'
+                drive = 'UNC'
                 tail = os.path.normpath(path[2:])
             elif path.startswith('UNC\\'):
                 # We have a network share cropped from a long UNC.
-                drive = u'UNC'
+                drive = 'UNC'
                 tail = os.path.normpath(path[4:])
             else:
                 path = self._getAbsolutePath(path)
                 # For unlocked filesystem, we use 'c' as default drive.
                 drive, root_tail = os.path.splitdrive(path)
                 if not drive:
-                    drive = u'c'
+                    drive = 'c'
                 else:
-                    drive = drive.strip(u':')
+                    drive = drive.strip(':')
                 tail = root_tail
 
-        while head not in [u'\\', u'']:
+        while head not in ['\\', '']:
             head, tail = os.path.split(tail)
             if tail == '':
                 break
@@ -372,11 +405,7 @@ class NTFilesystem(PosixFilesystemBase):
         try:
             yield
         except WindowsError as error:
-            raise OSError(
-                error.errno,
-                error.strerror,
-                error.filename,
-                )
+            raise OSError(error.errno, error.strerror, error.filename)
         except pywintypes.error as error:
             if path is None:
                 path = self.getRealPathFromSegments(segments)
@@ -399,10 +428,7 @@ class NTFilesystem(PosixFilesystemBase):
                 error_code = 2
                 error_message = 'No such file or directory'
 
-            raise OSError(
-                error_code,
-                error_message,
-                path.encode('utf-8'))
+            raise OSError(error_code, error_message, path.encode('utf-8'))
 
     def readLink(self, segments):
         """
@@ -426,10 +452,12 @@ class NTFilesystem(PosixFilesystemBase):
                 win32file.FILE_SHARE_READ,
                 None,
                 win32file.OPEN_EXISTING,
-                (win32file.FILE_FLAG_OPEN_REPARSE_POINT |
-                    win32file.FILE_FLAG_BACKUP_SEMANTICS),
+                (
+                    win32file.FILE_FLAG_OPEN_REPARSE_POINT
+                    | win32file.FILE_FLAG_BACKUP_SEMANTICS
+                ),
                 None,
-                )
+            )
         except pywintypes.error as error:
             message = '%s - %s' % (error.winerror, error.strerror)
             raise OSError(errno.ENOENT, message, encoded_path)
@@ -440,7 +468,8 @@ class NTFilesystem(PosixFilesystemBase):
         try:
             # MAXIMUM_REPARSE_DATA_BUFFER_SIZE = 16384 = (16*1024)
             raw_reparse_data = win32file.DeviceIoControl(
-                handle, FSCTL_GET_REPARSE_POINT, None, 16 * 1024)
+                handle, FSCTL_GET_REPARSE_POINT, None, 16 * 1024
+            )
         except pywintypes.error as error:
             message = '%s - %s' % (error.winerror, error.strerror)
             raise OSError(errno.EINVAL, message, encoded_path)
@@ -471,9 +500,11 @@ class NTFilesystem(PosixFilesystemBase):
             raise NotImplementedError('makeLink not implemented on this OS.')
 
         target_path = self.getRealPathFromSegments(
-            target_segments, include_virtual=False)
+            target_segments, include_virtual=False
+        )
         link_path = self.getRealPathFromSegments(
-            link_segments, include_virtual=False)
+            link_segments, include_virtual=False
+        )
 
         if self.isFolder(target_segments) or target_path.startswith('\\'):
             # We have folder or a Windows share as target.
@@ -484,12 +515,13 @@ class NTFilesystem(PosixFilesystemBase):
         with self._windowsToOSError(link_segments), self._impersonateUser():
             try:
                 with self.process_capabilities._elevatePrivileges(
-                        win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
+                    win32security.SE_CREATE_SYMBOLIC_LINK_NAME
+                ):
                     win32file.CreateSymbolicLink(
                         self.getEncodedPath(link_path),
                         self.getEncodedPath(target_path),
                         flags,
-                        )
+                    )
             except AdjustPrivilegeException as error:
                 message = force_unicode(error.message)
                 raise OSError(errno.EINVAL, message, link_path)
@@ -524,18 +556,22 @@ class NTFilesystem(PosixFilesystemBase):
                 win32file.OPEN_EXISTING,
                 FILE_STATUS_FLAGS,
                 None,
-                )
+            )
 
         try:
             file_info = win32file.GetFileInformationByHandle(file_handle)
             (
                 attributes,
-                created_at, accessed_at, written_at,
+                created_at,
+                accessed_at,
+                written_at,
                 volume_id,
-                file_high, file_low,
+                file_high,
+                file_low,
                 n_links,
-                index_high, index_low
-                ) = file_info
+                index_high,
+                index_low,
+            ) = file_info
         finally:
             win32file.CloseHandle(file_handle)
         stats_list = list(stats)
@@ -588,8 +624,7 @@ class NTFilesystem(PosixFilesystemBase):
             if 'uid' in attributes or 'gid' in attributes:
                 raise OSError(errno.EPERM, 'Operation not supported')
 
-            return super(NTFilesystem, self).setAttributes(
-                segments, attributes)
+            return super(NTFilesystem, self).setAttributes(segments, attributes)
 
     def iterateFolderContent(self, segments):
         """
@@ -599,13 +634,12 @@ class NTFilesystem(PosixFilesystemBase):
             drives = [
                 self._getPlaceholderAttributes([drive])
                 for drive in self._getAllDrives()
-                ]
+            ]
             return iter(drives)
 
         try:
             return super(NTFilesystem, self).iterateFolderContent(segments)
         except OSError as error:
-
             if error.errno == ERROR_DIRECTORY:
                 # When we don't list a directory, we get a specific
                 # error, but we convert here to the same error code produced by
@@ -625,9 +659,9 @@ class NTFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         with self._windowsToOSError(segments):
-            '''If we are locked in home folder just go with the normal way,
+            """If we are locked in home folder just go with the normal way,
             otherwise if empty folder, parent or current folder is requested,
-            just show the ROOT.'''
+            just show the ROOT."""
             if not self._lock_in_home and segments in [[], ['.'], ['..']]:
                 return self._getAllDrives()
 
@@ -645,8 +679,7 @@ class NTFilesystem(PosixFilesystemBase):
         Return the list of all drives.
         """
         raw_drives = win32api.GetLogicalDriveStrings()
-        drives = [
-            drive for drive in raw_drives.split("\000") if drive]
+        drives = [drive for drive in raw_drives.split('\000') if drive]
         result = []
         for drive in drives:
             if win32file.GetDriveType(drive) == LOCAL_DRIVE:
@@ -655,10 +688,9 @@ class NTFilesystem(PosixFilesystemBase):
         return result
 
     def createFolder(self, segments, recursive=False):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         with self._windowsToOSError(segments):
-            return super(NTFilesystem, self).createFolder(
-                segments, recursive)
+            return super(NTFilesystem, self).createFolder(segments, recursive)
 
     def _getFileData(self, path):
         """
@@ -676,18 +708,12 @@ class NTFilesystem(PosixFilesystemBase):
                 search = win32file.FindFilesW(path)
                 if len(search) != 1:
                     raise OSError(
-                        errno.ENOENT,
-                        'Could not find',
-                        path.encode('utf-8'),
-                        )
+                        errno.ENOENT, 'Could not find', path.encode('utf-8')
+                    )
                 data = search[0]
         except pywintypes.error as error:
             message = '%s - %s' % (error.winerror, error.strerror)
-            raise OSError(
-                errno.EINVAL,
-                message,
-                path,
-                )
+            raise OSError(errno.EINVAL, message, path)
 
         # Raw data:
         # [0] int : attributes
@@ -718,7 +744,7 @@ class NTFilesystem(PosixFilesystemBase):
             'tag': data[6],
             'name': data[8],
             'alternate_name': data[9],
-            }
+        }
 
     def isLink(self, segments):
         """
@@ -739,8 +765,9 @@ class NTFilesystem(PosixFilesystemBase):
         """
         data = self._getFileData(path)
         is_reparse_point = bool(
-            data['attributes'] & FILE_ATTRIBUTE_REPARSE_POINT)
-        has_symlink_tag = (data['tag'] == self.IO_REPARSE_TAG_SYMLINK)
+            data['attributes'] & FILE_ATTRIBUTE_REPARSE_POINT
+        )
+        has_symlink_tag = data['tag'] == self.IO_REPARSE_TAG_SYMLINK
         return is_reparse_point and has_symlink_tag
 
     def deleteFile(self, segments, ignore_errors=False):
@@ -750,23 +777,16 @@ class NTFilesystem(PosixFilesystemBase):
         try:
             with self._windowsToOSError(segments):
                 return super(NTFilesystem, self).deleteFile(
-                    segments, ignore_errors=ignore_errors)
+                    segments, ignore_errors=ignore_errors
+                )
         except OSError as error:
             # Windows return a bad error code for folders.
             if self.isFolder(segments):
-                raise OSError(
-                    errno.EISDIR,
-                    'Is a directory',
-                    error.filename,
-                    )
+                raise OSError(errno.EISDIR, 'Is a directory', error.filename)
             # When file is not found it uses EINVAL code but we want the
             # same code as in Unix.
             if error.errno == errno.EINVAL:
-                raise OSError(
-                    errno.ENOENT,
-                    'Not found',
-                    error.filename,
-                    )
+                raise OSError(errno.ENOENT, 'Not found', error.filename)
             raise error
 
     def _requireFolder(self, segments):
@@ -776,11 +796,7 @@ class NTFilesystem(PosixFilesystemBase):
         path = self.getRealPathFromSegments(segments)
         path_encoded = self.getEncodedPath(path)
         if not self.isFolder(segments):
-            raise OSError(
-                errno.ENOTDIR,
-                'Not a directory',
-                path_encoded,
-                )
+            raise OSError(errno.ENOTDIR, 'Not a directory', path_encoded)
 
     def deleteFolder(self, segments, recursive=True):
         """
@@ -815,7 +831,8 @@ class NTFilesystem(PosixFilesystemBase):
         with self._windowsToOSError(from_segments):
             try:
                 return super(NTFilesystem, self).rename(
-                    from_segments, to_segments)
+                    from_segments, to_segments
+                )
             except WindowsError as error:
                 # On Windows, rename fails if destination exists as it
                 # can't guarantee an atomic operation.
@@ -825,7 +842,8 @@ class NTFilesystem(PosixFilesystemBase):
                 # Try to remove the file, and then rename one more time.
                 self.deleteFile(to_segments)
                 return super(NTFilesystem, self).rename(
-                    from_segments, to_segments)
+                    from_segments, to_segments
+                )
 
     def setOwner(self, segments, owner):
         """
@@ -843,29 +861,30 @@ class NTFilesystem(PosixFilesystemBase):
         Helper for catching exceptions raised by elevatePrivileges.
         """
         with self.process_capabilities._elevatePrivileges(
-                win32security.SE_TAKE_OWNERSHIP_NAME,
-                win32security.SE_RESTORE_NAME,
-                ):
+            win32security.SE_TAKE_OWNERSHIP_NAME, win32security.SE_RESTORE_NAME
+        ):
             try:
                 security_descriptor = win32security.GetNamedSecurityInfo(
                     path,
                     win32security.SE_FILE_OBJECT,
                     win32security.DACL_SECURITY_INFORMATION,
-                    )
+                )
                 d_acl = security_descriptor.GetSecurityDescriptorDacl()
 
                 user_sid, user_domain, user_type = (
-                    win32security.LookupAccountName(None, owner))
+                    win32security.LookupAccountName(None, owner)
+                )
                 flags = (
-                    win32security.OBJECT_INHERIT_ACE |
-                    win32security.CONTAINER_INHERIT_ACE)
+                    win32security.OBJECT_INHERIT_ACE
+                    | win32security.CONTAINER_INHERIT_ACE
+                )
 
                 d_acl.AddAccessAllowedAceEx(
                     win32security.ACL_REVISION_DS,
                     flags,
                     win32file.FILE_ALL_ACCESS,
                     user_sid,
-                    )
+                )
                 win32security.SetNamedSecurityInfo(
                     path,
                     win32security.SE_FILE_OBJECT,
@@ -874,7 +893,7 @@ class NTFilesystem(PosixFilesystemBase):
                     None,
                     None,
                     None,
-                    )
+                )
                 win32security.SetNamedSecurityInfo(
                     path,
                     win32security.SE_FILE_OBJECT,
@@ -883,17 +902,18 @@ class NTFilesystem(PosixFilesystemBase):
                     None,
                     d_acl,
                     None,
-                    )
+                )
             except win32net.error as error:
                 if error.winerror == 1332:
-                    self.raiseFailedToSetOwner(owner, path, u'No such owner.')
+                    self.raiseFailedToSetOwner(owner, path, 'No such owner.')
                 if error.winerror == 1307:
-                    self.raiseFailedToSetOwner(owner, path, u'Not permitted.')
+                    self.raiseFailedToSetOwner(owner, path, 'Not permitted.')
                 else:
                     message = '[%s] %s' % (
-                        error.winerror, force_unicode(error.strerror))
-                    self.raiseFailedToSetOwner(
-                        owner, path, message)
+                        error.winerror,
+                        force_unicode(error.strerror),
+                    )
+                    self.raiseFailedToSetOwner(owner, path, message)
 
     def getOwner(self, segments):
         """
@@ -908,14 +928,15 @@ class NTFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 owner_security = win32security.GetFileSecurity(
-                    encoded_path, win32security.OWNER_SECURITY_INFORMATION)
+                    encoded_path, win32security.OWNER_SECURITY_INFORMATION
+                )
                 owner_sid = owner_security.GetSecurityDescriptorOwner()
                 name, domain, type = win32security.LookupAccountSid(
-                    None, owner_sid)
+                    None, owner_sid
+                )
                 return name
             except win32net.error as error:
-                raise OSError(
-                    error.winerror, error.strerror, encoded_path)
+                raise OSError(error.winerror, error.strerror, encoded_path)
 
     def addGroup(self, segments, group, permissions=None):
         """
@@ -925,31 +946,34 @@ class NTFilesystem(PosixFilesystemBase):
         encoded_path = self.getEncodedPath(path)
         try:
             group_sid, group_domain, group_type = (
-                win32security.LookupAccountName(None, group))
+                win32security.LookupAccountName(None, group)
+            )
         except win32net.error:
-            self.raiseFailedToAddGroup(
-                group, path, u'Could not get group ID.')
+            self.raiseFailedToAddGroup(group, path, 'Could not get group ID.')
 
         with self._impersonateUser():
             try:
                 security = win32security.GetFileSecurity(
-                    encoded_path, win32security.DACL_SECURITY_INFORMATION)
+                    encoded_path, win32security.DACL_SECURITY_INFORMATION
+                )
                 dacl = security.GetSecurityDescriptorDacl()
                 dacl.AddAccessAllowedAce(
                     win32security.ACL_REVISION,
                     ntsecuritycon.FILE_ALL_ACCESS,
-                    group_sid)
+                    group_sid,
+                )
                 security.SetDacl(True, dacl, False)
                 win32security.SetFileSecurity(
                     encoded_path,
                     win32security.DACL_SECURITY_INFORMATION,
                     security,
-                    )
+                )
             except win32net.error as error:
                 self.raiseFailedToAddGroup(
                     group,
                     encoded_path,
-                    u'%s: %s' % (error.winerror, error.strerror))
+                    '%s: %s' % (error.winerror, error.strerror),
+                )
 
     def removeGroup(self, segments, group):
         """
@@ -959,20 +983,22 @@ class NTFilesystem(PosixFilesystemBase):
         encoded_path = self.getEncodedPath(path)
         try:
             group_sid, group_domain, group_type = (
-                win32security.LookupAccountName(None, group))
+                win32security.LookupAccountName(None, group)
+            )
         except win32net.error:
             raise CompatError(
                 1013,
-                u'Failed to remove group "%s" from "%s". %s' % (
-                    group, path, u'Group does not exists.'))
+                'Failed to remove group "%s" from "%s". %s'
+                % (group, path, 'Group does not exists.'),
+            )
 
         with self._impersonateUser():
             try:
                 security = win32security.GetFileSecurity(
-                    encoded_path, win32security.DACL_SECURITY_INFORMATION)
+                    encoded_path, win32security.DACL_SECURITY_INFORMATION
+                )
             except win32net.error as error:
-                raise OSError(
-                    error.winerror, error.strerror, encoded_path)
+                raise OSError(error.winerror, error.strerror, encoded_path)
 
             dacl = security.GetSecurityDescriptorDacl()
             ace_count = dacl.GetAceCount()
@@ -993,11 +1019,12 @@ class NTFilesystem(PosixFilesystemBase):
             dacl.DeleteAce(index_ace_to_remove)
             security.SetDacl(True, dacl, False)
             win32security.SetFileSecurity(
-                encoded_path, win32security.DACL_SECURITY_INFORMATION, security)
+                encoded_path, win32security.DACL_SECURITY_INFORMATION, security
+            )
         return False
 
     def hasGroup(self, segments, group):
-        '''See `ILocalFilesystem`.'''
+        """See `ILocalFilesystem`."""
         if self._isVirtualPath(segments):
             return False
 
@@ -1006,17 +1033,18 @@ class NTFilesystem(PosixFilesystemBase):
 
         try:
             group_sid, group_domain, group_type = (
-                win32security.LookupAccountName(None, group))
+                win32security.LookupAccountName(None, group)
+            )
         except win32net.error:
             return False
 
         with self._impersonateUser():
             try:
                 security = win32security.GetFileSecurity(
-                    encoded_path, win32security.DACL_SECURITY_INFORMATION)
+                    encoded_path, win32security.DACL_SECURITY_INFORMATION
+                )
             except win32net.error as error:
-                raise OSError(
-                    error.winerror, error.strerror, encoded_path)
+                raise OSError(error.winerror, error.strerror, encoded_path)
 
             dacl = security.GetSecurityDescriptorDacl()
             ace_count = dacl.GetAceCount()
@@ -1044,7 +1072,7 @@ class NTFilesystem(PosixFilesystemBase):
                 flags & self.OPEN_READ_ONLY == self.OPEN_READ_ONLY
                 and flags & self.OPEN_WRITE_ONLY != self.OPEN_WRITE_ONLY
                 and flags & self.OPEN_READ_WRITE != self.OPEN_READ_WRITE
-                    ):
+            ):
                 # For read only mode, we use our custom code to open without
                 # a lock.
                 return self._fdRead(path_encoded)
@@ -1071,10 +1099,10 @@ class NTFilesystem(PosixFilesystemBase):
         """
         desired_access = win32file.GENERIC_READ
         share_mode = (
-            win32file.FILE_SHARE_DELETE |
-            win32file.FILE_SHARE_WRITE |
-            win32file.FILE_SHARE_READ
-            )
+            win32file.FILE_SHARE_DELETE
+            | win32file.FILE_SHARE_WRITE
+            | win32file.FILE_SHARE_READ
+        )
         security_attributes = None
         creation_disposition = win32file.OPEN_EXISTING
 
@@ -1087,10 +1115,9 @@ class NTFilesystem(PosixFilesystemBase):
                 creation_disposition,
                 0,
                 None,
-                )
+            )
 
             # Windows has its file handling mechanism.
             # We only want to generic POSIX fd.
             detached_handle = handle.Detach()
-            return msvcrt.open_osfhandle(
-                detached_handle, os.O_RDONLY)
+            return msvcrt.open_osfhandle(detached_handle, os.O_RDONLY)
