@@ -7,11 +7,11 @@ functions.
 
 from chevah_compat import process_capabilities
 from chevah_compat.testing import (
+    TEST_GROUPS,
+    TEST_USERS,
     CompatTestCase,
     setup_access_control,
     teardown_access_control,
-    TEST_GROUPS,
-    TEST_USERS,
 )
 
 

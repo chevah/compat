@@ -4,8 +4,8 @@
 Tests for the testing infrastructure.
 """
 
-from chevah_compat.testing.mockup import ChevahCommonsFactory
 from chevah_compat.testing import ChevahTestCase, mk
+from chevah_compat.testing.mockup import ChevahCommonsFactory
 
 
 class TestFactory(ChevahTestCase):

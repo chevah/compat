@@ -4,19 +4,19 @@
 Windows specific implementation of filesystem access.
 """
 
-import six
-from contextlib import contextmanager
-from winioctlcon import FSCTL_GET_REPARSE_POINT
 import errno
 import msvcrt
-import ntsecuritycon
 import os
+from contextlib import contextmanager
+
+import ntsecuritycon
 import pywintypes
+import six
 import win32api
 import win32file
 import win32net
 import win32security
-
+from winioctlcon import FSCTL_GET_REPARSE_POINT
 from zope.interface import implementer
 
 from chevah_compat.exceptions import (
@@ -32,7 +32,6 @@ from chevah_compat.posix_filesystem import (
     PosixFilesystemBase,
     _win_getEncodedPath,
 )
-
 
 #: https://msdn.microsoft.com/en-us/library/windows/desktop/aa364939.aspx
 # 0 Unknown

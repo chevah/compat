@@ -11,8 +11,8 @@ Make sure you call build command before calling this so that build folder
 is updated.
 """
 
-import sys
 import os
+import sys
 
 print('Before import (for module import is already called)')
 print(sys.argv)

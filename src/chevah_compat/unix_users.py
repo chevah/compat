@@ -20,7 +20,7 @@ from zope.interface import implementer
 
 from chevah_compat.compat_users import CompatUsers
 from chevah_compat.exceptions import ChangeUserException
-from chevah_compat.helpers import _, NoOpContext
+from chevah_compat.helpers import NoOpContext, _
 from chevah_compat.interfaces import (
     IFileSystemAvatar,
     IHasImpersonatedAvatar,

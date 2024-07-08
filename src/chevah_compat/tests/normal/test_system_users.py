@@ -6,14 +6,14 @@ Test system users portable code.
 
 import os
 
-from chevah_compat import DefaultAvatar, system_users, SuperAvatar
+from chevah_compat import DefaultAvatar, SuperAvatar, system_users
 from chevah_compat.interfaces import IFileSystemAvatar, IOSUsers
 from chevah_compat.testing import (
+    TEST_DOMAIN,
+    TEST_PDC,
     CompatTestCase,
     conditionals,
     mk,
-    TEST_DOMAIN,
-    TEST_PDC,
 )
 
 

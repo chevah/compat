@@ -4,7 +4,7 @@
 Tests for the testing infrastructure.
 """
 
-from threading import Thread, Event
+from threading import Event, Thread
 
 from chevah_compat.testing import ChevahTestCase, mk
 

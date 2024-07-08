@@ -8,18 +8,18 @@ import errno
 import os
 
 from chevah_compat import LocalFilesystem, SuperAvatar
+from chevah_compat.exceptions import CompatError, CompatException
 from chevah_compat.interfaces import IFileAttributes
 from chevah_compat.testing import (
-    conditionals,
-    mk,
     TEST_ACCOUNT_GROUP,
     TEST_ACCOUNT_GROUP_OTHER,
     TEST_ACCOUNT_USERNAME,
     TEST_ACCOUNT_USERNAME_OTHER,
-    TestUser,
     TEST_USERS,
+    TestUser,
+    conditionals,
+    mk,
 )
-from chevah_compat.exceptions import CompatError, CompatException
 from chevah_compat.testing.testcase import (
     FileSystemTestCase,
     OSAccountFileSystemTestCase,

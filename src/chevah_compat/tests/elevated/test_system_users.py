@@ -12,24 +12,24 @@ from chevah_compat import (
     process_capabilities,
     system_users,
 )
-from chevah_compat.constants import WINDOWS_PRIMARY_GROUP
 from chevah_compat.administration import os_administration
+from chevah_compat.constants import WINDOWS_PRIMARY_GROUP
+from chevah_compat.exceptions import ChangeUserException, CompatError
 from chevah_compat.helpers import NoOpContext
+from chevah_compat.interfaces import IHasImpersonatedAvatar
 from chevah_compat.testing import (
-    CompatTestCase,
-    conditionals,
-    mk,
-    TestUser,
-    TEST_ACCOUNT_UID,
     TEST_ACCOUNT_GID,
     TEST_ACCOUNT_GID_ANOTHER,
     TEST_ACCOUNT_GROUP,
     TEST_ACCOUNT_GROUP_WIN,
     TEST_ACCOUNT_PASSWORD,
+    TEST_ACCOUNT_UID,
     TEST_ACCOUNT_USERNAME,
+    CompatTestCase,
+    TestUser,
+    conditionals,
+    mk,
 )
-from chevah_compat.exceptions import ChangeUserException, CompatError
-from chevah_compat.interfaces import IHasImpersonatedAvatar
 
 
 class SystemUsersTestCase(CompatTestCase):
@@ -381,8 +381,8 @@ class TestSystemUsers(SystemUsersTestCase):
         )
 
         with system_users.executeAsUser(username=test_user.name):
-            import pwd
             import grp
+            import pwd
 
             uid, gid = os.geteuid(), os.getegid()
             impersonated_username = pwd.getpwuid(uid)[0]

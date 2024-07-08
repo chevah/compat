@@ -18,19 +18,19 @@ for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 
 """
 
-from contextlib import contextmanager
 import os
 import random
 import socket
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
 
 from chevah_compat import (
     LocalFilesystem,
+    SuperAvatar,
     process_capabilities,
     system_users,
-    SuperAvatar,
 )
 from chevah_compat.winerrors import ERROR_NONE_MAPPED
 

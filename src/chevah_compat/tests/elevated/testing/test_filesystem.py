@@ -5,9 +5,8 @@ Tests for testing filesystem
 """
 
 from chevah_compat import system_users
-
+from chevah_compat.testing import ChevahTestCase, conditionals, mk
 from chevah_compat.testing import mk as compat_mk
-from chevah_compat.testing import ChevahTestCase, mk, conditionals
 from chevah_compat.testing.filesystem import LocalTestFilesystem
 
 

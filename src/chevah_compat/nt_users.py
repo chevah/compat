@@ -4,13 +4,22 @@
 Adapter for working with NT users.
 """
 
-from win32com.shell import shell, shellcon
-from zope.interface import implementer
-import pywintypes
+from ctypes import (
+    POINTER,
+    byref,
+    c_uint,
+    c_wchar_p,
+    create_unicode_buffer,
+    windll,
+)
+
 import pythoncom
+import pywintypes
 import win32net
 import win32profile
 import win32security
+from win32com.shell import shell, shellcon
+from zope.interface import implementer
 
 from chevah_compat.compat_users import CompatUsers
 from chevah_compat.constants import CSIDL_FLAG_CREATE, WINDOWS_PRIMARY_GROUP
@@ -21,20 +30,11 @@ from chevah_compat.interfaces import (
     IHasImpersonatedAvatar,
     IOSUsers,
 )
-from chevah_compat.winerrors import ERROR_NONE_MAPPED
 
 # We can not import chevah_compat.process_capabilities as it would
 # create a circular import.
 from chevah_compat.nt_capabilities import NTProcessCapabilities
-
-from ctypes import (
-    windll,
-    c_wchar_p,
-    c_uint,
-    POINTER,
-    byref,
-    create_unicode_buffer,
-)
+from chevah_compat.winerrors import ERROR_NONE_MAPPED
 
 advapi32 = windll.advapi32
 GetUserNameW = advapi32.GetUserNameW

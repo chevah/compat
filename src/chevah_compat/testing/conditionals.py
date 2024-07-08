@@ -4,19 +4,17 @@
 Decorators used for testing.
 """
 
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
-import six
 from functools import wraps
-from nose import SkipTest
 from socket import gethostname
 from unittest import TestCase
 
+import six
+from nose import SkipTest
+
 from chevah_compat import process_capabilities
 from chevah_compat.testing.testcase import ChevahTestCase
-
 
 _SUPPORTED_OS_FAMILIES = ['posix', 'nt']
 

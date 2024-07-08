@@ -5,22 +5,19 @@
 Code for portable functions.
 """
 
-from __future__ import with_statement
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function, with_statement
 
 import os
 
 if os.name == 'posix':
+    from chevah_compat.unix_capabilities import UnixProcessCapabilities
+    from chevah_compat.unix_filesystem import UnixFilesystem
     from chevah_compat.unix_users import (
         UnixDefaultAvatar,
         UnixHasImpersonatedAvatar,
-        UnixUsers,
         UnixSuperAvatar,
+        UnixUsers,
     )
-    from chevah_compat.unix_capabilities import UnixProcessCapabilities
-    from chevah_compat.unix_filesystem import UnixFilesystem
 
     system_users = UnixUsers()
     process_capabilities = UnixProcessCapabilities()
@@ -33,14 +30,14 @@ if os.name == 'posix':
     os.environ['CRYPTOGRAPHY_ALLOW_OPENSSL_102'] = 'yes'
 
 elif os.name == 'nt':
+    from chevah_compat.nt_capabilities import NTProcessCapabilities
+    from chevah_compat.nt_filesystem import NTFilesystem
     from chevah_compat.nt_users import (
         NTDefaultAvatar,
         NTHasImpersonatedAvatar,
-        NTUsers,
         NTSuperAvatar,
+        NTUsers,
     )
-    from chevah_compat.nt_capabilities import NTProcessCapabilities
-    from chevah_compat.nt_filesystem import NTFilesystem
 
     system_users = NTUsers()
     process_capabilities = NTProcessCapabilities()

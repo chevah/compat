@@ -3,16 +3,14 @@ This plugin provides test timings to identify which tests might be
 taking the most.
 """
 
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from six.moves import range
+from __future__ import absolute_import, division, print_function
 
 import operator
 from time import time
 
 import nose
 from nose.plugins.base import Plugin
+from six.moves import range
 
 # Number of tests to show in final report.
 TOP_COUNT = 10

@@ -4,13 +4,13 @@
 Filesystem helpers for tests.
 """
 
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-import six
+from __future__ import absolute_import, division, print_function
+
 import os
 import re
 import uuid
+
+import six
 
 from chevah_compat import LocalFilesystem
 from chevah_compat.testing.constant import TEST_NAME_MARKER

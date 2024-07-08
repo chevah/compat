@@ -5,8 +5,6 @@ Filesystem code used by all operating systems, including Windows as
 Windows has its layer of POSIX compatibility.
 """
 
-from contextlib import contextmanager
-from datetime import date
 import errno
 import os
 import posixpath
@@ -17,6 +15,8 @@ import struct
 import sys
 import time
 import unicodedata
+from contextlib import contextmanager
+from datetime import date
 from os import scandir
 
 from zope.interface import implementer
@@ -26,9 +26,8 @@ from chevah_compat.exceptions import (
     CompatError,
     CompatException,
 )
+from chevah_compat.helpers import NoOpContext, _
 from chevah_compat.interfaces import IFileAttributes
-from chevah_compat.helpers import _, NoOpContext
-
 
 _DEFAULT_FOLDER_MODE = 0o777
 _DEFAULT_FILE_MODE = 0o600

@@ -5,6 +5,7 @@ Tests for the system compatibility module.
 """
 
 import os
+
 from chevah_compat.testing import ChevahTestCase, mk
 
 

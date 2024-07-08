@@ -12,7 +12,7 @@ from twisted.internet import defer, reactor, threads
 from twisted.internet.task import Clock
 
 from chevah_compat import process_capabilities
-from chevah_compat.testing import conditionals, ChevahTestCase, mk
+from chevah_compat.testing import ChevahTestCase, conditionals, mk
 
 
 class Dummy(object):

@@ -4,7 +4,7 @@
 Common interfaces used by Chevah products.
 """
 
-from zope.interface import Interface, Attribute
+from zope.interface import Attribute, Interface
 
 
 class IDaemon(Interface):

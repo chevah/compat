@@ -4,12 +4,12 @@ A simple implementation of the Unix daemon.
 Is shows how to pass opened files to the forked process.
 """
 
-from __future__ import absolute_import, unicode_literals, print_function
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import time
 
 from chevah.compat.unix_service import Daemon
-
 
 LOG_PATH = '/tmp/py-daemon-example.log'
 

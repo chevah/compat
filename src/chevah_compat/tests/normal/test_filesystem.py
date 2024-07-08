@@ -4,7 +4,6 @@
 Tests for portable filesystem access.
 """
 
-from datetime import date
 import errno
 import os
 import platform
@@ -13,15 +12,16 @@ import subprocess
 import sys
 import tempfile
 import time
+from datetime import date
 
 from nose.plugins.attrib import attr
 
 from chevah_compat import DefaultAvatar, FileAttributes, LocalFilesystem
-from chevah_compat.posix_filesystem import _win_getEncodedPath
 from chevah_compat.avatar import FilesystemApplicationAvatar
 from chevah_compat.exceptions import CompatError
 from chevah_compat.helpers import force_unicode
 from chevah_compat.interfaces import IFileAttributes, ILocalFilesystem
+from chevah_compat.posix_filesystem import _win_getEncodedPath
 from chevah_compat.testing import CompatTestCase, conditionals, mk
 
 start_of_year = time.mktime((date.today().year, 1, 1, 0, 0, 0, 0, 0, -1))
@@ -2851,7 +2851,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
 
         # Run the test with Windows Share paths
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(
-            '\\\\localhost\\{}\{}'.format(share_name, file_name)
+            '\\\\localhost\\{}\\{}'.format(share_name, file_name)
         )
         self.assertFalse(self.unlocked_filesystem.exists(segments))
         data = b'something-' * 1000

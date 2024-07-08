@@ -4,13 +4,13 @@
 Provides information about capabilities for a process on Windows.
 """
 
-from contextlib import contextmanager
 import platform
+from contextlib import contextmanager
+
 import pywintypes
 import win32api
 import win32process
 import win32security
-
 from zope.interface import implementer
 
 from chevah_compat.capabilities import BaseProcessCapabilities

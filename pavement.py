@@ -13,20 +13,20 @@ import subprocess
 import sys
 
 from brink.pavement_commons import (
-    coverage_prepare,
+    SETUP,
     codecov_publish,
+    coverage_prepare,
     default,
     help,
-    merge_init,
     merge_commit,
+    merge_init,
     pave,
     pqm,
-    SETUP,
     test_coverage,
     test_diff,
+    test_normal,
     test_python,
     test_remote,
-    test_normal,
     test_super,
 )
 from paver.easy import call_task, consume_args, environment, needs, pushd, task
@@ -281,9 +281,10 @@ def test_ci2(args):
     ]
 
     # Show some info about the current environment.
-    from OpenSSL import SSL, __version__ as pyopenssl_version
-    from coverage.cmdline import main as coverage_main
     from chevah_compat.testing.testcase import ChevahTestCase
+    from coverage.cmdline import main as coverage_main
+    from OpenSSL import SSL
+    from OpenSSL import __version__ as pyopenssl_version
 
     print(
         '%s / os_name:%s / os_version:%s / cpu_type:%s / ci_name:%s'

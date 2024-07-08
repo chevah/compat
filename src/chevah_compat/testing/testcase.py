@@ -5,30 +5,29 @@
 TestCase used for Chevah project.
 """
 
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-import six
+from __future__ import absolute_import, division, print_function
+
 import contextlib
 import inspect
-import threading
 import os
 import platform
 import socket
 import sys
+import threading
 import time
+from unittest.mock import Mock, patch
 
+import six
 from bunch import Bunch
-from unittest.mock import patch, Mock
 from nose import SkipTest
 
 try:
-    from twisted.internet.defer import Deferred
     from twisted.internet._signals import (
+        _SIGCHLDWaker,
         _SocketWaker,
         _UnixWaker,
-        _SIGCHLDWaker,
     )
+    from twisted.internet.defer import Deferred
     from twisted.python.failure import Failure
 except ImportError:
     # Twisted support is optional.
@@ -39,15 +38,15 @@ except ImportError:
 from chevah_compat import (
     DefaultAvatar,
     LocalFilesystem,
+    SuperAvatar,
     process_capabilities,
     system_users,
-    SuperAvatar,
 )
 from chevah_compat.administration import os_administration
 from chevah_compat.testing.assertion import AssertionMixin
-from chevah_compat.testing.mockup import mk
 from chevah_compat.testing.constant import TEST_NAME_MARKER
 from chevah_compat.testing.filesystem import LocalTestFilesystem
+from chevah_compat.testing.mockup import mk
 
 # For Python below 2.7 we use the separate unittest2 module.
 # It comes by default in Python 2.7.

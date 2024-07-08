@@ -3,17 +3,15 @@
 Module containing helpers for testing the Chevah project.
 """
 
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
-from six.moves import range
-import six
 import os
 import random
 import string
 import uuid
 
+import six
+from six.moves import range
 from unidecode import unidecode
 
 try:
@@ -25,8 +23,8 @@ except ImportError:  # pragma: no cover
 
 from chevah_compat import DefaultAvatar, process_capabilities, system_users
 from chevah_compat.avatar import FilesystemApplicationAvatar, FilesystemOSAvatar
-from chevah_compat.testing.filesystem import LocalTestFilesystem
 from chevah_compat.testing.constant import TEST_NAME_MARKER
+from chevah_compat.testing.filesystem import LocalTestFilesystem
 
 
 def _sanitize_name_legacy_unix(candidate):
