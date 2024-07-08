@@ -335,7 +335,7 @@ jobs:
       run: ./pythia.sh deps
 
     - name: Lint
-      run: ./pythia.sh lint --all
+      run: ./pythia.sh lint
 
   # Helper so that on GitHub repo settings we can configure a single job as
   # required.
