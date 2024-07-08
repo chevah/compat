@@ -3,21 +3,20 @@
 """
 Build script for chevah-compat.
 """
+
 import compileall
 import imp
 import os
 import py_compile
 import struct
+import subprocess
 import sys
 
 from brink.pavement_commons import (
-    buildbot_list,
-    buildbot_try,
     coverage_prepare,
     codecov_publish,
     default,
     help,
-    lint,
     merge_init,
     merge_commit,
     pave,
@@ -29,7 +28,7 @@ from brink.pavement_commons import (
     test_remote,
     test_normal,
     test_super,
-    )
+)
 from paver.easy import call_task, consume_args, environment, needs, pushd, task
 
 if os.name == 'nt':
@@ -37,20 +36,17 @@ if os.name == 'nt':
     import tempfile
 
     # Create the short temp.
-    tempfile.tempdir = "c:\\temp"
+    tempfile.tempdir = 'c:\\temp'
     try:
         os.mkdir(tempfile.tempdir)
     except OSError:
         pass
 
 # Make pylint shut up.
-buildbot_list
-buildbot_try
 coverage_prepare
 codecov_publish
 default
 help
-lint
 merge_init
 merge_commit
 pqm
@@ -61,83 +57,11 @@ test_remote
 test_normal
 test_super
 
-try:
-    from scame.formatcheck import ScameOptions
-
-    class CompatScameOptions(ScameOptions):
-        """
-        Scame options for the this project.
-        """
-        test_options = {}
-
-        def get(self, option, path):
-            tests_path = os.path.join('chevah_compat', 'tests')
-            testing_path = os.path.join('chevah_compat', 'testing')
-            admin_path = os.path.join('chevah_compat', 'administration.py')
-            if (
-                tests_path in path or
-                testing_path in path or
-                admin_path in path or
-                path == 'pavement.py'
-                    ):
-                # We have a testing code.
-                test_value = self.test_options.get(option, None)
-                if test_value is not None:
-                    return test_value
-
-            config = getattr(self, option)
-
-            if (
-                (path.endswith('.yml') or path.endswith('.yaml'))
-                and option == 'max_line_length'
-                    ):
-                # We allow long lines in yaml files.
-                return 1000
-
-            return config
-
-    options = CompatScameOptions()
-    # Looks like there is a bug in `scame`
-    # so we need max_line + 1 here.
-    options.max_line_length = 81
-    options.progress = True
-
-    options.scope = {
-        'include': [
-            'pavement.py',
-            'example/',
-            'README.rst',
-            'src/chevah_compat/',
-            ],
-        'exclude': [],
-        }
-
-    options.towncrier = {
-        'enabled': False,
-        'fragments_directory': None,
-        'excluded_fragments': 'readme.rst',
-        }
-
-    options.pyflakes['enabled'] = True
-
-    options.pycodestyle['enabled'] = False
-    options.bandit['enabled'] = False
-
-    # For now pylint is disabled, as there are to many errors.
-    options.pylint['enabled'] = False
-    options.pylint['disable'] = ['C0103', 'C0330', 'R0902', 'W0212']
-
-
-except ImportError:
-    # This will fail before we run `./brink.sh deps`
-    options = None
-
 
 SETUP['product']['name'] = 'chevah-compat'
 SETUP['folders']['source'] = 'src/chevah_compat'
 SETUP['repository']['name'] = 'compat'
 SETUP['repository']['github'] = 'https://github.com/chevah/compat'
-SETUP['scame'] = options
 SETUP['test']['package'] = 'chevah_compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = [
@@ -147,7 +71,7 @@ SETUP['test']['nose_options'] = [
     # '--with-timer',
     # '--with-run-reporter',
     # '--with-memory-usage',
-    ]
+]
 SETUP['pypi']['index_url'] = os.environ['PIP_INDEX_URL']
 
 
@@ -244,15 +168,16 @@ def deps():
     env_ci = os.environ.get('CI', '').strip()
     if env_ci.lower() != 'true':
         dev_mode = ['-e']
-        pave.fs.deleteFile([
-            pave.path.build, pave.getPythonLibPath(), 'chevah-compat.egg-link'])
+        pave.fs.deleteFile(
+            [pave.path.build, pave.getPythonLibPath(), 'chevah-compat.egg-link']
+        )
     else:
         print('Installing in non-dev mode.')
 
     pave.pip(
         command='install',
         arguments=dev_mode + ['.[dev]'],
-        )
+    )
 
 
 @task
@@ -261,6 +186,7 @@ def build():
     """
     Copy new source code to build folder.
     """
+
 
 @task
 @needs('build', 'test_python')
@@ -293,20 +219,15 @@ def _generate_coverate_reports():
     """
     import coverage
     from diff_cover.tool import main as diff_cover_main
+
     with pushd(pave.path.build):
         cov = coverage.Coverage(auto_data=True, config_file='.coveragerc')
         cov.load()
         cov.xml_report()
         cov.html_report()
-        print(
-            'HTML report file://%s/coverage-report/index.html' % (
-                pave.path.build,))
+        print('HTML report file://%s/coverage-report/index.html' % (pave.path.build,))
         print('--------')
-        diff_cover_main(argv=[
-            'diff-cover',
-            'coverage.xml',
-            '--fail-under', '100'
-            ])
+        diff_cover_main(argv=['diff-cover', 'coverage.xml', '--fail-under', '100'])
 
 
 @task
@@ -355,30 +276,34 @@ def test_ci2(args):
         # '--with-run-reporter',
         # '--with-timer',
         '-v',
-        ]
+    ]
 
     # Show some info about the current environment.
     from OpenSSL import SSL, __version__ as pyopenssl_version
     from coverage.cmdline import main as coverage_main
     from chevah_compat.testing.testcase import ChevahTestCase
 
-    print('%s / os_name:%s / os_version:%s / cpu_type:%s / ci_name:%s' % (
-        ChevahTestCase.os_family,
-        ChevahTestCase.os_name,
-        ChevahTestCase.os_version,
-        ChevahTestCase.cpu_type,
-        ChevahTestCase.ci_name,
-        ))
+    print(
+        '%s / os_name:%s / os_version:%s / cpu_type:%s / ci_name:%s'
+        % (
+            ChevahTestCase.os_family,
+            ChevahTestCase.os_name,
+            ChevahTestCase.os_version,
+            ChevahTestCase.cpu_type,
+            ChevahTestCase.ci_name,
+        )
+    )
     print('PYTHON %s on %s with %s' % (sys.version, pave.os_name, pave.cpu))
-    print('%s (%s)' % (
-        SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER))
+    print(
+        '%s (%s)' % (SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER)
+    )
     print('pyOpenSSL %s' % (pyopenssl_version,))
     coverage_main(argv=['--version'])
 
     print('\n#\n# Installed packages\n#')
     pave.pip(
         command='freeze',
-        )
+    )
 
     env = os.environ.copy()
     args = [env.get('TEST_ARGUMENTS', '')]
@@ -406,3 +331,46 @@ def test_ci2(args):
     exit_code = call_task('test_python', args=args)
 
     return exit_code
+
+@task
+@consume_args
+def lint(args):
+    """
+    Check that the source code is ok
+    """
+    ruff_bin = os.path.join(pave.path.build, 'bin', 'ruff')
+    check_result = subprocess.run(
+        [ruff_bin, 'check'],
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+        )
+
+    format_result = subprocess.run(
+        [ruff_bin, 'format', '--check'],
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+        )
+    if check_result.returncode != 0 or format_result != 0:
+        sys.exit(1)
+
+@task
+@consume_args
+def fix(args):
+    """
+    Try to fix the source code.
+    """
+    ruff_bin = os.path.join(pave.path.build, 'bin', 'ruff')
+    check_result = subprocess.run(
+        [ruff_bin, 'check', '--fix', '--unsafe-fixes'],
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+        )
+
+    format_result = subprocess.run(
+        [ruff_bin, 'format'],
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+        )
+
+    if check_result.returncode != 0 or format_result != 0:
+        sys.exit(1)
