@@ -156,7 +156,8 @@ class TestUser(SanitizeNameMixin):
         Generate the Windows token for `user`.
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
-            username=self.upn, password=self.password
+            username=self.upn,
+            password=self.password,
         )
 
         if not result:
@@ -297,7 +298,7 @@ class ChevahCommonsFactory(object):
             if min_length + 1 > length:
                 raise AssertionError(
                     'Can not generate an unique string shorter than %d'
-                    % (length)
+                    % (length),
                 )
             else:
                 extra_length = length - min_length
@@ -323,7 +324,7 @@ class ChevahCommonsFactory(object):
         """Return the default local test filesystem."""
         if self.__class__._local_test_filesystem is None:
             self.__class__._local_test_filesystem = LocalTestFilesystem(
-                avatar=DefaultAvatar()
+                avatar=DefaultAvatar(),
             )
         return self.__class__._local_test_filesystem
 
@@ -379,7 +380,10 @@ class ChevahCommonsFactory(object):
         )
 
     def makeFilesystemApplicationAvatar(
-        self, name=None, home_folder_path=None, root_folder_path=None
+        self,
+        name=None,
+        home_folder_path=None,
+        root_folder_path=None,
     ):
         """
         Creates a valid FilesystemApplicationAvatar.
@@ -423,7 +427,11 @@ class ChevahCommonsFactory(object):
         return result
 
     def makeTestUser(
-        self, name=None, password=None, posix_home_path=None, home_group=None
+        self,
+        name=None,
+        password=None,
+        posix_home_path=None,
+        home_group=None,
     ):
         """
         Return an instance of TestUser with specified name and password.

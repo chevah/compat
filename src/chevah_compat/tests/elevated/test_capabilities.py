@@ -100,7 +100,8 @@ class TestProcessCapabilities(FileSystemTestCase):
         The process under impersonated account still has root capabilities.
         """
         with system_users.executeAsUser(
-            username=self.os_user.name, token=self.os_user.token
+            username=self.os_user.name,
+            token=self.os_user.token,
         ):
             text = self.capabilities.getCurrentPrivilegesDescription()
 
@@ -120,7 +121,8 @@ class TestProcessCapabilities(FileSystemTestCase):
         self.assertContains('SeIncreaseWorkingSetPrivilege:0', initial_text)
 
         with system_users.executeAsUser(
-            username=self.os_user.name, token=self.os_user.token
+            username=self.os_user.name,
+            token=self.os_user.token,
         ):
             text = self.capabilities.getCurrentPrivilegesDescription()
 
@@ -139,18 +141,19 @@ class TestProcessCapabilities(FileSystemTestCase):
         import win32security
 
         initial_state = self.capabilities._getPrivilegeState(
-            win32security.SE_INC_WORKING_SET_NAME
+            win32security.SE_INC_WORKING_SET_NAME,
         )
         self.assertEqual('present', initial_state)
 
         with system_users.executeAsUser(
-            username=self.os_user.name, token=self.os_user.token
+            username=self.os_user.name,
+            token=self.os_user.token,
         ):
             with self.capabilities._elevatePrivileges(
-                win32security.SE_INC_WORKING_SET_NAME
+                win32security.SE_INC_WORKING_SET_NAME,
             ):
                 update_state = self.capabilities._getPrivilegeState(
-                    win32security.SE_INC_WORKING_SET_NAME
+                    win32security.SE_INC_WORKING_SET_NAME,
                 )
 
         self.assertStartsWith('enabled', update_state)
@@ -164,15 +167,16 @@ class TestProcessCapabilities(FileSystemTestCase):
         import win32security
 
         with system_users.executeAsUser(
-            username=self.os_user.name, token=self.os_user.token
+            username=self.os_user.name,
+            token=self.os_user.token,
         ):
             initial_state = self.capabilities._getPrivilegeState(
-                win32security.SE_CREATE_SYMBOLIC_LINK_NAME
+                win32security.SE_CREATE_SYMBOLIC_LINK_NAME,
             )
             self.assertEqual('absent', initial_state)
 
             with self.assertRaises(AdjustPrivilegeException):
                 with self.capabilities._elevatePrivileges(
-                    win32security.SE_CREATE_SYMBOLIC_LINK_NAME
+                    win32security.SE_CREATE_SYMBOLIC_LINK_NAME,
                 ):
                     pass

@@ -135,7 +135,8 @@ class TestNTProcessCapabilities(CompatTestCase):
         # accounts.
         privilege = win32security.SE_RELABEL_NAME
         self.assertEqual(
-            'absent', self.capabilities._getPrivilegeState(privilege)
+            'absent',
+            self.capabilities._getPrivilegeState(privilege),
         )
 
         self.assertFalse(self.capabilities._isPrivilegeEnabled(privilege))
@@ -146,7 +147,8 @@ class TestNTProcessCapabilities(CompatTestCase):
         """
         with self.assertRaises(AdjustPrivilegeException):
             with self.capabilities._elevatePrivileges(
-                win32security.SE_IMPERSONATE_NAME, 'no-such-privilege-name'
+                win32security.SE_IMPERSONATE_NAME,
+                'no-such-privilege-name',
             ):
                 pass  # pragma: no cover
 
@@ -182,7 +184,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         self.assertIsNotEmpty(result)
 
         privilege = self.capabilities._getPrivilegeID(
-            win32security.SE_CHANGE_NOTIFY_NAME
+            win32security.SE_CHANGE_NOTIFY_NAME,
         )
         self.assertContains((privilege, 3), result)
 
@@ -202,7 +204,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         process.
         """
         result = self.capabilities._getPrivilegeState(
-            win32security.SE_ASSIGNPRIMARYTOKEN_NAME
+            win32security.SE_ASSIGNPRIMARYTOKEN_NAME,
         )
 
         self.assertEqual('absent', result)
@@ -216,7 +218,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
             raise self.skipTest('GHA always runs as super-admin')
 
         result = self.capabilities._getPrivilegeState(
-            win32security.SE_SECURITY_NAME
+            win32security.SE_SECURITY_NAME,
         )
 
         self.assertEqual('absent', result)
@@ -230,7 +232,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
             raise self.skipTest('GHA always runs as super-admin')
 
         result = self.capabilities._getPrivilegeState(
-            win32security.SE_IMPERSONATE_NAME
+            win32security.SE_IMPERSONATE_NAME,
         )
 
         self.assertEqual('absent', result)
@@ -328,17 +330,17 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
         self.assertIsNotEmpty(result)
 
         privilege = self.capabilities._getPrivilegeID(
-            win32security.SE_SECURITY_NAME
+            win32security.SE_SECURITY_NAME,
         )
         self.assertContains((privilege, 0), result)
 
         privilege = self.capabilities._getPrivilegeID(
-            win32security.SE_IMPERSONATE_NAME
+            win32security.SE_IMPERSONATE_NAME,
         )
         self.assertContains((privilege, 3), result)
 
         privilege = self.capabilities._getPrivilegeID(
-            win32security.SE_CREATE_SYMBOLIC_LINK_NAME
+            win32security.SE_CREATE_SYMBOLIC_LINK_NAME,
         )
         self.assertContains((privilege, 0), result)
 
@@ -348,7 +350,7 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
         process but are not enabled.
         """
         result = self.capabilities._getPrivilegeState(
-            win32security.SE_SECURITY_NAME
+            win32security.SE_SECURITY_NAME,
         )
 
         self.assertEqual('present', result)
@@ -359,7 +361,7 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
         current process but are enabled by default.
         """
         result = self.capabilities._getPrivilegeState(
-            win32security.SE_IMPERSONATE_NAME
+            win32security.SE_IMPERSONATE_NAME,
         )
 
         self.assertEqual('enabled-by-default', result)
@@ -382,17 +384,18 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
         running as super user.
         """
         initial_state = self.capabilities._isPrivilegeEnabled(
-            win32security.SE_BACKUP_NAME
+            win32security.SE_BACKUP_NAME,
         )
 
         self.capabilities._adjustPrivilege(win32security.SE_BACKUP_NAME, False)
 
         self.assertIsFalse(
-            self.capabilities._isPrivilegeEnabled(win32security.SE_BACKUP_NAME)
+            self.capabilities._isPrivilegeEnabled(win32security.SE_BACKUP_NAME),
         )
 
         self.capabilities._adjustPrivilege(
-            win32security.SE_BACKUP_NAME, initial_state
+            win32security.SE_BACKUP_NAME,
+            initial_state,
         )
 
         self.assertEquals(
@@ -454,7 +457,7 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
         with capabilities._elevatePrivileges(take_ownership, impersonate):
             self.assertTrue(self.capabilities._isPrivilegeEnabled(impersonate))
             self.assertTrue(
-                self.capabilities._isPrivilegeEnabled(take_ownership)
+                self.capabilities._isPrivilegeEnabled(take_ownership),
             )
 
         self.assertTrue(self.capabilities._isPrivilegeEnabled(impersonate))

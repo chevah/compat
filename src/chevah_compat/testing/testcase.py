@@ -200,7 +200,7 @@ class TwistedTestCase(TestCase):
         """
         self._timeout_reached = True
         failure = AssertionError(
-            'Reactor took more than %.2f seconds to execute.' % timeout
+            'Reactor took more than %.2f seconds to execute.' % timeout,
         )
         self._reactor_timeout_failure = failure
 
@@ -212,7 +212,9 @@ class TwistedTestCase(TestCase):
 
         # Set up timeout.
         self._reactor_timeout_call = reactor.callLater(
-            timeout, self._raiseReactorTimeoutError, timeout
+            timeout,
+            self._raiseReactorTimeoutError,
+            timeout,
         )
 
         # Don't start the reactor if it is already started.
@@ -251,7 +253,7 @@ class TwistedTestCase(TestCase):
                     reactor.getThreadPool().q.qsize(),
                     self._threadPoolThreads(),
                     self._threadPoolWorking(),
-                )
+                ),
             )
             t2 = reactor.timeout()
             # For testing we want to force to reactor to wake at an
@@ -298,7 +300,9 @@ class TwistedTestCase(TestCase):
         # Start running has consumed the startup events, so we need
         # to restore them.
         reactor.addSystemEventTrigger(
-            'during', 'startup', reactor._reallyStartRunning
+            'during',
+            'startup',
+            reactor._reallyStartRunning,
         )
 
     def _assertReactorIsClean(self):
@@ -312,7 +316,7 @@ class TwistedTestCase(TestCase):
 
         def raise_failure(location, reason):
             raise AssertionError(
-                'Reactor is not clean. %s: %s' % (location, reason)
+                'Reactor is not clean. %s: %s' % (location, reason),
             )
 
         if reactor._started:  # noqa:cover
@@ -357,7 +361,11 @@ class TwistedTestCase(TestCase):
                 raise_failure('delayed calls', delayed_str)
 
     def _runDeferred(
-        self, deferred, timeout=None, debug=False, prevent_stop=False
+        self,
+        deferred,
+        timeout=None,
+        debug=False,
+        prevent_stop=False,
     ):
         """
         This is low level method. In most tests you would like to use
@@ -406,7 +414,7 @@ class TwistedTestCase(TestCase):
 
                 if self._timeout_reached:
                     raise AssertionError(
-                        'Deferred took more than %d to execute.' % timeout
+                        'Deferred took more than %d to execute.' % timeout,
                     )
 
         # Check executing all deferred from chained callbacks.
@@ -490,7 +498,7 @@ class TwistedTestCase(TestCase):
                 if have_callbacks:
                     raise AssertionError(
                         'Reactor queue still contains delayed deferred.\n'
-                        '%s' % (self._reactorQueueToString())
+                        '%s' % (self._reactorQueueToString()),
                     )
                 break
 
@@ -548,11 +556,15 @@ class TwistedTestCase(TestCase):
             # We stop the reactor on failures.
             self._shutdownTestReactor()
             raise AssertionError(
-                'executeDelayedCalls took more than %s' % (timeout,)
+                'executeDelayedCalls took more than %s' % (timeout,),
             )
 
     def executeReactorUntil(
-        self, callable, timeout=None, debug=False, prevent_stop=True
+        self,
+        callable,
+        timeout=None,
+        debug=False,
+        prevent_stop=True,
     ):
         """
         Run the reactor until callable returns `True`.
@@ -576,7 +588,9 @@ class TwistedTestCase(TestCase):
         iterations = [False] * (count - 1)
         iterations.append(True)
         self.executeReactorUntil(
-            lambda _: iterations.pop(0), timeout=timeout, debug=debug
+            lambda _: iterations.pop(0),
+            timeout=timeout,
+            debug=debug,
         )
 
     def iterateReactorWithStop(self, count=1, timeout=None, debug=False):
@@ -615,7 +629,11 @@ class TwistedTestCase(TestCase):
         return raw_name.split(' ', 1)[0].split('.')[-1]
 
     def getDeferredFailure(
-        self, deferred, timeout=None, debug=False, prevent_stop=False
+        self,
+        deferred,
+        timeout=None,
+        debug=False,
+        prevent_stop=False,
     ):
         """
         Run the deferred and return the failure.
@@ -631,7 +649,10 @@ class TwistedTestCase(TestCase):
             self.assertFailureType(AuthenticationError, failure)
         """
         self._runDeferred(
-            deferred, timeout=timeout, debug=debug, prevent_stop=prevent_stop
+            deferred,
+            timeout=timeout,
+            debug=debug,
+            prevent_stop=prevent_stop,
         )
         self.assertIsFailure(deferred)
         failure = deferred.result
@@ -665,13 +686,13 @@ class TwistedTestCase(TestCase):
         if not result:
             self.fail(
                 'Success result expected on %r, found no result instead'
-                % (deferred,)
+                % (deferred,),
             )
         elif isinstance(result[0], Failure):
             self.fail(
                 'Success result expected on %r, '
                 'found failure result instead:\n%s'
-                % (deferred, result[0].getBriefTraceback())
+                % (deferred, result[0].getBriefTraceback()),
             )
         else:
             return result[0]
@@ -708,18 +729,21 @@ class TwistedTestCase(TestCase):
         if not result:
             self.fail(
                 'Failure result expected on %r, found no result instead'
-                % (deferred,)
+                % (deferred,),
             )
         elif not isinstance(result[0], Failure):
             self.fail(
                 'Failure result expected on %r, '
-                'found success result (%r) instead' % (deferred, result[0])
+                'found success result (%r) instead' % (deferred, result[0]),
             )
         elif expectedExceptionTypes and not result[0].check(
-            *expectedExceptionTypes
+            *expectedExceptionTypes,
         ):
             expectedString = ' or '.join(
-                [f'{t.__module__}.{t.__name__}' for t in expectedExceptionTypes]
+                [
+                    f'{t.__module__}.{t.__name__}'
+                    for t in expectedExceptionTypes
+                ],
             )
 
             self.fail(
@@ -730,7 +754,7 @@ class TwistedTestCase(TestCase):
                     deferred,
                     result[0].type,
                     result[0].getBriefTraceback(),
-                )
+                ),
             )
         else:
             return result[0]
@@ -769,11 +793,15 @@ class TwistedTestCase(TestCase):
             deferred.addErrback(lambda _: None)
             self.fail(
                 'No result expected on %r, found %r instead'
-                % (deferred, result[0])
+                % (deferred, result[0]),
             )
 
     def getDeferredResult(
-        self, deferred, timeout=None, debug=False, prevent_stop=False
+        self,
+        deferred,
+        timeout=None,
+        debug=False,
+        prevent_stop=False,
     ):
         """
         Run the deferred and return the result.
@@ -789,7 +817,10 @@ class TwistedTestCase(TestCase):
             self.assertEqual('something', result)
         """
         self._runDeferred(
-            deferred, timeout=timeout, debug=debug, prevent_stop=prevent_stop
+            deferred,
+            timeout=timeout,
+            debug=debug,
+            prevent_stop=prevent_stop,
         )
         self.assertIsNotFailure(deferred)
         return deferred.result
@@ -989,8 +1020,8 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
                     AssertionError(
                         'There are still active threads, '
                         'beside the main thread: %s - %s'
-                        % (thread_name, threads)
-                    )
+                        % (thread_name, threads),
+                    ),
                 )
 
         super(ChevahTestCase, self).tearDown()
@@ -1083,8 +1114,8 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             self._teardown_errors.append(
                 AssertionError(
                     'There are temporary files or folders left over.\n %s'
-                    % ('\n'.join(errors))
-                )
+                    % ('\n'.join(errors)),
+                ),
             )
 
     def shortDescription(self):  # noqa:cover
@@ -1122,7 +1153,10 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
 
     def assertSequenceEqual(self, first, second, msg, seq_type):
         super(ChevahTestCase, self).assertSequenceEqual(
-            first, second, msg, seq_type
+            first,
+            second,
+            msg,
+            seq_type,
         )
 
         for first_element, second_element in zip(first, second):
@@ -1150,7 +1184,8 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         Update to stdlib to make sure we don't compare str with unicode.
         """
         if isinstance(first, six.text_type) and not isinstance(
-            second, six.text_type
+            second,
+            six.text_type,
         ):  # noqa:cover
             if not msg:
                 msg = 'First is unicode while second is str for "%s".' % (
@@ -1159,7 +1194,8 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             raise AssertionError(msg.encode('utf-8'))
 
         if not isinstance(first, six.text_type) and isinstance(
-            second, six.text_type
+            second,
+            six.text_type,
         ):  # noqa:cover
             if not msg:
                 msg = 'First is str while second is unicode for "%s".' % (
@@ -1168,7 +1204,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             raise AssertionError(msg.encode('utf-8'))
 
         return super(ChevahTestCase, self)._baseAssertEqual(
-            first, second, msg=msg
+            first,
+            second,
+            msg=msg,
         )
 
     @staticmethod
@@ -1351,7 +1389,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         if not isinstance(value, expected_type):
             raise AssertionError(
                 'Expecting type %s, but got %s. %s'
-                % (expected_type, type(value), msg)
+                % (expected_type, type(value), msg),
             )
 
     def tempPath(self, prefix='', suffix='', win_encoded=False):
@@ -1371,7 +1409,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         will be automatically removed.
         """
         path, segments = mk.fs.pathInTemp(
-            cleanup=self.addCleanup, prefix=prefix, suffix=suffix
+            cleanup=self.addCleanup,
+            prefix=prefix,
+            suffix=suffix,
         )
 
         if self.os_family == 'nt' and win_encoded:
@@ -1380,7 +1420,12 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         return path, segments
 
     def tempFile(
-        self, content='', prefix='', suffix='', cleanup=True, win_encoded=False
+        self,
+        content='',
+        prefix='',
+        suffix='',
+        cleanup=True,
+        win_encoded=False,
     ):
         """
         Return (path, segments) for a new file created in temp which is
@@ -1414,7 +1459,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         auto cleaned.
         """
         segments = mk.fs.createFolderInTemp(
-            foldername=name, prefix=prefix, suffix=suffix
+            foldername=name,
+            prefix=prefix,
+            suffix=suffix,
         )
         path = mk.fs.getRealPathFromSegments(segments)
         self.addCleanup(mk.fs.deleteFolder, segments, recursive=True)
@@ -1438,7 +1485,8 @@ class FileSystemTestCase(ChevahTestCase):
         cls.os_user = cls.setUpTestUser()
 
         home_folder_path = system_users.getHomeFolder(
-            username=cls.os_user.name, token=cls.os_user.token
+            username=cls.os_user.name,
+            token=cls.os_user.token,
         )
 
         cls.avatar = mk.makeFilesystemOSAvatar(

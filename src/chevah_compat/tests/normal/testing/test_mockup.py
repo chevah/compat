@@ -68,7 +68,8 @@ class TestFactory(ChevahTestCase):
             value.decode(encoding='ascii')
 
         self.assertEndsWith(
-            'ordinal not in range(128)', context.exception.reason
+            'ordinal not in range(128)',
+            context.exception.reason,
         )
 
         with self.assertRaises(UnicodeDecodeError) as context:
@@ -94,7 +95,8 @@ class TestFactory(ChevahTestCase):
             value.decode(encoding='ascii')
 
         self.assertEndsWith(
-            'ordinal not in range(128)', context.exception.reason
+            'ordinal not in range(128)',
+            context.exception.reason,
         )
 
         with self.assertRaises(UnicodeDecodeError) as context:

@@ -27,7 +27,8 @@ class SymbolicLinksMixin(object):
         link_segments.append(mk.string())
 
         self.filesystem.makeLink(
-            target_segments=target_segments, link_segments=link_segments
+            target_segments=target_segments,
+            link_segments=link_segments,
         )
 
         self.addCleanup(self.filesystem.deleteFile, link_segments)
@@ -43,7 +44,8 @@ class SymbolicLinksMixin(object):
         segments.append(mk.string())
 
         self.filesystem.makeLink(
-            target_segments=['z', 'no-such', 'target'], link_segments=segments
+            target_segments=['z', 'no-such', 'target'],
+            link_segments=segments,
         )
 
         self.addCleanup(self.filesystem.deleteFile, segments)

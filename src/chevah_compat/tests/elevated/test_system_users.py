@@ -133,7 +133,8 @@ class TestSystemUsers(SystemUsersTestCase):
 
         self.assertCompatError(1014, context.exception)
         self.assertContains(
-            'Invalid username/token combination.', context.exception.message
+            'Invalid username/token combination.',
+            context.exception.message,
         )
 
     @conditionals.onOSFamily('nt')
@@ -145,12 +146,15 @@ class TestSystemUsers(SystemUsersTestCase):
         required capabilities.
         """
         test_user = TestUser(
-            name=mk.string(), password=mk.string(), create_local_profile=True
+            name=mk.string(),
+            password=mk.string(),
+            create_local_profile=True,
         )
         os_administration.addUser(test_user)
 
         home_folder = system_users.getHomeFolder(
-            username=test_user.name, token=test_user.token
+            username=test_user.name,
+            token=test_user.token,
         )
 
         self.assertContains(test_user.name.lower(), home_folder.lower())
@@ -183,14 +187,16 @@ class TestSystemUsers(SystemUsersTestCase):
         the account and it's home folder.
         """
         test_user = TestUser(
-            name='no-home', password=mk.string(), create_local_profile=False
+            name='no-home',
+            password=mk.string(),
+            create_local_profile=False,
         )
         # Unfortunately there is no API to get default base home path for
         # users, we need to rely on an existing pattern.
         home_base = os.path.dirname(os.getenv('USERPROFILE'))
         expected_home_path = os.path.join(home_base, test_user.name)
         expected_home_segments = mk.fs.getSegmentsFromRealPath(
-            expected_home_path
+            expected_home_path,
         )
 
         try:
@@ -200,11 +206,13 @@ class TestSystemUsers(SystemUsersTestCase):
             self.assertFalse(mk.fs.isFolder(expected_home_segments))
 
             self.home_folder = system_users.getHomeFolder(
-                username=test_user.name, token=token
+                username=test_user.name,
+                token=token,
             )
 
             self.assertContains(
-                test_user.name.lower(), self.home_folder.lower()
+                test_user.name.lower(),
+                self.home_folder.lower(),
             )
             self.assertIsInstance(str, self.home_folder)
             self.assertTrue(mk.fs.isFolder(expected_home_segments))
@@ -217,7 +225,8 @@ class TestSystemUsers(SystemUsersTestCase):
         Check successful call to authenticateWithUsernameAndPassword.
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
-            username=TEST_ACCOUNT_USERNAME, password=TEST_ACCOUNT_PASSWORD
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
         )
 
         if self.os_name in ['osx', 'freebsd']:
@@ -238,7 +247,8 @@ class TestSystemUsers(SystemUsersTestCase):
         password is not here.
         """
         result = system_users._checkPasswdFile(
-            username=TEST_ACCOUNT_USERNAME, password=TEST_ACCOUNT_PASSWORD
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
         )
 
         if self.os_name in ['aix', 'hpux']:
@@ -260,7 +270,8 @@ class TestSystemUsers(SystemUsersTestCase):
         On systems with passwd it return False.
         """
         result = system_users._checkPasswdFile(
-            username=TEST_ACCOUNT_USERNAME, password=''
+            username=TEST_ACCOUNT_USERNAME,
+            password='',
         )
 
         if self.os_name in ['aix', 'hpux']:
@@ -280,7 +291,8 @@ class TestSystemUsers(SystemUsersTestCase):
         Check /etc/shadow authentication.
         """
         result = system_users._checkShadowFile(
-            username=TEST_ACCOUNT_USERNAME, password=TEST_ACCOUNT_PASSWORD
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
         )
 
         if self.os_name in ['aix', 'hpux', 'osx', 'freebsd', 'openbsd']:
@@ -298,7 +310,8 @@ class TestSystemUsers(SystemUsersTestCase):
         Check PAM authentication.
         """
         result = system_users.pamWithUsernameAndPassword(
-            username=TEST_ACCOUNT_USERNAME, password=TEST_ACCOUNT_PASSWORD
+            username=TEST_ACCOUNT_USERNAME,
+            password=TEST_ACCOUNT_PASSWORD,
         )
 
         self.assertTrue(result)
@@ -309,7 +322,8 @@ class TestSystemUsers(SystemUsersTestCase):
         credentials are not valid.
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
-            username=TEST_ACCOUNT_USERNAME, password=mk.string()
+            username=TEST_ACCOUNT_USERNAME,
+            password=mk.string(),
         )
 
         self.assertFalse(result)
@@ -324,7 +338,8 @@ class TestSystemUsers(SystemUsersTestCase):
         PAM modules.
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
-            username=mk.string(), password=mk.string()
+            username=mk.string(),
+            password=mk.string(),
         )
 
         self.assertFalse(result)
@@ -336,12 +351,14 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         test_user = mk.getTestUser('normal')
         with system_users.executeAsUser(
-            username=test_user.name, token=test_user.token
+            username=test_user.name,
+            token=test_user.token,
         ):
             pass
 
         with system_users.executeAsUser(
-            username=test_user.name, token=test_user.token
+            username=test_user.name,
+            token=test_user.token,
         ):
             pass
 
@@ -360,7 +377,8 @@ class TestSystemUsers(SystemUsersTestCase):
         test_user = mk.getTestUser('normal')
 
         with system_users.executeAsUser(
-            username=test_user.name, token=test_user.token
+            username=test_user.name,
+            token=test_user.token,
         ):
             self.assertEqual(test_user.name, system_users.getCurrentUserName())
 
@@ -377,7 +395,8 @@ class TestSystemUsers(SystemUsersTestCase):
         # os.getgroups can return duplicate group IDs and out of order.
         # This is why we compare based on sets.
         self.assertNotEqual(
-            set(self.getGroupsIDForTestAccount()), set(os.getgroups())
+            set(self.getGroupsIDForTestAccount()),
+            set(os.getgroups()),
         )
 
         with system_users.executeAsUser(username=test_user.name):
@@ -431,7 +450,8 @@ class TestSystemUsers(SystemUsersTestCase):
         self.assertEqual(
             TEST_ACCOUNT_GROUP,
             system_users.getGroupForUser(
-                username=TEST_ACCOUNT_USERNAME, groups=groups
+                username=TEST_ACCOUNT_USERNAME,
+                groups=groups,
             ),
         )
 
@@ -444,8 +464,10 @@ class TestSystemUsers(SystemUsersTestCase):
         groups = ['non-existent-group']
         self.assertIsNone(
             system_users.getGroupForUser(
-                username=test_user.name, groups=groups, token=test_user.token
-            )
+                username=test_user.name,
+                groups=groups,
+                token=test_user.token,
+            ),
         )
 
     def test_getGroupForUser_not_in_groups(self):
@@ -458,8 +480,10 @@ class TestSystemUsers(SystemUsersTestCase):
 
         self.assertIsNone(
             system_users.getGroupForUser(
-                username=test_user.name, groups=groups, token=test_user.token
-            )
+                username=test_user.name,
+                groups=groups,
+                token=test_user.token,
+            ),
         )
 
     def test_getGroupForUser_success(self):
@@ -472,7 +496,9 @@ class TestSystemUsers(SystemUsersTestCase):
         self.assertEqual(
             TEST_ACCOUNT_GROUP,
             system_users.getGroupForUser(
-                username=test_user.name, groups=groups, token=test_user.token
+                username=test_user.name,
+                groups=groups,
+                token=test_user.token,
             ),
         )
 
@@ -484,7 +510,9 @@ class TestSystemUsers(SystemUsersTestCase):
         self.assertEqual(
             TEST_ACCOUNT_GROUP,
             system_users.getGroupForUser(
-                username=test_user.name, groups=groups, token=test_user.token
+                username=test_user.name,
+                groups=groups,
+                token=test_user.token,
             ),
         )
 
@@ -518,7 +546,8 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         test_user = mk.getTestUser('normal')
         avatar = mk.makeFilesystemOSAvatar(
-            name=TEST_ACCOUNT_USERNAME, token=test_user.token
+            name=TEST_ACCOUNT_USERNAME,
+            token=test_user.token,
         )
 
         group_name = system_users.getPrimaryGroup(username=avatar.name)
@@ -593,7 +622,8 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
             raise self.skipTest()
 
         avatar = ImpersonatedAvatarImplementation(
-            name=TEST_ACCOUNT_USERNAME, use_impersonation=True
+            name=TEST_ACCOUNT_USERNAME,
+            use_impersonation=True,
         )
 
         with self.patch('chevah_compat.unix_users._ExecuteAsUser') as (
@@ -617,7 +647,9 @@ class TestHasImpersonatedAvatar(SystemUsersTestCase):
         """
         test_user = mk.getTestUser('normal')
         avatar = ImpersonatedAvatarImplementation(
-            name=test_user.name, token=test_user.token, use_impersonation=True
+            name=test_user.name,
+            token=test_user.token,
+            use_impersonation=True,
         )
 
         with avatar.getImpersonationContext():
@@ -649,7 +681,9 @@ class TestSystemUsersPAM(CompatTestCase):
         When a valid username and password is provided it will return True.
         """
         result = system_users.pamWithUsernameAndPassword(
-            username='pam_user', password='test-pass', service='chevah-pam-test'
+            username='pam_user',
+            password='test-pass',
+            service='chevah-pam-test',
         )
 
         self.assertIsTrue(result)
@@ -660,7 +694,9 @@ class TestSystemUsersPAM(CompatTestCase):
         False
         """
         result = system_users.pamWithUsernameAndPassword(
-            username='pam_user', password='bad-pass', service='chevah-pam-test'
+            username='pam_user',
+            password='bad-pass',
+            service='chevah-pam-test',
         )
 
         self.assertIsFalse(result)
@@ -670,7 +706,9 @@ class TestSystemUsersPAM(CompatTestCase):
         When an invalid username is provided it will return False.
         """
         result = system_users.pamWithUsernameAndPassword(
-            username='bad-user', password='test-pass', service='chevah-pam-test'
+            username='bad-user',
+            password='test-pass',
+            service='chevah-pam-test',
         )
 
         self.assertIsFalse(result)

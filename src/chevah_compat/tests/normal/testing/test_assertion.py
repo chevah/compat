@@ -101,7 +101,8 @@ class TestAssertionMixin(ChevahTestCase):
             self.assertIsEmpty((1, 2))
 
         self.assertEqual(
-            'Iterable is not empty.\n(1, 2).', context.exception.args[0]
+            'Iterable is not empty.\n(1, 2).',
+            context.exception.args[0],
         )
 
     def test_assertCompatError_no_CompatError(self):
@@ -144,7 +145,10 @@ class TestAssertionMixin(ChevahTestCase):
         sut = [1, 3]
 
         exception = self.assertRaises(
-            AssertionError, self.assertIteratorItemsEqual, [], sut
+            AssertionError,
+            self.assertIteratorItemsEqual,
+            [],
+            sut,
         )
 
         self.assertEqual('Value is not iterable.', exception.args[0])
@@ -167,13 +171,17 @@ class TestAssertionMixin(ChevahTestCase):
         sut = iter(value)
 
         exception = self.assertRaises(
-            AssertionError, self.assertIteratorItemsEqual, [1], sut
+            AssertionError,
+            self.assertIteratorItemsEqual,
+            [1],
+            sut,
         )
 
         # The check here is more complicated since the message relies on the
         # assertEqual implementation.
         self.assertStartsWith(
-            'Element counts were not equal:', exception.args[0]
+            'Element counts were not equal:',
+            exception.args[0],
         )
 
     def test_assertEqual_unicode_vs_bytestring_in_list(self):

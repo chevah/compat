@@ -53,7 +53,8 @@ class MemoryUsage(Plugin):
             return
 
         sorted_usage = sorted(
-            iter(self._memory_usage.items()), key=operator.itemgetter(1)
+            iter(self._memory_usage.items()),
+            key=operator.itemgetter(1),
         )
 
         stream.writeln('-' * 70)

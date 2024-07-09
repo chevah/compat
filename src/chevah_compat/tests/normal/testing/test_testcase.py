@@ -56,7 +56,8 @@ class TestTwistedTestCase(ChevahTestCase):
             self._runDeferred(deferred, timeout=0)
 
         self.assertEqual(
-            'Deferred took more than 0 to execute.', context.exception.args[0]
+            'Deferred took more than 0 to execute.',
+            context.exception.args[0],
         )
 
         # Restore order messing with internal timeout state in
@@ -75,7 +76,8 @@ class TestTwistedTestCase(ChevahTestCase):
             self._runDeferred(deferred)
 
         self.assertEqual(
-            'Deferred took more than 0 to execute.', context.exception.args[0]
+            'Deferred took more than 0 to execute.',
+            context.exception.args[0],
         )
 
         # Restore order messing with internal timeout state in
@@ -161,7 +163,9 @@ class TestTwistedTestCase(ChevahTestCase):
         # Run again and we should still have the same pool.
         with self.patchObject(reactor, 'startRunning') as mock_start:
             self._runDeferred(
-                defer.succeed(True), timeout=0.3, prevent_stop=True
+                defer.succeed(True),
+                timeout=0.3,
+                prevent_stop=True,
             )
 
         # reactor.start() is not called if reactor was not previously
@@ -406,7 +410,8 @@ class TestTwistedTestCase(ChevahTestCase):
         # so that we can can check that the operation will continue.
         delayed_call_1.called = True
         self.assertEqual(
-            [delayed_call_1, delayed_call_2], reactor.getDelayedCalls()
+            [delayed_call_1, delayed_call_2],
+            reactor.getDelayedCalls(),
         )
 
         self._cleanReactor()
@@ -448,7 +453,8 @@ class TestTwistedTestCase(ChevahTestCase):
             self.executeDelayedCalls(timeout=0.1)
 
         self.assertEqual(
-            'executeDelayedCalls took more than 0.1', context.exception.args[0]
+            'executeDelayedCalls took more than 0.1',
+            context.exception.args[0],
         )
         # Delayed call not called and reactor is stopped.
         self.assertEqual([], results)
@@ -461,14 +467,17 @@ class TestTwistedTestCase(ChevahTestCase):
         results = []
         reactor.callLater(0.1, lambda x: results.append(x), True)
         call_2 = reactor.callLater(  # noqa: cover
-            0.2, lambda x: results.append(x), False
+            0.2,
+            lambda x: results.append(x),
+            False,
         )
         # Make sure call is not already called.
         self.assertEqual([], results)
 
         # Wait until first callback is called.
         self.executeReactorUntil(
-            lambda _: results == [True], prevent_stop=False
+            lambda _: results == [True],
+            prevent_stop=False,
         )
 
         self.assertEqual([True], results)
@@ -487,7 +496,9 @@ class TestTwistedTestCase(ChevahTestCase):
 
         # Wait until first callback is called.
         self.executeReactorUntil(
-            lambda _: False, prevent_stop=False, timeout=0.2
+            lambda _: False,
+            prevent_stop=False,
+            timeout=0.2,
         )
 
         # The reactor was spin.
@@ -695,7 +706,7 @@ class TestChevahTestCase(ChevahTestCase):
         Run test only on Linux and AIX.
         """
         if not sys.platform.startswith('linux') and not sys.platform.startswith(
-            'aix'
+            'aix',
         ):
             raise AssertionError('This should be called only on Linux and AIX.')
 
@@ -713,7 +724,7 @@ class TestChevahTestCase(ChevahTestCase):
         if can_impersonate is not True:  # pragma: no cover
             raise AssertionError(
                 'This should be called only when impersonate_local_account '
-                'is True.'
+                'is True.',
             )
 
     @conditionals.onAdminPrivileges(True)
@@ -724,12 +735,12 @@ class TestChevahTestCase(ChevahTestCase):
         """
         if self.os_version in ['nt-5.1', 'nt-5.2']:
             raise AssertionError(
-                'Windows XP and 2003 BS does not run as administrator'
+                'Windows XP and 2003 BS does not run as administrator',
             )
 
         if self.ci_name in [self.CI.TRAVIS, self.CI.GITHUB]:
             raise AssertionError(
-                'Travis and GitHub does not run as administrator'
+                'Travis and GitHub does not run as administrator',
             )
 
     @conditionals.onAdminPrivileges(False)
@@ -746,7 +757,7 @@ class TestChevahTestCase(ChevahTestCase):
             return
 
         raise AssertionError(
-            '"%s" is running with administrator privileges' % (self.hostname,)
+            '"%s" is running with administrator privileges' % (self.hostname,),
         )
 
     def test_cleanup_test_segments_file(self):
@@ -773,7 +784,7 @@ class TestChevahTestCase(ChevahTestCase):
         removed, even when it is a symbolic link.
         """
         _, self.test_segments = mk.fs.makePathInTemp(
-            prefix='test_cleanup_test_segments_link'
+            prefix='test_cleanup_test_segments_link',
         )
 
         mk.fs.makeLink(

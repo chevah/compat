@@ -20,7 +20,8 @@ class TestElevatedLocalTestFilesystem(ChevahTestCase):
         super(TestElevatedLocalTestFilesystem, cls).setUpClass()
         cls.user = compat_mk.getTestUser('normal')
         home_folder_path = system_users.getHomeFolder(
-            username=cls.user.name, token=cls.user.token
+            username=cls.user.name,
+            token=cls.user.token,
         )
         cls.avatar = compat_mk.makeFilesystemOSAvatar(
             name=cls.user.name,
@@ -52,7 +53,8 @@ class TestElevatedLocalTestFilesystem(ChevahTestCase):
         # We check that the elevated filesystem start with the same
         # path as normal filesystem
         self.assertEqual(
-            mk.fs.temp_segments[:-1], filesystem.temp_segments[:-1]
+            mk.fs.temp_segments[:-1],
+            filesystem.temp_segments[:-1],
         )
 
         self.checkTemporaryFolderInitialization(filesystem)

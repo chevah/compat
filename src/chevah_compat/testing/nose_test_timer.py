@@ -87,7 +87,9 @@ class TestTimer(Plugin):
                 finally:
                     # Make sure end timer is set even on failures.
                     self.__timer._set_end_time(
-                        test=test, time_now=time(), kind='inner'
+                        test=test,
+                        time_now=time(),
+                        kind='inner',
                     )
 
             def __getattr__(self, name):
@@ -118,7 +120,8 @@ class TestTimer(Plugin):
             return
 
         inner_time_list = sorted(
-            iter(self._timed_tests['inner'].items()), key=operator.itemgetter(1)
+            iter(self._timed_tests['inner'].items()),
+            key=operator.itemgetter(1),
         )
 
         total_time = {'inner': 0, 'outer': 0}

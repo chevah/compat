@@ -83,14 +83,16 @@ class NTUsers(CompatUsers):
             if token is None:
                 if username != self.getCurrentUserName():
                     self.raiseFailedToGetHomeFolder(
-                        username, 'Invalid username/token combination.'
+                        username,
+                        'Invalid username/token combination.',
                     )
                 return self._getHomeFolderPath()
             else:
                 return self._getHomeFolder(username, token)
         except MissingProfileFolderException:
             self.raiseFailedToGetHomeFolder(
-                username, 'Failed to get home folder path.'
+                username,
+                'Failed to get home folder path.',
             )
 
     def _getHomeFolder(self, username, token):
@@ -131,7 +133,10 @@ class NTUsers(CompatUsers):
             # Force creation of user profile folder if not already
             # existing.
             path = shell.SHGetFolderPath(
-                0, shellcon.CSIDL_PROFILE | CSIDL_FLAG_CREATE, token, 0
+                0,
+                shellcon.CSIDL_PROFILE | CSIDL_FLAG_CREATE,
+                token,
+                0,
             )
             return path
         except pythoncom.com_error:
@@ -145,7 +150,9 @@ class NTUsers(CompatUsers):
             primary_domain_controller, name = self._parseUPN(username)
 
             user_info_4 = win32net.NetUserGetInfo(
-                primary_domain_controller, name, 4
+                primary_domain_controller,
+                name,
+                4,
             )
 
             profile_path = user_info_4['profile']
@@ -204,7 +211,8 @@ class NTUsers(CompatUsers):
             try:
                 group_sid, group_domain, group_type = (
                     win32security.LookupAccountName(
-                        primary_domain_controller, group
+                        primary_domain_controller,
+                        group,
                     )
                 )
             except (win32security.error, pywintypes.error):
@@ -254,7 +262,7 @@ class NTUsers(CompatUsers):
 
         if token is None:
             raise ChangeUserException(
-                'executeAsUser: A valid token is required.'
+                'executeAsUser: A valid token is required.',
             )
 
         return _ExecuteAsUser(token)

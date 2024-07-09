@@ -54,7 +54,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
     else:
         if euid is None:
             raise ChangeUserException(
-                'You need to pass euid when username is not passed.'
+                'You need to pass euid when username is not passed.',
             )
         pwnam = pwd.getpwuid(euid)
         username = pwnam.pw_name
@@ -424,7 +424,8 @@ class _ExecuteAsUser(object):
     def __exit__(self, exc_type, exc_value, tb):
         """Reverting previous effective ID."""
         _change_effective_privileges(
-            euid=self.initial_euid, egid=self.initial_egid
+            euid=self.initial_euid,
+            egid=self.initial_egid,
         )
         return False
 

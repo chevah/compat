@@ -65,7 +65,7 @@ SETUP['repository']['github'] = 'https://github.com/chevah/compat'
 SETUP['test']['package'] = 'chevah_compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = [
-    '--with-randomly'
+    '--with-randomly',
     # FIXME:690:
     # Add support for extenstions.
     # '--with-timer',
@@ -169,7 +169,11 @@ def deps():
     if env_ci.lower() != 'true':
         dev_mode = ['-e']
         pave.fs.deleteFile(
-            [pave.path.build, pave.getPythonLibPath(), 'chevah-compat.egg-link']
+            [
+                pave.path.build,
+                pave.getPythonLibPath(),
+                'chevah-compat.egg-link',
+            ],
         )
     else:
         print('Installing in non-dev mode.')
@@ -224,11 +228,11 @@ def _generate_coverate_reports():
         cov.html_report()
         print(
             'HTML report file://%s/coverage-report/index.html'
-            % (pave.path.build,)
+            % (pave.path.build,),
         )
         print('--------')
         diff_cover_main(
-            argv=['diff-cover', 'coverage.xml', '--fail-under', '100']
+            argv=['diff-cover', 'coverage.xml', '--fail-under', '100'],
         )
 
 
@@ -277,7 +281,7 @@ def test_ci2(args):
         # Add support for extensions.
         # '--with-run-reporter',
         # '--with-timer',
-        '-v'
+        '-v',
     ]
 
     # Show some info about the current environment.
@@ -294,12 +298,12 @@ def test_ci2(args):
             ChevahTestCase.os_version,
             ChevahTestCase.cpu_type,
             ChevahTestCase.ci_name,
-        )
+        ),
     )
     print('PYTHON %s on %s with %s' % (sys.version, pave.os_name, pave.cpu))
     print(
         '%s (%s)'
-        % (SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER)
+        % (SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER),
     )
     print('pyOpenSSL %s' % (pyopenssl_version,))
     coverage_main(argv=['--version'])
@@ -343,11 +347,15 @@ def lint(args):
     """
     ruff_bin = os.path.join(pave.path.build, 'bin', 'ruff')
     check_result = subprocess.run(
-        [ruff_bin, 'check'], stdout=sys.stdout, stderr=sys.stderr
+        [ruff_bin, 'check'],
+        stdout=sys.stdout,
+        stderr=sys.stderr,
     )
 
     format_result = subprocess.run(
-        [ruff_bin, 'format', '--check'], stdout=sys.stdout, stderr=sys.stderr
+        [ruff_bin, 'format', '--check'],
+        stdout=sys.stdout,
+        stderr=sys.stderr,
     )
     if check_result.returncode != 0 or format_result != 0:
         sys.exit(1)
@@ -367,7 +375,9 @@ def fix(args):
     )
 
     format_result = subprocess.run(
-        [ruff_bin, 'format'], stdout=sys.stdout, stderr=sys.stderr
+        [ruff_bin, 'format'],
+        stdout=sys.stdout,
+        stderr=sys.stderr,
     )
 
     if check_result.returncode != 0 or format_result != 0:

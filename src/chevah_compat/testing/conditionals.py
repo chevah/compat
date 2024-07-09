@@ -67,7 +67,8 @@ def onOSFamily(family):
         return process_capabilities.os_family != family
 
     return skipOnCondition(
-        check_os_family, 'OS family "%s" not available.' % family
+        check_os_family,
+        'OS family "%s" not available.' % family,
     )
 
 
@@ -99,7 +100,8 @@ def onOSVersion(versions):
         return process_capabilities.os_version not in versions
 
     return skipOnCondition(
-        check_os_version, 'OS version "%s" not available.' % versions
+        check_os_version,
+        'OS version "%s" not available.' % versions,
     )
 
 
@@ -113,7 +115,8 @@ def onCapability(name, value):
         return capability != value
 
     return skipOnCondition(
-        check_capability, 'Capability "%s" not present.' % name
+        check_capability,
+        'Capability "%s" not present.' % name,
     )
 
 

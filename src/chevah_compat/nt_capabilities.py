@@ -44,7 +44,8 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         """
         with self._openProcess(win32security.TOKEN_QUERY) as process_token:
             return win32security.GetTokenInformation(
-                process_token, win32security.TokenPrivileges
+                process_token,
+                win32security.TokenPrivileges,
             )
 
     @property
@@ -129,11 +130,14 @@ class NTProcessCapabilities(BaseProcessCapabilities):
                 # Implement distinct API for opening currently impersonated
                 # user token.
                 process_token = win32security.OpenThreadToken(
-                    win32api.GetCurrentThread(), mode, 0
+                    win32api.GetCurrentThread(),
+                    mode,
+                    0,
                 )
             except Exception:
                 process_token = win32security.OpenProcessToken(
-                    win32process.GetCurrentProcess(), mode
+                    win32process.GetCurrentProcess(),
+                    mode,
                 )
 
             yield process_token
@@ -188,13 +192,15 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         # Privileges are passes as a list of tuples.
         # We only update one privilege at a time.
         new_privileges = [
-            (win32security.LookupPrivilegeValue('', privilege_name), new_state)
+            (win32security.LookupPrivilegeValue('', privilege_name), new_state),
         ]
         process_mode = win32security.TOKEN_ALL_ACCESS
         with self._openProcess(mode=process_mode) as process_token:
             try:
                 win32security.AdjustTokenPrivileges(
-                    process_token, 0, new_privileges
+                    process_token,
+                    0,
+                    new_privileges,
                 )
             except win32security.error as error:
                 raise AdjustPrivilegeException(str(error))

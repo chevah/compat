@@ -134,7 +134,8 @@ class NTFilesystem(PosixFilesystemBase):
         if self.avatar.lock_in_home_folder:
             # Similar to posix_filesystem
             temp_path = os.path.join(
-                self.avatar.home_folder_path, '__chevah_test_temp__'
+                self.avatar.home_folder_path,
+                '__chevah_test_temp__',
             )
         else:
             # Default tempfile.gettempdir() return path with short names,
@@ -197,11 +198,11 @@ class NTFilesystem(PosixFilesystemBase):
             else:
                 if drive == 'UNC:\\':
                     result = '\\' + os.path.normpath(
-                        '\\' + os.path.join(*path_segments)
+                        '\\' + os.path.join(*path_segments),
                     )
                 else:
                     result = os.path.normpath(
-                        drive + os.path.join(*path_segments)
+                        drive + os.path.join(*path_segments),
                     )
                     # os.path.normpath can result in an 'out of drive' path.
                     if result.find(':\\') == -1:
@@ -216,7 +217,8 @@ class NTFilesystem(PosixFilesystemBase):
             return self._root_path
 
         virtual_path = self._getVirtualPathFromSegments(
-            segments, include_virtual
+            segments,
+            include_virtual,
         )
 
         if virtual_path is not None:
@@ -270,7 +272,9 @@ class NTFilesystem(PosixFilesystemBase):
         if letter.strip(':').lower() not in self._allowed_drive_letters:
             message = 'Bad drive letter "%s" for %s' % (letter, path)
             raise OSError(
-                errno.EINVAL, message.encode('utf-8'), path.encode('utf-8')
+                errno.EINVAL,
+                message.encode('utf-8'),
+                path.encode('utf-8'),
             )
 
     def isAbsolutePath(self, path):
@@ -467,7 +471,10 @@ class NTFilesystem(PosixFilesystemBase):
         try:
             # MAXIMUM_REPARSE_DATA_BUFFER_SIZE = 16384 = (16*1024)
             raw_reparse_data = win32file.DeviceIoControl(
-                handle, FSCTL_GET_REPARSE_POINT, None, 16 * 1024
+                handle,
+                FSCTL_GET_REPARSE_POINT,
+                None,
+                16 * 1024,
             )
         except pywintypes.error as error:
             message = '%s - %s' % (error.winerror, error.strerror)
@@ -499,10 +506,12 @@ class NTFilesystem(PosixFilesystemBase):
             raise NotImplementedError('makeLink not implemented on this OS.')
 
         target_path = self.getRealPathFromSegments(
-            target_segments, include_virtual=False
+            target_segments,
+            include_virtual=False,
         )
         link_path = self.getRealPathFromSegments(
-            link_segments, include_virtual=False
+            link_segments,
+            include_virtual=False,
         )
 
         if self.isFolder(target_segments) or target_path.startswith('\\'):
@@ -514,7 +523,7 @@ class NTFilesystem(PosixFilesystemBase):
         with self._windowsToOSError(link_segments), self._impersonateUser():
             try:
                 with self.process_capabilities._elevatePrivileges(
-                    win32security.SE_CREATE_SYMBOLIC_LINK_NAME
+                    win32security.SE_CREATE_SYMBOLIC_LINK_NAME,
                 ):
                     win32file.CreateSymbolicLink(
                         self.getEncodedPath(link_path),
@@ -707,7 +716,9 @@ class NTFilesystem(PosixFilesystemBase):
                 search = win32file.FindFilesW(path)
                 if len(search) != 1:
                     raise OSError(
-                        errno.ENOENT, 'Could not find', path.encode('utf-8')
+                        errno.ENOENT,
+                        'Could not find',
+                        path.encode('utf-8'),
                     )
                 data = search[0]
         except pywintypes.error as error:
@@ -764,7 +775,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         data = self._getFileData(path)
         is_reparse_point = bool(
-            data['attributes'] & FILE_ATTRIBUTE_REPARSE_POINT
+            data['attributes'] & FILE_ATTRIBUTE_REPARSE_POINT,
         )
         has_symlink_tag = data['tag'] == self.IO_REPARSE_TAG_SYMLINK
         return is_reparse_point and has_symlink_tag
@@ -776,7 +787,8 @@ class NTFilesystem(PosixFilesystemBase):
         try:
             with self._windowsToOSError(segments):
                 return super(NTFilesystem, self).deleteFile(
-                    segments, ignore_errors=ignore_errors
+                    segments,
+                    ignore_errors=ignore_errors,
                 )
         except OSError as error:
             # Windows return a bad error code for folders.
@@ -830,7 +842,8 @@ class NTFilesystem(PosixFilesystemBase):
         with self._windowsToOSError(from_segments):
             try:
                 return super(NTFilesystem, self).rename(
-                    from_segments, to_segments
+                    from_segments,
+                    to_segments,
                 )
             except WindowsError as error:
                 # On Windows, rename fails if destination exists as it
@@ -841,7 +854,8 @@ class NTFilesystem(PosixFilesystemBase):
                 # Try to remove the file, and then rename one more time.
                 self.deleteFile(to_segments)
                 return super(NTFilesystem, self).rename(
-                    from_segments, to_segments
+                    from_segments,
+                    to_segments,
                 )
 
     def setOwner(self, segments, owner):
@@ -860,7 +874,8 @@ class NTFilesystem(PosixFilesystemBase):
         Helper for catching exceptions raised by elevatePrivileges.
         """
         with self.process_capabilities._elevatePrivileges(
-            win32security.SE_TAKE_OWNERSHIP_NAME, win32security.SE_RESTORE_NAME
+            win32security.SE_TAKE_OWNERSHIP_NAME,
+            win32security.SE_RESTORE_NAME,
         ):
             try:
                 security_descriptor = win32security.GetNamedSecurityInfo(
@@ -927,11 +942,13 @@ class NTFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 owner_security = win32security.GetFileSecurity(
-                    encoded_path, win32security.OWNER_SECURITY_INFORMATION
+                    encoded_path,
+                    win32security.OWNER_SECURITY_INFORMATION,
                 )
                 owner_sid = owner_security.GetSecurityDescriptorOwner()
                 name, domain, type = win32security.LookupAccountSid(
-                    None, owner_sid
+                    None,
+                    owner_sid,
                 )
                 return name
             except win32net.error as error:
@@ -953,7 +970,8 @@ class NTFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 security = win32security.GetFileSecurity(
-                    encoded_path, win32security.DACL_SECURITY_INFORMATION
+                    encoded_path,
+                    win32security.DACL_SECURITY_INFORMATION,
                 )
                 dacl = security.GetSecurityDescriptorDacl()
                 dacl.AddAccessAllowedAce(
@@ -994,7 +1012,8 @@ class NTFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 security = win32security.GetFileSecurity(
-                    encoded_path, win32security.DACL_SECURITY_INFORMATION
+                    encoded_path,
+                    win32security.DACL_SECURITY_INFORMATION,
                 )
             except win32net.error as error:
                 raise OSError(error.winerror, error.strerror, encoded_path)
@@ -1018,7 +1037,9 @@ class NTFilesystem(PosixFilesystemBase):
             dacl.DeleteAce(index_ace_to_remove)
             security.SetDacl(True, dacl, False)
             win32security.SetFileSecurity(
-                encoded_path, win32security.DACL_SECURITY_INFORMATION, security
+                encoded_path,
+                win32security.DACL_SECURITY_INFORMATION,
+                security,
             )
         return False
 
@@ -1040,7 +1061,8 @@ class NTFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             try:
                 security = win32security.GetFileSecurity(
-                    encoded_path, win32security.DACL_SECURITY_INFORMATION
+                    encoded_path,
+                    win32security.DACL_SECURITY_INFORMATION,
                 )
             except win32net.error as error:
                 raise OSError(error.winerror, error.strerror, encoded_path)

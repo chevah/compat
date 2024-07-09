@@ -68,7 +68,7 @@ class LocalTestFilesystem(LocalFilesystem):
         if remaining_folders:
             raise AssertionError(
                 'Not all temporary folders were cleaned: %s'
-                % (remaining_folders)
+                % (remaining_folders),
             )
 
     def setUpTemporaryFolder(self):
@@ -78,7 +78,7 @@ class LocalTestFilesystem(LocalFilesystem):
         if self.exists(self.temp_segments):
             self.deleteFolder(self.temp_segments, recursive=True)
             raise AssertionError(
-                'Temporary folder already exists at: %s' % (self.temp_segments)
+                'Temporary folder already exists at: %s' % (self.temp_segments),
             )
 
         self.createFolder(self.temp_segments)
@@ -107,7 +107,12 @@ class LocalTestFilesystem(LocalFilesystem):
         return self.getRealPathFromSegments(segments)
 
     def createFile(
-        self, segments, length=0, access_time=None, content=None, mode=0o666
+        self,
+        segments,
+        length=0,
+        access_time=None,
+        content=None,
+        mode=0o666,
     ):
         """Creates a file.
 
@@ -310,7 +315,7 @@ class LocalTestFilesystem(LocalFilesystem):
         """
         if not self._avatar:
             raise AssertionError(
-                'Not cleaning home folder for a Filesystem with no avatar.'
+                'Not cleaning home folder for a Filesystem with no avatar.',
             )
 
         segments = self.home_segments

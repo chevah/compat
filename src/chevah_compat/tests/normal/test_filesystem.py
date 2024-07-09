@@ -286,7 +286,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertEqual(
             r'\\?\UNC\share.server.org\share name\file here.txt',
             _win_getEncodedPath(
-                r'\\?\UNC\share.server.org\share name\file here.txt'
+                r'\\?\UNC\share.server.org\share name\file here.txt',
             ),
         )
 
@@ -298,7 +298,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertEqual(
             r'\\?\UNC\share.server.org\share name\a' + long_name,
             _win_getEncodedPath(
-                r'\\?\UNC\share.server.org\share name\a' + long_name
+                r'\\?\UNC\share.server.org\share name\a' + long_name,
             ),
         )
 
@@ -307,7 +307,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         Does nothing if the path is short.
         """
         self.assertEqual(
-            r'C:\Some Path\here', _win_getEncodedPath(r'C:\Some Path\here')
+            r'C:\Some Path\here',
+            _win_getEncodedPath(r'C:\Some Path\here'),
         )
         self.assertEqual(
             r'\\share.server.org\share name\file here.txt',
@@ -456,7 +457,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertTrue(self.filesystem.exists(self.test_segments))
         self.assertEqual(
-            [child_name], self.filesystem.getFolderContent(self.test_segments)
+            [child_name],
+            self.filesystem.getFolderContent(self.test_segments),
         )
 
     def test_deleteFolder_recursive_empty(self):
@@ -520,7 +522,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertTrue(self.filesystem.exists(link_segments))
         # Check that link has same content as target.
         self.assertEqual(
-            [child_name], self.filesystem.getFolderContent(link_segments)
+            [child_name],
+            self.filesystem.getFolderContent(link_segments),
         )
 
         self.filesystem.deleteFolder(link_segments)
@@ -529,7 +532,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertFalse(self.filesystem.exists(link_segments))
         # Check that target content was not removed
         self.assertEqual(
-            [child_name], self.filesystem.getFolderContent(self.test_segments)
+            [child_name],
+            self.filesystem.getFolderContent(self.test_segments),
         )
 
     @conditionals.onCapability('symbolic_link', True)
@@ -564,7 +568,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         link_segments[-1] = '%s-link' % self.test_segments[-1]
 
         mk.fs.makeLink(
-            target_segments=self.test_segments, link_segments=link_segments
+            target_segments=self.test_segments,
+            link_segments=link_segments,
         )
 
         self.assertTrue(mk.fs.exists(link_segments))
@@ -664,7 +669,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         # This is why we use `lexists` and not `exists`
         self.assertTrue(os.path.lexists(path))
         self.assertEqual(
-            ['UNC', '127.0.0.1', share_name], self.filesystem.readLink(segments)
+            ['UNC', '127.0.0.1', share_name],
+            self.filesystem.readLink(segments),
         )
         result = self.filesystem.exists(segments)
         self.assertTrue(result)
@@ -693,7 +699,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         # Target name has 4 extra UTF-16 characters.
         self.assertEqual(utf_16_length, result['substitute_name_offset'])
         self.assertEqual(
-            utf_16_length + 4 * 2, result['substitute_name_length']
+            utf_16_length + 4 * 2,
+            result['substitute_name_length'],
         )
 
     def test_parseSymbolicLinkReparse(self):
@@ -714,7 +721,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             raise self.skipTest()
 
         symbolic_link_data = self.filesystem._parseReparseData(
-            self.raw_reparse_buffer
+            self.raw_reparse_buffer,
         )
 
         result = self.filesystem._parseSymbolicLinkReparse(symbolic_link_data)
@@ -746,7 +753,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         segments = ['c', 'temp', name]
         path = 'c:\\temp\\' + name
         subprocess.call(
-            'mklink /d %s \\\\127.0.0.1\\no-such-share' % (path,), shell=True
+            'mklink /d %s \\\\127.0.0.1\\no-such-share' % (path,),
+            shell=True,
         )
         self.addCleanup(mk.fs.deleteFolder, segments)
 
@@ -830,7 +838,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         target_segments = ['z', 'no-such', 'target']
         _, self.test_segments = mk.fs.makePathInTemp()
         self.filesystem.makeLink(
-            target_segments=target_segments, link_segments=self.test_segments
+            target_segments=target_segments,
+            link_segments=self.test_segments,
         )
 
         result = self.filesystem.readLink(self.test_segments)
@@ -973,7 +982,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         _, link_segments = mk.fs.makePathInTemp(prefix='target-link-folder')
         mk.fs.makeLink(
-            target_segments=mk.fs.temp_segments, link_segments=link_segments
+            target_segments=mk.fs.temp_segments,
+            link_segments=link_segments,
         )
         self.addCleanup(mk.fs.deleteFolder, link_segments)
 
@@ -991,11 +1001,14 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         path, link_segments = self.tempPathCleanup(win_encoded=True)
         target_segments = ['c', 'no-such-parent', 'no-child', 'target']
         mk.fs.makeLink(
-            target_segments=target_segments, link_segments=link_segments
+            target_segments=target_segments,
+            link_segments=link_segments,
         )
 
         error = self.assertRaises(
-            OSError, self.filesystem.getAttributes, link_segments
+            OSError,
+            self.filesystem.getAttributes,
+            link_segments,
         )
 
         if self.TEST_LANGUAGE == 'FR':
@@ -1430,7 +1443,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.test_segments = mk.fs.createFileInTemp()
         now = time.time()
         mk.fs.setAttributes(
-            self.test_segments, {'atime': now - 10, 'mtime': now - 10}
+            self.test_segments,
+            {'atime': now - 10, 'mtime': now - 10},
         )
 
         self.filesystem.touch(self.test_segments)
@@ -1479,7 +1493,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         destination_segments = mk.fs.createFileInTemp()
 
         self.filesystem.copyFile(
-            self.test_segments, destination_segments, overwrite=True
+            self.test_segments,
+            destination_segments,
+            overwrite=True,
         )
 
         destination_content = mk.fs.getFileContent(destination_segments)
@@ -1494,7 +1510,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.test_segments = mk.fs.createFileInTemp()
         destination_segments = self.test_segments[:-1]
         path = mk.fs.getRealPathFromSegments(
-            destination_segments + self.test_segments[-1:]
+            destination_segments + self.test_segments[-1:],
         )
         source_segments = ['bla', self.test_segments[-1]]
         if self.os_name == 'windows':
@@ -1520,7 +1536,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         mk.fs.touch(destination_file_segments)
 
         self.filesystem.copyFile(
-            self.test_segments, destination_segments, overwrite=True
+            self.test_segments,
+            destination_segments,
+            overwrite=True,
         )
 
         destination_content = mk.fs.getFileContent(destination_file_segments)
@@ -1828,7 +1846,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         fd = None
         try:
             fd = self.filesystem.openFile(
-                segments, flags=self.filesystem.OPEN_READ_ONLY, mode=0
+                segments,
+                flags=self.filesystem.OPEN_READ_ONLY,
+                mode=0,
             )
 
             self.filesystem.deleteFile(segments)
@@ -1867,7 +1887,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         fd = None
         try:
             fd = self.filesystem.openFile(
-                segments, flags=self.filesystem.OPEN_WRITE_ONLY, mode=0
+                segments,
+                flags=self.filesystem.OPEN_WRITE_ONLY,
+                mode=0,
             )
 
             os.write(fd, content.encode('utf-8'))
@@ -1896,7 +1918,9 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         fd = None
         try:
             fd = self.filesystem.openFile(
-                segments, flags=self.filesystem.OPEN_READ_WRITE, mode=0
+                segments,
+                flags=self.filesystem.OPEN_READ_WRITE,
+                mode=0,
             )
 
             # File can be read, and pointer is at start
@@ -1987,7 +2011,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.test_segments = mk.fs.createFileInTemp(content=content)
         if self.os_family == 'posix':
             result = self.filesystem.setAttributes(
-                self.test_segments, {'mode': 0o666}
+                self.test_segments,
+                {'mode': 0o666},
             )
 
         # Write new content into file.
@@ -2013,7 +2038,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         if self.os_family == 'posix':
             result = self.filesystem.setAttributes(
-                self.test_segments, {'mode': 0o666}
+                self.test_segments,
+                {'mode': 0o666},
             )
 
         a_file = None
@@ -2163,7 +2189,8 @@ class LocalFilesystemNTMixin(object):
         self.filesystem._checkChildPath('c:\\root\\path\\', 'c:\\root\\path')
         self.filesystem._checkChildPath('c:\\root\\path', 'c:\\root\\path\\')
         self.filesystem._checkChildPath(
-            'c:\\root\\path', 'c:\\root\\path\\..\\path'
+            'c:\\root\\path',
+            'c:\\root\\path\\..\\path',
         )
 
         with self.assertRaises(CompatError):
@@ -2171,7 +2198,8 @@ class LocalFilesystemNTMixin(object):
 
         with self.assertRaises(CompatError):
             self.filesystem._checkChildPath(
-                'c:\\root\\path', 'c:\\root\\path\\..'
+                'c:\\root\\path',
+                'c:\\root\\path\\..',
             )
 
     def test_getFileData(self):
@@ -2202,7 +2230,8 @@ class LocalFilesystemNTMixin(object):
             target_segments = ['bad', 'no-such', 'target']
             _, test_segments = mk.fs.makePathInTemp()
             self.filesystem.makeLink(
-                target_segments=target_segments, link_segments=test_segments
+                target_segments=target_segments,
+                link_segments=test_segments,
             )
 
     def test_deleteFolder_recursive_read_only_members(self):
@@ -2263,26 +2292,28 @@ class LocalFilesystemNTMixin(object):
         # UNC paths are always absolute.
         self.assertIsTrue(self.filesystem.isAbsolutePath('\\\\system07\\C$\\'))
         self.assertIsTrue(
-            self.filesystem.isAbsolutePath('\\\\.\\UNC\\Server\\Foo.txt')
-        )
-        self.assertIsTrue(
-            self.filesystem.isAbsolutePath('\\\\?\\UNC\\Server\\Share\\Foo.txt')
+            self.filesystem.isAbsolutePath('\\\\.\\UNC\\Server\\Foo.txt'),
         )
         self.assertIsTrue(
             self.filesystem.isAbsolutePath(
-                '\\\\.\\Volume{b75e2c83-0000-0000-0000-602f00000000}\\Foo.txt'
-            )
+                '\\\\?\\UNC\\Server\\Share\\Foo.txt',
+            ),
         )
         self.assertIsTrue(
             self.filesystem.isAbsolutePath(
-                '\\\\?\\Volume{b75e2c83-0000-0000-0000-602f00000000}\\Foo.txt'
-            )
+                '\\\\.\\Volume{b75e2c83-0000-0000-0000-602f00000000}\\Foo.txt',
+            ),
         )
         self.assertIsTrue(
-            self.filesystem.isAbsolutePath(r'\\.\C:\Test\Foo.txt')
+            self.filesystem.isAbsolutePath(
+                '\\\\?\\Volume{b75e2c83-0000-0000-0000-602f00000000}\\Foo.txt',
+            ),
         )
         self.assertIsTrue(
-            self.filesystem.isAbsolutePath(r'\\?\C:\Test\Foo.txt')
+            self.filesystem.isAbsolutePath(r'\\.\C:\Test\Foo.txt'),
+        )
+        self.assertIsTrue(
+            self.filesystem.isAbsolutePath(r'\\?\C:\Test\Foo.txt'),
         )
 
         # Just the share root.
@@ -2293,7 +2324,7 @@ class LocalFilesystemNTMixin(object):
 
         # Using forward slashes will handled it as relative path.
         self.assertIsFalse(
-            self.filesystem.isAbsolutePath('//system07/share-name')
+            self.filesystem.isAbsolutePath('//system07/share-name'),
         )
 
         # Normal relative path.
@@ -2306,8 +2337,8 @@ class LocalFilesystemNTMixin(object):
         # A relative path from the current directory of the C: drive.
         self.assertIsFalse(
             self.filesystem.isAbsolutePath(
-                r'C:Projects\apilibrary\apilibrary.sln'
-            )
+                r'C:Projects\apilibrary\apilibrary.sln',
+            ),
         )
 
         # They look like absolute, but they are default drive,
@@ -2315,15 +2346,16 @@ class LocalFilesystemNTMixin(object):
         # On WIndows API this is defined as
         # An absolute path from the root of the current drive.
         self.assertIsFalse(
-            self.filesystem.isAbsolutePath(r'\default-drive\path')
+            self.filesystem.isAbsolutePath(r'\default-drive\path'),
         )
         self.assertIsFalse(
-            self.filesystem.isAbsolutePath('/default/drive/path')
+            self.filesystem.isAbsolutePath('/default/drive/path'),
         )
 
 
 class TestLocalFilesystemNTnonDevicePath(
-    DefaultFilesystemTestCase, LocalFilesystemNTMixin
+    DefaultFilesystemTestCase,
+    LocalFilesystemNTMixin,
 ):
     """
     Test for default local filesystem with special behavior for Windows.
@@ -2357,7 +2389,8 @@ class TestLocalFilesystemNTnonDevicePath(
 
 
 class TestLocalFilesystemNTDevicePath(
-    DefaultFilesystemTestCase, LocalFilesystemNTMixin
+    DefaultFilesystemTestCase,
+    LocalFilesystemNTMixin,
 ):
     """
     Test for default local filesystem with special behavior for Windows.
@@ -2416,7 +2449,7 @@ class TestLocalFilesystemUnix(DefaultFilesystemTestCase):
         """
         if self.os_name == 'osx':
             expected = self.filesystem.getSegmentsFromRealPath(
-                tempfile.gettempdir()
+                tempfile.gettempdir(),
             )
         else:
             expected = ['tmp']
@@ -2515,7 +2548,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         self.assertEqual('/caca', path)
 
         path = self.unlocked_filesystem.getRealPathFromSegments(
-            ['caca', 'maca raca']
+            ['caca', 'maca raca'],
         )
         self.assertEqual('/caca/maca raca', path)
 
@@ -2546,7 +2579,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         self.assertEqual('c:\\', path)
 
         path = self.unlocked_filesystem.getRealPathFromSegments(
-            ['o', 'maca raca']
+            ['o', 'maca raca'],
         )
         self.assertEqual('o:\\maca raca', path)
 
@@ -2672,11 +2705,11 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         """
         path = 'some_path'
         relative_segments = self.unlocked_filesystem.getSegmentsFromRealPath(
-            path
+            path,
         )
         absolute_path = self.unlocked_filesystem.getAbsoluteRealPath(path)
         absolute_segments = self.unlocked_filesystem.getSegmentsFromRealPath(
-            absolute_path
+            absolute_path,
         )
         self.assertEqual(absolute_segments, relative_segments)
 
@@ -2776,10 +2809,12 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
 
         self.assertEqual('c:\\', filesystem.getRealPathFromSegments([]))
         self.assertEqual(
-            'c:\\Temp', filesystem.getRealPathFromSegments(['c', 'Temp'])
+            'c:\\Temp',
+            filesystem.getRealPathFromSegments(['c', 'Temp']),
         )
         self.assertEqual(
-            ['c', 'Temp', 'some', 'path'], filesystem.home_segments
+            ['c', 'Temp', 'some', 'path'],
+            filesystem.home_segments,
         )
 
     @conditionals.onOSFamily('nt')
@@ -2825,7 +2860,8 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         It can handle long paths for Windows Shares.
         """
         _, segments = mk.fs.makePathInTemp(
-            prefix='test_share_long_path-', suffix='-123456789' * 20
+            prefix='test_share_long_path-',
+            suffix='-123456789' * 20,
         )
         file_name = segments[-1]
         # Make sure path does not exists.
@@ -2851,7 +2887,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
 
         # Run the test with Windows Share paths
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(
-            '\\\\localhost\\{}\\{}'.format(share_name, file_name)
+            '\\\\localhost\\{}\\{}'.format(share_name, file_name),
         )
         self.assertFalse(self.unlocked_filesystem.exists(segments))
         data = b'something-' * 1000
@@ -2979,7 +3015,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         self.assertEqual(_p('a'), path)
 
         path = self.locked_filesystem.getRealPathFromSegments(
-            ['..', 'a', '..', 'b']
+            ['..', 'a', '..', 'b'],
         )
         self.assertEqual(_p('b'), path)
 
@@ -3010,20 +3046,20 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         self.assertEqual([], result)
 
         result = self.locked_filesystem.getSegmentsFromRealPath(
-            root_path + separator
+            root_path + separator,
         )
         self.assertEqual([], result)
 
         name = mk.string()
         result = self.locked_filesystem.getSegmentsFromRealPath(
-            root_path + separator + name
+            root_path + separator + name,
         )
         self.assertEqual([name], result)
 
         name = mk.string()
         child = mk.string()
         result = self.locked_filesystem.getSegmentsFromRealPath(
-            root_path + separator + name + separator + child + separator
+            root_path + separator + name + separator + child + separator,
         )
         self.assertEqual([name, child], result)
 
@@ -3048,7 +3084,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
 
         with self.assertRaises(CompatError):
             self.locked_filesystem.getSegmentsFromRealPath(
-                'UNC\\server\\share\\path'
+                'UNC\\server\\share\\path',
             )
 
         with self.assertRaises(CompatError):
@@ -3216,7 +3252,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
                 virtual_folders=[
                     (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
                     (segments[-1:], mk.fs.temp_path),
-                ]
+                ],
             )
         self.assertEqual(1005, context.exception.event_id)
         self.assertEqual(
@@ -3231,7 +3267,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
                 virtual_folders=[
                     (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
                     (segments[-1:] + ['deep', 'virtual'], mk.fs.temp_path),
-                ]
+                ],
             )
         self.assertEqual(1005, context.exception.event_id)
 
@@ -3249,7 +3285,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
                     virtual_folders=[
                         (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
                         ([virtual_shadow], mk.fs.temp_path),
-                    ]
+                    ],
                 )
             self.assertEqual(1005, context.exception.event_id)
 
@@ -3258,13 +3294,13 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
                 virtual_folders=[
                     (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
                     ([virtual_shadow], mk.fs.temp_path),
-                ]
+                ],
             )
             self.getFilesystem(
                 virtual_folders=[
                     (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
                     ([virtual_shadow, 'deep'], mk.fs.temp_path),
-                ]
+                ],
             )
 
     def test_getRealPathFromSegments_no_match(self):
@@ -3276,7 +3312,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['base'], '/other/path'),
                 (['some', 'base'], '/some/path'),
-            ]
+            ],
         )
 
         result = sut.getRealPathFromSegments(['other', 'path'])
@@ -3292,17 +3328,19 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['base'], '/other/path'),
                 (['some', 'base', 'deep'], '/some/path'),
-            ]
+            ],
         )
 
         result = sut.getRealPathFromSegments(['some', 'base', 'path'])
         self.assertEqual(
-            os.path.join(mk.fs.temp_path, 'some', 'base', 'path'), result
+            os.path.join(mk.fs.temp_path, 'some', 'base', 'path'),
+            result,
         )
 
         with self.assertRaises(CompatError) as context:
             sut.getRealPathFromSegments(
-                ['some', 'base', 'path'], include_virtual=False
+                ['some', 'base', 'path'],
+                include_virtual=False,
             )
         self.assertEqual(1007, context.exception.event_id)
 
@@ -3315,7 +3353,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['base'], '/other/path'),
                 (['some', 'base'], '/some/path'),
-            ]
+            ],
         )
 
         result = sut.getRealPathFromSegments(['some'])
@@ -3337,7 +3375,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['some', 'base'], '/some/path'),
                 (['base\N{LEO}'], '/other\N{SUN}/path'),
-            ]
+            ],
         )
 
         result = sut.getRealPathFromSegments(['base\N{LEO}'])
@@ -3350,7 +3388,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             self.assertEqual('/other\N{SUN}/path', result)
         else:
             self.assertEqual(
-                os.path.join(mk.fs.temp_path, 'Base\N{LEO}'), result
+                os.path.join(mk.fs.temp_path, 'Base\N{LEO}'),
+                result,
             )
 
     @conditionals.onOSFamily('nt')
@@ -3365,7 +3404,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['some\N{SUN}', 'base\N{SUN}'], 'c:/some\N{SUN}/path'),
                 (['base\N{SUN}'], 'e:\\otherN{leo}\\path'),
-            ]
+            ],
         )
 
         result = sut.getRealPathFromSegments(['base\N{SUN}'])
@@ -3384,7 +3423,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['some\N{SUN}', 'base\N{SUN}'], '/some/path'),
                 (['base\N{SUN}'], '/other/path'),
-            ]
+            ],
         )
 
         with self.assertRaises(CompatError) as context:
@@ -3393,7 +3432,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         with self.assertRaises(CompatError) as context:
             sut.getRealPathFromSegments(
-                ['some\N{SUN}', 'base\N{SUN}'], include_virtual=False
+                ['some\N{SUN}', 'base\N{SUN}'],
+                include_virtual=False,
             )
         self.assertEqual(1007, context.exception.event_id)
 
@@ -3413,7 +3453,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['some', 'base'], '/some/path\N{SUN}'),
                 (['base\N{SUN}'], '/other/path\N{SUN}'),
-            ]
+            ],
         )
 
         result = sut.getRealPathFromSegments(['base\N{SUN}', 'child\N{CLOUD}'])
@@ -3430,14 +3470,14 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['some', 'base\N{SUN}'], 'c:/some/path\N{SUN}'),
                 (['base\N{SUN}'], 'e:\\other\N{SUN}\\path'),
-            ]
+            ],
         )
 
         result = sut.getRealPathFromSegments(['base\N{SUN}', 'child\N{CLOUD}'])
         self.assertEqual('e:\\other\N{SUN}\\path\\child\N{CLOUD}', result)
 
         result = sut.getRealPathFromSegments(
-            ['some', 'base\N{SUN}', 'child\N{SUN}']
+            ['some', 'base\N{SUN}', 'child\N{SUN}'],
         )
         self.assertEqual('c:\\some\\path\N{SUN}\\child\N{SUN}', result)
 
@@ -3450,7 +3490,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['some', 'base'], '/some/path'),
                 (['base'], '/other/path'),
-            ]
+            ],
         )
 
         result = sut.getSegmentsFromRealPath(mk.fs.temp_path)
@@ -3458,7 +3498,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertEqual([], result)
 
         result = sut.getSegmentsFromRealPath(
-            os.path.join(mk.fs.temp_path, 'child path')
+            os.path.join(mk.fs.temp_path, 'child path'),
         )
         self.assertEqual(['child path'], result)
 
@@ -3479,7 +3519,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['some\N{SUN}', 'base'], '/virtual/path\N{SUN}/'),
                 (['base\N{SUN}'], '/other\N{SUN}/path'),
-            ]
+            ],
         )
 
         result = sut.getSegmentsFromRealPath('/virtual/path\N{SUN}')
@@ -3513,7 +3553,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['some', 'base'], 'c:\\virtual\\path\\'),
                 (['base'], 'e:/other/path'),
-            ]
+            ],
         )
 
         result = sut.getSegmentsFromRealPath('c:\\virtual\\path')
@@ -3546,7 +3586,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['some', 'base'], '/virtual/path'),
                 (['base'], '/other/path'),
-            ]
+            ],
         )
 
         result = sut.getSegmentsFromRealPath('/other/path/child')
@@ -3567,7 +3607,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['some', 'base'], 'c:\\virtual\\path'),
                 (['base'], 'e:/other/path'),
-            ]
+            ],
         )
 
         result = sut.getSegmentsFromRealPath('e:/other/path/child')
@@ -3588,7 +3628,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         virtual path itself.
         """
         virtual_path, virtual_segments = self.tempFolder(
-            'virtual-base\N{CLOUD}'
+            'virtual-base\N{CLOUD}',
         )
         mk.fs.createFolder(virtual_segments + ['inside-virtual\N{SUN}'])
 
@@ -3599,7 +3639,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
                     ['virtual', 'non-existent-\N{SUN}'],
                     mk.fs.makePathInTemp()[0],
                 ),
-            ]
+            ],
         )
 
         self.assertFalse(sut.exists(['no-such-root-child']))
@@ -3613,7 +3653,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertTrue(sut.exists(['virtual-base\N{CLOUD}']))
         # Any virtual part or child exists.
         self.assertTrue(
-            sut.exists(['some', 'base\N{SUN}', 'inside-virtual\N{SUN}'])
+            sut.exists(['some', 'base\N{SUN}', 'inside-virtual\N{SUN}']),
         )
         self.assertTrue(sut.exists(['some', 'base\N{SUN}']))
         self.assertTrue(sut.exists(['some']))
@@ -3633,7 +3673,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFolder(virtual_segments + ['child-folder'])
 
         sut = self.getFilesystem(
-            virtual_folders=[(['some', 'base'], virtual_path)]
+            virtual_folders=[(['some', 'base'], virtual_path)],
         )
 
         sut.deleteFolder(['some', 'base', 'child-folder'])
@@ -3658,8 +3698,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         """
         sut = self.getFilesystem(
             virtual_folders=[
-                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path)
-            ]
+                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
+            ],
         )
 
         # It can create outside of the virtual folders.
@@ -3699,7 +3739,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFile(virtual_segments + ['child-file\N{SUN}'])
 
         sut = self.getFilesystem(
-            virtual_folders=[(['some', 'base'], virtual_path)]
+            virtual_folders=[(['some', 'base'], virtual_path)],
         )
 
         sut.deleteFile(['some', 'base', 'child-file\N{SUN}'])
@@ -3729,7 +3769,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFolder(virtual_segments + ['child-folder'])
 
         sut = self.getFilesystem(
-            virtual_folders=[(['some', 'base'], virtual_path)]
+            virtual_folders=[(['some', 'base'], virtual_path)],
         )
 
         # It will try to set the owner.
@@ -3762,7 +3802,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFolder(virtual_segments + ['child-folder'])
 
         sut = self.getFilesystem(
-            virtual_folders=[(['some', 'base'], virtual_path)]
+            virtual_folders=[(['some', 'base'], virtual_path)],
         )
 
         # It will try to set the owner.
@@ -3795,7 +3835,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFolder(virtual_segments + ['child-folder'])
 
         sut = self.getFilesystem(
-            virtual_folders=[(['some', 'base'], virtual_path)]
+            virtual_folders=[(['some', 'base'], virtual_path)],
         )
 
         sut.rename(['some', 'base', 'child-folder'], ['outside-folder'])
@@ -3845,11 +3885,12 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFolder(virtual_segments + ['child-folder'])
 
         sut = self.getFilesystem(
-            virtual_folders=[(['some', 'base'], virtual_path)]
+            virtual_folders=[(['some', 'base'], virtual_path)],
         )
 
         sut.setAttributes(
-            ['some', 'base', 'child-folder'], {'atime': 1111, 'mtime': 1111}
+            ['some', 'base', 'child-folder'],
+            {'atime': 1111, 'mtime': 1111},
         )
 
         with self.assertRaises(CompatError) as context:
@@ -3875,25 +3916,26 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         virtual_path, virtual_segments = self.tempFolder('virtual')
         mk.fs.createFolder(virtual_segments + ['child-folder\N{SUN}'])
         mk.fs.createFile(
-            virtual_segments + ['child-file\N{CLOUD}'], content='123456789'
+            virtual_segments + ['child-file\N{CLOUD}'],
+            content='123456789',
         )
 
         sut = self.getFilesystem(
             virtual_folders=[
                 (['some\N{CLOUD}', 'other-base\N{SUN}'], virtual_path),
                 (['some\N{CLOUD}', 'base\N{SUN}'], virtual_path),
-            ]
+            ],
         )
 
         result = sut.getAttributes(
-            ['some\N{CLOUD}', 'base\N{SUN}', 'child-folder\N{SUN}']
+            ['some\N{CLOUD}', 'base\N{SUN}', 'child-folder\N{SUN}'],
         )
         self.assertTrue(result.is_folder)
         self.assertFalse(result.is_file)
         self.assertEqual('child-folder\N{SUN}', result.name)
 
         result = sut.getAttributes(
-            ['some\N{CLOUD}', 'base\N{SUN}', 'child-file\N{CLOUD}']
+            ['some\N{CLOUD}', 'base\N{SUN}', 'child-file\N{CLOUD}'],
         )
         self.assertFalse(result.is_folder)
         self.assertTrue(result.is_file)
@@ -3911,7 +3953,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertFalse(result.is_link)
         self.assertEqual('some\N{CLOUD}', result.name)
         self.assertEqual(
-            os.path.join(mk.fs.temp_path, 'some\N{CLOUD}'), result.path
+            os.path.join(mk.fs.temp_path, 'some\N{CLOUD}'),
+            result.path,
         )
         self.assertEqual(0, result.size)
         self.assertEqual(start_of_year, result.modified)
@@ -3937,11 +3980,12 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         virtual_path, virtual_segments = self.tempFolder('virtual')
         mk.fs.createFolder(virtual_segments + ['child-folder\N{SUN}'])
         mk.fs.createFile(
-            virtual_segments + ['child-file\N{CLOUD}'], content='123456789'
+            virtual_segments + ['child-file\N{CLOUD}'],
+            content='123456789',
         )
 
         sut = self.getFilesystem(
-            virtual_folders=[(['some\N{CLOUD}', 'base\N{SUN}'], virtual_path)]
+            virtual_folders=[(['some\N{CLOUD}', 'base\N{SUN}'], virtual_path)],
         )
 
         if self.os_name in ['windows', 'osx']:
@@ -3950,7 +3994,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             self.assertFalse(result.is_file)
             self.assertEqual('Some\N{CLOUD}', result.name)
             self.assertEqual(
-                os.path.join(mk.fs.temp_path, 'Some\N{CLOUD}'), result.path
+                os.path.join(mk.fs.temp_path, 'Some\N{CLOUD}'),
+                result.path,
             )
             self.assertEqual(0, result.size)
 
@@ -3977,7 +4022,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         virtual_path, virtual_segments = self.tempFolder('virtual')
         mk.fs.createFolder(virtual_segments + ['child-folder\N{SUN}'])
         mk.fs.createFile(
-            virtual_segments + ['child-file\N{CLOUD}'], content='123456789'
+            virtual_segments + ['child-file\N{CLOUD}'],
+            content='123456789',
         )
 
         sut = self.getFilesystem(
@@ -3985,11 +4031,11 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
                 (['some\N{CLOUD}', 'other-base\N{SUN}'], virtual_path),
                 (['some\N{CLOUD}', 'base\N{SUN}'], virtual_path),
                 (['some\N{CLOUD}', 'more-base\N{SUN}'], virtual_path),
-            ]
+            ],
         )
 
         result = sut.getStatus(
-            ['some\N{CLOUD}', 'base\N{SUN}', 'child-folder\N{SUN}']
+            ['some\N{CLOUD}', 'base\N{SUN}', 'child-folder\N{SUN}'],
         )
         self.assertFalse(stat.S_ISREG(result.st_mode))
         self.assertTrue(stat.S_ISDIR(result.st_mode))
@@ -3997,7 +4043,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertNotEqual(0, result.st_ino)
 
         result = sut.getStatus(
-            ['some\N{CLOUD}', 'base\N{SUN}', 'child-file\N{CLOUD}']
+            ['some\N{CLOUD}', 'base\N{SUN}', 'child-file\N{CLOUD}'],
         )
         self.assertTrue(stat.S_ISREG(result.st_mode))
         self.assertFalse(stat.S_ISDIR(result.st_mode))
@@ -4040,7 +4086,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFolder(virtual_segments + ['child-folder'])
 
         sut = self.getFilesystem(
-            virtual_folders=[(['some', 'base'], virtual_path)]
+            virtual_folders=[(['some', 'base'], virtual_path)],
         )
 
         # It can remove group.
@@ -4075,8 +4121,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         """
         sut = self.getFilesystem(
             virtual_folders=[
-                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path)
-            ]
+                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
+            ],
         )
 
         with self.assertRaises(CompatError) as context:
@@ -4097,16 +4143,16 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         """
         sut = self.getFilesystem(
             virtual_folders=[
-                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path)
-            ]
+                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
+            ],
         )
 
         self.assertFalse(sut.isLink(['virtual-\N{CLOUD}']))
         self.assertFalse(sut.isLink(['virtual-\N{CLOUD}', 'base\N{SUN}']))
         self.assertFalse(
             sut.isLink(
-                ['virtual-\N{CLOUD}', 'base\N{SUN}', 'non-existent-file']
-            )
+                ['virtual-\N{CLOUD}', 'base\N{SUN}', 'non-existent-file'],
+            ),
         )
 
         # Since is part of virtual path, this fail as is an invalid path which
@@ -4121,8 +4167,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         """
         sut = self.getFilesystem(
             virtual_folders=[
-                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path)
-            ]
+                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
+            ],
         )
 
         with self.assertRaises(CompatError) as context:
@@ -4140,7 +4186,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         # It will try read the link inside the virtual path.
         with self.assertRaises(OSError) as context:
             sut.readLink(
-                ['virtual-\N{CLOUD}', 'base\N{SUN}', 'non-existent-file']
+                ['virtual-\N{CLOUD}', 'base\N{SUN}', 'non-existent-file'],
             )
 
     @conditionals.onCapability('symbolic_link', True)
@@ -4150,8 +4196,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         """
         sut = self.getFilesystem(
             virtual_folders=[
-                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path)
-            ]
+                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
+            ],
         )
 
         with self.assertRaises(CompatError) as context:
@@ -4186,19 +4232,23 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         _, segments = self.tempFile(content='1234')
         sut = self.getFilesystem(
             virtual_folders=[
-                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path)
-            ]
+                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
+            ],
         )
 
         with self.assertRaises(CompatError) as context:
             sut.openFile(
-                ['virtual-\N{CLOUD}', 'base\N{SUN}'], os.O_RDONLY, 0o777
+                ['virtual-\N{CLOUD}', 'base\N{SUN}'],
+                os.O_RDONLY,
+                0o777,
             )
         self.assertEqual(1007, context.exception.event_id)
 
         with self.assertRaises(CompatError) as context:
             sut.openFile(
-                ['virtual-\N{CLOUD}', 'lost\N{SUN}'], os.O_RDONLY, 0o777
+                ['virtual-\N{CLOUD}', 'lost\N{SUN}'],
+                os.O_RDONLY,
+                0o777,
             )
         self.assertEqual(1007, context.exception.event_id)
 
@@ -4223,8 +4273,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         _, segments = self.tempFile(content='1234')
         sut = self.getFilesystem(
             virtual_folders=[
-                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path)
-            ]
+                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
+            ],
         )
 
         with self.assertRaises(CompatError) as context:
@@ -4240,7 +4290,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertEqual(1007, context.exception.event_id)
 
         result = sut.openFileForReading(
-            ['virtual-\N{CLOUD}', 'base\N{SUN}', segments[-1]]
+            ['virtual-\N{CLOUD}', 'base\N{SUN}', segments[-1]],
         )
         actual_data = result.read()
         result.close()
@@ -4254,8 +4304,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         _, segments = self.tempFile(content='1234')
         sut = self.getFilesystem(
             virtual_folders=[
-                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path)
-            ]
+                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
+            ],
         )
 
         with self.assertRaises(CompatError) as context:
@@ -4271,7 +4321,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertEqual(1007, context.exception.event_id)
 
         result = sut.openFileForWriting(
-            ['virtual-\N{CLOUD}', 'base\N{SUN}', segments[-1]]
+            ['virtual-\N{CLOUD}', 'base\N{SUN}', segments[-1]],
         )
         result.write(b'56789')
         result.close()
@@ -4285,8 +4335,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         _, segments = self.tempFile(content='1234')
         sut = self.getFilesystem(
             virtual_folders=[
-                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path)
-            ]
+                (['virtual-\N{CLOUD}', 'base\N{SUN}'], mk.fs.temp_path),
+            ],
         )
 
         with self.assertRaises(CompatError) as context:
@@ -4302,7 +4352,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         self.assertEqual(1007, context.exception.event_id)
 
         result = sut.openFileForAppending(
-            ['virtual-\N{CLOUD}', 'base\N{SUN}', segments[-1]]
+            ['virtual-\N{CLOUD}', 'base\N{SUN}', segments[-1]],
         )
         result.write(b'56789')
         result.close()
@@ -4315,14 +4365,15 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         """
         virtual_path, virtual_segments = self.tempFolder('virtual')
         mk.fs.createFile(
-            virtual_segments + ['child-file\N{SUN}'], content='blalata'
+            virtual_segments + ['child-file\N{SUN}'],
+            content='blalata',
         )
 
         sut = self.getFilesystem(
             virtual_folders=[
                 (['some', 'base'], virtual_path),
                 (['some', 'more-base'], virtual_path),
-            ]
+            ],
         )
 
         result = sut.getFileSize(['some', 'base', 'child-file\N{SUN}'])
@@ -4349,7 +4400,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         mk.fs.createFile(virtual_segments + ['child-file\N{SUN}'])
 
         sut = self.getFilesystem(
-            virtual_folders=[(['base\N{SUN}', 'deep'], virtual_path)]
+            virtual_folders=[(['base\N{SUN}', 'deep'], virtual_path)],
         )
 
         result = sut.getFolderContent(['base\N{SUN}', 'deep'])
@@ -4370,7 +4421,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
                 (['\N{SUN}base', 'base1'], virtual_path),
                 (['\N{SUN}base', 'base2'], mk.fs.temp_path),
                 (['more-virtual', 'deep'], mk.fs.temp_path + 'no-such'),
-            ]
+            ],
         )
 
         expected = [
@@ -4427,7 +4478,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['virtual', 'child-virtual'], mk.fs.temp_path),
                 (['virtual', 'deep-virtual', 'other'], mk.fs.temp_path),
-            ]
+            ],
         )
 
         expected = ['child-folder', 'child-file\N{SUN}']
@@ -4460,7 +4511,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
                     ['non-virtual\N{SUN}', 'child-file', 'other'],
                     mk.fs.temp_path,
                 ),
-            ]
+            ],
         )
 
         # We create the folders after the filesystem was initialized as
@@ -4478,7 +4529,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         expected = [
             sut._getPlaceholderAttributes(['non-virtual\N{SUN}', 'child-file']),
             sut._getPlaceholderAttributes(
-                ['non-virtual\N{SUN}', 'virtual\N{CLOUD}']
+                ['non-virtual\N{SUN}', 'virtual\N{CLOUD}'],
             ),
         ]
         result = sut.iterateFolderContent(['non-virtual\N{SUN}'])
@@ -4512,7 +4563,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
                     ['non-virtual\N{SUN}', 'child-file', 'other'],
                     mk.fs.temp_path,
                 ),
-            ]
+            ],
         )
 
         # We create the folders after the filesystem was initialized as
@@ -4524,7 +4575,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         # Even if non-virtual is real, we get the attributes for the virtual
         # path.
         self.assertIteratorItemsEqual(
-            [mk.fs._getPlaceholderAttributes(segments)], result
+            [mk.fs._getPlaceholderAttributes(segments)],
+            result,
         )
 
     def test_getFolderContent_virtual_deep_member(self):
@@ -4538,7 +4590,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['\N{SUN}base', 'deep\N{CLOUD}', 'virt\N{SUN}'], virtual_path),
                 (['\N{SUN}base', 'other\N{SUN}', 'virt-folder'], virtual_path),
-            ]
+            ],
         )
 
         expected = ['deep\N{CLOUD}', 'other\N{SUN}']
@@ -4558,8 +4610,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
         expected = [
             sut._getPlaceholderAttributes(
-                ['\N{SUN}base', 'deep\N{CLOUD}', 'virt\N{SUN}']
-            )
+                ['\N{SUN}base', 'deep\N{CLOUD}', 'virt\N{SUN}'],
+            ),
         ]
         result = sut.iterateFolderContent(['\N{SUN}base', 'deep\N{CLOUD}'])
         self.assertIteratorItemsEqual(expected, result)
@@ -4576,7 +4628,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             virtual_folders=[
                 (['\N{SUN}base', 'deep\N{CLOUD}', 'virt\N{SUN}'], virtual_path),
                 (['\N{SUN}base', 'other\N{SUN}', 'virt-folder'], virtual_path),
-            ]
+            ],
         )
 
         if self.os_name in ['windows', 'osx']:
@@ -4588,7 +4640,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             self.assertItemsEqual(['virt\N{SUN}'], result)
 
             result = sut.getFolderContent(
-                ['\N{SUN}base', 'deep\N{CLOUD}', 'Virt\N{SUN}']
+                ['\N{SUN}base', 'deep\N{CLOUD}', 'Virt\N{SUN}'],
             )
             self.assertItemsEqual(['inside-virt\N{SUN}'], result)
 
@@ -4601,7 +4653,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
 
             with self.assertRaises(OSError):
                 sut.getFolderContent(
-                    ['\N{SUN}base', 'deep\N{CLOUD}', 'Virt\N{SUN}']
+                    ['\N{SUN}base', 'deep\N{CLOUD}', 'Virt\N{SUN}'],
                 )
 
 

@@ -18,7 +18,7 @@ class IDaemon(Interface):
         """
         True if standard streams (input, output, error) should be redirected
         to the new daemon process.
-        """
+        """,
     )
 
     detach_process = Attribute('True if process should detach from console.')
@@ -94,17 +94,17 @@ class IProcessCapabilities(Interface):
 
     os_family = Attribute('General family of OS. nt or posix')
     os_name = Attribute(
-        'Name of operating system. Ex: windows, linux, aix, solaris.'
+        'Name of operating system. Ex: windows, linux, aix, solaris.',
     )
 
     impersonate_local_account = Attribute(
-        'True if it can impersonate any local account.'
+        'True if it can impersonate any local account.',
     )
     create_home_folder = Attribute(
-        'True if it can create home folders for any local account.'
+        'True if it can create home folders for any local account.',
     )
     get_home_folder = Attribute(
-        'True if it can retrieve home folders for any local account.'
+        'True if it can retrieve home folders for any local account.',
     )
     symbolic_link = Attribute('True if it supports symbolic links.')
     pam = Attribute('True if it supports PAM authentication.')
@@ -124,7 +124,7 @@ class IHasImpersonatedAvatar(Interface):
         local and active directory accounts.
 
         This attribute is `None` on Unix systems.
-        """
+        """,
     )
 
     use_impersonation = Attribute('True if this avatar should be impersonated.')
@@ -143,10 +143,10 @@ class IFileSystemAvatar(IHasImpersonatedAvatar):
     home_folder_path = Attribute('Path to home folder')
     root_folder_path = Attribute('Path to root folder')
     lock_in_home_folder = Attribute(
-        'True if filesystem access should be limited to home folder.'
+        'True if filesystem access should be limited to home folder.',
     )
     virtual_folders = Attribute(
-        'List of tuples which map segments to real paths.'
+        'List of tuples which map segments to real paths.',
     )
 
 
@@ -235,19 +235,19 @@ class IFilesystemNode(Interface):
     name = Attribute(
         """
         Name of this node.
-        """
+        """,
     )
 
     path = Attribute(
         """
         Path inside the rooted filesystem.
-        """
+        """,
     )
 
     absolute_path = Attribute(
         """
         Path in the absolute filesystem.
-        """
+        """,
     )
 
     def getParent():
@@ -625,7 +625,7 @@ class IFileAttributes(Interface):
 
     name = Attribute('Name of this member.')
     path = Attribute(
-        'Absolute path of this member, as seen for the chrooted fs.'
+        'Absolute path of this member, as seen for the chrooted fs.',
     )
     size = Attribute('Size in bytes.')
     is_file = Attribute('True if member is a file.')

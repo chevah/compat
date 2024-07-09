@@ -61,7 +61,8 @@ class TestPosixFilesystem(FileSystemTestCase):
 
         if self.os_family == 'posix':
             self.assertContains(
-                'No such file or directory', context.exception.message
+                'No such file or directory',
+                context.exception.message,
             )
         elif self.TEST_LANGUAGE == 'FR':
             self.assertContains(
@@ -128,7 +129,8 @@ class TestPosixFilesystem(FileSystemTestCase):
         """
         with self.assertRaises(CompatError) as context:
             self.filesystem.addGroup(
-                self.filesystem.home_segments, 'non-existent-group'
+                self.filesystem.home_segments,
+                'non-existent-group',
             )
         self.assertEqual(1017, context.exception.event_id)
 
@@ -151,11 +153,11 @@ class TestPosixFilesystem(FileSystemTestCase):
             root_filesystem = self.filesystem
 
         self.assertFalse(
-            self.filesystem.hasGroup(file_segments, TEST_ACCOUNT_GROUP_OTHER)
+            self.filesystem.hasGroup(file_segments, TEST_ACCOUNT_GROUP_OTHER),
         )
         root_filesystem.addGroup(file_segments, TEST_ACCOUNT_GROUP_OTHER)
         self.assertTrue(
-            self.filesystem.hasGroup(file_segments, TEST_ACCOUNT_GROUP_OTHER)
+            self.filesystem.hasGroup(file_segments, TEST_ACCOUNT_GROUP_OTHER),
         )
 
     def test_addGroup_ok_group_folder(self):
@@ -176,11 +178,11 @@ class TestPosixFilesystem(FileSystemTestCase):
             root_filesystem = self.filesystem
 
         self.assertFalse(
-            self.filesystem.hasGroup(folder_segments, TEST_ACCOUNT_GROUP_OTHER)
+            self.filesystem.hasGroup(folder_segments, TEST_ACCOUNT_GROUP_OTHER),
         )
         root_filesystem.addGroup(folder_segments, TEST_ACCOUNT_GROUP_OTHER)
         self.assertTrue(
-            self.filesystem.hasGroup(folder_segments, TEST_ACCOUNT_GROUP_OTHER)
+            self.filesystem.hasGroup(folder_segments, TEST_ACCOUNT_GROUP_OTHER),
         )
 
     def test_hasGroup(self):
@@ -192,8 +194,9 @@ class TestPosixFilesystem(FileSystemTestCase):
 
         self.assertFalse(
             self.filesystem.hasGroup(
-                self.filesystem.home_segments, TEST_ACCOUNT_GROUP_OTHER
-            )
+                self.filesystem.home_segments,
+                TEST_ACCOUNT_GROUP_OTHER,
+            ),
         )
 
         # FIXME:928:
@@ -201,8 +204,9 @@ class TestPosixFilesystem(FileSystemTestCase):
         if self.os_family == 'posix':
             self.assertTrue(
                 self.filesystem.hasGroup(
-                    self.filesystem.home_segments, TEST_ACCOUNT_GROUP
-                )
+                    self.filesystem.home_segments,
+                    TEST_ACCOUNT_GROUP,
+                ),
             )
 
     def test_setOwner_ok(self):
@@ -242,7 +246,8 @@ class TestPosixFilesystem(FileSystemTestCase):
         It will raise an error if user has no permissions to list folder.
         """
         avatar = mk.FilesystemOsAvatar(
-            user=TEST_USERS['normal'], home_folder_path=mk.fs.temp_path
+            user=TEST_USERS['normal'],
+            home_folder_path=mk.fs.temp_path,
         )
         user_fs = mk.makeLocalTestFilesystem(avatar)
         user_fs.folder(user_fs.temp_segments, cleanup=self.addCleanup)
@@ -251,7 +256,9 @@ class TestPosixFilesystem(FileSystemTestCase):
             user_fs.setAttributes(user_fs.temp_segments, {'mode': 0o000})
 
             error = self.assertRaises(
-                OSError, user_fs.iterateFolderContent, user_fs.temp_segments
+                OSError,
+                user_fs.iterateFolderContent,
+                user_fs.temp_segments,
             )
         finally:
             # Make sure we revert the permissions so that we can cleanup.
@@ -265,7 +272,8 @@ class TestPosixFilesystem(FileSystemTestCase):
         the normal user.
         """
         avatar = mk.FilesystemOsAvatar(
-            user=TEST_USERS['normal'], home_folder_path=mk.fs.temp_path
+            user=TEST_USERS['normal'],
+            home_folder_path=mk.fs.temp_path,
         )
         user_fs = mk.makeLocalTestFilesystem(avatar)
         user_fs.folder(user_fs.temp_segments, cleanup=self.addCleanup)
@@ -335,8 +343,9 @@ class TestUnixFilesystem(FileSystemTestCase):
             act()
             self.assertTrue(
                 self.filesystem.hasGroup(
-                    file_segments, TEST_ACCOUNT_GROUP_OTHER
-                )
+                    file_segments,
+                    TEST_ACCOUNT_GROUP_OTHER,
+                ),
             )
         else:
             with self.assertRaises(CompatError) as context:
@@ -344,8 +353,9 @@ class TestUnixFilesystem(FileSystemTestCase):
             self.assertEqual(1017, context.exception.event_id)
             self.assertFalse(
                 self.filesystem.hasGroup(
-                    file_segments, TEST_ACCOUNT_GROUP_OTHER
-                )
+                    file_segments,
+                    TEST_ACCOUNT_GROUP_OTHER,
+                ),
             )
 
     def test_addGroup_denied_group_folder(self):
@@ -365,8 +375,9 @@ class TestUnixFilesystem(FileSystemTestCase):
             act()
             self.assertTrue(
                 self.filesystem.hasGroup(
-                    folder_segments, TEST_ACCOUNT_GROUP_OTHER
-                )
+                    folder_segments,
+                    TEST_ACCOUNT_GROUP_OTHER,
+                ),
             )
         else:
             with self.assertRaises(CompatError) as context:
@@ -374,8 +385,9 @@ class TestUnixFilesystem(FileSystemTestCase):
             self.assertEqual(1017, context.exception.event_id)
             self.assertFalse(
                 self.filesystem.hasGroup(
-                    folder_segments, TEST_ACCOUNT_GROUP_OTHER
-                )
+                    folder_segments,
+                    TEST_ACCOUNT_GROUP_OTHER,
+                ),
             )
 
     def test_removeGroup(self):
@@ -384,11 +396,13 @@ class TestUnixFilesystem(FileSystemTestCase):
         """
         # Right now, on Unix it does nothing.
         self.filesystem.removeGroup(
-            self.filesystem.home_segments, TEST_ACCOUNT_GROUP_OTHER
+            self.filesystem.home_segments,
+            TEST_ACCOUNT_GROUP_OTHER,
         )
 
         self.filesystem.removeGroup(
-            self.filesystem.home_segments, 'no-such-group'
+            self.filesystem.home_segments,
+            'no-such-group',
         )
 
 
@@ -419,36 +433,42 @@ class TestNTFilesystem(FileSystemTestCase):
 
         self.assertFalse(
             self.filesystem.hasGroup(
-                self.test_segments, TEST_ACCOUNT_GROUP_OTHER
-            )
+                self.test_segments,
+                TEST_ACCOUNT_GROUP_OTHER,
+            ),
         )
 
         self.filesystem.addGroup(self.test_segments, TEST_ACCOUNT_GROUP_OTHER)
 
         self.assertTrue(
             self.filesystem.hasGroup(
-                self.test_segments, TEST_ACCOUNT_GROUP_OTHER
-            )
+                self.test_segments,
+                TEST_ACCOUNT_GROUP_OTHER,
+            ),
         )
 
         self.filesystem.removeGroup(
-            self.test_segments, TEST_ACCOUNT_GROUP_OTHER
+            self.test_segments,
+            TEST_ACCOUNT_GROUP_OTHER,
         )
 
         self.assertFalse(
             self.filesystem.hasGroup(
-                self.test_segments, TEST_ACCOUNT_GROUP_OTHER
-            )
+                self.test_segments,
+                TEST_ACCOUNT_GROUP_OTHER,
+            ),
         )
 
         # Try to remove it again.
         self.filesystem.removeGroup(
-            self.test_segments, TEST_ACCOUNT_GROUP_OTHER
+            self.test_segments,
+            TEST_ACCOUNT_GROUP_OTHER,
         )
 
         with self.assertRaises(OSError):
             self.filesystem.removeGroup(
-                ['no-such-segments'], TEST_ACCOUNT_GROUP_OTHER
+                ['no-such-segments'],
+                TEST_ACCOUNT_GROUP_OTHER,
             )
 
         with self.assertRaises(CompatError) as context:

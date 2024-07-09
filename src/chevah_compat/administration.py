@@ -125,7 +125,7 @@ class OSAdministrationUnix(object):
             time.sleep(0.1)
 
         raise AssertionError(
-            'Group found in all, but not available by name %s' % (name,)
+            'Group found in all, but not available by name %s' % (name,),
         )
 
     def _addGroup_aix(self, group):
@@ -148,7 +148,7 @@ class OSAdministrationUnix(object):
                 str(group.gid),
                 'passwd',
                 '"*"',
-            ]
+            ],
         )
 
     def _addGroup_solaris(self, group):
@@ -160,7 +160,7 @@ class OSAdministrationUnix(object):
     def _addGroup_freebsd(self, group):
         group_name = group.name.encode('utf-8')
         execute(
-            ['sudo', 'pw', 'groupadd', '-g', str(group.gid), '-n', group_name]
+            ['sudo', 'pw', 'groupadd', '-g', str(group.gid), '-n', group_name],
         )
 
     def _addGroup_openbsd(self, group):
@@ -213,7 +213,7 @@ class OSAdministrationUnix(object):
                     groupdb_name,
                     'GroupMembership',
                     member,
-                ]
+                ],
             )
 
     def _addUsersToGroup_solaris(self, group, users):
@@ -236,7 +236,7 @@ class OSAdministrationUnix(object):
                 group_name,
                 '-M',
                 members_list.encode('utf-8'),
-            ]
+            ],
         )
 
     def _addUsersToGroup_openbsd(self, group, users):
@@ -342,7 +342,7 @@ class OSAdministrationUnix(object):
                     'chgrp',
                     user.home_group.encode('utf-8'),
                     user.posix_home_path.encode('utf-8'),
-                ]
+                ],
             )
 
     def _addUser_linux(self, user):
@@ -360,7 +360,7 @@ class OSAdministrationUnix(object):
                 userdb_name,
                 'UserShell',
                 '/bin/bash',
-            ]
+            ],
         )
         execute(
             [
@@ -371,7 +371,7 @@ class OSAdministrationUnix(object):
                 userdb_name,
                 'UniqueID',
                 str(user.uid),
-            ]
+            ],
         )
         execute(
             [
@@ -382,7 +382,7 @@ class OSAdministrationUnix(object):
                 userdb_name,
                 'PrimaryGroupID',
                 str(user.gid),
-            ]
+            ],
         )
         execute(
             [
@@ -393,7 +393,7 @@ class OSAdministrationUnix(object):
                 userdb_name,
                 'NFSHomeDirectory',
                 home_folder,
-            ]
+            ],
         )
 
         # Create home folder.
@@ -437,7 +437,7 @@ class OSAdministrationUnix(object):
 
         if user.home_group:
             execute(
-                ['sudo', 'chgrp', user.home_group.encode('utf-8'), home_path]
+                ['sudo', 'chgrp', user.home_group.encode('utf-8'), home_path],
             )
 
     def _addUser_openbsd(self, user):
@@ -469,7 +469,7 @@ class OSAdministrationUnix(object):
 
         if user.home_group:
             execute(
-                ['sudo', 'chgrp', user.home_group.encode('utf-8'), home_path]
+                ['sudo', 'chgrp', user.home_group.encode('utf-8'), home_path],
             )
 
     def setUserPassword(self, user):
@@ -588,7 +588,8 @@ class OSAdministrationUnix(object):
 
     def _setUserPassword_openbsd(self, user):
         code, out = execute(
-            command=['encrypt'], input_text=user.password.encode('utf-8')
+            command=['encrypt'],
+            input_text=user.password.encode('utf-8'),
         )
 
         execute(
@@ -598,7 +599,7 @@ class OSAdministrationUnix(object):
                 '-p',
                 out.strip(),
                 user.name.encode('utf-8'),
-            ]
+            ],
         )
 
     def deleteUser(self, user):
@@ -768,7 +769,7 @@ class OSAdministrationUnix(object):
 
         if not exists:
             raise AssertionError(
-                ('No such %s: %s' % (kind, name)).encode('utf-8')
+                ('No such %s: %s' % (kind, name)).encode('utf-8'),
             )
 
     def _changeUnixEntry(
@@ -868,7 +869,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         except Exception as error:  # pragma: no cover
             raise AssertionError(
                 'Failed to add group %s in domain %s. %s'
-                % (group.name, group.pdc, error)
+                % (group.name, group.pdc, error),
             )
 
     def addUsersToGroup(self, group, users=None):
@@ -885,12 +886,15 @@ class OSAdministrationWindows(OSAdministrationUnix):
             members_info.append({'domainandname': member})
         try:
             win32net.NetLocalGroupAddMembers(
-                group.pdc, group.name, 3, members_info
+                group.pdc,
+                group.name,
+                3,
+                members_info,
             )
         except Exception as error:  # pragma: no cover
             raise AssertionError(
                 'Failed to add to group %s users %s. %s'
-                % (group.name, users, error)
+                % (group.name, users, error),
             )
 
     def addUser(self, user):
@@ -923,7 +927,8 @@ class OSAdministrationWindows(OSAdministrationUnix):
                 raise AssertionError('You must provide a password.')
 
             system_users._createLocalProfile(
-                username=user.upn, token=user.token
+                username=user.upn,
+                token=user.token,
             )
 
         user.windows_sid = self._getUserSID(user)
@@ -950,12 +955,15 @@ class OSAdministrationWindows(OSAdministrationUnix):
             import win32net
 
             win32net.NetUserChangePassword(
-                pdc, user.name, user.password, user.password
+                pdc,
+                user.name,
+                user.password,
+                user.password,
             )
         except Exception:  # pragma: no cover
             print(
                 'Failed to set password for user "%s" on pdc "%s".'
-                % (user.name, pdc)
+                % (user.name, pdc),
             )
             raise
 
@@ -1023,7 +1031,8 @@ class OSAdministrationWindows(OSAdministrationUnix):
         policy_handle = None
         try:
             policy_handle = win32security.LsaOpenPolicy(
-                '', win32security.POLICY_ALL_ACCESS
+                '',
+                win32security.POLICY_ALL_ACCESS,
             )
 
             yield policy_handle
@@ -1056,7 +1065,9 @@ class OSAdministrationWindows(OSAdministrationUnix):
 
         with self._openLSAPolicy() as policy_handle:
             win32security.LsaAddAccountRights(
-                policy_handle, user.windows_sid, rights
+                policy_handle,
+                user.windows_sid,
+                rights,
             )
             user._invalidateToken()
 
@@ -1068,7 +1079,10 @@ class OSAdministrationWindows(OSAdministrationUnix):
 
         with self._openLSAPolicy() as policy_handle:
             win32security.LsaRemoveAccountRights(
-                policy_handle, user.windows_sid, 0, rights
+                policy_handle,
+                user.windows_sid,
+                0,
+                rights,
             )
             user._invalidateToken()
 

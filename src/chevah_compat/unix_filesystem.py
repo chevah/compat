@@ -104,10 +104,12 @@ class UnixFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         target_path = self.getRealPathFromSegments(
-            target_segments, include_virtual=False
+            target_segments,
+            include_virtual=False,
         )
         link_path = self.getRealPathFromSegments(
-            link_segments, include_virtual=False
+            link_segments,
+            include_virtual=False,
         )
 
         with self._impersonateUser():

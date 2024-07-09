@@ -98,7 +98,7 @@ class PosixFilesystemBase(object):
                 1006,
                 _(
                     'Could not switch process to local account "%s".'
-                    % (self._avatar.name)
+                    % (self._avatar.name),
                 ),
             )
 
@@ -152,7 +152,7 @@ class PosixFilesystemBase(object):
                     % (
                         self._avatar.home_folder_path,
                         self._avatar.root_folder_path,
-                    )
+                    ),
                 ),
             )
 
@@ -195,7 +195,8 @@ class PosixFilesystemBase(object):
         """See `ILocalFilesystem`."""
         if self.avatar.lock_in_home_folder:
             temporary_folder = os.path.join(
-                self.avatar.home_folder_path, '__chevah_test_temp__'
+                self.avatar.home_folder_path,
+                '__chevah_test_temp__',
             )
         else:
             # Go with general temporary directory.
@@ -261,22 +262,26 @@ class PosixFilesystemBase(object):
             if segments_length < len(virtual_segments):
                 # Not the virtual folder of a descended of it.
                 if not include_virtual and self._areEqual(
-                    segments, virtual_segments[:segments_length]
+                    segments,
+                    virtual_segments[:segments_length],
                 ):
                     # But this is a parent of a virtual segment and we
                     # don't allow that.
                     raise CompatError(
-                        1007, 'Modifying a virtual path is not allowed.'
+                        1007,
+                        'Modifying a virtual path is not allowed.',
                     )
 
                 continue
 
             if not include_virtual and self._areEqual(
-                segments, virtual_segments
+                segments,
+                virtual_segments,
             ):
                 # This is a virtual root, but we don't allow it.
                 raise CompatError(
-                    1007, 'Modifying a virtual path is not allowed.'
+                    1007,
+                    'Modifying a virtual path is not allowed.',
                 )
 
             base_segments = segments[: len(virtual_segments)]
@@ -327,7 +332,8 @@ class PosixFilesystemBase(object):
             partial_virtual = True
 
             if not self._areEqual(
-                virtual_segments, segments[: len(virtual_segments)]
+                virtual_segments,
+                segments[: len(virtual_segments)],
             ):
                 # This is not a mapping for this virtual path.
                 continue
@@ -496,10 +502,12 @@ class PosixFilesystemBase(object):
     def rename(self, from_segments, to_segments):
         """See `ILocalFilesystem`."""
         from_path = self.getRealPathFromSegments(
-            from_segments, include_virtual=False
+            from_segments,
+            include_virtual=False,
         )
         to_path = self.getRealPathFromSegments(
-            to_segments, include_virtual=False
+            to_segments,
+            include_virtual=False,
         )
 
         from_path_encoded = self.getEncodedPath(from_path)
@@ -570,7 +578,7 @@ class PosixFilesystemBase(object):
 
         def fail_on_read():
             raise AssertionError(
-                'File opened for appending. Read is not allowed.'
+                'File opened for appending. Read is not allowed.',
             )
 
         path = self.getRealPathFromSegments(segments, include_virtual=False)
@@ -872,7 +880,8 @@ class PosixFilesystemBase(object):
                 os.chmod(path_encoded, attributes['mode'])
             if 'atime' in attributes and 'mtime' in attributes:
                 os.utime(
-                    path_encoded, (attributes['atime'], attributes['mtime'])
+                    path_encoded,
+                    (attributes['atime'], attributes['mtime']),
                 )
 
     def touch(self, segments):
@@ -894,17 +903,21 @@ class PosixFilesystemBase(object):
             destination_segments.append(source_segments[-1])
 
         destination_path = self.getRealPathFromSegments(
-            destination_segments, include_virtual=False
+            destination_segments,
+            include_virtual=False,
         )
         destination_path_encoded = self.getEncodedPath(destination_path)
 
         if not overwrite and self.exists(destination_segments):
             raise OSError(
-                errno.EEXIST, 'Destination exists', destination_path_encoded
+                errno.EEXIST,
+                'Destination exists',
+                destination_path_encoded,
             )
 
         source_path = self.getRealPathFromSegments(
-            source_segments, include_virtual=False
+            source_segments,
+            include_virtual=False,
         )
         source_path_encoded = self.getEncodedPath(source_path)
 
@@ -932,7 +945,7 @@ class PosixFilesystemBase(object):
             1016,
             _(
                 'Failed to set owner to "%s" for "%s". %s'
-                % (owner, path, message)
+                % (owner, path, message),
             ),
         )
 
@@ -1009,7 +1022,7 @@ class PosixFilesystemBase(object):
                 ('print_name_offset', SIZE_USHORT),
                 ('print_name_length', SIZE_USHORT),
                 ('flags', SIZE_ULONG),
-            ]
+            ],
         }
 
         if len(raw_reparse_data) < HEADER_SIZE:
@@ -1053,7 +1066,7 @@ class PosixFilesystemBase(object):
         offset = symbolic_link_data['print_name_offset']
         ending = offset + symbolic_link_data['print_name_length']
         result['name'] = symbolic_link_data['data'][offset:ending].decode(
-            'utf-16'
+            'utf-16',
         )
 
         offset = symbolic_link_data['substitute_name_offset']
@@ -1125,7 +1138,7 @@ class FileAttributes(object):
                 self.node_id,
                 self.owner,
                 self.group,
-            )
+            ),
         )
 
     def __eq__(self, other):
