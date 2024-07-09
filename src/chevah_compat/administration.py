@@ -48,7 +48,7 @@ def execute(command, input_text=None, output=None, ignore_errors=True):
     if output is None:
         output = subprocess.PIPE
 
-    command = [part for part in command]
+    command = list(command)
 
     process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=output)
     (stdoutdata, stderrdata) = process.communicate(input_text)

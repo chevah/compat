@@ -48,7 +48,7 @@ elif os.name == 'nt':
 else:
     raise AssertionError('Operating system "%s" not supported.' % (os.name))
 
-from chevah_compat.posix_filesystem import FileAttributes  # noqa
+from chevah_compat.posix_filesystem import FileAttributes
 
 # Silence the linter
 FileAttributes

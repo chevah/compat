@@ -17,7 +17,7 @@ import sys
 print('Before import (for module import is already called)')
 print(sys.argv)
 
-from chevah import compat  # noqa
+from chevah import compat  # noqa:E402
 
 # Silence the linter
 compat

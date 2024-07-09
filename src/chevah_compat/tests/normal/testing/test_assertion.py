@@ -215,8 +215,8 @@ class TestAssertionMixin(ChevahTestCase):
         a Unicode string vs. a bytestring are equal.
         """
 
-        unicode_set = set(['text'])
-        bytes_set = set([b'text'])
+        unicode_set = set('text')
+        bytes_set = set(b'text')
         with self.assertRaises(AssertionError):
             self.assertEqual(unicode_set, bytes_set)
 

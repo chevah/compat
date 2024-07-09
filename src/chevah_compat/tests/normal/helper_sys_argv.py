@@ -12,7 +12,7 @@ import sys
 sys.stdout.write(repr(sys.argv[1:]))
 
 # List after importing.
-import chevah_compat  # noqa
+import chevah_compat  # noqa:E402
 
 # Silence the linter.
 chevah_compat

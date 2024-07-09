@@ -41,20 +41,33 @@ select = [
     "F",
     "E", "W",
     "I",
-    #"UP",
-    #"YTT",
     "FLY",
     "T10",
-    #"EM",
+
     "EXE",
     "FA",
     "ICN",
-    #"INP",
-    #"T20",
+    "C4",
+    "COM",
+    "PGH",
+    "AIR",
+    "FURB",
     "PYI",
     "RSE",
+    #"EM",
+    #"UP",
+    #"YTT",
+    #"INP",
+    #"T20",
+    #"RET",
+    #"SLF",
+    #"PERF",
+    #"TRY",
+    #"ERA",
+    #"RUF",
     ]
 ignore = [
+    "TRY003",
     ]
 
 external = [
