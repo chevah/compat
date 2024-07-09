@@ -345,9 +345,7 @@ def lint(args):
     """
     Check that the source code is ok
     """
-    check_args = []
-    if '--all' in args:
-        check_args = ['--no-cache']
+    check_args = args
 
     if pave.os_name == 'windows':
         ruff_bin = os.path.join(pave.path.build, 'lib', 'Scripts', 'ruff')
@@ -361,7 +359,7 @@ def lint(args):
     )
 
     format_result = subprocess.run(
-        [ruff_bin, 'format', '--check'],
+        [ruff_bin, 'format', '--check'] + check_args,
         stdout=sys.stdout,
         stderr=sys.stderr,
     )
@@ -378,13 +376,13 @@ def fix(args):
     """
     ruff_bin = os.path.join(pave.path.build, 'bin', 'ruff')
     check_result = subprocess.run(
-        [ruff_bin, 'check', '--fix', '--unsafe-fixes'],
+        [ruff_bin, 'check', '--fix', '--unsafe-fixes', '--no-cache'],
         stdout=sys.stdout,
         stderr=sys.stderr,
     )
 
     format_result = subprocess.run(
-        [ruff_bin, 'format'],
+        [ruff_bin, 'format', '--no-cache'],
         stdout=sys.stdout,
         stderr=sys.stderr,
     )
