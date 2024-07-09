@@ -309,7 +309,6 @@ class OSAdministrationUnix(object):
                 return user
             except (KeyError, OSError) as e:
                 error = e
-                pass
             time.sleep(0.2)
         raise AssertionError('Could not get user %s: %s' % (name, error))
 

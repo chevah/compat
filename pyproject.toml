@@ -43,7 +43,6 @@ select = [
     "I",
     "FLY",
     "T10",
-
     "EXE",
     "FA",
     "ICN",
@@ -54,6 +53,7 @@ select = [
     "FURB",
     "PYI",
     "RSE",
+    "PIE",
     #"EM",
     #"UP",
     #"YTT",
@@ -68,6 +68,7 @@ select = [
     ]
 ignore = [
     "TRY003",
+    "COM812",
     ]
 
 external = [

@@ -344,7 +344,7 @@ class NTFilesystem(PosixFilesystemBase):
 
         head = True
 
-        if path.startswith('\\\\?\\') or path.startswith('\\\\.\\'):
+        if path.startswith(('\\\\?\\', '\\\\.\\')):
             # We have Unicode path or decice device path format.
             # Get to simple/normalized path format.
             path = path[4:]

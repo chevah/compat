@@ -271,11 +271,7 @@ class LocalTestFilesystem(LocalFilesystem):
             if os.name == 'posix':
                 # On Unix it is allowed to clean folder only in these
                 # folders.
-                if not (
-                    path.startswith('/srv')
-                    or path.startswith('/home')
-                    or path.startswith('/tmp'),
-                ):
+                if not path.startswith(('/srv', '/home', '/tmp')):
                     return False
             if os.name == 'nt':
                 if path == 'c:\\':
