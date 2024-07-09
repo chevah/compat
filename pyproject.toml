@@ -43,7 +43,7 @@ select = [
     "I",
     #"UP",
     #"YTT",
-    #"FLY",
+    "FLY",
     ]
 ignore = [
     ]

@@ -719,10 +719,7 @@ class TwistedTestCase(TestCase):
             *expectedExceptionTypes
         ):
             expectedString = ' or '.join(
-                [
-                    '.'.join((t.__module__, t.__name__))
-                    for t in expectedExceptionTypes
-                ]
+                [f'{t.__module__}.{t.__name__}' for t in expectedExceptionTypes]
             )
 
             self.fail(
