@@ -349,7 +349,11 @@ def lint(args):
     if '--all' in args:
         check_args = ['--no-cache']
 
-    ruff_bin = os.path.join(pave.path.build, 'bin', 'ruff')
+    if pave.os_name == 'windows':
+        ruff_bin = os.path.join(pave.path.build, 'lib', 'Scripts', 'ruff')
+    else:
+        ruff_bin = os.path.join(pave.path.build, 'bin', 'ruff')
+
     check_result = subprocess.run(
         [ruff_bin, 'check'] + check_args,
         stdout=sys.stdout,
