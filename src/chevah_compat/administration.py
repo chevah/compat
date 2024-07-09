@@ -306,9 +306,10 @@ class OSAdministrationUnix(object):
         for iterator in range(1000):
             try:
                 user = pwd.getpwnam(name)
-                return user
             except (KeyError, OSError) as e:
                 error = e
+            else:
+                return user
             time.sleep(0.2)
         raise AssertionError('Could not get user %s: %s' % (name, error))
 
@@ -841,10 +842,8 @@ class OSAdministrationUnix(object):
         Return a list of all lines from file.
         """
         opened_file = self.fs.openFileForReading(segments)
-        content = []
         try:
-            for line in opened_file:
-                content.append(line.rstrip().decode('utf-8'))
+            content = [line.rstrip().decode('utf-8') for line in opened_file]
         finally:
             opened_file.close()
 
@@ -880,9 +879,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
 
         import win32net
 
-        members_info = []
-        for member in users:
-            members_info.append({'domainandname': member})
+        members_info = [{'domainandname': member} for member in users]
         try:
             win32net.NetLocalGroupAddMembers(
                 group.pdc,

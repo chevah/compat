@@ -138,9 +138,10 @@ class NTUsers(CompatUsers):
                 token,
                 0,
             )
-            return path
         except pythoncom.com_error:
             raise MissingProfileFolderException
+
+        return path
 
     def _createLocalProfile(self, username, token):
         """
@@ -190,13 +191,14 @@ class NTUsers(CompatUsers):
 
         try:
             win32security.LookupAccountName('', username)
-            return True
         except (win32security.error, pywintypes.error) as error:
             (number, name, message) = error.args
             if number == ERROR_NONE_MAPPED:
                 return False
             error_text = '[%s] %s %s' % (number, name, message)
             self.raiseFailedtoCheckUserExists(username, error_text)
+
+        return True
 
     def getGroupForUser(self, username, groups, token):
         """

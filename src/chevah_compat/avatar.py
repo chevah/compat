@@ -33,7 +33,7 @@ class FilesystemAvatar(HasImpersonatedAvatar):
         self._virtual_folders = virtual_folders
 
         if not isinstance(self._home_folder_path, str):
-            raise RuntimeError('home_folder_path should be text.')
+            raise RuntimeError('home_folder_path should be text.')  # noqa: TRY004
 
         if self._root_folder_path:
             if not isinstance(self._root_folder_path, str):

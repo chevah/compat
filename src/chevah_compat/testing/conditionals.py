@@ -10,7 +10,6 @@ from functools import wraps
 from socket import gethostname
 from unittest import TestCase
 
-import six
 from nose import SkipTest
 
 from chevah_compat import process_capabilities
@@ -155,10 +154,3 @@ def onAdminPrivileges(present):
         is_normal_user,
         'Administrator privileges not present on "%s".' % (hostname,),
     )
-
-
-def skipOnPY3():
-    """
-    Skip tests on Python 3 or Python 2 in forward compatibility.
-    """
-    return skipOnCondition(lambda: six.PY3, 'Python 2 only test.')

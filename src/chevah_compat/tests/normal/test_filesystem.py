@@ -676,7 +676,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertTrue(result)
 
     # Raw data returned from reparse point.
-    # print_name and target_name is  u'c:\\temp\\str1593-cp\u021b'
+    # print-name and target-name is c:\temp\str1593-cp\u021b
     raw_reparse_buffer = (
         b'\x0c\x00\x00\xa0`\x00\x00\x00&\x00.\x00\x00\x00&\x00\x00\x00\x00'
         b'\x00c\x00:\x00\\\x00t\x00e\x00m\x00p\x00\\\x00s\x00t\x00r\x001\x005'

@@ -153,7 +153,7 @@ class TestTwistedTestCase(ChevahTestCase):
         with self.patchObject(reactor, 'stop') as mock_stop:
             self._runDeferred(deferred, timeout=0.3, prevent_stop=True)
 
-        # reactor.stop() is not called
+        # reactor.stop is not called
         self.assertIsFalse(mock_stop.called)
         self.assertIsTrue(reactor._started)
         self.assertIsTrue(deferred.result)

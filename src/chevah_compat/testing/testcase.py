@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
+# ruff: noqa: TRY004
 """
 TestCase used for Chevah project.
 """
@@ -122,9 +122,7 @@ class TwistedTestCase(TestCase):
         Return a string representation of all delayed calls from reactor
         queue.
         """
-        result = []
-        for delayed in reactor.getDelayedCalls():  # noqa: cover
-            result.append(six.text_type(delayed.func))
+        result = [str(delayed.func) for delayed in reactor.getDelayedCalls()]
         return '\n'.join(result)
 
     def _threadPoolQueue(self):

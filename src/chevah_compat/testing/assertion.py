@@ -101,7 +101,7 @@ class AssertionMixin(object):
         if not isinstance(actual_error, CompatError):
             values = (actual_error, type(actual_error))
             message = 'Error %s not CompatError but %s' % values
-            raise AssertionError(message)
+            raise AssertionError(message)  # noqa: TRY004
 
         actual_id = getattr(actual_error, 'event_id', None)
         if expected_id != actual_id:

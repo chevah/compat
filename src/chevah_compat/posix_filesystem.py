@@ -97,8 +97,9 @@ class PosixFilesystemBase(object):
             raise CompatError(
                 1006,
                 _(
-                    'Could not switch process to local account "%s".'
-                    % (self._avatar.name),
+                    'Could not switch process to local account "{}".'.format(
+                        self._avatar.name
+                    )
                 ),
             )
 
@@ -147,9 +148,8 @@ class PosixFilesystemBase(object):
             raise CompatError(
                 20019,
                 _(
-                    'User home folder "%s" is not within the root folder '
-                    '"%s".'
-                    % (
+                    'User home folder "{}" is not within the root folder '
+                    '"{}".'.format(
                         self._avatar.home_folder_path,
                         self._avatar.root_folder_path,
                     ),
@@ -493,7 +493,7 @@ class PosixFilesystemBase(object):
                         os.chmod(path_encoded, stat.S_IWRITE)
                         return os.unlink(path_encoded)
 
-                    raise error
+                    raise
             except Exception:
                 if ignore_errors:
                     return
@@ -652,9 +652,9 @@ class PosixFilesystemBase(object):
                     if name in result:
                         continue
                     result.append(name)
-        except Exception as error:
+        except Exception:
             if not result:
-                raise error
+                raise
 
         return result
 
@@ -697,11 +697,11 @@ class PosixFilesystemBase(object):
             if real_first_attributes.name not in first_names:
                 firsts.append(real_first_attributes)
 
-        except Exception as error:
+        except Exception:
             # We fail to list the actual folder.
             if not virtual_members:
                 # Since there are no virtual folder, we just raise the error.
-                raise error
+                raise
 
             # We have virtual folders.
             # No direct listing.
@@ -934,7 +934,11 @@ class PosixFilesystemBase(object):
         """
         raise CompatError(
             1017,
-            _('Failed to add group "%s" for "%s". %s' % (group, path, message)),
+            _(
+                'Failed to add group "{}" for "{}". {}'.format(
+                    group, path, message
+                )
+            ),
         )
 
     def raiseFailedToSetOwner(self, owner, path, message=''):
@@ -944,8 +948,9 @@ class PosixFilesystemBase(object):
         raise CompatError(
             1016,
             _(
-                'Failed to set owner to "%s" for "%s". %s'
-                % (owner, path, message),
+                'Failed to set owner to "{}" for "{}". {}'.format(
+                    owner, path, message
+                ),
             ),
         )
 
@@ -959,7 +964,9 @@ class PosixFilesystemBase(object):
         if not child_strip.startswith(root_strip):
             raise CompatError(
                 1018,
-                'Path "%s" is outside of locked folder "%s"' % (child, root),
+                'Path "{}" is outside of locked folder "{}"'.format(
+                    child, root
+                ),
             )
 
     def _parseReparseData(self, raw_reparse_data):
@@ -1048,9 +1055,6 @@ class PosixFilesystemBase(object):
                 result[member_name] = struct.unpack('<H', member_data)[0]
             else:
                 result[member_name] = struct.unpack('<L', member_data)[0]
-            # result[member_name] = 0
-            # for byte in member_data:
-            #     result[member_name] += ord(byte)
 
         # Remaining tail is set as data.
         result['data'] = tail

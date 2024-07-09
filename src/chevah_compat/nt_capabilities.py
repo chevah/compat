@@ -94,13 +94,14 @@ class NTProcessCapabilities(BaseProcessCapabilities):
             if not version:
                 return False
             major_version = int(version.split('.')[0])
-            if not major_version:
-                return False
-            if major_version < 6:
-                return False
-            return True
         except Exception:
             return False
+
+        if not major_version:
+            return False
+        if major_version < 6:
+            return False
+        return True
 
     @contextmanager
     def _openProcess(self, mode):

@@ -44,7 +44,7 @@ from chevah_compat.posix_filesystem import (
 LOCAL_DRIVE = 3
 
 # Not defined in win32api.
-# (0x400)
+# 0x400
 FILE_ATTRIBUTE_REPARSE_POINT = 1024
 
 #: Win32 - File Access Rights Constants
@@ -616,7 +616,7 @@ class NTFilesystem(PosixFilesystemBase):
                     # order to not disclose the target, and have it behave
                     # like Unix.
                     error.filename = base_path
-                    raise error
+                    raise
 
                 result.size = stats.st_size
                 result.modified = stats.st_mtime
@@ -660,7 +660,7 @@ class NTFilesystem(PosixFilesystemBase):
                 # the same code raised by Unix.
                 error.errno = errno.ENOENT
 
-            raise error
+            raise
 
     def getFolderContent(self, segments):
         """
@@ -680,7 +680,7 @@ class NTFilesystem(PosixFilesystemBase):
                     # When path is not a folder EINVAL is raised instead of
                     # the more specific ENOTDIR.
                     self._requireFolder(segments)
-                raise error
+                raise
 
     def _getAllDrives(self):
         """
@@ -798,7 +798,7 @@ class NTFilesystem(PosixFilesystemBase):
             # same code as in Unix.
             if error.errno == errno.EINVAL:
                 raise OSError(errno.ENOENT, 'Not found', error.filename)
-            raise error
+            raise
 
     def _requireFolder(self, segments):
         """
@@ -833,7 +833,7 @@ class NTFilesystem(PosixFilesystemBase):
             # message.
             if error.errno == errno.EINVAL:
                 self._requireFolder(segments)
-            raise error
+            raise
 
     def rename(self, from_segments, to_segments):
         """
@@ -850,7 +850,7 @@ class NTFilesystem(PosixFilesystemBase):
                 # can't guarantee an atomic operation.
                 if error.errno != errno.EEXIST:
                     # Not a file already exists error.
-                    raise error
+                    raise
                 # Try to remove the file, and then rename one more time.
                 self.deleteFile(to_segments)
                 return super(NTFilesystem, self).rename(
@@ -950,9 +950,10 @@ class NTFilesystem(PosixFilesystemBase):
                     None,
                     owner_sid,
                 )
-                return name
             except win32net.error as error:
                 raise OSError(error.winerror, error.strerror, encoded_path)
+
+            return name
 
     def addGroup(self, segments, group, permissions=None):
         """

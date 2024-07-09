@@ -1,5 +1,6 @@
 # Copyright (c) 2012 Adi Roiban.
 # See LICENSE for details.
+# ruff: noqa: ERA001
 """
 Common interfaces used by Chevah products.
 """
