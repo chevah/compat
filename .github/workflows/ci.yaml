@@ -111,7 +111,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Lint
-      run: ./pythia.sh lint
+      run: ./pythia.sh lint --no-cache
 
 
   macos-m1-unicode-path:
@@ -179,7 +179,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Lint
-      run: ./pythia.sh lint
+      run: ./pythia.sh lint --no-cache
 
 
   windows:
@@ -232,7 +232,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Lint
-      run: ./pythia.sh lint
+      run: ./pythia.sh lint --no-cache
 
 
   docker:
