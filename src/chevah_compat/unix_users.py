@@ -443,7 +443,7 @@ class UnixHasImpersonatedAvatar(object):
         """
         See: :class:`IFileSystemAvatar`
         """
-        raise NotImplementedError()
+        raise NotImplementedError('use_impersonation')
 
     def getImpersonationContext(self):
         """

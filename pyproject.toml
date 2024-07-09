@@ -44,6 +44,15 @@ select = [
     #"UP",
     #"YTT",
     "FLY",
+    "T10",
+    #"EM",
+    "EXE",
+    "FA",
+    "ICN",
+    #"INP",
+    #"T20",
+    "PYI",
+    "RSE",
     ]
 ignore = [
     ]

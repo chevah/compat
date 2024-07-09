@@ -389,7 +389,7 @@ class PosixFilesystemBase(object):
         """
         See `ILocalFilesystem`.
         """
-        raise NotImplementedError()
+        raise NotImplementedError('isLink')
 
     def exists(self, segments):
         """See `ILocalFilesystem`."""

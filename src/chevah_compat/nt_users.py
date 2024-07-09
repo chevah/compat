@@ -135,7 +135,7 @@ class NTUsers(CompatUsers):
             )
             return path
         except pythoncom.com_error:
-            raise MissingProfileFolderException()
+            raise MissingProfileFolderException
 
     def _createLocalProfile(self, username, token):
         """
@@ -336,7 +336,7 @@ class NTHasImpersonatedAvatar(object):
         """
         See: :class:`IFileSystemAvatar`
         """
-        raise NotImplementedError()
+        raise NotImplementedError('use_impersonation')
 
     def getImpersonationContext(self):
         """
