@@ -802,7 +802,7 @@ class TestChevahTestCase(ChevahTestCase):
         """
         Is has the argument in the inverse order of stdlib version.
         """
-        self.assertIn(set(1, 'a', 'b'), 'a')
+        self.assertIn({1, 'a', 'b'}, 'a')
 
     def test_assertRaises(self):
         """
