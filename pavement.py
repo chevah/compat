@@ -345,9 +345,13 @@ def lint(args):
     """
     Check that the source code is ok
     """
+    check_args = []
+    if '--all' in args:
+        check_args = ['--no-cache']
+
     ruff_bin = os.path.join(pave.path.build, 'bin', 'ruff')
     check_result = subprocess.run(
-        [ruff_bin, 'check'],
+        [ruff_bin, 'check'] + check_args,
         stdout=sys.stdout,
         stderr=sys.stderr,
     )
@@ -357,7 +361,8 @@ def lint(args):
         stdout=sys.stdout,
         stderr=sys.stderr,
     )
-    if check_result.returncode != 0 or format_result != 0:
+    if check_result.returncode != 0 or format_result.returncode != 0:
+        print('Lint failed.')
         sys.exit(1)
 
 

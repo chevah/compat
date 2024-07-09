@@ -110,6 +110,9 @@ jobs:
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+    - name: Lint
+      run: ./pythia.sh lint
+
 
   macos-m1-unicode-path:
     strategy:
@@ -175,6 +178,9 @@ jobs:
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+    - name: Lint
+      run: ./pythia.sh lint
+
 
   windows:
     runs-on: 'windows-2022'
@@ -224,6 +230,10 @@ jobs:
       run: ./pythia.sh codecov_publish
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Lint
+      run: ./pythia.sh lint
+
 
   docker:
 
@@ -327,16 +337,6 @@ jobs:
         su chevah -c "./pythia.sh test_ci2"
 
 
-  static-checks:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Deps
-      run: ./pythia.sh deps
-
-    - name: Lint
-      run: ./pythia.sh lint
-
   # Helper so that on GitHub repo settings we can configure a single job as
   # required.
   ci-required:
@@ -349,7 +349,6 @@ jobs:
       - macos-m1-unicode-path
       - windows
       - docker
-      - static-checks
     steps:
       - name: Require all successes
         shell: python3 {0}

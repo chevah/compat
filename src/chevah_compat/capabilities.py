@@ -43,7 +43,7 @@ def _get_cpu_type():
     if not base:
         base = platform.machine()
 
-    if base == 'aarch64':  # noqa:cover
+    if base == 'aarch64':  # noqa: cover
         return 'arm64'
 
     if base == 'x86_64':

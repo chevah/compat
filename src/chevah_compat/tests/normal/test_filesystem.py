@@ -2373,7 +2373,7 @@ class TestLocalFilesystemNTnonDevicePath(
         if cls.os_family != 'nt':
             raise cls.skipTest('Only on Windows.')
         cls._prev_os_getcwd = os.getcwd()
-        if cls._prev_os_getcwd.startswith('\\\\'):  # noqa:cover
+        if cls._prev_os_getcwd.startswith('\\\\'):  # noqa: cover
             # We have a device path, so force using a non-device path
             # Most of the time, tests are executed from a process
             # that already has a DOS path and not a device path.
