@@ -61,7 +61,6 @@ target-version = "py311"
 # TCH flake8-type-checking
 # TD flake8-todos
 # UP pyupgrade
-# YTT flake8-2020
 select = [
     "A",
     "AIR",
@@ -91,6 +90,7 @@ select = [
     "TID",
     "TRY",
     "YTT",
+    "UP",
     ]
 ignore = [
     "BLE001",

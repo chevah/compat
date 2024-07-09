@@ -5,14 +5,11 @@
 TestCase used for Chevah project.
 """
 
-from __future__ import absolute_import, division, print_function
-
 import contextlib
 import inspect
 import os
 import platform
 import socket
-import sys
 import threading
 import time
 from unittest.mock import Mock, patch
@@ -35,6 +32,10 @@ except ImportError:
     _UnixWaker = None
     _SIGCHLDWaker = None
 
+# For Python below 2.7 we use the separate unittest2 module.
+# It comes by default in Python 2.7.
+from unittest import TestCase
+
 from chevah_compat import (
     DefaultAvatar,
     LocalFilesystem,
@@ -47,16 +48,6 @@ from chevah_compat.testing.assertion import AssertionMixin
 from chevah_compat.testing.constant import TEST_NAME_MARKER
 from chevah_compat.testing.filesystem import LocalTestFilesystem
 from chevah_compat.testing.mockup import mk
-
-# For Python below 2.7 we use the separate unittest2 module.
-# It comes by default in Python 2.7.
-if sys.version_info[0:2] < (2, 7):
-    from unittest2 import TestCase
-
-    # Shut up you linter.
-    TestCase
-else:
-    from unittest import TestCase
 
 try:
     # Import reactor last in case some other modules are changing the reactor.
@@ -93,7 +84,7 @@ class TwistedTestCase(TestCase):
     _reactor_timeout_call = None
 
     def setUp(self):
-        super(TwistedTestCase, self).setUp()
+        super().setUp()
         self._timeout_reached = False
         self._reactor_timeout_failure = None
 
@@ -115,7 +106,7 @@ class TwistedTestCase(TestCase):
                 self._assertReactorIsClean()
         finally:
             self._cleanReactor()
-        super(TwistedTestCase, self).tearDown()
+        super().tearDown()
 
     def _reactorQueueToString(self):
         """
@@ -198,7 +189,7 @@ class TwistedTestCase(TestCase):
         """
         self._timeout_reached = True
         failure = AssertionError(
-            'Reactor took more than %.2f seconds to execute.' % timeout,
+            f'Reactor took more than {timeout:.2f} seconds to execute.',
         )
         self._reactor_timeout_failure = failure
 
@@ -235,23 +226,14 @@ class TwistedTestCase(TestCase):
             # to have a much better debug output.
             # Otherwise the debug messages will flood the output.
             print(
-                'delayed: %s\n'
-                'threads: %s\n'
-                'writers: %s\n'
-                'readers: %s\n'
-                'threadpool size: %s\n'
-                'threadpool threads: %s\n'
-                'threadpool working: %s\n'
-                '\n'
-                % (
-                    self._reactorQueueToString(),
-                    reactor.threadCallQueue,
-                    reactor.getWriters(),
-                    reactor.getReaders(),
-                    reactor.getThreadPool().q.qsize(),
-                    self._threadPoolThreads(),
-                    self._threadPoolWorking(),
-                ),
+                f'delayed: {self._reactorQueueToString()}\n'
+                f'threads: {reactor.threadCallQueue}\n'
+                f'writers: {reactor.getWriters()}\n'
+                f'readers: {reactor.getReaders()}\n'
+                f'threadpool size: {reactor.getThreadPool().q.qsize()}\n'
+                f'threadpool threads: {self._threadPoolThreads()}\n'
+                f'threadpool working: {self._threadPoolWorking()}\n'
+                '\n',
             )
             t2 = reactor.timeout()
             # For testing we want to force to reactor to wake at an
@@ -314,7 +296,7 @@ class TwistedTestCase(TestCase):
 
         def raise_failure(location, reason):
             raise AssertionError(
-                'Reactor is not clean. %s: %s' % (location, reason),
+                f'Reactor is not clean. {location}: {reason}',
             )
 
         if reactor._started:  # noqa: cover
@@ -496,7 +478,7 @@ class TwistedTestCase(TestCase):
                 if have_callbacks:
                     raise AssertionError(
                         'Reactor queue still contains delayed deferred.\n'
-                        '%s' % (self._reactorQueueToString()),
+                        f'{self._reactorQueueToString()}',
                     )
                 break
 
@@ -554,7 +536,7 @@ class TwistedTestCase(TestCase):
             # We stop the reactor on failures.
             self._shutdownTestReactor()
             raise AssertionError(
-                'executeDelayedCalls took more than %s' % (timeout,),
+                f'executeDelayedCalls took more than {timeout}',
             )
 
     def executeReactorUntil(
@@ -683,14 +665,12 @@ class TwistedTestCase(TestCase):
         deferred.addBoth(result.append)
         if not result:
             self.fail(
-                'Success result expected on %r, found no result instead'
-                % (deferred,),
+                f'Success result expected on {deferred!r}, found no result instead',
             )
         elif isinstance(result[0], Failure):
             self.fail(
-                'Success result expected on %r, '
-                'found failure result instead:\n%s'
-                % (deferred, result[0].getBriefTraceback()),
+                f'Success result expected on {deferred!r}, '
+                f'found failure result instead:\n{result[0].getBriefTraceback()}',
             )
         else:
             return result[0]
@@ -726,13 +706,12 @@ class TwistedTestCase(TestCase):
         deferred.addBoth(result.append)
         if not result:
             self.fail(
-                'Failure result expected on %r, found no result instead'
-                % (deferred,),
+                f'Failure result expected on {deferred!r}, found no result instead',
             )
         elif not isinstance(result[0], Failure):
             self.fail(
-                'Failure result expected on %r, '
-                'found success result (%r) instead' % (deferred, result[0]),
+                f'Failure result expected on {deferred!r}, '
+                f'found success result ({result[0]!r}) instead',
             )
         elif expectedExceptionTypes and not result[0].check(
             *expectedExceptionTypes,
@@ -745,14 +724,8 @@ class TwistedTestCase(TestCase):
             )
 
             self.fail(
-                'Failure of type (%s) expected on %r, '
-                'found type %r instead: %s'
-                % (
-                    expectedString,
-                    deferred,
-                    result[0].type,
-                    result[0].getBriefTraceback(),
-                ),
+                f'Failure of type ({expectedString}) expected on {deferred!r}, '
+                f'found type {result[0].type!r} instead: {result[0].getBriefTraceback()}',
             )
         else:
             return result[0]
@@ -790,8 +763,7 @@ class TwistedTestCase(TestCase):
             # report it, so swallow it in the deferred
             deferred.addErrback(lambda _: None)
             self.fail(
-                'No result expected on %r, found %r instead'
-                % (deferred, result[0]),
+                f'No result expected on {deferred!r}, found {result[0]!r} instead',
             )
 
     def getDeferredResult(
@@ -858,7 +830,7 @@ class TwistedTestCase(TestCase):
         if isinstance(deferred.result, Failure):
             error = deferred.result
             self.ignoreFailure(deferred)
-            raise AssertionError('Deferred contains a failure: %s' % (error))
+            raise AssertionError(f'Deferred contains a failure: {error}')
 
 
 def _get_os_version():
@@ -878,21 +850,21 @@ def _get_os_version():
     """
     if os.name == 'nt':
         parts = platform.version().split('.')
-        return 'nt-%s.%s' % (parts[0], parts[1])
+        return f'nt-{parts[0]}.{parts[1]}'
 
     # We are now in Unix zone.
     os_name = os.uname()[0].lower()
 
     if os_name == 'darwin':
         parts = platform.mac_ver()[0].split('.')
-        return 'osx-%s.%s' % (parts[0], parts[1])
+        return f'osx-{parts[0]}.{parts[1]}'
 
     if os_name == 'sunos':
         parts = platform.release().split('.')
-        return 'solaris-%s' % (parts[1],)
+        return f'solaris-{parts[1]}'
 
     if os_name == 'aix':  # noqa: cover
-        return 'aix-%s.%s' % (platform.version(), platform.release())
+        return f'aix-{platform.version()}.{platform.release()}'
 
     if os_name != 'linux':
         return process_capabilities.os_name
@@ -911,7 +883,7 @@ def _get_os_version():
 
     distro_version = distro.version().split('.', 1)[0]
 
-    return '%s-%s' % (distro_name, distro_version)
+    return f'{distro_name}-{distro_version}'
 
 
 def _get_cpu_type():
@@ -999,7 +971,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
     _drop_user = '-'
 
     def setUp(self):
-        super(ChevahTestCase, self).setUp()
+        super().setUp()
         self.__cleanup__ = []
         self._cleanup_stack = []
         self._teardown_errors = []
@@ -1017,16 +989,15 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
                 self._teardown_errors.append(
                     AssertionError(
                         'There are still active threads, '
-                        'beside the main thread: %s - %s'
-                        % (thread_name, threads),
+                        f'beside the main thread: {thread_name} - {threads}',
                     ),
                 )
 
-        super(ChevahTestCase, self).tearDown()
+        super().tearDown()
 
         errors, self._teardown_errors = self._teardown_errors, None
         if errors:
-            raise AssertionError('Cleanup errors: %r' % (errors,))
+            raise AssertionError(f'Cleanup errors: {errors!r}')
 
     def _isExceptedThread(self, name):
         """
@@ -1111,8 +1082,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         if errors:  # noqa: cover
             self._teardown_errors.append(
                 AssertionError(
-                    'There are temporary files or folders left over.\n %s'
-                    % ('\n'.join(errors)),
+                    'There are temporary files or folders left over.\n {}'.format(
+                        '\n'.join(errors)
+                    ),
                 ),
             )
 
@@ -1130,17 +1102,13 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         tests_start = class_name.find('.tests.') + 7
         class_name = class_name[tests_start:]
 
-        return '%s - %s.%s' % (
-            self._testMethodName,
-            class_name,
-            self._testMethodName,
-        )
+        return f'{self._testMethodName} - {class_name}.{self._testMethodName}'
 
     def assertRaises(self, exception_class, callback=None, *args, **kwargs):
         """
         Wrapper around the stdlib call to allow non-context usage.
         """
-        super_assertRaises = super(ChevahTestCase, self).assertRaises
+        super_assertRaises = super().assertRaises
         if callback is None:
             return super_assertRaises(exception_class)
 
@@ -1150,7 +1118,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         return context.exception
 
     def assertSequenceEqual(self, first, second, msg, seq_type):
-        super(ChevahTestCase, self).assertSequenceEqual(
+        super().assertSequenceEqual(
             first,
             second,
             msg,
@@ -1161,7 +1129,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             self.assertEqual(first_element, second_element)
 
     def assertDictEqual(self, first, second, msg):
-        super(ChevahTestCase, self).assertDictEqual(first, second, msg)
+        super().assertDictEqual(first, second, msg)
 
         first_keys = sorted(first.keys())
         second_keys = sorted(second.keys())
@@ -1171,7 +1139,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         self.assertSequenceEqual(first_values, second_values, msg, list)
 
     def assertSetEqual(self, first, second, msg):
-        super(ChevahTestCase, self).assertSetEqual(first, second, msg)
+        super().assertSetEqual(first, second, msg)
 
         first_elements = sorted(first)
         second_elements = sorted(second)
@@ -1186,9 +1154,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             six.text_type,
         ):  # noqa: cover
             if not msg:
-                msg = 'First is unicode while second is str for "%s".' % (
-                    first,
-                )
+                msg = f'First is unicode while second is str for "{first}".'
             raise AssertionError(msg.encode('utf-8'))
 
         if not isinstance(first, six.text_type) and isinstance(
@@ -1196,12 +1162,10 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             six.text_type,
         ):  # noqa: cover
             if not msg:
-                msg = 'First is str while second is unicode for "%s".' % (
-                    first,
-                )
+                msg = f'First is str while second is unicode for "{first}".'
             raise AssertionError(msg.encode('utf-8'))
 
-        return super(ChevahTestCase, self)._baseAssertEqual(
+        return super()._baseAssertEqual(
             first,
             second,
             msg=msg,
@@ -1372,7 +1336,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         Overwrite stdlib to swap the arguments.
         """
         if source not in target:
-            message = '%s not in %s.' % (repr(source), repr(target))
+            message = f'{repr(source)} not in {repr(target)}.'
             raise AssertionError(message.encode('utf-8'))
 
     def assertIsInstance(self, expected_type, value, msg=None):
@@ -1386,8 +1350,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
 
         if not isinstance(value, expected_type):
             raise AssertionError(
-                'Expecting type %s, but got %s. %s'
-                % (expected_type, type(value), msg),
+                f'Expecting type {expected_type}, but got {type(value)}. {msg}',
             )
 
     def tempPath(self, prefix='', suffix='', win_encoded=False):
@@ -1478,7 +1441,7 @@ class FileSystemTestCase(ChevahTestCase):
         if not process_capabilities.get_home_folder:
             raise cls.skipTest()
 
-        super(FileSystemTestCase, cls).setUpClass()
+        super().setUpClass()
 
         cls.os_user = cls.setUpTestUser()
 
@@ -1500,7 +1463,7 @@ class FileSystemTestCase(ChevahTestCase):
             os_administration.deleteHomeFolder(cls.os_user)
         os_administration.deleteUser(cls.os_user)
 
-        super(FileSystemTestCase, cls).tearDownClass()
+        super().tearDownClass()
 
     @classmethod
     def setUpTestUser(cls):
@@ -1514,7 +1477,7 @@ class FileSystemTestCase(ChevahTestCase):
         return user
 
     def setUp(self):
-        super(FileSystemTestCase, self).setUp()
+        super().setUp()
         # Initialized only to clean the home folder.
         test_filesystem = LocalTestFilesystem(avatar=self.avatar)
         test_filesystem.cleanHomeFolder()

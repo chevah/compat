@@ -17,7 +17,7 @@ class TestElevatedLocalTestFilesystem(ChevahTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(TestElevatedLocalTestFilesystem, cls).setUpClass()
+        super().setUpClass()
         cls.user = compat_mk.getTestUser('normal')
         home_folder_path = system_users.getHomeFolder(
             username=cls.user.name,

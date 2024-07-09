@@ -4,8 +4,6 @@ A simple implementation of the Unix daemon.
 Is shows how to pass opened files to the forked process.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import time
 
@@ -14,7 +12,7 @@ from chevah.compat.unix_service import Daemon
 LOG_PATH = '/tmp/py-daemon-example.log'
 
 
-class Options(object):
+class Options:
     pid = '/tmp/py-daemon-example.pid'
 
 
@@ -45,13 +43,13 @@ class DaemonImplementation(Daemon):
         os.write(self._log_fd, 'Starting in fork...\n')
         while True:
             time.sleep(1)
-            os.write(self._log_fd, '%s Still alive.\n' % (time.time()))
+            os.write(self._log_fd, f'{time.time()} Still alive.\n')
 
     def onStop(self, exit_code):
         """
         See: `IDaemon`.
         """
-        os.write(self._log_fd, 'Stopping in fork %s.\n' % (exit_code,))
+        os.write(self._log_fd, f'Stopping in fork {exit_code}.\n')
         os.close(self._log_fd)
         print('This should not be visible in the console.')
 

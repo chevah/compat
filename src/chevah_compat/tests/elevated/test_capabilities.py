@@ -12,7 +12,7 @@ from chevah_compat.testing.testcase import FileSystemTestCase
 
 class TestProcessCapabilities(FileSystemTestCase):
     def setUp(self):
-        super(TestProcessCapabilities, self).setUp()
+        super().setUp()
         self.capabilities = process_capabilities
 
     def test_impersonate_local_account(self):

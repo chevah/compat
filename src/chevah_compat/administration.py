@@ -43,7 +43,7 @@ def execute(command, input_text=None, output=None, ignore_errors=True):
     verbose = False
 
     if verbose:
-        print('Calling: %s' % command)
+        print(f'Calling: {command}')
 
     if output is None:
         output = subprocess.PIPE
@@ -56,7 +56,7 @@ def execute(command, input_text=None, output=None, ignore_errors=True):
     exit_code = process.returncode
     if exit_code != 0:
         if verbose:
-            print('Failed to execute %s\n%s' % (command, stderrdata))
+            print(f'Failed to execute {command}\n{stderrdata}')
 
         if not ignore_errors:
             sys.exit(exit_code)
@@ -64,7 +64,7 @@ def execute(command, input_text=None, output=None, ignore_errors=True):
     return (exit_code, stdoutdata)
 
 
-class OSAdministrationUnix(object):
+class OSAdministrationUnix:
     shadow_segments = ['etc', 'shadow']
     passwd_segments = ['etc', 'passwd']
     group_segments = ['etc', 'group']
@@ -83,7 +83,7 @@ class OSAdministrationUnix(object):
 
     def _addGroup_unix(self, group):
         group_line = '%s:x:%d:' % (group.name, group.gid)
-        gshadow_line = '%s:!::' % (group.name)
+        gshadow_line = f'{group.name}:!::'
 
         self._appendUnixEntry(self.group_segments, group_line)
 
@@ -111,7 +111,7 @@ class OSAdministrationUnix(object):
             time.sleep(0.1)
 
         if not group_found:
-            raise AssertionError('Failed to get group from all: %s' % (name,))
+            raise AssertionError(f'Failed to get group from all: {name}')
 
         # Now we find the group in list of all groups, but
         # we need to make sure it is also available to be
@@ -125,7 +125,7 @@ class OSAdministrationUnix(object):
             time.sleep(0.1)
 
         raise AssertionError(
-            'Group found in all, but not available by name %s' % (name,),
+            f'Group found in all, but not available by name {name}',
         )
 
     def _addGroup_aix(self, group):
@@ -271,7 +271,7 @@ class OSAdministrationUnix(object):
         )
         passwd_line = '%s:x:%d:%d::%s:%s' % values
 
-        shadow_line = '%s:!:15218:0:99999:7:::' % (user.name)
+        shadow_line = f'{user.name}:!:15218:0:99999:7:::'
 
         self._appendUnixEntry(self.passwd_segments, passwd_line)
 
@@ -311,7 +311,7 @@ class OSAdministrationUnix(object):
             else:
                 return user
             time.sleep(0.2)
-        raise AssertionError('Could not get user %s: %s' % (name, error))
+        raise AssertionError(f'Could not get user {name}: {error}')
 
     def _addUser_aix(self, user):
         # AIX will only allow creating users with shells from
@@ -541,7 +541,7 @@ class OSAdministrationUnix(object):
         Set a password for the user on AIX. The password is an attribute
         of the 'user'.
         """
-        input_text = '%s:%s' % (user.name, user.password)
+        input_text = f'{user.name}:{user.password}'
         execute(
             command=['sudo', 'chpasswd', '-c'],
             input_text=input_text.encode('utf-8'),
@@ -642,7 +642,7 @@ class OSAdministrationUnix(object):
         execute(['sudo', 'rm', '-rf', encoded_home_path])
 
     def _deleteHomeFolder_osx(self, user):
-        home_folder = '/Users/%s' % user.name
+        home_folder = f'/Users/{user.name}'
         execute(['sudo', 'rm', '-rf', home_folder])
 
     def _deleteUser_unix(self, user):
@@ -769,7 +769,7 @@ class OSAdministrationUnix(object):
 
         if not exists:
             raise AssertionError(
-                ('No such %s: %s' % (kind, name)).encode('utf-8'),
+                (f'No such {kind}: {name}').encode(),
             )
 
     def _changeUnixEntry(
@@ -823,7 +823,7 @@ class OSAdministrationUnix(object):
         if exists:
             self._replaceFile(temp_segments, segments)
         else:
-            raise AssertionError('No such entry: %s' % (name))
+            raise AssertionError(f'No such entry: {name}')
 
     def _replaceFile(self, from_segments, to_segments):
         attributes = self.fs.getAttributes(to_segments)
@@ -866,8 +866,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
             win32net.NetLocalGroupAdd(group.pdc, 0, data)
         except Exception as error:  # pragma: no cover
             raise AssertionError(
-                'Failed to add group %s in domain %s. %s'
-                % (group.name, group.pdc, error),
+                f'Failed to add group {group.name} in domain {group.pdc}. {error}',
             )
 
     def addUsersToGroup(self, group, users=None):
@@ -889,8 +888,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
             )
         except Exception as error:  # pragma: no cover
             raise AssertionError(
-                'Failed to add to group %s users %s. %s'
-                % (group.name, users, error),
+                f'Failed to add to group {group.name} users {users}. {error}',
             )
 
     def addUser(self, user):
@@ -958,8 +956,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
             )
         except Exception:  # pragma: no cover
             print(
-                'Failed to set password for user "%s" on pdc "%s".'
-                % (user.name, pdc),
+                f'Failed to set password for user "{user.name}" on pdc "{pdc}".',
             )
             raise
 
@@ -999,14 +996,10 @@ class OSAdministrationWindows(OSAdministrationUnix):
         # FIXME:927:
         # We need to look for a way to delete home folders with unicode
         # names.
-        command = 'rmdir /S /Q "%s"' % profile_folder_path
+        command = f'rmdir /S /Q "{profile_folder_path}"'
         result = subprocess.call(command, shell=True)
         if result != 0:  # pragma: no cover
-            message = 'Unable to remove folder [%s]: %s\n%s.' % (
-                result,
-                profile_folder_path,
-                command,
-            )
+            message = f'Unable to remove folder [{result}]: {profile_folder_path}\n{command}.'
             raise AssertionError(message)
 
     def deleteGroup(self, group):
@@ -1048,7 +1041,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
             result = win32security.LookupAccountName('', user.name)
             user_sid = result[0]
         except win32security.error:  # pragma: no cover
-            message = 'User %s could not be found.' % (user.name)
+            message = f'User {user.name} could not be found.'
             raise AssertionError(message.encode('utf-8'))
 
         return user_sid

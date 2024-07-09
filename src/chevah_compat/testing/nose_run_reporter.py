@@ -6,13 +6,6 @@ Add this command to the way you execute nose::
 
 """
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
-
 import nose
 from nose.plugins.base import Plugin
 
@@ -25,7 +18,7 @@ class RunReporter(Plugin):
 
     def configure(self, options, config):
         """Configures the test timer plugin."""
-        super(RunReporter, self).configure(options, config)
+        super().configure(options, config)
         self.config = config
         self._timed_tests = {'inner': {}, 'outer': {}}
         self._timer = {'inner': 0, 'outer': 0}

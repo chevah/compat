@@ -399,7 +399,7 @@ class UnixUsers(CompatUsers):
         return self._pam_authenticate
 
 
-class _ExecuteAsUser(object):
+class _ExecuteAsUser:
     """Context manager for running under a different user."""
 
     def __init__(self, username=None, euid=0, egid=0):
@@ -431,7 +431,7 @@ class _ExecuteAsUser(object):
 
 
 @implementer(IHasImpersonatedAvatar)
-class UnixHasImpersonatedAvatar(object):
+class UnixHasImpersonatedAvatar:
     _euid = None
     _egid = None
 

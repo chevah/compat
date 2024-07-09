@@ -2,13 +2,10 @@
 This plugin provides memory usage .
 """
 
-from __future__ import absolute_import, division, print_function
-
 import operator
 
 import nose
 from nose.plugins.base import Plugin
-from six.moves import range
 
 # Number of tests to show in final report.
 TOP_COUNT = 10
@@ -34,7 +31,7 @@ class MemoryUsage(Plugin):
 
     def configure(self, options, config):
         """Configures the test timer plugin."""
-        super(MemoryUsage, self).configure(options, config)
+        super().configure(options, config)
         self._memory_usage = {}
 
     def startTest(self, test):
@@ -58,7 +55,7 @@ class MemoryUsage(Plugin):
         )
 
         stream.writeln('-' * 70)
-        stream.writeln('Memory usage top %s report:\n' % (TOP_COUNT))
+        stream.writeln(f'Memory usage top {TOP_COUNT} report:\n')
         tests_count = len(sorted_usage)
         if not tests_count:
             stream.writeln('No tests were executed.')
@@ -70,9 +67,9 @@ class MemoryUsage(Plugin):
 
         for index in range(tests_count - 1, test_start - 1, -1):
             test_id, memory_usage = sorted_usage[index]
-            stream.writeln('%0.4f: %s' % (memory_usage, test_id))
+            stream.writeln(f'{memory_usage:0.4f}: {test_id}')
 
-        stream.writeln('\nMax RSS: %s' % self.getPeakMemoryUsage())
+        stream.writeln(f'\nMax RSS: {self.getPeakMemoryUsage()}')
 
 
 if __name__ == '__main__':

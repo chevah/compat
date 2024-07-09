@@ -7,7 +7,7 @@ Tests for portable filesystem access.
 from chevah_compat.testing import conditionals, mk
 
 
-class SymbolicLinksMixin(object):
+class SymbolicLinksMixin:
     """
     Unit tests for `makeLink` executed by an OS account which has permission
     to create symbolic links.

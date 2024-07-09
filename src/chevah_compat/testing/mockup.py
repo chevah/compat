@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
 """
 Module containing helpers for testing the Chevah project.
 """
-
-from __future__ import absolute_import, division, print_function
 
 import os
 import random
@@ -11,7 +8,6 @@ import string
 import uuid
 
 import six
-from six.moves import range
 from unidecode import unidecode
 
 try:
@@ -45,7 +41,7 @@ def _sanitize_name_windows(candidate):
     return unidecode(candidate)
 
 
-class SanitizeNameMixin(object):
+class SanitizeNameMixin:
     @classmethod
     def sanitizeName(cls, name):
         """
@@ -149,7 +145,7 @@ class TestUser(SanitizeNameMixin):
         if not self.domain:
             return self.name
 
-        return '%s@%s' % (self.name, self.domain)
+        return f'{self.name}@{self.domain}'
 
     def _getToken(self):
         """
@@ -161,10 +157,7 @@ class TestUser(SanitizeNameMixin):
         )
 
         if not result:
-            message = 'Failed to get a valid token for "%s" with "%s".' % (
-                self.upn,
-                self.password,
-            )
+            message = f'Failed to get a valid token for "{self.upn}" with "{self.password}".'
             raise AssertionError(message.encode('utf-8'))
 
         return token
@@ -207,7 +200,7 @@ class TestGroup(SanitizeNameMixin):
 _unique_id = random.randint(0, 5000)
 
 
-class ChevahCommonsFactory(object):
+class ChevahCommonsFactory:
     """
     Generator of objects to help testing.
     """
@@ -444,11 +437,11 @@ class ChevahCommonsFactory(object):
 
         if posix_home_path is None:
             if process_capabilities.os_name == 'solaris':
-                posix_home_path = '/export/home/%s' % name
+                posix_home_path = f'/export/home/{name}'
             elif process_capabilities.os_name == 'osx':
-                posix_home_path = '/Users/%s' % name
+                posix_home_path = f'/Users/{name}'
             else:  # Linux and normal Unix
-                posix_home_path = '/home/%s' % name
+                posix_home_path = f'/home/{name}'
 
         return TestUser(
             name=name,

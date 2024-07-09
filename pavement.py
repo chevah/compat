@@ -227,8 +227,7 @@ def _generate_coverate_reports():
         cov.xml_report()
         cov.html_report()
         print(
-            'HTML report file://%s/coverage-report/index.html'
-            % (pave.path.build,),
+            f'HTML report file://{pave.path.build}/coverage-report/index.html',
         )
         print('--------')
         diff_cover_main(
@@ -291,21 +290,13 @@ def test_ci2(args):
     from OpenSSL import __version__ as pyopenssl_version
 
     print(
-        '%s / os_name:%s / os_version:%s / cpu_type:%s / ci_name:%s'
-        % (
-            ChevahTestCase.os_family,
-            ChevahTestCase.os_name,
-            ChevahTestCase.os_version,
-            ChevahTestCase.cpu_type,
-            ChevahTestCase.ci_name,
-        ),
+        f'{ChevahTestCase.os_family} / os_name:{ChevahTestCase.os_name} / os_version:{ChevahTestCase.os_version} / cpu_type:{ChevahTestCase.cpu_type} / ci_name:{ChevahTestCase.ci_name}',
     )
-    print('PYTHON %s on %s with %s' % (sys.version, pave.os_name, pave.cpu))
+    print(f'PYTHON {sys.version} on {pave.os_name} with {pave.cpu}')
     print(
-        '%s (%s)'
-        % (SSL.SSLeay_version(SSL.SSLEAY_VERSION), SSL.OPENSSL_VERSION_NUMBER),
+        f'{SSL.SSLeay_version(SSL.SSLEAY_VERSION)} ({SSL.OPENSSL_VERSION_NUMBER})',
     )
-    print('pyOpenSSL %s' % (pyopenssl_version,))
+    print(f'pyOpenSSL {pyopenssl_version}')
     coverage_main(argv=['--version'])
 
     print('\n#\n# Installed packages\n#')

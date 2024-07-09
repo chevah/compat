@@ -75,7 +75,7 @@ class NTUsers(CompatUsers):
         if not process_capabilities.get_home_folder:
             message = (
                 'Operating system does not support getting home folder '
-                'for account "%s".' % username
+                f'for account "{username}".'
             )
             self.raiseFailedToGetHomeFolder(username, message)
 
@@ -195,7 +195,7 @@ class NTUsers(CompatUsers):
             (number, name, message) = error.args
             if number == ERROR_NONE_MAPPED:
                 return False
-            error_text = '[%s] %s %s' % (number, name, message)
+            error_text = f'[{number}] {name} {message}'
             self.raiseFailedtoCheckUserExists(username, error_text)
 
         return True
@@ -311,7 +311,7 @@ class NTUsers(CompatUsers):
         )
 
 
-class _ExecuteAsUser(object):
+class _ExecuteAsUser:
     """
     Context manager for running under a different user.
     """
@@ -340,7 +340,7 @@ class _ExecuteAsUser(object):
 
 
 @implementer(IHasImpersonatedAvatar)
-class NTHasImpersonatedAvatar(object):
+class NTHasImpersonatedAvatar:
     @property
     def use_impersonation(self):
         """

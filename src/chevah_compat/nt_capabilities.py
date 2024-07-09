@@ -162,7 +162,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
                 state = self._getPrivilegeState(privilege_name)
                 if not self._isPrivilegeStateAvailable(state):
                     message = (
-                        'Process does not have %s privilege.' % privilege_name
+                        f'Process does not have {privilege_name} privilege.'
                     )
                     raise AdjustPrivilegeException(message.encode('utf-8'))
 

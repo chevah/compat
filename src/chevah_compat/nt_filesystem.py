@@ -190,7 +190,7 @@ class NTFilesystem(PosixFilesystemBase):
             if self._lock_in_home:
                 return self._getLockedPathFromSegments(segments)
 
-            drive = '%s:\\' % segments[0]
+            drive = f'{segments[0]}:\\'
             path_segments = segments[1:]
 
             if len(path_segments) == 0:
@@ -270,7 +270,7 @@ class NTFilesystem(PosixFilesystemBase):
 
         letter, _ = os.path.splitdrive(path)
         if letter.strip(':').lower() not in self._allowed_drive_letters:
-            message = 'Bad drive letter "%s" for %s' % (letter, path)
+            message = f'Bad drive letter "{letter}" for {path}'
             raise OSError(
                 errno.EINVAL,
                 message.encode('utf-8'),
@@ -391,7 +391,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
-        absolute_path = super(NTFilesystem, self).getAbsoluteRealPath(path)
+        absolute_path = super().getAbsoluteRealPath(path)
 
         if absolute_path.startswith('\\\\?\\'):
             # Remove the Unicode path marker, since our compat API uses normal
@@ -407,7 +407,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         try:
             yield
-        except WindowsError as error:
+        except OSError as error:
             raise OSError(error.errno, error.strerror, error.filename)
         except pywintypes.error as error:
             if path is None:
@@ -462,7 +462,7 @@ class NTFilesystem(PosixFilesystemBase):
                 None,
             )
         except pywintypes.error as error:
-            message = '%s - %s' % (error.winerror, error.strerror)
+            message = f'{error.winerror} - {error.strerror}'
             raise OSError(errno.ENOENT, message, encoded_path)
 
         if handle == win32file.INVALID_HANDLE_VALUE:
@@ -477,7 +477,7 @@ class NTFilesystem(PosixFilesystemBase):
                 16 * 1024,
             )
         except pywintypes.error as error:
-            message = '%s - %s' % (error.winerror, error.strerror)
+            message = f'{error.winerror} - {error.strerror}'
             raise OSError(errno.EINVAL, message, encoded_path)
         finally:
             win32file.CloseHandle(handle)
@@ -592,7 +592,7 @@ class NTFilesystem(PosixFilesystemBase):
         See `ILocalFilesystem`.
         """
         with self._windowsToOSError(segments):
-            result = super(NTFilesystem, self).getAttributes(segments)
+            result = super().getAttributes(segments)
             if not result.is_link:
                 return result
 
@@ -632,7 +632,7 @@ class NTFilesystem(PosixFilesystemBase):
             if 'uid' in attributes or 'gid' in attributes:
                 raise OSError(errno.EPERM, 'Operation not supported')
 
-            return super(NTFilesystem, self).setAttributes(segments, attributes)
+            return super().setAttributes(segments, attributes)
 
     def iterateFolderContent(self, segments):
         """
@@ -646,7 +646,7 @@ class NTFilesystem(PosixFilesystemBase):
             return iter(drives)
 
         try:
-            return super(NTFilesystem, self).iterateFolderContent(segments)
+            return super().iterateFolderContent(segments)
         except OSError as error:
             if error.errno == ERROR_DIRECTORY:
                 # When we don't list a directory, we get a specific
@@ -674,7 +674,7 @@ class NTFilesystem(PosixFilesystemBase):
                 return self._getAllDrives()
 
             try:
-                return super(NTFilesystem, self).getFolderContent(segments)
+                return super().getFolderContent(segments)
             except OSError as error:
                 if error.errno == errno.EINVAL:
                     # When path is not a folder EINVAL is raised instead of
@@ -698,7 +698,7 @@ class NTFilesystem(PosixFilesystemBase):
     def createFolder(self, segments, recursive=False):
         """See `ILocalFilesystem`."""
         with self._windowsToOSError(segments):
-            return super(NTFilesystem, self).createFolder(segments, recursive)
+            return super().createFolder(segments, recursive)
 
     def _getFileData(self, path):
         """
@@ -722,7 +722,7 @@ class NTFilesystem(PosixFilesystemBase):
                     )
                 data = search[0]
         except pywintypes.error as error:
-            message = '%s - %s' % (error.winerror, error.strerror)
+            message = f'{error.winerror} - {error.strerror}'
             raise OSError(errno.EINVAL, message, path)
 
         # Raw data:
@@ -786,7 +786,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         try:
             with self._windowsToOSError(segments):
-                return super(NTFilesystem, self).deleteFile(
+                return super().deleteFile(
                     segments,
                     ignore_errors=ignore_errors,
                 )
@@ -841,11 +841,11 @@ class NTFilesystem(PosixFilesystemBase):
         """
         with self._windowsToOSError(from_segments):
             try:
-                return super(NTFilesystem, self).rename(
+                return super().rename(
                     from_segments,
                     to_segments,
                 )
-            except WindowsError as error:
+            except OSError as error:
                 # On Windows, rename fails if destination exists as it
                 # can't guarantee an atomic operation.
                 if error.errno != errno.EEXIST:
@@ -853,7 +853,7 @@ class NTFilesystem(PosixFilesystemBase):
                     raise
                 # Try to remove the file, and then rename one more time.
                 self.deleteFile(to_segments)
-                return super(NTFilesystem, self).rename(
+                return super().rename(
                     from_segments,
                     to_segments,
                 )
@@ -923,9 +923,8 @@ class NTFilesystem(PosixFilesystemBase):
                 if error.winerror == 1307:
                     self.raiseFailedToSetOwner(owner, path, 'Not permitted.')
                 else:
-                    message = '[%s] %s' % (
-                        error.winerror,
-                        force_unicode(error.strerror),
+                    message = (
+                        f'[{error.winerror}] {force_unicode(error.strerror)}'
                     )
                     self.raiseFailedToSetOwner(owner, path, message)
 
@@ -990,7 +989,7 @@ class NTFilesystem(PosixFilesystemBase):
                 self.raiseFailedToAddGroup(
                     group,
                     encoded_path,
-                    '%s: %s' % (error.winerror, error.strerror),
+                    f'{error.winerror}: {error.strerror}',
                 )
 
     def removeGroup(self, segments, group):
@@ -1006,8 +1005,9 @@ class NTFilesystem(PosixFilesystemBase):
         except win32net.error:
             raise CompatError(
                 1013,
-                'Failed to remove group "%s" from "%s". %s'
-                % (group, path, 'Group does not exists.'),
+                'Failed to remove group "{}" from "{}". {}'.format(
+                    group, path, 'Group does not exists.'
+                ),
             )
 
         with self._impersonateUser():

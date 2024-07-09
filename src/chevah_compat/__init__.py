@@ -5,8 +5,6 @@
 Code for portable functions.
 """
 
-from __future__ import absolute_import, division, print_function, with_statement
-
 import os
 
 if os.name == 'posix':
@@ -46,7 +44,7 @@ elif os.name == 'nt':
     DefaultAvatar = NTDefaultAvatar
     SuperAvatar = NTSuperAvatar
 else:
-    raise AssertionError('Operating system "%s" not supported.' % (os.name))
+    raise AssertionError(f'Operating system "{os.name}" not supported.')
 
 from chevah_compat.posix_filesystem import FileAttributes
 

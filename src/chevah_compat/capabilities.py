@@ -31,7 +31,7 @@ def _get_os_name():
     elif family.startswith('freebsd'):
         return 'freebsd'
     else:
-        raise AssertionError('OS "%s" not supported.' % family)
+        raise AssertionError(f'OS "{family}" not supported.')
 
 
 def _get_cpu_type():
@@ -55,7 +55,7 @@ def _get_cpu_type():
     return base
 
 
-class BaseProcessCapabilities(object):
+class BaseProcessCapabilities:
     """
     Code shared by all `IProcessCapabilities`
     """

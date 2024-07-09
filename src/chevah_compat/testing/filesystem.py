@@ -4,8 +4,6 @@
 Filesystem helpers for tests.
 """
 
-from __future__ import absolute_import, division, print_function
-
 import os
 import re
 import uuid
@@ -27,8 +25,8 @@ class LocalTestFilesystem(LocalFilesystem):
         """
         Create an unique temp folder.
         """
-        super(LocalTestFilesystem, self).__init__(avatar=avatar)
-        self._temp_uuid = '%s%s%s' % (
+        super().__init__(avatar=avatar)
+        self._temp_uuid = '{}{}{}'.format(
             'long-name-' * 25,
             uuid.uuid4(),
             TEST_NAME_MARKER,
@@ -67,8 +65,7 @@ class LocalTestFilesystem(LocalFilesystem):
 
         if remaining_folders:
             raise AssertionError(
-                'Not all temporary folders were cleaned: %s'
-                % (remaining_folders),
+                f'Not all temporary folders were cleaned: {remaining_folders}',
             )
 
     def setUpTemporaryFolder(self):
@@ -78,7 +75,7 @@ class LocalTestFilesystem(LocalFilesystem):
         if self.exists(self.temp_segments):
             self.deleteFolder(self.temp_segments, recursive=True)
             raise AssertionError(
-                'Temporary folder already exists at: %s' % (self.temp_segments),
+                f'Temporary folder already exists at: {self.temp_segments}',
             )
 
         self.createFolder(self.temp_segments)
@@ -287,7 +284,7 @@ class LocalTestFilesystem(LocalFilesystem):
             return True
 
         if not have_safe_path(path):
-            message = 'Cleaning the folder "%s" is not allowed.' % path
+            message = f'Cleaning the folder "{path}" is not allowed.'
             raise AssertionError(message.encode('utf-8'))
 
         folder_members = self.getFolderContent(segments)

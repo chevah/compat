@@ -15,7 +15,7 @@ from chevah_compat import process_capabilities
 from chevah_compat.testing import ChevahTestCase, conditionals, mk
 
 
-class Dummy(object):
+class Dummy:
     """
     Dummy class to help with testing.
     """
@@ -757,7 +757,7 @@ class TestChevahTestCase(ChevahTestCase):
             return
 
         raise AssertionError(
-            '"%s" is running with administrator privileges' % (self.hostname,),
+            f'"{self.hostname}" is running with administrator privileges',
         )
 
     def test_cleanup_test_segments_file(self):
@@ -811,7 +811,7 @@ class TestChevahTestCase(ChevahTestCase):
         """
 
         def some_call(argument):
-            raise RuntimeError('error-marker-%s' % (argument,))
+            raise RuntimeError(f'error-marker-{argument}')
 
         exception = self.assertRaises(RuntimeError, some_call, 'more')
 
@@ -908,7 +908,7 @@ class TestChevahTestCaseSkipSetup(ChevahTestCase):
 
         This will prevent calling of tearDown.
         """
-        super(TestChevahTestCaseSkipSetup, self).setUp()
+        super().setUp()
 
         raise self.skipTest()
 
@@ -928,12 +928,12 @@ class TestChevahTestCaseAddCleanup(ChevahTestCase):
     """
 
     def setUp(self):
-        super(TestChevahTestCaseAddCleanup, self).setUp()
+        super().setUp()
         self.cleanup_call_count = 0
 
     def tearDown(self):
         self.assertEqual(0, self.cleanup_call_count)
-        super(TestChevahTestCaseAddCleanup, self).tearDown()
+        super().tearDown()
         self.assertEqual(2, self.cleanup_call_count)
 
     def cleanUpLast(self):
@@ -961,12 +961,12 @@ class TestChevahTestCaseCallCleanup(ChevahTestCase):
     """
 
     def setUp(self):
-        super(TestChevahTestCaseCallCleanup, self).setUp()
+        super().setUp()
         self.cleanup_call_count = 0
 
     def tearDown(self):
         self.assertEqual(1, self.cleanup_call_count)
-        super(TestChevahTestCaseCallCleanup, self).tearDown()
+        super().tearDown()
         self.assertEqual(1, self.cleanup_call_count)
 
     def cleanUp(self):

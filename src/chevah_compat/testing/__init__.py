@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
 """
@@ -6,13 +5,6 @@ Package with code that helps with testing.
 
 Here are a few import shortcuts.
 """
-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
 
 from chevah_compat import process_capabilities
 from chevah_compat.administration import os_administration

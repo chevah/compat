@@ -4,8 +4,6 @@
 Decorators used for testing.
 """
 
-from __future__ import absolute_import, division, print_function
-
 from functools import wraps
 from socket import gethostname
 from unittest import TestCase
@@ -60,14 +58,14 @@ def onOSFamily(family):
     Run test only if current os is from `family`.
     """
     if family not in _SUPPORTED_OS_FAMILIES:
-        raise AssertionError('Unknow os family: %s' % (family,))
+        raise AssertionError(f'Unknow os family: {family}')
 
     def check_os_family():
         return process_capabilities.os_family != family
 
     return skipOnCondition(
         check_os_family,
-        'OS family "%s" not available.' % family,
+        f'OS family "{family}" not available.',
     )
 
 
@@ -82,12 +80,12 @@ def onOSName(name):
 
     for os_name in name:
         if os_name not in _SUPPORTED_OS_NAMES:
-            raise AssertionError('Unknow os name: %s' % (os_name,))
+            raise AssertionError(f'Unknow os name: {os_name}')
 
     def check_os_name():
         return process_capabilities.os_name not in name
 
-    return skipOnCondition(check_os_name, 'OS name "%s" not available.' % name)
+    return skipOnCondition(check_os_name, f'OS name "{name}" not available.')
 
 
 def onOSVersion(versions):
@@ -100,7 +98,7 @@ def onOSVersion(versions):
 
     return skipOnCondition(
         check_os_version,
-        'OS version "%s" not available.' % versions,
+        f'OS version "{versions}" not available.',
     )
 
 
@@ -115,7 +113,7 @@ def onCapability(name, value):
 
     return skipOnCondition(
         check_capability,
-        'Capability "%s" not present.' % name,
+        f'Capability "{name}" not present.',
     )
 
 
@@ -152,5 +150,5 @@ def onAdminPrivileges(present):
 
     return skipOnCondition(
         is_normal_user,
-        'Administrator privileges not present on "%s".' % (hostname,),
+        f'Administrator privileges not present on "{hostname}".',
     )

@@ -99,7 +99,7 @@ class TestSystemUsers(CompatTestCase):
         test_pdc = TEST_PDC
 
         name = mk.string()
-        upn = '%s@%s' % (name, test_domain)
+        upn = f'{name}@{test_domain}'
 
         (pdc, username) = system_users._parseUPN(upn)
 

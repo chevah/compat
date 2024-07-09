@@ -10,7 +10,7 @@ def _(string):
     return string
 
 
-class NoOpContext(object):
+class NoOpContext:
     """
     A context manager that does nothing.
     """
@@ -73,11 +73,7 @@ def force_unicode(value):
         return value
 
     if isinstance(value, EnvironmentError):
-        return '[Errno %s] %s: %s' % (
-            value.errno,
-            str_or_repr(value.strerror),
-            str_or_repr(value.filename),
-        )
+        return f'[Errno {value.errno}] {str_or_repr(value.strerror)}: {str_or_repr(value.filename)}'
 
     result = str_or_repr(value)
 

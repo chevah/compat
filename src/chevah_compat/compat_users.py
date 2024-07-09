@@ -10,7 +10,7 @@ has unique ID.
 from chevah_compat.exceptions import CompatError
 
 
-class CompatUsers(object):
+class CompatUsers:
     """
     Base class for users compatibility.
     """
@@ -19,7 +19,7 @@ class CompatUsers(object):
         """
         Helper for raising the exception from a single place.
         """
-        message = 'Failed to get primary group for user "%s"' % username
+        message = f'Failed to get primary group for user "{username}"'
         raise CompatError(1015, message)
 
     def raiseFailedToGetHomeFolder(self, username, text):
@@ -27,12 +27,12 @@ class CompatUsers(object):
         Helper for raising the exception from a single place.
         """
         values = (username, text)
-        message = 'Could not get home folder for user "%s". %s' % values
+        message = 'Could not get home folder for user "{}". {}'.format(*values)
         raise CompatError(1014, message)
 
     def raiseFailedtoCheckUserExists(self, username, text):
         """
         Helper for raising the exception with a specific ID.
         """
-        message = 'Failed to check that user "%s" exists. %s' % (username, text)
+        message = f'Failed to check that user "{username}" exists. {text}'
         raise CompatError(1018, message)

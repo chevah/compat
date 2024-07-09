@@ -71,7 +71,7 @@ class TestSystemUsers(SystemUsersTestCase):
 
         home_folder = system_users.getHomeFolder(username=TEST_ACCOUNT_USERNAME)
 
-        self.assertEqual('/home/%s' % TEST_ACCOUNT_USERNAME, home_folder)
+        self.assertEqual(f'/home/{TEST_ACCOUNT_USERNAME}', home_folder)
         self.assertIsInstance(str, home_folder)
 
     def test_getHomeFolder_no_capabilities(self):
@@ -94,7 +94,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         home_folder = system_users.getHomeFolder(username=TEST_ACCOUNT_USERNAME)
 
-        self.assertEqual('/Users/%s' % TEST_ACCOUNT_USERNAME, home_folder)
+        self.assertEqual(f'/Users/{TEST_ACCOUNT_USERNAME}', home_folder)
         self.assertIsInstance(str, home_folder)
 
     def test_getHomeFolder_non_existing_user(self):

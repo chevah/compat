@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
 """
@@ -25,7 +24,7 @@ class TestProcessCapabilitiesPosix(CompatTestCase):
     """
 
     def setUp(self):
-        super(TestProcessCapabilitiesPosix, self).setUp()
+        super().setUp()
 
         self.capabilities = process_capabilities
 
@@ -107,7 +106,7 @@ class TestNTProcessCapabilities(CompatTestCase):
     """
 
     def setUp(self):
-        super(TestNTProcessCapabilities, self).setUp()
+        super().setUp()
 
         self.capabilities = process_capabilities
 
@@ -171,7 +170,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
     """
 
     def setUp(self):
-        super(TestNTProcessCapabilitiesNormalUser, self).setUp()
+        super().setUp()
 
         self.capabilities = process_capabilities
 
@@ -317,7 +316,7 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
     """
 
     def setUp(self):
-        super(TestNTProcessCapabilitiesAdministrator, self).setUp()
+        super().setUp()
 
         self.capabilities = process_capabilities
 
@@ -398,7 +397,7 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
             initial_state,
         )
 
-        self.assertEquals(
+        self.assertEqual(
             initial_state,
             self.capabilities._isPrivilegeEnabled(win32security.SE_BACKUP_NAME),
         )

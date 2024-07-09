@@ -414,7 +414,7 @@ class TestNTFilesystem(FileSystemTestCase):
     @classmethod
     @conditionals.onOSFamily('nt')
     def setUpClass(cls):
-        super(TestNTFilesystem, cls).setUpClass()
+        super().setUpClass()
 
     def test_temp_segments_location(self):
         """

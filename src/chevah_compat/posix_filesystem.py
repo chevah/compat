@@ -33,7 +33,7 @@ _DEFAULT_FOLDER_MODE = 0o777
 _DEFAULT_FILE_MODE = 0o600
 
 
-class PosixFilesystemBase(object):
+class PosixFilesystemBase:
     """
     Base implementation of ILocalFilesystem for
     local Posix filesystems.
@@ -97,9 +97,7 @@ class PosixFilesystemBase(object):
             raise CompatError(
                 1006,
                 _(
-                    'Could not switch process to local account "{}".'.format(
-                        self._avatar.name
-                    )
+                    f'Could not switch process to local account "{self._avatar.name}".'
                 ),
             )
 
@@ -148,11 +146,8 @@ class PosixFilesystemBase(object):
             raise CompatError(
                 20019,
                 _(
-                    'User home folder "{}" is not within the root folder '
-                    '"{}".'.format(
-                        self._avatar.home_folder_path,
-                        self._avatar.root_folder_path,
-                    ),
+                    f'User home folder "{self._avatar.home_folder_path}" is not within the root folder '
+                    f'"{self._avatar.root_folder_path}".',
                 ),
             )
 
@@ -245,8 +240,8 @@ class PosixFilesystemBase(object):
                 virtual_path = '/' + '/'.join(virtual_segments)
                 raise CompatError(
                     1005,
-                    'Virtual path "%s" overlaps an existing file or '
-                    'folder at "%s".' % (virtual_path, inside_path),
+                    f'Virtual path "{virtual_path}" overlaps an existing file or '
+                    f'folder at "{inside_path}".',
                 )
 
     def _getVirtualPathFromSegments(self, segments, include_virtual):
@@ -522,7 +517,7 @@ class PosixFilesystemBase(object):
         """
         try:
             yield
-        except EnvironmentError as error:
+        except OSError as error:
             if not error.filename:
                 error.filename = self.getEncodedPath(path)
             raise OSError(error.errno, error.strerror, error.filename)
@@ -533,7 +528,7 @@ class PosixFilesystemBase(object):
         """
         path = self.getRealPathFromSegments(segments)
         if self.isFolder(segments):
-            raise OSError(errno.EISDIR, 'Is a directory: %s' % path, path)
+            raise OSError(errno.EISDIR, f'Is a directory: {path}', path)
 
     def openFile(self, segments, flags, mode):
         """See `ILocalFilesystem`."""
@@ -934,11 +929,7 @@ class PosixFilesystemBase(object):
         """
         raise CompatError(
             1017,
-            _(
-                'Failed to add group "{}" for "{}". {}'.format(
-                    group, path, message
-                )
-            ),
+            _(f'Failed to add group "{group}" for "{path}". {message}'),
         )
 
     def raiseFailedToSetOwner(self, owner, path, message=''):
@@ -948,9 +939,7 @@ class PosixFilesystemBase(object):
         raise CompatError(
             1016,
             _(
-                'Failed to set owner to "{}" for "{}". {}'.format(
-                    owner, path, message
-                ),
+                f'Failed to set owner to "{owner}" for "{path}". {message}',
             ),
         )
 
@@ -964,9 +953,7 @@ class PosixFilesystemBase(object):
         if not child_strip.startswith(root_strip):
             raise CompatError(
                 1018,
-                'Path "{}" is outside of locked folder "{}"'.format(
-                    child, root
-                ),
+                f'Path "{child}" is outside of locked folder "{root}"',
             )
 
     def _parseReparseData(self, raw_reparse_data):
@@ -1087,7 +1074,7 @@ class PosixFilesystemBase(object):
 
 
 @implementer(IFileAttributes)
-class FileAttributes(object):
+class FileAttributes:
     """
     See: IFileAttributes.
     """
@@ -1155,7 +1142,7 @@ class FileAttributes(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return '%s:%s:%s' % (self.__class__, id(self), self.__dict__)
+        return f'{self.__class__}:{id(self)}:{self.__dict__}'
 
 
 def _win_getEncodedPath(path):

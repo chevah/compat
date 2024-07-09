@@ -27,7 +27,7 @@ from chevah_compat.testing import CompatTestCase, conditionals, mk
 start_of_year = time.mktime((date.today().year, 1, 1, 0, 0, 0, 0, 0, -1))
 
 
-class FilesystemTestingHelpers(object):
+class FilesystemTestingHelpers:
     """
     Common code for running filesystem tests.
     """
@@ -37,7 +37,7 @@ class FilesystemTestingHelpers(object):
         Create a symbolic link to `segments` and return the segments for it.
         """
         link_segments = segments[:]
-        link_segments[-1] = '%s-link' % segments[-1]
+        link_segments[-1] = f'{segments[-1]}-link'
         mk.fs.makeLink(target_segments=segments, link_segments=link_segments)
         if cleanup:
             self.addCleanup(mk.fs.deleteFile, link_segments)
@@ -167,7 +167,7 @@ class DefaultFilesystemTestCase(CompatTestCase, FilesystemTestMixin):
 
     @classmethod
     def setUpClass(cls):
-        super(DefaultFilesystemTestCase, cls).setUpClass()
+        super().setUpClass()
         cls.filesystem = LocalFilesystem(avatar=DefaultAvatar())
 
     def createFolderWithChild(self):
@@ -251,7 +251,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         with self.assertRaises(OSError) as context:
             with self.filesystem._convertToOSError(path):
-                raise IOError(3, message)
+                raise OSError(3, message)
 
         self.assertEqual(3, context.exception.errno)
 
@@ -544,7 +544,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         content = mk.string()
         _, segments = self.tempFile(content=content)
         link_segments = segments[:]
-        link_segments[-1] = '%s-link' % segments[-1]
+        link_segments[-1] = f'{segments[-1]}-link'
 
         mk.fs.makeLink(target_segments=segments, link_segments=link_segments)
 
@@ -565,7 +565,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         self.test_segments, child_name = self.createFolderWithChild()
         link_segments = self.test_segments[:]
-        link_segments[-1] = '%s-link' % self.test_segments[-1]
+        link_segments[-1] = f'{self.test_segments[-1]}-link'
 
         mk.fs.makeLink(
             target_segments=self.test_segments,
@@ -753,7 +753,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         segments = ['c', 'temp', name]
         path = 'c:\\temp\\' + name
         subprocess.call(
-            'mklink /d %s \\\\127.0.0.1\\no-such-share' % (path,),
+            f'mklink /d {path} \\\\127.0.0.1\\no-such-share',
             shell=True,
         )
         self.addCleanup(mk.fs.deleteFolder, segments)
@@ -881,7 +881,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         _, non_existent_segments = mk.fs.makePathInTemp()
         file_link_segments = self.makeLink(self.test_segments)
         folder_link_segments = self.test_segments[:]
-        folder_link_segments[-1] = '%s-folder-link' % folder_link_segments[-1]
+        folder_link_segments[-1] = f'{folder_link_segments[-1]}-folder-link'
         mk.fs.makeLink(
             target_segments=mk.fs.temp_segments,
             link_segments=folder_link_segments,
@@ -1308,7 +1308,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         base_segments = self.folderInTemp()
 
         for i in range(count):
-            mk.fs.createFolder(base_segments + ['some-member-%s' % (i,)])
+            mk.fs.createFolder(base_segments + [f'some-member-{i}'])
             if i % 1000 == 0:
                 # This is slow, so keep the CI informed that we are doing
                 # stuff.
@@ -2131,7 +2131,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertEqual(2, after.modified)
 
 
-class LocalFilesystemNTMixin(object):
+class LocalFilesystemNTMixin:
     """
     Shared tests for Windows path handling in an unlocked filesystem.
     """
@@ -2378,12 +2378,12 @@ class TestLocalFilesystemNTnonDevicePath(
             # Most of the time, tests are executed from a process
             # that already has a DOS path and not a device path.
             os.chdir(cls._prev_os_getcwd[4:])
-        super(TestLocalFilesystemNTnonDevicePath, cls).setUpClass()
+        super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         try:
-            super(TestLocalFilesystemNTnonDevicePath, cls).tearDownClass()
+            super().tearDownClass()
         finally:
             os.chdir(cls._prev_os_getcwd)
 
@@ -2411,12 +2411,12 @@ class TestLocalFilesystemNTDevicePath(
         if not cls._prev_os_getcwd.startswith('\\\\'):
             # We have a device path, so force using a non-device path
             os.chdir('\\\\?\\' + cls._prev_os_getcwd)
-        super(TestLocalFilesystemNTDevicePath, cls).setUpClass()
+        super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         try:
-            super(TestLocalFilesystemNTDevicePath, cls).tearDownClass()
+            super().tearDownClass()
         finally:
             os.chdir(cls._prev_os_getcwd)
 
@@ -2492,7 +2492,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
 
     @classmethod
     def setUpClass(cls):
-        super(TestLocalFilesystemUnlocked, cls).setUpClass()
+        super().setUpClass()
         cls.unlocked_filesystem = LocalFilesystem(avatar=DefaultAvatar())
         cls.filesystem = cls.unlocked_filesystem
 
@@ -2887,7 +2887,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
 
         # Run the test with Windows Share paths
         segments = self.unlocked_filesystem.getSegmentsFromRealPath(
-            '\\\\localhost\\{}\\{}'.format(share_name, file_name),
+            f'\\\\localhost\\{share_name}\\{file_name}',
         )
         self.assertFalse(self.unlocked_filesystem.exists(segments))
         data = b'something-' * 1000
@@ -3120,7 +3120,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         It return the virtual link of the target.
         """
         path, target_segments = self.tempFile()
-        link_segments = ['%s-link' % target_segments[-1]]
+        link_segments = [f'{target_segments[-1]}-link']
         mk.fs.makeLink(
             target_segments=target_segments,
             link_segments=target_segments[:-1] + link_segments,
@@ -3195,7 +3195,7 @@ class TestLocalFilesystemLockedUNC(CompatTestCase, FilesystemTestMixin):
         cls.locked_avatar = DefaultAvatar()
         cls._share_name = 'TestLocalFilesystemLockedUNC ' + mk.string()
         cls.addWindowsShare('c:\\temp', cls._share_name)
-        unc = '\\\\127.0.0.1\\%s' % (cls._share_name)
+        unc = f'\\\\127.0.0.1\\{cls._share_name}'
         cls.locked_avatar.root_folder_path = unc
         cls.locked_avatar.home_folder_path = unc
         cls.locked_avatar.lock_in_home_folder = True
@@ -3205,7 +3205,7 @@ class TestLocalFilesystemLockedUNC(CompatTestCase, FilesystemTestMixin):
     @classmethod
     def tearDownClass(cls):
         cls.removeWindowsShare(cls._share_name)
-        super(TestLocalFilesystemLockedUNC, cls).tearDownClass()
+        super().tearDownClass()
 
     def test_openFileForWriting(self):
         """
@@ -3256,8 +3256,8 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
             )
         self.assertEqual(1005, context.exception.event_id)
         self.assertEqual(
-            'Virtual path "/%s" overlaps an existing file or '
-            'folder at "%s".' % (segments[-1], path),
+            f'Virtual path "/{segments[-1]}" overlaps an existing file or '
+            f'folder at "{path}".',
             context.exception.message,
         )
 
