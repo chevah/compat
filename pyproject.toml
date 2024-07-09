@@ -45,7 +45,6 @@ target-version = "py311"
 # CPY flake8-copyright
 # D pydocstyle
 # DTZ flake8-datetimez
-# FIX flake8-fixme
 # G flake8-logging-format
 # INT flake8-gettext
 # N pep8-naming
@@ -60,7 +59,6 @@ target-version = "py311"
 # T20 flake8-print
 # TCH flake8-type-checking
 # TD flake8-todos
-# UP pyupgrade
 select = [
     "A",
     "AIR",

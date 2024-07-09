@@ -665,12 +665,14 @@ class TwistedTestCase(TestCase):
         deferred.addBoth(result.append)
         if not result:
             self.fail(
-                f'Success result expected on {deferred!r}, found no result instead',
+                f'Success result expected on {deferred!r}, '
+                f'found no result instead',
             )
         elif isinstance(result[0], Failure):
             self.fail(
                 f'Success result expected on {deferred!r}, '
-                f'found failure result instead:\n{result[0].getBriefTraceback()}',
+                f'found failure result instead:\n'
+                f'{result[0].getBriefTraceback()}',
             )
         else:
             return result[0]
@@ -706,7 +708,8 @@ class TwistedTestCase(TestCase):
         deferred.addBoth(result.append)
         if not result:
             self.fail(
-                f'Failure result expected on {deferred!r}, found no result instead',
+                f'Failure result expected on {deferred!r}, '
+                f'found no result instead',
             )
         elif not isinstance(result[0], Failure):
             self.fail(
@@ -725,7 +728,8 @@ class TwistedTestCase(TestCase):
 
             self.fail(
                 f'Failure of type ({expectedString}) expected on {deferred!r}, '
-                f'found type {result[0].type!r} instead: {result[0].getBriefTraceback()}',
+                f'found type {result[0].type!r} '
+                f'instead: {result[0].getBriefTraceback()}',
             )
         else:
             return result[0]
@@ -763,7 +767,8 @@ class TwistedTestCase(TestCase):
             # report it, so swallow it in the deferred
             deferred.addErrback(lambda _: None)
             self.fail(
-                f'No result expected on {deferred!r}, found {result[0]!r} instead',
+                f'No result expected on {deferred!r}, '
+                f'found {result[0]!r} instead',
             )
 
     def getDeferredResult(
@@ -1082,9 +1087,8 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         if errors:  # noqa: cover
             self._teardown_errors.append(
                 AssertionError(
-                    'There are temporary files or folders left over.\n {}'.format(
-                        '\n'.join(errors)
-                    ),
+                    'There are temporary files or folders left over.\n'
+                    ' {}'.format('\n'.join(errors)),
                 ),
             )
 

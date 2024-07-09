@@ -73,7 +73,11 @@ def force_unicode(value):
         return value
 
     if isinstance(value, EnvironmentError):
-        return f'[Errno {value.errno}] {str_or_repr(value.strerror)}: {str_or_repr(value.filename)}'
+        return (
+            f'[Errno {value.errno}] '
+            f'{str_or_repr(value.strerror)}: '
+            f'{str_or_repr(value.filename)}'
+        )
 
     result = str_or_repr(value)
 

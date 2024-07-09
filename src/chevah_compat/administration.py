@@ -866,7 +866,8 @@ class OSAdministrationWindows(OSAdministrationUnix):
             win32net.NetLocalGroupAdd(group.pdc, 0, data)
         except Exception as error:  # pragma: no cover
             raise AssertionError(
-                f'Failed to add group {group.name} in domain {group.pdc}. {error}',
+                f'Failed to add group {group.name} '
+                f'in domain {group.pdc}. {error}',
             )
 
     def addUsersToGroup(self, group, users=None):
@@ -956,7 +957,8 @@ class OSAdministrationWindows(OSAdministrationUnix):
             )
         except Exception:  # pragma: no cover
             print(
-                f'Failed to set password for user "{user.name}" on pdc "{pdc}".',
+                f'Failed to set password for user "{user.name}" '
+                f'on pdc "{pdc}".',
             )
             raise
 
@@ -999,7 +1001,10 @@ class OSAdministrationWindows(OSAdministrationUnix):
         command = f'rmdir /S /Q "{profile_folder_path}"'
         result = subprocess.call(command, shell=True)
         if result != 0:  # pragma: no cover
-            message = f'Unable to remove folder [{result}]: {profile_folder_path}\n{command}.'
+            message = (
+                f'Unable to remove folder [{result}]: '
+                f'{profile_folder_path}\n{command}.'
+            )
             raise AssertionError(message)
 
     def deleteGroup(self, group):

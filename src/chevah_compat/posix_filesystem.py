@@ -97,7 +97,8 @@ class PosixFilesystemBase:
             raise CompatError(
                 1006,
                 _(
-                    f'Could not switch process to local account "{self._avatar.name}".'
+                    f'Could not switch process to local account '
+                    f'"{self._avatar.name}".'
                 ),
             )
 
@@ -146,7 +147,8 @@ class PosixFilesystemBase:
             raise CompatError(
                 20019,
                 _(
-                    f'User home folder "{self._avatar.home_folder_path}" is not within the root folder '
+                    f'User home folder "{self._avatar.home_folder_path}" '
+                    'is not within the root folder '
                     f'"{self._avatar.root_folder_path}".',
                 ),
             )
@@ -240,7 +242,8 @@ class PosixFilesystemBase:
                 virtual_path = '/' + '/'.join(virtual_segments)
                 raise CompatError(
                     1005,
-                    f'Virtual path "{virtual_path}" overlaps an existing file or '
+                    f'Virtual path "{virtual_path}" overlaps an '
+                    'existing file or '
                     f'folder at "{inside_path}".',
                 )
 

@@ -290,11 +290,16 @@ def test_ci2(args):
     from OpenSSL import __version__ as pyopenssl_version
 
     print(
-        f'{ChevahTestCase.os_family} / os_name:{ChevahTestCase.os_name} / os_version:{ChevahTestCase.os_version} / cpu_type:{ChevahTestCase.cpu_type} / ci_name:{ChevahTestCase.ci_name}',
+        f'{ChevahTestCase.os_family} / '
+        f'os_name:{ChevahTestCase.os_name} / '
+        f'os_version:{ChevahTestCase.os_version} / '
+        f'cpu_type:{ChevahTestCase.cpu_type} / '
+        f'ci_name:{ChevahTestCase.ci_name}',
     )
     print(f'PYTHON {sys.version} on {pave.os_name} with {pave.cpu}')
     print(
-        f'{SSL.SSLeay_version(SSL.SSLEAY_VERSION)} ({SSL.OPENSSL_VERSION_NUMBER})',
+        f'{SSL.SSLeay_version(SSL.SSLEAY_VERSION)} '
+        f'({SSL.OPENSSL_VERSION_NUMBER})',
     )
     print(f'pyOpenSSL {pyopenssl_version}')
     coverage_main(argv=['--version'])

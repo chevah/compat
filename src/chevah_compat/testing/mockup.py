@@ -157,7 +157,10 @@ class TestUser(SanitizeNameMixin):
         )
 
         if not result:
-            message = f'Failed to get a valid token for "{self.upn}" with "{self.password}".'
+            message = (
+                f'Failed to get a valid token for "{self.upn}" '
+                f'with "{self.password}".'
+            )
             raise AssertionError(message.encode('utf-8'))
 
         return token
