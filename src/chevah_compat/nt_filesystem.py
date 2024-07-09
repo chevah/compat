@@ -946,7 +946,7 @@ class NTFilesystem(PosixFilesystemBase):
                     win32security.OWNER_SECURITY_INFORMATION,
                 )
                 owner_sid = owner_security.GetSecurityDescriptorOwner()
-                name, domain, type = win32security.LookupAccountSid(
+                name, _, _ = win32security.LookupAccountSid(
                     None,
                     owner_sid,
                 )

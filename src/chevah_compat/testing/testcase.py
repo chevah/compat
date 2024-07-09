@@ -561,7 +561,7 @@ class TwistedTestCase(TestCase):
 
     def executeReactorUntil(
         self,
-        callable,
+        callable,  # noqa: A002
         timeout=None,
         debug=False,
         prevent_stop=True,

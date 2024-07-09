@@ -117,7 +117,7 @@ class TestAssertionMixin(ChevahTestCase):
         )
 
         self.assertEqual(
-            'Error generic-error not CompatError but ' "<class 'Exception'>",
+            "Error generic-error not CompatError but <class 'Exception'>",
             exception.args[0],
         )
 

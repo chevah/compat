@@ -38,6 +38,7 @@ target-version = "py311"
 [tool.ruff.lint]
 
 select = [
+    "A",
     "F",
     "E", "W",
     "I",
@@ -54,6 +55,8 @@ select = [
     "PYI",
     "RSE",
     "PIE",
+    "SLOT",
+    "ISC",
     #"EM",
     #"UP",
     #"YTT",
@@ -67,6 +70,7 @@ select = [
     #"RUF",
     ]
 ignore = [
+    "ISC001",
     "TRY003",
     "COM812",
     ]
