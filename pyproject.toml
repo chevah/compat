@@ -37,42 +37,69 @@ target-version = "py311"
 
 [tool.ruff.lint]
 
+# Still to enable
+# ANN flake8-annotations
+# ARG flake8-unused-arguments
+# ASYNC flake8-async
+# B flake8-bugbear
+# BLE flake8-blind-except
+# C90 mccabe
+# CPY flake8-copyright
+# D pydocstyle
+# DTZ flake8-datetimez
+# EM flake8-errmsg
+# ERA eradicate
+# FBT flake8-boolean-trap
+# FIX flake8-fixme
+# G flake8-logging-format
+# INP flake8-no-pep420
+# INT flake8-gettext
+# LOG flake8-logging
+# N pep8-naming
+# NPY NumPy-specific rules
+# PD pandas-vet
+# PERF Perflint
+# PL Pylint
+# PT flake8-pytest-style
+# PTH flake8-use-pathlib
+# Q flake8-quotes
+# RET flake8-return
+# RSE flake8-raise
+# S flake8-bandit
+# SIM flake8-simplify
+# SLF flake8-self
+# T20 flake8-print
+# TCH flake8-type-checking
+# TD flake8-todos
+# TID flake8-tidy-imports
+# TRY tryceratops
+# UP pyupgrade
+# YTT flake8-2020
 select = [
     "A",
-    "F",
-    "E", "W",
-    "I",
-    "FLY",
-    "T10",
-    "EXE",
-    "FA",
-    "ICN",
+    "AIR",
     "C4",
     "COM",
-    "PGH",
-    "AIR",
+    "E", "W",
+    "EXE",
+    "F",
+    "FA",
+    "FLY",
     "FURB",
+    "I",
+    "ICN",
+    "ISC",
+    "PGH",
+    "PIE",
     "PYI",
     "RSE",
-    "PIE",
     "SLOT",
-    "ISC",
-    #"EM",
-    #"UP",
-    #"YTT",
-    #"INP",
-    #"T20",
-    #"RET",
-    #"SLF",
-    #"PERF",
-    #"TRY",
-    #"ERA",
-    #"RUF",
+    "T10",
     ]
 ignore = [
+    "COM812",
     "ISC001",
     "TRY003",
-    "COM812",
     ]
 
 external = [
