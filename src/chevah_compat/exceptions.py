@@ -4,15 +4,17 @@
 Exceptions used in chevah_compat package.
 """
 
+
 class CompatException(Exception):
     """
     Base compat repo exception.
     """
+
     def __init__(self, message=''):
         self.message = message
 
     def __repr__(self):
-        result = u'CompatException %s' % (self.message)
+        result = f'CompatException {self.message}'
         return result
 
 
@@ -38,8 +40,7 @@ class CompatError(Exception):
         self.message = message
 
     def __repr__(self):
-        result = u'CompatError %s - %s' % (
-            str(self.event_id), self.message)
+        result = f'CompatError {str(self.event_id)} - {self.message}'
         return result
 
     def __str__(self):

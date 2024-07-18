@@ -3,7 +3,8 @@
 """
 Tests for the testing infrastructure.
 """
-from threading import Thread, Event
+
+from threading import Event, Thread
 
 from chevah_compat.testing import ChevahTestCase, mk
 
@@ -33,7 +34,7 @@ class TestFactory(ChevahTestCase):
 
         self.excepted_threads = self.excepted_threads + ['TestThread']
 
-        thread = TestThread(name="TestThread")
+        thread = TestThread(name='TestThread')
         thread.start()
 
         self.tearDown()
@@ -56,7 +57,7 @@ class TestFactory(ChevahTestCase):
             def run(self):
                 event.wait()
 
-        thread = TestThread(name="TestThread")
+        thread = TestThread(name='TestThread')
         thread.start()
 
         with self.assertRaises(AssertionError) as context:
@@ -80,7 +81,7 @@ class TestFactory(ChevahTestCase):
 
         self.excepted_threads = self.excepted_threads + ['TestTh']
 
-        thread = TestThread(name="TestThread")
+        thread = TestThread(name='TestThread')
         thread.start()
 
         self.tearDown()

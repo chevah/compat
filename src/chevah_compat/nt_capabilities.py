@@ -3,26 +3,24 @@
 """
 Provides information about capabilities for a process on Windows.
 """
-from contextlib import contextmanager
+
 import platform
+from contextlib import contextmanager
+
 import pywintypes
 import win32api
 import win32process
 import win32security
-
 from zope.interface import implementer
 
 from chevah_compat.capabilities import BaseProcessCapabilities
-from chevah_compat.exceptions import (
-    AdjustPrivilegeException,
-    )
+from chevah_compat.exceptions import AdjustPrivilegeException
 from chevah_compat.interfaces import IProcessCapabilities
 
 
 @implementer(IProcessCapabilities)
 class NTProcessCapabilities(BaseProcessCapabilities):
-    '''Container for NT capabilities detection.'''
-
+    """Container for NT capabilities detection."""
 
     def getCurrentPrivilegesDescription(self):
         """
@@ -33,9 +31,9 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         for privilege in self._getAvailablePrivileges():
             name = win32security.LookupPrivilegeName('', privilege[0])
             value = str(privilege[1])
-            result.append(name + u':' + value)
+            result.append(name + ':' + value)
 
-        return u', '.join(result)
+        return ', '.join(result)
 
     def _getAvailablePrivileges(self):
         """
@@ -46,7 +44,9 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         """
         with self._openProcess(win32security.TOKEN_QUERY) as process_token:
             return win32security.GetTokenInformation(
-                process_token, win32security.TokenPrivileges)
+                process_token,
+                win32security.TokenPrivileges,
+            )
 
     @property
     def impersonate_local_account(self):
@@ -54,7 +54,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         See `IProcessCapabilities`.
         """
         privileges = self.getCurrentPrivilegesDescription()
-        if ('SeImpersonatePrivilege' in privileges):
+        if 'SeImpersonatePrivilege' in privileges:
             return True
 
         return False
@@ -73,8 +73,10 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         See `IProcessCapabilities`.
         """
         privileges = self.getCurrentPrivilegesDescription()
-        if ('SeBackupPrivilege' in privileges and
-                'SeRestorePrivilege' in privileges):
+        if (
+            'SeBackupPrivilege' in privileges
+            and 'SeRestorePrivilege' in privileges
+        ):
             return True
         else:
             return False
@@ -92,13 +94,14 @@ class NTProcessCapabilities(BaseProcessCapabilities):
             if not version:
                 return False
             major_version = int(version.split('.')[0])
-            if not major_version:
-                return False
-            if major_version < 6:
-                return False
-            return True
         except Exception:
             return False
+
+        if not major_version:
+            return False
+        if major_version < 6:
+            return False
+        return True
 
     @contextmanager
     def _openProcess(self, mode):
@@ -128,10 +131,15 @@ class NTProcessCapabilities(BaseProcessCapabilities):
                 # Implement distinct API for opening currently impersonated
                 # user token.
                 process_token = win32security.OpenThreadToken(
-                    win32api.GetCurrentThread(), mode, 0)
+                    win32api.GetCurrentThread(),
+                    mode,
+                    0,
+                )
             except Exception:
                 process_token = win32security.OpenProcessToken(
-                    win32process.GetCurrentProcess(), mode)
+                    win32process.GetCurrentProcess(),
+                    mode,
+                )
 
             yield process_token
         finally:
@@ -154,8 +162,8 @@ class NTProcessCapabilities(BaseProcessCapabilities):
                 state = self._getPrivilegeState(privilege_name)
                 if not self._isPrivilegeStateAvailable(state):
                     message = (
-                        u'Process does not have %s privilege.' %
-                        privilege_name)
+                        f'Process does not have {privilege_name} privilege.'
+                    )
                     raise AdjustPrivilegeException(message.encode('utf-8'))
 
                 if not self._isPrivilegeStateEnabled(state):
@@ -184,15 +192,17 @@ class NTProcessCapabilities(BaseProcessCapabilities):
 
         # Privileges are passes as a list of tuples.
         # We only update one privilege at a time.
-        new_privileges = [(
-            win32security.LookupPrivilegeValue('', privilege_name),
-            new_state
-            )]
+        new_privileges = [
+            (win32security.LookupPrivilegeValue('', privilege_name), new_state),
+        ]
         process_mode = win32security.TOKEN_ALL_ACCESS
         with self._openProcess(mode=process_mode) as process_token:
             try:
                 win32security.AdjustTokenPrivileges(
-                    process_token, 0, new_privileges)
+                    process_token,
+                    0,
+                    new_privileges,
+                )
             except win32security.error as error:
                 raise AdjustPrivilegeException(str(error))
 
@@ -225,7 +235,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         enabled-by-default and removed. This tries to implement a priority,
         so a privilege which was removed will only return removed.
         """
-        result = u'absent'
+        result = 'absent'
 
         try:
             target_id = self._getPrivilegeID(privilege_name)
@@ -247,25 +257,22 @@ class NTProcessCapabilities(BaseProcessCapabilities):
                 continue
 
             if (
-                (state & win32security.SE_PRIVILEGE_REMOVED) ==
-                win32security.SE_PRIVILEGE_REMOVED
-                    ):
-                return u'removed'
+                state & win32security.SE_PRIVILEGE_REMOVED
+            ) == win32security.SE_PRIVILEGE_REMOVED:
+                return 'removed'
 
             if (
-                (state & win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT) ==
-                win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
-                    ):
-                return u'enabled-by-default'
+                state & win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT
+            ) == win32security.SE_PRIVILEGE_ENABLED_BY_DEFAULT:
+                return 'enabled-by-default'
 
             if (
-                (state & win32security.SE_PRIVILEGE_ENABLED) ==
-                win32security.SE_PRIVILEGE_ENABLED
-                    ):
-                return u'enabled'
+                state & win32security.SE_PRIVILEGE_ENABLED
+            ) == win32security.SE_PRIVILEGE_ENABLED:
+                return 'enabled'
 
             # Set state as present and stop looking for other names.
-            result = u'present'
+            result = 'present'
             break
 
         return result
@@ -282,7 +289,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         """
         Retrun True if state is one of the enabled values.
         """
-        if state in [u'enabled', u'enabled-by-default']:
+        if state in ['enabled', 'enabled-by-default']:
             return True
         else:
             return False
@@ -292,7 +299,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         Return True if state is one of the values in which it is available
         to the process.
         """
-        if state in [u'present', u'enabled', u'enabled-by-default']:
+        if state in ['present', 'enabled', 'enabled-by-default']:
             return True
         else:
             return False

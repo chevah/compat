@@ -3,14 +3,10 @@
 """
 Tests for testing filesystem
 """
-from chevah_compat import (
-    system_users,
-    )
 
-from chevah_compat.testing import (
-    mk as compat_mk,
-    )
-from chevah_compat.testing import ChevahTestCase, mk, conditionals
+from chevah_compat import system_users
+from chevah_compat.testing import ChevahTestCase, conditionals, mk
+from chevah_compat.testing import mk as compat_mk
 from chevah_compat.testing.filesystem import LocalTestFilesystem
 
 
@@ -21,15 +17,17 @@ class TestElevatedLocalTestFilesystem(ChevahTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(TestElevatedLocalTestFilesystem, cls).setUpClass()
+        super().setUpClass()
         cls.user = compat_mk.getTestUser('normal')
         home_folder_path = system_users.getHomeFolder(
-            username=cls.user.name, token=cls.user.token)
+            username=cls.user.name,
+            token=cls.user.token,
+        )
         cls.avatar = compat_mk.makeFilesystemOSAvatar(
             name=cls.user.name,
             home_folder_path=home_folder_path,
             token=cls.user.token,
-            )
+        )
 
     def checkTemporaryFolderInitialization(self, filesystem):
         """
@@ -55,7 +53,9 @@ class TestElevatedLocalTestFilesystem(ChevahTestCase):
         # We check that the elevated filesystem start with the same
         # path as normal filesystem
         self.assertEqual(
-            mk.fs.temp_segments[:-1], filesystem.temp_segments[:-1])
+            mk.fs.temp_segments[:-1],
+            filesystem.temp_segments[:-1],
+        )
 
         self.checkTemporaryFolderInitialization(filesystem)
 
@@ -69,6 +69,6 @@ class TestElevatedLocalTestFilesystem(ChevahTestCase):
         filesystem = LocalTestFilesystem(avatar=self.avatar)
 
         temporary = filesystem.temp_segments
-        self.assertEqual([u'c', u'temp'], temporary[:2])
+        self.assertEqual(['c', 'temp'], temporary[:2])
 
         self.checkTemporaryFolderInitialization(filesystem)

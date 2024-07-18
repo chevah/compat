@@ -4,22 +4,23 @@
 Any methods from here is a sign of bad design.
 """
 
+
 def _(string):
-    '''Placeholder for future gettext integration.'''
+    """Placeholder for future gettext integration."""
     return string
 
 
-class NoOpContext(object):
+class NoOpContext:
     """
     A context manager that does nothing.
     """
 
     def __enter__(self):
-        '''Do nothing.'''
+        """Do nothing."""
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
-        '''Just propagate errors.'''
+        """Just propagate errors."""
         return False
 
 
@@ -30,8 +31,8 @@ def force_unicode(value):
     In case there are encoding errors when converting the invalid characters
     are replaced.
     """
-    def str_or_repr(value):
 
+    def str_or_repr(value):
         if isinstance(value, str):
             return value
 
@@ -58,27 +59,25 @@ def force_unicode(value):
             """
 
         try:
-            return str(
-                str_value, encoding='windows-1252', errors='replace')
+            return str(str_value, encoding='windows-1252', errors='replace')
         except UnicodeDecodeError:
             pass
 
         # No luck with str, try repr()
-        return str(
-            repr(value), encoding='windows-1252', errors='replace')
+        return str(repr(value), encoding='windows-1252', errors='replace')
 
     if value is None:
-        return u'None'
+        return 'None'
 
     if isinstance(value, str):
         return value
 
     if isinstance(value, EnvironmentError):
-        return '[Errno %s] %s: %s' % (
-            value.errno,
-            str_or_repr(value.strerror),
-            str_or_repr(value.filename),
-            )
+        return (
+            f'[Errno {value.errno}] '
+            f'{str_or_repr(value.strerror)}: '
+            f'{str_or_repr(value.filename)}'
+        )
 
     result = str_or_repr(value)
 

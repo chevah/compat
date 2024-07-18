@@ -3,6 +3,7 @@
 """
 Adapter for working with Unix users.
 """
+
 import crypt
 import grp
 import os
@@ -10,6 +11,7 @@ import pwd
 
 try:
     import spwd
+
     HAS_SHADOW_SUPPORT = True
 except ImportError:
     HAS_SHADOW_SUPPORT = False
@@ -18,15 +20,12 @@ from zope.interface import implementer
 
 from chevah_compat.compat_users import CompatUsers
 from chevah_compat.exceptions import ChangeUserException
-from chevah_compat.helpers import (
-    _,
-    NoOpContext,
-    )
+from chevah_compat.helpers import NoOpContext, _
 from chevah_compat.interfaces import (
     IFileSystemAvatar,
     IHasImpersonatedAvatar,
     IOSUsers,
-    )
+)
 
 
 def _get_euid_and_egid(username):
@@ -36,7 +35,7 @@ def _get_euid_and_egid(username):
     try:
         pwnam = pwd.getpwnam(username)
     except KeyError:
-        raise ChangeUserException(_(u'User does not exists.'))
+        raise ChangeUserException(_('User does not exists.'))
 
     return (pwnam.pw_uid, pwnam.pw_gid)
 
@@ -49,13 +48,14 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
         try:
             pwnam = pwd.getpwnam(username)
         except KeyError:
-            raise ChangeUserException(u'User does not exists.')
+            raise ChangeUserException('User does not exists.')
         euid = pwnam.pw_uid
         egid = pwnam.pw_gid
     else:
         if euid is None:
             raise ChangeUserException(
-                'You need to pass euid when username is not passed.')
+                'You need to pass euid when username is not passed.',
+            )
         pwnam = pwd.getpwuid(euid)
         username = pwnam.pw_name
 
@@ -75,7 +75,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
         os.setegid(egid)
         os.seteuid(euid)
     except OSError:
-        raise ChangeUserException(u'Could not switch user.')
+        raise ChangeUserException('Could not switch user.')
 
 
 def _verifyCrypt(password, crypted_password):
@@ -113,13 +113,12 @@ class UnixUsers(CompatUsers):
     _NOT_HERE = ('x', 'NP', '*NP*', '*')
 
     def getHomeFolder(self, username, token=None):
-        '''Get home folder for local (or NIS) user.'''
+        """Get home folder for local (or NIS) user."""
         try:
             home_folder = pwd.getpwnam(username).pw_dir
             return home_folder.rstrip('/')
         except KeyError:
-            self.raiseFailedToGetHomeFolder(
-                username, _(u'Username not found.'))
+            self.raiseFailedToGetHomeFolder(username, _('Username not found.'))
 
     def userExists(self, username):
         """
@@ -145,7 +144,7 @@ class UnixUsers(CompatUsers):
         It matches groups based on both name and group ID.
         """
         if not groups:
-            raise ValueError('Groups for validation can\'t be empty.')
+            raise ValueError("Groups for validation can't be empty.")
 
         for group in groups:
             try:
@@ -227,11 +226,11 @@ class UnixUsers(CompatUsers):
         return False
 
     def dropPrivileges(self, username):
-        '''Change process privileges to `username`.
+        """Change process privileges to `username`.
 
         Return `ChangeUserException` is there are no permissions for
         switching to user.
-        '''
+        """
         _change_effective_privileges(username)
 
     def executeAsUser(self, username, token=None):
@@ -245,7 +244,7 @@ class UnixUsers(CompatUsers):
         return _ExecuteAsUser(username=username)
 
     def getPrimaryGroup(self, username):
-        '''Return get primary group for avatar.'''
+        """Return get primary group for avatar."""
         try:
             user_struct = pwd.getpwnam(username)
             group_struct = grp.getgrgid(user_struct.pw_gid)
@@ -255,11 +254,11 @@ class UnixUsers(CompatUsers):
         return group_name
 
     def _executeAsAdministrator(self):
-        '''Returns a context manager for running under administrator user.
+        """Returns a context manager for running under administrator user.
 
         Return `ChangeUserException` is there are no permissions for
         switching to user.
-        '''
+        """
         return _ExecuteAsUser(euid=0, egid=0)
 
     def _checkPasswdFile(self, username, password):
@@ -299,7 +298,7 @@ class UnixUsers(CompatUsers):
         return _verifyCrypt(password, crypted_password)
 
     def _checkShadowFile(self, username, password):
-        '''
+        """
         Authenticate against /etc/shadow file.
 
         salt and hashed password OR a status exception value e.g.:
@@ -313,7 +312,7 @@ class UnixUsers(CompatUsers):
             * "LK" or "*" - the account is Locked,
                user will be unable to log-in
             * "!!" - the password has expired
-        '''
+        """
         if not HAS_SHADOW_SUPPORT:
             return None
 
@@ -342,6 +341,7 @@ class UnixUsers(CompatUsers):
         Authenticate against /etc/spwd.db BSD file.
         """
         from chevah_compat import process_capabilities
+
         if process_capabilities.os_name not in ['freebsd', 'openbsd']:
             return None
 
@@ -389,6 +389,7 @@ class UnixUsers(CompatUsers):
 
             try:
                 from pam import authenticate as pam_authenticate
+
                 self._pam_authenticate = pam_authenticate
             except (ImportError, AssertionError):
                 # We set this to false to not check it again.
@@ -398,16 +399,16 @@ class UnixUsers(CompatUsers):
         return self._pam_authenticate
 
 
-class _ExecuteAsUser(object):
-    '''Context manager for running under a different user.'''
+class _ExecuteAsUser:
+    """Context manager for running under a different user."""
 
     def __init__(self, username=None, euid=0, egid=0):
-        '''Initialize the context manager.'''
+        """Initialize the context manager."""
         if username is not None:
             try:
                 pwnam = pwd.getpwnam(username)
             except KeyError:
-                raise ChangeUserException(_(u'User does not exists.'))
+                raise ChangeUserException(_('User does not exists.'))
             euid = pwnam.pw_uid
             egid = pwnam.pw_gid
         self.euid = euid
@@ -416,20 +417,21 @@ class _ExecuteAsUser(object):
         self.initial_egid = os.getegid()
 
     def __enter__(self):
-        '''Change process effective user.'''
+        """Change process effective user."""
         _change_effective_privileges(euid=self.euid, egid=self.egid)
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
-        '''Reverting previous effective ID.'''
+        """Reverting previous effective ID."""
         _change_effective_privileges(
-            euid=self.initial_euid, egid=self.initial_egid)
+            euid=self.initial_euid,
+            egid=self.initial_egid,
+        )
         return False
 
 
 @implementer(IHasImpersonatedAvatar)
-class UnixHasImpersonatedAvatar(object):
-
+class UnixHasImpersonatedAvatar:
     _euid = None
     _egid = None
 
@@ -442,7 +444,7 @@ class UnixHasImpersonatedAvatar(object):
         """
         See: :class:`IFileSystemAvatar`
         """
-        raise NotImplementedError()
+        raise NotImplementedError('use_impersonation')
 
     def getImpersonationContext(self):
         """
@@ -458,7 +460,6 @@ class UnixHasImpersonatedAvatar(object):
         return _ExecuteAsUser(euid=self._euid, egid=self._egid)
 
 
-
 @implementer(IFileSystemAvatar)
 class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
     """
@@ -468,6 +469,7 @@ class UnixDefaultAvatar(UnixHasImpersonatedAvatar):
     It has full access to the filesystem.
     It does not use impersonation.
     """
+
     home_folder_path = '/'
     root_folder_path = '/'
     lock_in_home_folder = False
@@ -496,7 +498,7 @@ class UnixSuperAvatar(UnixHasImpersonatedAvatar):
     Avatar for the super account on Unix aka root.
     """
 
-    home_folder_path = u'/root'
+    home_folder_path = '/root'
     root_folder_path = '/'
     lock_in_home_folder = False
     token = None

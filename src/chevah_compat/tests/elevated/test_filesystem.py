@@ -3,32 +3,27 @@
 """
 Tests for portable filesystem access.
 """
+
 import errno
 import os
 
-from chevah_compat import (
-    LocalFilesystem,
-    SuperAvatar,
-    )
+from chevah_compat import LocalFilesystem, SuperAvatar
+from chevah_compat.exceptions import CompatError, CompatException
 from chevah_compat.interfaces import IFileAttributes
 from chevah_compat.testing import (
-    conditionals,
-    mk,
     TEST_ACCOUNT_GROUP,
     TEST_ACCOUNT_GROUP_OTHER,
     TEST_ACCOUNT_USERNAME,
     TEST_ACCOUNT_USERNAME_OTHER,
-    TestUser,
     TEST_USERS,
-    )
-from chevah_compat.exceptions import (
-    CompatError,
-    CompatException,
-    )
+    TestUser,
+    conditionals,
+    mk,
+)
 from chevah_compat.testing.testcase import (
     FileSystemTestCase,
     OSAccountFileSystemTestCase,
-    )
+)
 from chevah_compat.tests.mixin.filesystem import SymbolicLinksMixin
 
 
@@ -42,7 +37,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         It raises an exception when the requested path is not found.
         """
         with self.assertRaises(OSError):
-            self.filesystem.getOwner([u'non-existent-segment'])
+            self.filesystem.getOwner(['non-existent-segment'])
 
     @conditionals.onOSFamily('posix')
     def test_getOwner_ok_posix(self):
@@ -56,29 +51,29 @@ class TestPosixFilesystem(FileSystemTestCase):
         """
         An error is raised when trying to set owner for an bad path.
         """
-        segments = [u'c', u'non-existent-segment']
+        segments = ['c', 'non-existent-segment']
         with self.assertRaises(CompatError) as context:
-
             self.filesystem.setOwner(segments, self.avatar.name)
 
         self.assertCompatError(1016, context.exception)
 
-        self.assertContains(
-            'Failed to set owner to', context.exception.message)
+        self.assertContains('Failed to set owner to', context.exception.message)
 
         if self.os_family == 'posix':
             self.assertContains(
-                u'No such file or directory', context.exception.message)
+                'No such file or directory',
+                context.exception.message,
+            )
         elif self.TEST_LANGUAGE == 'FR':
             self.assertContains(
-                u'[2] Le fichier sp\xe9cifi\xe9 est introuvable.',
+                '[2] Le fichier sp\xe9cifi\xe9 est introuvable.',
                 context.exception.message,
-                )
+            )
         else:
             self.assertContains(
-                u'The system cannot find the file specified',
+                'The system cannot find the file specified',
                 context.exception.message,
-                )
+            )
 
     def test_setOwner_bad_owner_file(self):
         """
@@ -91,9 +86,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         file_object.close()
 
         with self.assertRaises(CompatError) as context:
-            self.filesystem.setOwner(
-                file_segments,
-                u'non-existent-owner')
+            self.filesystem.setOwner(file_segments, 'non-existent-owner')
         self.assertEqual(1016, context.exception.event_id)
 
     def test_setOwner_bad_owner_folder(self):
@@ -107,16 +100,14 @@ class TestPosixFilesystem(FileSystemTestCase):
 
         # Check on folder.
         with self.assertRaises(CompatError) as context:
-            self.filesystem.setOwner(
-                folder_segments,
-                u'non-existent-owner')
+            self.filesystem.setOwner(folder_segments, 'non-existent-owner')
         self.assertEqual(1016, context.exception.event_id)
 
     def test_setGroup(self):
         """
         setGroup is not yet supported.
         """
-        segments = [u'dont-care']
+        segments = ['dont-care']
         with self.assertRaises(AssertionError):
             self.filesystem.setGroup(segments, TEST_ACCOUNT_USERNAME_OTHER)
 
@@ -125,7 +116,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         Changing the groups for an unknown file will raise an
         CompatError.
         """
-        segments = [u'c', u'no-such-segments']
+        segments = ['c', 'no-such-segments']
 
         with self.assertRaises(CompatError) as context:
             self.filesystem.addGroup(segments, TEST_ACCOUNT_USERNAME_OTHER)
@@ -138,7 +129,9 @@ class TestPosixFilesystem(FileSystemTestCase):
         """
         with self.assertRaises(CompatError) as context:
             self.filesystem.addGroup(
-                self.filesystem.home_segments, u'non-existent-group')
+                self.filesystem.home_segments,
+                'non-existent-group',
+            )
         self.assertEqual(1017, context.exception.event_id)
 
     def test_addGroup_ok_group_file(self):
@@ -160,13 +153,12 @@ class TestPosixFilesystem(FileSystemTestCase):
             root_filesystem = self.filesystem
 
         self.assertFalse(
-            self.filesystem.hasGroup(
-                file_segments, TEST_ACCOUNT_GROUP_OTHER))
-        root_filesystem.addGroup(
-            file_segments, TEST_ACCOUNT_GROUP_OTHER)
+            self.filesystem.hasGroup(file_segments, TEST_ACCOUNT_GROUP_OTHER),
+        )
+        root_filesystem.addGroup(file_segments, TEST_ACCOUNT_GROUP_OTHER)
         self.assertTrue(
-            self.filesystem.hasGroup(
-                file_segments, TEST_ACCOUNT_GROUP_OTHER))
+            self.filesystem.hasGroup(file_segments, TEST_ACCOUNT_GROUP_OTHER),
+        )
 
     def test_addGroup_ok_group_folder(self):
         """
@@ -186,26 +178,26 @@ class TestPosixFilesystem(FileSystemTestCase):
             root_filesystem = self.filesystem
 
         self.assertFalse(
-            self.filesystem.hasGroup(
-                folder_segments, TEST_ACCOUNT_GROUP_OTHER))
-        root_filesystem.addGroup(
-            folder_segments, TEST_ACCOUNT_GROUP_OTHER)
+            self.filesystem.hasGroup(folder_segments, TEST_ACCOUNT_GROUP_OTHER),
+        )
+        root_filesystem.addGroup(folder_segments, TEST_ACCOUNT_GROUP_OTHER)
         self.assertTrue(
-            self.filesystem.hasGroup(
-                folder_segments, TEST_ACCOUNT_GROUP_OTHER))
+            self.filesystem.hasGroup(folder_segments, TEST_ACCOUNT_GROUP_OTHER),
+        )
 
     def test_hasGroup(self):
         """
         Check hasGroup.
         """
         with self.assertRaises(OSError):
-            self.filesystem.hasGroup(
-                [u'no-such-segment'], TEST_ACCOUNT_USERNAME)
+            self.filesystem.hasGroup(['no-such-segment'], TEST_ACCOUNT_USERNAME)
 
         self.assertFalse(
             self.filesystem.hasGroup(
                 self.filesystem.home_segments,
-                TEST_ACCOUNT_GROUP_OTHER))
+                TEST_ACCOUNT_GROUP_OTHER,
+            ),
+        )
 
         # FIXME:928:
         # Update this test after the Windows issues is fixed.
@@ -213,7 +205,9 @@ class TestPosixFilesystem(FileSystemTestCase):
             self.assertTrue(
                 self.filesystem.hasGroup(
                     self.filesystem.home_segments,
-                    TEST_ACCOUNT_GROUP))
+                    TEST_ACCOUNT_GROUP,
+                ),
+            )
 
     def test_setOwner_ok(self):
         """
@@ -254,7 +248,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         avatar = mk.FilesystemOsAvatar(
             user=TEST_USERS['normal'],
             home_folder_path=mk.fs.temp_path,
-            )
+        )
         user_fs = mk.makeLocalTestFilesystem(avatar)
         user_fs.folder(user_fs.temp_segments, cleanup=self.addCleanup)
 
@@ -263,8 +257,9 @@ class TestPosixFilesystem(FileSystemTestCase):
 
             error = self.assertRaises(
                 OSError,
-                user_fs.iterateFolderContent, user_fs.temp_segments,
-                )
+                user_fs.iterateFolderContent,
+                user_fs.temp_segments,
+            )
         finally:
             # Make sure we revert the permissions so that we can cleanup.
             user_fs.setAttributes(user_fs.temp_segments, {'mode': 0o700})
@@ -279,7 +274,7 @@ class TestPosixFilesystem(FileSystemTestCase):
         avatar = mk.FilesystemOsAvatar(
             user=TEST_USERS['normal'],
             home_folder_path=mk.fs.temp_path,
-            )
+        )
         user_fs = mk.makeLocalTestFilesystem(avatar)
         user_fs.folder(user_fs.temp_segments, cleanup=self.addCleanup)
 
@@ -328,7 +323,7 @@ class TestUnixFilesystem(FileSystemTestCase):
         """
         # We check that the elevated filesystem start with the same
         # path as normal filesystem
-        self.assertEqual([u'tmp'], self.filesystem.temp_segments)
+        self.assertEqual(['tmp'], self.filesystem.temp_segments)
 
     def test_addGroup_denied_group_file(self):
         """
@@ -346,14 +341,22 @@ class TestUnixFilesystem(FileSystemTestCase):
 
         if self.os_name == 'hpux':
             act()
-            self.assertTrue(self.filesystem.hasGroup(
-                file_segments, TEST_ACCOUNT_GROUP_OTHER))
+            self.assertTrue(
+                self.filesystem.hasGroup(
+                    file_segments,
+                    TEST_ACCOUNT_GROUP_OTHER,
+                ),
+            )
         else:
             with self.assertRaises(CompatError) as context:
                 act()
             self.assertEqual(1017, context.exception.event_id)
-            self.assertFalse(self.filesystem.hasGroup(
-                file_segments, TEST_ACCOUNT_GROUP_OTHER))
+            self.assertFalse(
+                self.filesystem.hasGroup(
+                    file_segments,
+                    TEST_ACCOUNT_GROUP_OTHER,
+                ),
+            )
 
     def test_addGroup_denied_group_folder(self):
         """
@@ -370,14 +373,22 @@ class TestUnixFilesystem(FileSystemTestCase):
 
         if self.os_name == 'hpux':
             act()
-            self.assertTrue(self.filesystem.hasGroup(
-                folder_segments, TEST_ACCOUNT_GROUP_OTHER))
+            self.assertTrue(
+                self.filesystem.hasGroup(
+                    folder_segments,
+                    TEST_ACCOUNT_GROUP_OTHER,
+                ),
+            )
         else:
             with self.assertRaises(CompatError) as context:
                 act()
             self.assertEqual(1017, context.exception.event_id)
-            self.assertFalse(self.filesystem.hasGroup(
-                folder_segments, TEST_ACCOUNT_GROUP_OTHER))
+            self.assertFalse(
+                self.filesystem.hasGroup(
+                    folder_segments,
+                    TEST_ACCOUNT_GROUP_OTHER,
+                ),
+            )
 
     def test_removeGroup(self):
         """
@@ -386,11 +397,13 @@ class TestUnixFilesystem(FileSystemTestCase):
         # Right now, on Unix it does nothing.
         self.filesystem.removeGroup(
             self.filesystem.home_segments,
-            TEST_ACCOUNT_GROUP_OTHER)
+            TEST_ACCOUNT_GROUP_OTHER,
+        )
 
         self.filesystem.removeGroup(
             self.filesystem.home_segments,
-            u'no-such-group')
+            'no-such-group',
+        )
 
 
 class TestNTFilesystem(FileSystemTestCase):
@@ -401,14 +414,14 @@ class TestNTFilesystem(FileSystemTestCase):
     @classmethod
     @conditionals.onOSFamily('nt')
     def setUpClass(cls):
-        super(TestNTFilesystem, cls).setUpClass()
+        super().setUpClass()
 
     def test_temp_segments_location(self):
         """
         For elevated accounts temporary folder is not located insider
         user default temp folder but in the hardcoded c:\temp folder..
         """
-        self.assertEqual([u'c', u'temp'], self.filesystem.temp_segments)
+        self.assertEqual(['c', 'temp'], self.filesystem.temp_segments)
 
     def test_removeGroup_good(self):
         """
@@ -420,39 +433,53 @@ class TestNTFilesystem(FileSystemTestCase):
 
         self.assertFalse(
             self.filesystem.hasGroup(
-                self.test_segments, TEST_ACCOUNT_GROUP_OTHER))
+                self.test_segments,
+                TEST_ACCOUNT_GROUP_OTHER,
+            ),
+        )
 
-        self.filesystem.addGroup(
-            self.test_segments, TEST_ACCOUNT_GROUP_OTHER)
+        self.filesystem.addGroup(self.test_segments, TEST_ACCOUNT_GROUP_OTHER)
 
         self.assertTrue(
             self.filesystem.hasGroup(
-                self.test_segments, TEST_ACCOUNT_GROUP_OTHER))
+                self.test_segments,
+                TEST_ACCOUNT_GROUP_OTHER,
+            ),
+        )
 
         self.filesystem.removeGroup(
-            self.test_segments, TEST_ACCOUNT_GROUP_OTHER)
+            self.test_segments,
+            TEST_ACCOUNT_GROUP_OTHER,
+        )
 
         self.assertFalse(
             self.filesystem.hasGroup(
-                self.test_segments, TEST_ACCOUNT_GROUP_OTHER))
+                self.test_segments,
+                TEST_ACCOUNT_GROUP_OTHER,
+            ),
+        )
 
         # Try to remove it again.
         self.filesystem.removeGroup(
-            self.test_segments, TEST_ACCOUNT_GROUP_OTHER)
+            self.test_segments,
+            TEST_ACCOUNT_GROUP_OTHER,
+        )
 
         with self.assertRaises(OSError):
             self.filesystem.removeGroup(
-                [u'no-such-segments'], TEST_ACCOUNT_GROUP_OTHER)
+                ['no-such-segments'],
+                TEST_ACCOUNT_GROUP_OTHER,
+            )
 
         with self.assertRaises(CompatError) as context:
-            self.filesystem.removeGroup(
-                self.test_segments, u'no-such-group')
+            self.filesystem.removeGroup(self.test_segments, 'no-such-group')
         self.assertEqual(1013, context.exception.event_id)
 
     def test_setOwner_CompatError(self):
         """
         setOwner will convert CompatExceptions into CompatError.
         """
+
         def set_owner(segments, owner):
             raise CompatException(message='test-message')
 
@@ -475,10 +502,9 @@ class TestNTFilesystem(FileSystemTestCase):
             self.filesystem.makeLink(
                 target_segments=['z', 'no-such', 'target'],
                 link_segments=link_segments,
-                )
+            )
 
-        self.assertContains(
-            'Process does not have', context.exception.strerror)
+        self.assertContains('Process does not have', context.exception.strerror)
 
 
 class TestSymbolicLinks(OSAccountFileSystemTestCase, SymbolicLinksMixin):
@@ -493,6 +519,7 @@ class TestSymbolicLinks(OSAccountFileSystemTestCase, SymbolicLinksMixin):
 
     try:
         import win32security
+
         rights = (win32security.SE_CREATE_SYMBOLIC_LINK_NAME,)
     except Exception:
         rights = ()
@@ -503,4 +530,4 @@ class TestSymbolicLinks(OSAccountFileSystemTestCase, SymbolicLinksMixin):
         home_group=TEST_ACCOUNT_GROUP,
         posix_uid=mk.posixID(),
         windows_required_rights=rights,
-        )
+    )

@@ -4,12 +4,9 @@ separate thread.
 
 This code is under based on nose/twistedtools.py which is under LGPL license.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import unicode_literals
-from threading import Thread
+
 import time
+from threading import Thread
 
 _twisted_thread = None
 _reactor = None
@@ -33,6 +30,7 @@ def get_reactor():
         _reactor.run(installSignalHandlers=False)
 
     from twisted.internet import reactor as twisted_reactor
+
     _reactor = twisted_reactor
 
     _twisted_thread = Thread(target=reactor_run)
@@ -58,7 +56,7 @@ def stop_reactor():
         return
 
     def stop_reactor():
-        '''Helper for calling stop from within the thread.'''
+        """Helper for calling stop from within the thread."""
         _reactor.stop()
 
     _reactor.callFromThread(stop_reactor)

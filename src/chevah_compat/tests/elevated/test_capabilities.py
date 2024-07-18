@@ -3,6 +3,7 @@
 """
 Capabilities detection tests for accounts with elevated permissions.
 """
+
 from chevah_compat import process_capabilities, system_users
 from chevah_compat.exceptions import AdjustPrivilegeException
 from chevah_compat.testing import conditionals
@@ -10,9 +11,8 @@ from chevah_compat.testing.testcase import FileSystemTestCase
 
 
 class TestProcessCapabilities(FileSystemTestCase):
-
     def setUp(self):
-        super(TestProcessCapabilities, self).setUp()
+        super().setUp()
         self.capabilities = process_capabilities
 
     def test_impersonate_local_account(self):
@@ -55,7 +55,7 @@ class TestProcessCapabilities(FileSystemTestCase):
         capabilities.
         """
         text = self.capabilities.getCurrentPrivilegesDescription()
-        self.assertEqual(u'root capabilities enabled.', text)
+        self.assertEqual('root capabilities enabled.', text)
 
     @conditionals.onOSFamily('nt')
     def test_getCurrentPrivilegesDescription_nt(self):
@@ -82,13 +82,13 @@ class TestProcessCapabilities(FileSystemTestCase):
             'SeImpersonatePrivilege:3, SeCreateGlobalPrivilege:3, '
             'SeIncreaseWorkingSetPrivilege:0, SeTimeZonePrivilege:0, '
             'SeCreateSymbolicLinkPrivilege:0'
-            )
+        )
 
         if self.os_version == 'nt-10.0':
             # On latest Windows there is an extra capability by default.
             service_capabilities += (
                 ', SeDelegateSessionUserImpersonatePrivilege:0'
-                )
+            )
         self.assertEqual(service_capabilities, text)
 
     @conditionals.onOSFamily('posix')
@@ -100,10 +100,12 @@ class TestProcessCapabilities(FileSystemTestCase):
         The process under impersonated account still has root capabilities.
         """
         with system_users.executeAsUser(
-                username=self.os_user.name, token=self.os_user.token):
+            username=self.os_user.name,
+            token=self.os_user.token,
+        ):
             text = self.capabilities.getCurrentPrivilegesDescription()
 
-        self.assertEqual(u'root capabilities enabled.', text)
+        self.assertEqual('root capabilities enabled.', text)
 
     @conditionals.onOSFamily('nt')
     def test_getCurrentPrivilegesDescription_impersonated_nt(self):
@@ -116,14 +118,16 @@ class TestProcessCapabilities(FileSystemTestCase):
 
         # Unify tests once proper capabilities support is implemented.
         initial_text = self.capabilities.getCurrentPrivilegesDescription()
-        self.assertContains(u'SeIncreaseWorkingSetPrivilege:0', initial_text)
+        self.assertContains('SeIncreaseWorkingSetPrivilege:0', initial_text)
 
         with system_users.executeAsUser(
-                username=self.os_user.name, token=self.os_user.token):
+            username=self.os_user.name,
+            token=self.os_user.token,
+        ):
             text = self.capabilities.getCurrentPrivilegesDescription()
 
         # These assertion are fragile. Feel free to improve it.
-        self.assertContains(u'SeIncreaseWorkingSetPrivilege:3', text)
+        self.assertContains('SeIncreaseWorkingSetPrivilege:3', text)
 
     @conditionals.onOSFamily('nt')
     def test_elevatePrivileges_impersonated(self):
@@ -137,17 +141,22 @@ class TestProcessCapabilities(FileSystemTestCase):
         import win32security
 
         initial_state = self.capabilities._getPrivilegeState(
-            win32security.SE_INC_WORKING_SET_NAME)
-        self.assertEqual(u'present', initial_state)
+            win32security.SE_INC_WORKING_SET_NAME,
+        )
+        self.assertEqual('present', initial_state)
 
         with system_users.executeAsUser(
-                username=self.os_user.name, token=self.os_user.token):
+            username=self.os_user.name,
+            token=self.os_user.token,
+        ):
             with self.capabilities._elevatePrivileges(
-                    win32security.SE_INC_WORKING_SET_NAME):
+                win32security.SE_INC_WORKING_SET_NAME,
+            ):
                 update_state = self.capabilities._getPrivilegeState(
-                    win32security.SE_INC_WORKING_SET_NAME)
+                    win32security.SE_INC_WORKING_SET_NAME,
+                )
 
-        self.assertStartsWith(u'enabled', update_state)
+        self.assertStartsWith('enabled', update_state)
 
     @conditionals.onOSFamily('nt')
     def test_elevatePrivileges_impersonated_not_present(self):
@@ -158,12 +167,16 @@ class TestProcessCapabilities(FileSystemTestCase):
         import win32security
 
         with system_users.executeAsUser(
-                username=self.os_user.name, token=self.os_user.token):
+            username=self.os_user.name,
+            token=self.os_user.token,
+        ):
             initial_state = self.capabilities._getPrivilegeState(
-                win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
-            self.assertEqual(u'absent', initial_state)
+                win32security.SE_CREATE_SYMBOLIC_LINK_NAME,
+            )
+            self.assertEqual('absent', initial_state)
 
             with self.assertRaises(AdjustPrivilegeException):
                 with self.capabilities._elevatePrivileges(
-                        win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
+                    win32security.SE_CREATE_SYMBOLIC_LINK_NAME,
+                ):
                     pass

@@ -3,6 +3,7 @@
 """
 Common code for capabilities on all systems.
 """
+
 import os
 import platform
 import sys
@@ -30,7 +31,7 @@ def _get_os_name():
     elif family.startswith('freebsd'):
         return 'freebsd'
     else:
-        raise AssertionError('OS "%s" not supported.' % family)
+        raise AssertionError(f'OS "{family}" not supported.')
 
 
 def _get_cpu_type():
@@ -42,7 +43,7 @@ def _get_cpu_type():
     if not base:
         base = platform.machine()
 
-    if base == 'aarch64':  # noqa:cover
+    if base == 'aarch64':  # noqa: cover
         return 'arm64'
 
     if base == 'x86_64':
@@ -54,7 +55,7 @@ def _get_cpu_type():
     return base
 
 
-class BaseProcessCapabilities(object):
+class BaseProcessCapabilities:
     """
     Code shared by all `IProcessCapabilities`
     """

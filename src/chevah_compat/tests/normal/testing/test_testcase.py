@@ -3,6 +3,7 @@
 """
 Tests for ChevahTestCase.
 """
+
 import os
 import sys
 import time
@@ -11,13 +12,14 @@ from twisted.internet import defer, reactor, threads
 from twisted.internet.task import Clock
 
 from chevah_compat import process_capabilities
-from chevah_compat.testing import conditionals, ChevahTestCase, mk
+from chevah_compat.testing import ChevahTestCase, conditionals, mk
 
 
-class Dummy(object):
+class Dummy:
     """
     Dummy class to help with testing.
     """
+
     _value = mk.string()
 
     def method(self):
@@ -41,8 +43,7 @@ class TestTwistedTestCase(ChevahTestCase):
         with self.assertRaises(AssertionError) as context:
             self._runDeferred(delayed_call)
 
-        self.assertEqual(
-            'This is not a deferred.', context.exception.args[0])
+        self.assertEqual('This is not a deferred.', context.exception.args[0])
 
     def test_runDeferred_timeout_custom(self):
         """
@@ -56,8 +57,8 @@ class TestTwistedTestCase(ChevahTestCase):
 
         self.assertEqual(
             'Deferred took more than 0 to execute.',
-            context.exception.args[0]
-            )
+            context.exception.args[0],
+        )
 
         # Restore order messing with internal timeout state in
         # previous state.
@@ -76,8 +77,8 @@ class TestTwistedTestCase(ChevahTestCase):
 
         self.assertEqual(
             'Deferred took more than 0 to execute.',
-            context.exception.args[0]
-            )
+            context.exception.args[0],
+        )
 
         # Restore order messing with internal timeout state in
         # previous state.
@@ -111,8 +112,7 @@ class TestTwistedTestCase(ChevahTestCase):
         deferred.addCallback(lambda result: four_deferred)
         reactor.callLater(0.001, lambda d: d.callback('one'), deferred)
         reactor.callLater(0.001, lambda d: d.callback('two'), two_deferred)
-        reactor.callLater(
-            0.002, lambda d: d.callback('three'), three_deferred)
+        reactor.callLater(0.002, lambda d: d.callback('three'), three_deferred)
         reactor.callLater(0.003, lambda d: d.callback('four'), four_deferred)
 
         self._runDeferred(deferred, timeout=0.3)
@@ -153,7 +153,7 @@ class TestTwistedTestCase(ChevahTestCase):
         with self.patchObject(reactor, 'stop') as mock_stop:
             self._runDeferred(deferred, timeout=0.3, prevent_stop=True)
 
-        # reactor.stop() is not called
+        # reactor.stop is not called
         self.assertIsFalse(mock_stop.called)
         self.assertIsTrue(reactor._started)
         self.assertIsTrue(deferred.result)
@@ -163,7 +163,10 @@ class TestTwistedTestCase(ChevahTestCase):
         # Run again and we should still have the same pool.
         with self.patchObject(reactor, 'startRunning') as mock_start:
             self._runDeferred(
-                defer.succeed(True), timeout=0.3, prevent_stop=True)
+                defer.succeed(True),
+                timeout=0.3,
+                prevent_stop=True,
+            )
 
         # reactor.start() is not called if reactor was not previously
         # stopped.
@@ -171,8 +174,7 @@ class TestTwistedTestCase(ChevahTestCase):
         self.assertIs(initial_pool, reactor.threadpool)
 
         # Run again but this time call reactor.stop.
-        self._runDeferred(
-            defer.succeed(True), timeout=0.3, prevent_stop=False)
+        self._runDeferred(defer.succeed(True), timeout=0.3, prevent_stop=False)
 
         self.assertIsFalse(reactor._started)
         self.assertIsNone(reactor.threadpool)
@@ -227,7 +229,7 @@ class TestTwistedTestCase(ChevahTestCase):
         """
         failureResultOf will return the failure.
         """
-        error = AssertionError(u'bla')
+        error = AssertionError('bla')
         deferred = defer.fail(error)
 
         failure = self.failureResultOf(deferred)
@@ -238,7 +240,7 @@ class TestTwistedTestCase(ChevahTestCase):
         """
         failureResultOf will return the failure of a specific type.
         """
-        error = NotImplementedError(u'bla')
+        error = NotImplementedError('bla')
         deferred = defer.fail(error)
 
         failure = self.failureResultOf(deferred, NotImplementedError)
@@ -249,7 +251,7 @@ class TestTwistedTestCase(ChevahTestCase):
         """
         failureResultOf will fail if failure is not of the specified type.
         """
-        error = NotImplementedError(u'bla')
+        error = NotImplementedError('bla')
         deferred = defer.fail(error)
 
         with self.assertRaises(AssertionError):
@@ -282,6 +284,7 @@ class TestTwistedTestCase(ChevahTestCase):
 
         def last_call():
             self.called = True
+
         reactor.callLater(0.01, lambda: reactor.callLater(0.01, last_call))
 
         self.executeReactor()
@@ -312,6 +315,7 @@ class TestTwistedTestCase(ChevahTestCase):
 
         def last_call():
             self.called = True
+
         reactor.callLater(1.5, last_call)
 
         self.executeReactor(timeout=2)
@@ -322,6 +326,7 @@ class TestTwistedTestCase(ChevahTestCase):
         """
         Will raise an error if a delayed call is still on the reactor queue.
         """
+
         def much_later():  # pragma: no cover
             """
             This is here to have a name.
@@ -335,7 +340,7 @@ class TestTwistedTestCase(ChevahTestCase):
         self.assertEqual(
             'Reactor is not clean. delayed calls: much_later',
             context.exception.args[0],
-            )
+        )
         # Cancel and remove it so that the general test will not fail.
         delayed_call.cancel()
         self.executeReactor()
@@ -344,6 +349,7 @@ class TestTwistedTestCase(ChevahTestCase):
         """
         Will not raise an error if delayed call should be ignored.
         """
+
         def much_later():  # pragma: no cover
             """
             This is here to have a name.
@@ -362,7 +368,8 @@ class TestTwistedTestCase(ChevahTestCase):
         """
         It will cancel any pending jobs for the threads.
         """
-        def last_call():  # noqa:cover
+
+        def last_call():  # noqa: cover
             # This is added to the thread queue, but does not has the time
             # to be executed as our assertion will remove it from the queue.
             time.sleep(1)
@@ -374,7 +381,8 @@ class TestTwistedTestCase(ChevahTestCase):
 
         self.assertContains(
             'Reactor is not clean. threadpoool queue:',
-            context.exception.args[0])
+            context.exception.args[0],
+        )
 
         # It will auto-clean the pool, so calling it again will not fail.
         self._assertReactorIsClean()
@@ -402,7 +410,9 @@ class TestTwistedTestCase(ChevahTestCase):
         # so that we can can check that the operation will continue.
         delayed_call_1.called = True
         self.assertEqual(
-            [delayed_call_1, delayed_call_2], reactor.getDelayedCalls())
+            [delayed_call_1, delayed_call_2],
+            reactor.getDelayedCalls(),
+        )
 
         self._cleanReactor()
 
@@ -445,7 +455,7 @@ class TestTwistedTestCase(ChevahTestCase):
         self.assertEqual(
             'executeDelayedCalls took more than 0.1',
             context.exception.args[0],
-            )
+        )
         # Delayed call not called and reactor is stopped.
         self.assertEqual([], results)
         self.assertFalse(reactor._started)
@@ -456,8 +466,11 @@ class TestTwistedTestCase(ChevahTestCase):
         """
         results = []
         reactor.callLater(0.1, lambda x: results.append(x), True)
-        call_2 = reactor.callLater(  # noqa:cover
-            0.2, lambda x: results.append(x), False)
+        call_2 = reactor.callLater(  # noqa: cover
+            0.2,
+            lambda x: results.append(x),
+            False,
+        )
         # Make sure call is not already called.
         self.assertEqual([], results)
 
@@ -465,7 +478,7 @@ class TestTwistedTestCase(ChevahTestCase):
         self.executeReactorUntil(
             lambda _: results == [True],
             prevent_stop=False,
-            )
+        )
 
         self.assertEqual([True], results)
         # The second call is not called and we need to cancel it, otherwise
@@ -486,14 +499,14 @@ class TestTwistedTestCase(ChevahTestCase):
             lambda _: False,
             prevent_stop=False,
             timeout=0.2,
-            )
+        )
 
         # The reactor was spin.
         self.assertEqual([True], results)
         self.assertEqual(
             'Reactor took more than 0.20 seconds to execute.',
             self._reactor_timeout_failure.args[0],
-            )
+        )
         # Ignore this error so that it will not be triggered in tearDown.
         self._reactor_timeout_failure = None
 
@@ -559,6 +572,7 @@ class TestTwistedTimeoutTestCase(ChevahTestCase):
 
         def last_call():
             self.called = True
+
         reactor.callLater(1.25, last_call)
 
         self.executeReactor()
@@ -607,7 +621,7 @@ class TestChevahTestCase(ChevahTestCase):
         with self.patch(
             'chevah_compat.tests.normal.testing.test_testcase.Dummy.method',
             return_value=value,
-                ):
+        ):
             instance = Dummy()
             self.assertEqual(value, instance.method())
 
@@ -622,8 +636,7 @@ class TestChevahTestCase(ChevahTestCase):
         value = mk.string()
         one_instance = Dummy()
 
-        with self.patchObject(
-                one_instance, 'method', return_value=value):
+        with self.patchObject(one_instance, 'method', return_value=value):
             self.assertEqual(value, one_instance.method())
 
             # All other instances are not affected.
@@ -692,10 +705,10 @@ class TestChevahTestCase(ChevahTestCase):
         """
         Run test only on Linux and AIX.
         """
-        if (not sys.platform.startswith('linux') and
-                not sys.platform.startswith('aix')):
-            raise AssertionError(
-                'This should be called only on Linux and AIX.')
+        if not sys.platform.startswith('linux') and not sys.platform.startswith(
+            'aix',
+        ):
+            raise AssertionError('This should be called only on Linux and AIX.')
 
     @conditionals.onCapability('impersonate_local_account', True)
     def test_onCapability(self):
@@ -706,12 +719,13 @@ class TestChevahTestCase(ChevahTestCase):
         # but we don't ignore the whole test to make sure that it is
         # executed.
         can_impersonate = (
-            process_capabilities.impersonate_local_account)  # pragma: no cover
+            process_capabilities.impersonate_local_account
+        )  # pragma: no cover
         if can_impersonate is not True:  # pragma: no cover
             raise AssertionError(
                 'This should be called only when impersonate_local_account '
-                'is True.'
-                )
+                'is True.',
+            )
 
     @conditionals.onAdminPrivileges(True)
     def test_onAdminPrivileges_present(self):
@@ -721,11 +735,13 @@ class TestChevahTestCase(ChevahTestCase):
         """
         if self.os_version in ['nt-5.1', 'nt-5.2']:
             raise AssertionError(
-                'Windows XP and 2003 BS does not run as administrator')
+                'Windows XP and 2003 BS does not run as administrator',
+            )
 
         if self.ci_name in [self.CI.TRAVIS, self.CI.GITHUB]:
             raise AssertionError(
-                'Travis and GitHub does not run as administrator')
+                'Travis and GitHub does not run as administrator',
+            )
 
     @conditionals.onAdminPrivileges(False)
     def test_onAdminPrivileges_missing(self):
@@ -733,15 +749,16 @@ class TestChevahTestCase(ChevahTestCase):
         Run test on build slaves that do not have administrator privileges.
         """
         if (
-            self.TEST_LANGUAGE == 'FR' or
-            self.os_name
+            self.TEST_LANGUAGE == 'FR'
+            or self.os_name
             or self.ci_name not in [self.CI.BUILDBOT, self.CI.LOCAL]
-                ):
+        ):
             # Not available on Windows XP and 2003 and non-buildbot runs.
             return
 
         raise AssertionError(
-            '"%s" is running with administrator privileges' % (self.hostname,))
+            f'"{self.hostname}" is running with administrator privileges',
+        )
 
     def test_cleanup_test_segments_file(self):
         """
@@ -767,12 +784,13 @@ class TestChevahTestCase(ChevahTestCase):
         removed, even when it is a symbolic link.
         """
         _, self.test_segments = mk.fs.makePathInTemp(
-            prefix='test_cleanup_test_segments_link')
+            prefix='test_cleanup_test_segments_link',
+        )
 
         mk.fs.makeLink(
             target_segments=mk.fs.temp_segments,
             link_segments=self.test_segments,
-            )
+        )
 
     def test_assertIsInstance(self):
         """
@@ -784,7 +802,7 @@ class TestChevahTestCase(ChevahTestCase):
         """
         Is has the argument in the inverse order of stdlib version.
         """
-        self.assertIn(set([1, 'a', 'b']), 'a')
+        self.assertIn({1, 'a', 'b'}, 'a')
 
     def test_assertRaises(self):
         """
@@ -793,13 +811,9 @@ class TestChevahTestCase(ChevahTestCase):
         """
 
         def some_call(argument):
-            raise RuntimeError('error-marker-%s' % (argument,))
+            raise RuntimeError(f'error-marker-{argument}')
 
-        exception = self.assertRaises(
-            RuntimeError,
-            some_call,
-            'more'
-            )
+        exception = self.assertRaises(RuntimeError, some_call, 'more')
 
         self.assertEqual('error-marker-more', exception.args[0])
 
@@ -860,6 +874,7 @@ class TestClassConditionalsPosix(ChevahTestCase):
     """
     Conditionals also work on classes.
     """
+
     def test_onOSFamily_posix(self):
         """
         Run test only on posix.
@@ -873,6 +888,7 @@ class TestClassConditionalsNT(ChevahTestCase):
     """
     This is the complement of the previous tests.
     """
+
     def test_onOSFamily(self):
         """
         Run test only on nt.
@@ -892,7 +908,7 @@ class TestChevahTestCaseSkipSetup(ChevahTestCase):
 
         This will prevent calling of tearDown.
         """
-        super(TestChevahTestCaseSkipSetup, self).setUp()
+        super().setUp()
 
         raise self.skipTest()
 
@@ -912,12 +928,12 @@ class TestChevahTestCaseAddCleanup(ChevahTestCase):
     """
 
     def setUp(self):
-        super(TestChevahTestCaseAddCleanup, self).setUp()
+        super().setUp()
         self.cleanup_call_count = 0
 
     def tearDown(self):
         self.assertEqual(0, self.cleanup_call_count)
-        super(TestChevahTestCaseAddCleanup, self).tearDown()
+        super().tearDown()
         self.assertEqual(2, self.cleanup_call_count)
 
     def cleanUpLast(self):
@@ -945,12 +961,12 @@ class TestChevahTestCaseCallCleanup(ChevahTestCase):
     """
 
     def setUp(self):
-        super(TestChevahTestCaseCallCleanup, self).setUp()
+        super().setUp()
         self.cleanup_call_count = 0
 
     def tearDown(self):
         self.assertEqual(1, self.cleanup_call_count)
-        super(TestChevahTestCaseCallCleanup, self).tearDown()
+        super().tearDown()
         self.assertEqual(1, self.cleanup_call_count)
 
     def cleanUp(self):

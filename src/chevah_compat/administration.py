@@ -17,20 +17,21 @@ Default groups and users have a maximum length of 9. Check `lsattr -El sys0`
 for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 
 """
-from contextlib import contextmanager
+
 import os
 import random
 import socket
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
 
 from chevah_compat import (
     LocalFilesystem,
+    SuperAvatar,
     process_capabilities,
     system_users,
-    SuperAvatar,
-    )
+)
 from chevah_compat.winerrors import ERROR_NONE_MAPPED
 
 
@@ -42,21 +43,20 @@ def execute(command, input_text=None, output=None, ignore_errors=True):
     verbose = False
 
     if verbose:
-        print('Calling: %s' % command)
+        print(f'Calling: {command}')
 
     if output is None:
         output = subprocess.PIPE
 
-    command = [part for part in command]
+    command = list(command)
 
-    process = subprocess.Popen(
-        command, stdin=subprocess.PIPE, stdout=output)
+    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=output)
     (stdoutdata, stderrdata) = process.communicate(input_text)
 
     exit_code = process.returncode
     if exit_code != 0:
         if verbose:
-            print(u'Failed to execute %s\n%s' % (command, stderrdata))
+            print(f'Failed to execute {command}\n{stderrdata}')
 
         if not ignore_errors:
             sys.exit(exit_code)
@@ -64,8 +64,7 @@ def execute(command, input_text=None, output=None, ignore_errors=True):
     return (exit_code, stdoutdata)
 
 
-class OSAdministrationUnix(object):
-
+class OSAdministrationUnix:
     shadow_segments = ['etc', 'shadow']
     passwd_segments = ['etc', 'passwd']
     group_segments = ['etc', 'group']
@@ -83,8 +82,8 @@ class OSAdministrationUnix(object):
         add_group_method(group=group)
 
     def _addGroup_unix(self, group):
-        group_line = u'%s:x:%d:' % (group.name, group.gid)
-        gshadow_line = u'%s:!::' % (group.name)
+        group_line = '%s:x:%d:' % (group.name, group.gid)
+        gshadow_line = f'{group.name}:!::'
 
         self._appendUnixEntry(self.group_segments, group_line)
 
@@ -112,8 +111,7 @@ class OSAdministrationUnix(object):
             time.sleep(0.1)
 
         if not group_found:
-            raise AssertionError('Failed to get group from all: %s' % (
-                name))
+            raise AssertionError(f'Failed to get group from all: {name}')
 
         # Now we find the group in list of all groups, but
         # we need to make sure it is also available to be
@@ -127,8 +125,8 @@ class OSAdministrationUnix(object):
             time.sleep(0.1)
 
         raise AssertionError(
-            'Group found in all, but not available by name %s' % (
-                name))
+            f'Group found in all, but not available by name {name}',
+        )
 
     def _addGroup_aix(self, group):
         group_name = group.name.encode('utf-8')
@@ -138,12 +136,20 @@ class OSAdministrationUnix(object):
         self._addGroup_unix(group)
 
     def _addGroup_osx(self, group):
-        groupdb_name = u'/Groups/' + group.name
-        execute([
-            'sudo', 'dscl', '.', '-create', groupdb_name,
-            'gid', str(group.gid),
-            'passwd', '"*"',
-            ])
+        groupdb_name = '/Groups/' + group.name
+        execute(
+            [
+                'sudo',
+                'dscl',
+                '.',
+                '-create',
+                groupdb_name,
+                'gid',
+                str(group.gid),
+                'passwd',
+                '"*"',
+            ],
+        )
 
     def _addGroup_solaris(self, group):
         self._addGroup_unix(group)
@@ -153,19 +159,13 @@ class OSAdministrationUnix(object):
 
     def _addGroup_freebsd(self, group):
         group_name = group.name.encode('utf-8')
-        execute([
-            'sudo', 'pw', 'groupadd',
-            '-g', str(group.gid),
-            '-n', group_name,
-            ])
+        execute(
+            ['sudo', 'pw', 'groupadd', '-g', str(group.gid), '-n', group_name],
+        )
 
     def _addGroup_openbsd(self, group):
         group_name = group.name.encode('utf-8')
-        execute([
-            'sudo', 'groupadd',
-            '-g', str(group.gid),
-            group_name,
-            ])
+        execute(['sudo', 'groupadd', '-g', str(group.gid), group_name])
 
     def addUsersToGroup(self, group, users=None):
         """
@@ -179,14 +179,14 @@ class OSAdministrationUnix(object):
 
     def _addUsersToGroup_unix(self, group, users):
         segments = ['etc', 'group']
-        members = u','.join(users)
+        members = ','.join(users)
         self._changeUnixEntry(
             segments=segments,
             name=group.name,
             field=4,
             value_when_empty=members,
-            value_to_append=u',' + members,
-            )
+            value_to_append=',' + members,
+        )
 
     def _addUsersToGroup_aix(self, group, users):
         if not len(users):
@@ -202,12 +202,19 @@ class OSAdministrationUnix(object):
         self._addUsersToGroup_unix(group, users)
 
     def _addUsersToGroup_osx(self, group, users):
-        groupdb_name = u'/Groups/' + group.name
+        groupdb_name = '/Groups/' + group.name
         for member in users:
-            execute([
-                'sudo', 'dscl', '.', '-append', groupdb_name,
-                'GroupMembership', member,
-                ])
+            execute(
+                [
+                    'sudo',
+                    'dscl',
+                    '.',
+                    '-append',
+                    groupdb_name,
+                    'GroupMembership',
+                    member,
+                ],
+            )
 
     def _addUsersToGroup_solaris(self, group, users):
         self._addUsersToGroup_unix(group, users)
@@ -221,15 +228,21 @@ class OSAdministrationUnix(object):
 
         group_name = group.name.encode('utf-8')
         members_list = ','.join(users)
-        execute([
-            'sudo', 'pw', 'groupmod', group_name,
-            '-M', members_list.encode('utf-8')])
+        execute(
+            [
+                'sudo',
+                'pw',
+                'groupmod',
+                group_name,
+                '-M',
+                members_list.encode('utf-8'),
+            ],
+        )
 
     def _addUsersToGroup_openbsd(self, group, users):
         group_name = group.name.encode('utf-8')
         for user in users:
-            execute([
-                'sudo', 'usermod', '-G', group_name, user.encode('utf-8')])
+            execute(['sudo', 'usermod', '-G', group_name, user.encode('utf-8')])
 
     def addUser(self, user):
         """
@@ -245,14 +258,20 @@ class OSAdministrationUnix(object):
     def _addUser_unix(self, user):
         # Prevent circular import.
         from chevah_compat.testing import TestGroup
+
         group = TestGroup(name=user.name, posix_gid=user.uid)
         self._addGroup_unix(group)
 
         values = (
-            user.name, user.uid, user.gid, user.posix_home_path, user.shell)
-        passwd_line = u'%s:x:%d:%d::%s:%s' % values
+            user.name,
+            user.uid,
+            user.gid,
+            user.posix_home_path,
+            user.shell,
+        )
+        passwd_line = '%s:x:%d:%d::%s:%s' % values
 
-        shadow_line = u'%s:!:15218:0:99999:7:::' % (user.name)
+        shadow_line = f'{user.name}:!:15218:0:99999:7:::'
 
         self._appendUnixEntry(self.passwd_segments, passwd_line)
 
@@ -263,45 +282,36 @@ class OSAdministrationUnix(object):
         # Wait for user to be available before creating home folder.
         self._getUnixUser(user.name)
 
-        if user.posix_home_path == u'/tmp':
+        if user.posix_home_path == '/tmp':
             return
 
         encoded_home_path = user.posix_home_path.encode('utf-8')
         execute(['sudo', 'mkdir', encoded_home_path])
-        execute([
-            'sudo', 'chown', str(user.uid),
-            encoded_home_path,
-            ])
+        execute(['sudo', 'chown', str(user.uid), encoded_home_path])
         if user.home_group:
             # On some Unix system we can change group as unicode,
             # so we get the ID and change using the group ID.
             group = self._getUnixGroup(user.home_group)
-            execute([
-                'sudo', 'chgrp', str(group[2]),
-                encoded_home_path,
-                ])
+            execute(['sudo', 'chgrp', str(group[2]), encoded_home_path])
         else:
-            execute([
-                'sudo', 'chgrp', str(user.uid),
-                encoded_home_path,
-                ])
+            execute(['sudo', 'chgrp', str(user.uid), encoded_home_path])
 
     def _getUnixUser(self, name):
         """
         Get Unix user entry, retrying if user is not available yet.
         """
         import pwd
+
         error = None
         for iterator in range(1000):
             try:
                 user = pwd.getpwnam(name)
-                return user
             except (KeyError, OSError) as e:
                 error = e
-                pass
+            else:
+                return user
             time.sleep(0.2)
-        raise AssertionError(
-            'Could not get user %s: %s' % (name, error))
+        raise AssertionError(f'Could not get user {name}: {error}')
 
     def _addUser_aix(self, user):
         # AIX will only allow creating users with shells from
@@ -312,11 +322,12 @@ class OSAdministrationUnix(object):
 
         user_name = user.name.encode('utf-8')
         command = [
-            'sudo', 'mkuser',
+            'sudo',
+            'mkuser',
             'id=' + str(user.uid),
             'home=' + user.posix_home_path.encode('utf-8'),
             'shell=' + user_shell,
-            ]
+        ]
 
         if user.primary_group_name:
             command.append('pgrp=' + user.primary_group_name)
@@ -325,33 +336,65 @@ class OSAdministrationUnix(object):
 
         execute(command)
         if user.home_group:
-            execute([
-                'sudo', 'chgrp', user.home_group.encode('utf-8'),
-                user.posix_home_path.encode('utf-8')
-                ])
+            execute(
+                [
+                    'sudo',
+                    'chgrp',
+                    user.home_group.encode('utf-8'),
+                    user.posix_home_path.encode('utf-8'),
+                ],
+            )
 
     def _addUser_linux(self, user):
         self._addUser_unix(user)
 
     def _addUser_osx(self, user):
-        userdb_name = u'/Users/' + user.name
-        home_folder = u'/Users/' + user.name
-        execute([
-            'sudo', 'dscl', '.', '-create', userdb_name,
-            'UserShell', '/bin/bash',
-            ])
-        execute([
-            'sudo', 'dscl', '.', '-create', userdb_name,
-            'UniqueID', str(user.uid),
-            ])
-        execute([
-            'sudo', 'dscl', '.', '-create', userdb_name,
-            'PrimaryGroupID', str(user.gid),
-            ])
-        execute([
-            'sudo', 'dscl', '.', '-create', userdb_name,
-            'NFSHomeDirectory', home_folder,
-            ])
+        userdb_name = '/Users/' + user.name
+        home_folder = '/Users/' + user.name
+        execute(
+            [
+                'sudo',
+                'dscl',
+                '.',
+                '-create',
+                userdb_name,
+                'UserShell',
+                '/bin/bash',
+            ],
+        )
+        execute(
+            [
+                'sudo',
+                'dscl',
+                '.',
+                '-create',
+                userdb_name,
+                'UniqueID',
+                str(user.uid),
+            ],
+        )
+        execute(
+            [
+                'sudo',
+                'dscl',
+                '.',
+                '-create',
+                userdb_name,
+                'PrimaryGroupID',
+                str(user.gid),
+            ],
+        )
+        execute(
+            [
+                'sudo',
+                'dscl',
+                '.',
+                '-create',
+                userdb_name,
+                'NFSHomeDirectory',
+                home_folder,
+            ],
+        )
 
         # Create home folder.
         execute(['sudo', 'mkdir', home_folder])
@@ -373,12 +416,19 @@ class OSAdministrationUnix(object):
         user_name = user.name.encode('utf-8')
         home_path = user.posix_home_path.encode('utf-8')
         command = [
-            'sudo', 'pw', 'user', 'add', user_name,
-            '-u', str(user.uid),
-            '-d', home_path,
-            '-s', user.shell.encode('utf-8'),
+            'sudo',
+            'pw',
+            'user',
+            'add',
+            user_name,
+            '-u',
+            str(user.uid),
+            '-d',
+            home_path,
+            '-s',
+            user.shell.encode('utf-8'),
             '-m',
-            ]
+        ]
         # Only add gid if required.
         if user.uid != user.gid:
             command.extend(['-g', str(user.gid)])
@@ -386,20 +436,25 @@ class OSAdministrationUnix(object):
         execute(command)
 
         if user.home_group:
-            execute([
-                'sudo', 'chgrp', user.home_group.encode('utf-8'), home_path])
+            execute(
+                ['sudo', 'chgrp', user.home_group.encode('utf-8'), home_path],
+            )
 
     def _addUser_openbsd(self, user):
         home_path = user.posix_home_path.encode('utf-8')
         command = [
-            'sudo', 'useradd',
-            '-u', str(user.uid).encode('utf-8'),
-            '-d', home_path,
-            '-s', user.shell.encode('utf-8'),
-            ]
+            'sudo',
+            'useradd',
+            '-u',
+            str(user.uid).encode('utf-8'),
+            '-d',
+            home_path,
+            '-s',
+            user.shell.encode('utf-8'),
+        ]
 
         if user.posix_home_path != '/tmp':
-            command.append('-m'),
+            (command.append('-m'),)
 
         # Only add gid if required.
         if user.uid != user.gid:
@@ -413,8 +468,9 @@ class OSAdministrationUnix(object):
         time.sleep(0.2)
 
         if user.home_group:
-            execute([
-                'sudo', 'chgrp', user.home_group.encode('utf-8'), home_path])
+            execute(
+                ['sudo', 'chgrp', user.home_group.encode('utf-8'), home_path],
+            )
 
     def setUserPassword(self, user):
         """
@@ -444,54 +500,52 @@ class OSAdministrationUnix(object):
         Set a password in shadow file.
         """
         import crypt
+
         ALPHABET = (
             '0123456789'
             'abcdefghijklmnopqrstuvwxyz'
             'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-            )
+        )
         salt = ''.join(random.choice(ALPHABET) for i in range(8))
-        shadow_password = crypt.crypt(
-            user.password,
-            '$1$' + salt + '$',
-            )
+        shadow_password = crypt.crypt(user.password, '$1$' + salt + '$')
 
         self._changeUnixEntry(
             segments=segments,
             name=user.name,
             field=2,
             value_to_replace=shadow_password,
-            )
+        )
 
     def _setUserPassword_passwd(self, user, segments):
         """
         Set a password in passwd file.
         """
         import crypt
+
         ALPHABET = (
             '0123456789'
             'abcdefghijklmnopqrstuvwxyz'
             'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-            )
+        )
         salt = ''.join(random.choice(ALPHABET) for i in range(2))
-        passwd_password = crypt.crypt(
-            user.password, salt)
+        passwd_password = crypt.crypt(user.password, salt)
         self._changeUnixEntry(
             segments=segments,
             name=user.name,
             field=2,
             value_to_replace=passwd_password,
-            )
+        )
 
     def _setUserPassword_aix(self, user):
         """
         Set a password for the user on AIX. The password is an attribute
         of the 'user'.
         """
-        input_text = u'%s:%s' % (user.name, user.password)
+        input_text = f'{user.name}:{user.password}'
         execute(
             command=['sudo', 'chpasswd', '-c'],
             input_text=input_text.encode('utf-8'),
-            )
+        )
 
     def _setUserPassword_linux(self, user):
         """
@@ -505,11 +559,8 @@ class OSAdministrationUnix(object):
         Set a password for the user on Mac OS X. The password is an attribute
         of the 'user'.
         """
-        userdb_name = u'/Users/' + user.name
-        execute([
-            'sudo', 'dscl', '.', '-passwd', userdb_name,
-            user.password,
-            ])
+        userdb_name = '/Users/' + user.name
+        execute(['sudo', 'dscl', '.', '-passwd', userdb_name, user.password])
 
     def _setUserPassword_solaris(self, user):
         """
@@ -525,23 +576,31 @@ class OSAdministrationUnix(object):
         execute(
             command=[
                 'sudo',
-                'pw', 'mod', 'user', user.name.encode('utf-8'), '-h', '0',
-                ],
+                'pw',
+                'mod',
+                'user',
+                user.name.encode('utf-8'),
+                '-h',
+                '0',
+            ],
             input_text=user.password.encode('utf-8'),
-            )
+        )
 
     def _setUserPassword_openbsd(self, user):
         code, out = execute(
             command=['encrypt'],
             input_text=user.password.encode('utf-8'),
-            )
+        )
 
         execute(
             command=[
                 'sudo',
-                'usermod', '-p', out.strip(), user.name.encode('utf-8'),
-                ],
-            )
+                'usermod',
+                '-p',
+                out.strip(),
+                user.name.encode('utf-8'),
+            ],
+        )
 
     def deleteUser(self, user):
         """
@@ -554,7 +613,7 @@ class OSAdministrationUnix(object):
         """
         Removes user's home folder if outside temporary folder.
         """
-        if user.posix_home_path and user.posix_home_path.startswith(u'/tmp'):
+        if user.posix_home_path and user.posix_home_path.startswith('/tmp'):
             return
 
         delete_folder_method = getattr(self, '_deleteHomeFolder_' + self.name)
@@ -583,17 +642,19 @@ class OSAdministrationUnix(object):
         execute(['sudo', 'rm', '-rf', encoded_home_path])
 
     def _deleteHomeFolder_osx(self, user):
-        home_folder = u'/Users/%s' % user.name
+        home_folder = f'/Users/{user.name}'
         execute(['sudo', 'rm', '-rf', home_folder])
 
     def _deleteUser_unix(self, user):
         self._deleteUnixEntry(
             kind='user',
             name=user.name,
-            files=[['etc', 'passwd'], ['etc', 'shadow']])
+            files=[['etc', 'passwd'], ['etc', 'shadow']],
+        )
 
         # Prevent circular import.
         from chevah_compat.testing import TestGroup
+
         group = TestGroup(name=user.name, posix_gid=user.uid)
         self._deleteGroup_unix(group)
         self.deleteHomeFolder(user)
@@ -606,7 +667,7 @@ class OSAdministrationUnix(object):
         self._deleteUser_unix(user)
 
     def _deleteUser_osx(self, user):
-        userdb_name = u'/Users/' + user.name
+        userdb_name = '/Users/' + user.name
         execute(['sudo', 'dscl', '.', '-delete', userdb_name])
         self.deleteHomeFolder(user)
 
@@ -635,7 +696,8 @@ class OSAdministrationUnix(object):
         self._deleteUnixEntry(
             kind='group',
             name=group.name,
-            files=[['etc', 'group'], ['etc', 'gshadow']])
+            files=[['etc', 'group'], ['etc', 'gshadow']],
+        )
 
     def _deleteGroup_aix(self, group):
         execute(['sudo', 'rmgroup', group.name.encode('utf-8')])
@@ -644,7 +706,7 @@ class OSAdministrationUnix(object):
         self._deleteGroup_unix(group)
 
     def _deleteGroup_osx(self, group):
-        groupdb_name = u'/groups/' + group.name
+        groupdb_name = '/groups/' + group.name
         execute(['sudo', 'dscl', '.', '-delete', groupdb_name])
 
     def _deleteGroup_solaris(self, group):
@@ -682,7 +744,6 @@ class OSAdministrationUnix(object):
         """
         exists = False
         for segments in files:
-
             if not self.fs.exists(segments):
                 continue
 
@@ -693,7 +754,6 @@ class OSAdministrationUnix(object):
             content = self._getFileContent(segments)
             opened_file = self.fs.openFileForWriting(temp_segments)
             try:
-
                 for line in content:
                     entry_name = line.split(':')[0]
                     if entry_name == name:
@@ -708,14 +768,19 @@ class OSAdministrationUnix(object):
                 self._replaceFile(temp_segments, segments)
 
         if not exists:
-            raise AssertionError((
-                'No such %s: %s' % (kind, name)).encode('utf-8'))
+            raise AssertionError(
+                (f'No such {kind}: {name}').encode(),
+            )
 
     def _changeUnixEntry(
-        self, segments, name, field,
-        value_when_empty=None, value_to_append=None,
+        self,
+        segments,
+        name,
+        field,
+        value_when_empty=None,
+        value_to_append=None,
         value_to_replace=None,
-            ):
+    ):
         """
         Update entry 'name' with a new value or an appended value.
         Field is the number of entry filed to update, counting with 1.
@@ -741,14 +806,13 @@ class OSAdministrationUnix(object):
                         else:
                             pass
                     elif value_to_append:
-                        fields[field - 1] = (
-                            fields[field - 1] + value_to_append)
+                        fields[field - 1] = fields[field - 1] + value_to_append
                     elif value_to_replace:
                         fields[field - 1] = value_to_replace
                     else:
                         pass
 
-                    new_line = u':'.join(fields)
+                    new_line = ':'.join(fields)
                 else:
                     new_line = line
 
@@ -759,7 +823,7 @@ class OSAdministrationUnix(object):
         if exists:
             self._replaceFile(temp_segments, segments)
         else:
-            raise AssertionError(u'No such entry: %s' % (name))
+            raise AssertionError(f'No such entry: {name}')
 
     def _replaceFile(self, from_segments, to_segments):
         attributes = self.fs.getAttributes(to_segments)
@@ -769,8 +833,8 @@ class OSAdministrationUnix(object):
                 'mode': attributes.mode,
                 'uid': attributes.uid,
                 'gid': attributes.gid,
-                },
-            )
+            },
+        )
         self.fs.rename(from_segments, to_segments)
 
     def _getFileContent(self, segments):
@@ -778,10 +842,8 @@ class OSAdministrationUnix(object):
         Return a list of all lines from file.
         """
         opened_file = self.fs.openFileForReading(segments)
-        content = []
         try:
-            for line in opened_file:
-                content.append(line.rstrip().decode('utf-8'))
+            content = [line.rstrip().decode('utf-8') for line in opened_file]
         finally:
             opened_file.close()
 
@@ -798,13 +860,15 @@ class OSAdministrationWindows(OSAdministrationUnix):
         Add a group to Windows local system.
         """
         import win32net
+
         data = {'name': group.name}
         try:
             win32net.NetLocalGroupAdd(group.pdc, 0, data)
         except Exception as error:  # pragma: no cover
             raise AssertionError(
-                'Failed to add group %s in domain %s. %s' % (
-                    group.name, group.pdc, error))
+                f'Failed to add group {group.name} '
+                f'in domain {group.pdc}. {error}',
+            )
 
     def addUsersToGroup(self, group, users=None):
         """
@@ -814,18 +878,19 @@ class OSAdministrationWindows(OSAdministrationUnix):
             users = []
 
         import win32net
-        members_info = []
-        for member in users:
-            members_info.append({
-                'domainandname': member
-                })
+
+        members_info = [{'domainandname': member} for member in users]
         try:
             win32net.NetLocalGroupAddMembers(
-                group.pdc, group.name, 3, members_info)
+                group.pdc,
+                group.name,
+                3,
+                members_info,
+            )
         except Exception as error:  # pragma: no cover
             raise AssertionError(
-                'Failed to add to group %s users %s. %s' % (
-                    group.name, users, error))
+                f'Failed to add to group {group.name} users {users}. {error}',
+            )
 
     def addUser(self, user):
         """
@@ -849,7 +914,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
             'comment': None,
             'flags': win32netcon.UF_SCRIPT,
             'script_path': None,
-            }
+        }
 
         win32net.NetUserAdd(user.pdc, 1, user_info)
         if user.windows_create_local_profile:
@@ -857,7 +922,9 @@ class OSAdministrationWindows(OSAdministrationUnix):
                 raise AssertionError('You must provide a password.')
 
             system_users._createLocalProfile(
-                username=user.upn, token=user.token)
+                username=user.upn,
+                token=user.token,
+            )
 
         user.windows_sid = self._getUserSID(user)
 
@@ -881,11 +948,18 @@ class OSAdministrationWindows(OSAdministrationUnix):
 
         try:
             import win32net
+
             win32net.NetUserChangePassword(
-                pdc, user.name, user.password, user.password)
+                pdc,
+                user.name,
+                user.password,
+                user.password,
+            )
         except Exception:  # pragma: no cover
-            print('Failed to set password for user "%s" on pdc "%s".' % (
-                user.name, pdc))
+            print(
+                f'Failed to set password for user "{user.name}" '
+                f'on pdc "{pdc}".',
+            )
             raise
 
     def deleteUser(self, user):
@@ -897,6 +971,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
             self._revokeUserRights(user, user.windows_required_rights)
 
         import win32net
+
         try:
             win32net.NetUserDel(user.pdc, user.name)
         except win32net.error as error:  # pragma: no cover
@@ -923,11 +998,13 @@ class OSAdministrationWindows(OSAdministrationUnix):
         # FIXME:927:
         # We need to look for a way to delete home folders with unicode
         # names.
-        command = u'rmdir /S /Q "%s"' % profile_folder_path
+        command = f'rmdir /S /Q "{profile_folder_path}"'
         result = subprocess.call(command, shell=True)
         if result != 0:  # pragma: no cover
-            message = u'Unable to remove folder [%s]: %s\n%s.' % (
-                result, profile_folder_path, command)
+            message = (
+                f'Unable to remove folder [{result}]: '
+                f'{profile_folder_path}\n{command}.'
+            )
             raise AssertionError(message)
 
     def deleteGroup(self, group):
@@ -935,6 +1012,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         Remove a group from Windows local system.
         """
         import win32net
+
         win32net.NetLocalGroupDel(group.pdc, group.name)
 
     @contextmanager
@@ -943,10 +1021,13 @@ class OSAdministrationWindows(OSAdministrationUnix):
         Context manager for opening LSA policy token in ALL ACCESS mode.
         """
         import win32security
+
         policy_handle = None
         try:
             policy_handle = win32security.LsaOpenPolicy(
-                '', win32security.POLICY_ALL_ACCESS)
+                '',
+                win32security.POLICY_ALL_ACCESS,
+            )
 
             yield policy_handle
         finally:
@@ -960,11 +1041,12 @@ class OSAdministrationWindows(OSAdministrationUnix):
         Raises an error if user cannot not be found.
         """
         import win32security
+
         try:
             result = win32security.LookupAccountName('', user.name)
             user_sid = result[0]
         except win32security.error:  # pragma: no cover
-            message = u'User %s could not be found.' % (user.name)
+            message = f'User {user.name} could not be found.'
             raise AssertionError(message.encode('utf-8'))
 
         return user_sid
@@ -974,9 +1056,13 @@ class OSAdministrationWindows(OSAdministrationUnix):
         Grants `rights` to `user`.
         """
         import win32security
+
         with self._openLSAPolicy() as policy_handle:
             win32security.LsaAddAccountRights(
-                policy_handle, user.windows_sid, rights)
+                policy_handle,
+                user.windows_sid,
+                rights,
+            )
             user._invalidateToken()
 
     def _revokeUserRights(self, user, rights):
@@ -984,9 +1070,14 @@ class OSAdministrationWindows(OSAdministrationUnix):
         Revokes `rights` from `user`.
         """
         import win32security
+
         with self._openLSAPolicy() as policy_handle:
             win32security.LsaRemoveAccountRights(
-                policy_handle, user.windows_sid, 0, rights)
+                policy_handle,
+                user.windows_sid,
+                0,
+                rights,
+            )
             user._invalidateToken()
 
 

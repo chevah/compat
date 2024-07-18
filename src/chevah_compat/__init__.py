@@ -4,24 +4,18 @@
 """
 Code for portable functions.
 """
-from __future__ import with_statement
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 
 import os
 
 if os.name == 'posix':
+    from chevah_compat.unix_capabilities import UnixProcessCapabilities
+    from chevah_compat.unix_filesystem import UnixFilesystem
     from chevah_compat.unix_users import (
         UnixDefaultAvatar,
         UnixHasImpersonatedAvatar,
-        UnixUsers,
         UnixSuperAvatar,
-        )
-    from chevah_compat.unix_capabilities import (
-        UnixProcessCapabilities,
-        )
-    from chevah_compat.unix_filesystem import UnixFilesystem
+        UnixUsers,
+    )
 
     system_users = UnixUsers()
     process_capabilities = UnixProcessCapabilities()
@@ -34,15 +28,14 @@ if os.name == 'posix':
     os.environ['CRYPTOGRAPHY_ALLOW_OPENSSL_102'] = 'yes'
 
 elif os.name == 'nt':
-
+    from chevah_compat.nt_capabilities import NTProcessCapabilities
+    from chevah_compat.nt_filesystem import NTFilesystem
     from chevah_compat.nt_users import (
         NTDefaultAvatar,
         NTHasImpersonatedAvatar,
-        NTUsers,
         NTSuperAvatar,
-        )
-    from chevah_compat.nt_capabilities import NTProcessCapabilities
-    from chevah_compat.nt_filesystem import NTFilesystem
+        NTUsers,
+    )
 
     system_users = NTUsers()
     process_capabilities = NTProcessCapabilities()
@@ -51,9 +44,10 @@ elif os.name == 'nt':
     DefaultAvatar = NTDefaultAvatar
     SuperAvatar = NTSuperAvatar
 else:
-    raise AssertionError('Operating system "%s" not supported.' % (os.name))
+    raise AssertionError(f'Operating system "{os.name}" not supported.')
 
-from chevah_compat.posix_filesystem import FileAttributes  # noqa
+from chevah_compat.posix_filesystem import FileAttributes
+
 # Silence the linter
 FileAttributes
 

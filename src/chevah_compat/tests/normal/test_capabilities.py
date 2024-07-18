@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
 """
 Test for platform capabilities detection.
 """
+
 try:
     import win32security
 except ImportError:
@@ -14,7 +14,7 @@ from zope.interface.verify import verifyObject
 from chevah_compat import process_capabilities
 from chevah_compat.exceptions import AdjustPrivilegeException
 from chevah_compat.interfaces import IProcessCapabilities
-from chevah_compat.testing import conditionals, CompatTestCase, mk
+from chevah_compat.testing import CompatTestCase, conditionals, mk
 
 
 @conditionals.onOSFamily('posix')
@@ -24,7 +24,7 @@ class TestProcessCapabilitiesPosix(CompatTestCase):
     """
 
     def setUp(self):
-        super(TestProcessCapabilitiesPosix, self).setUp()
+        super().setUp()
 
         self.capabilities = process_capabilities
 
@@ -72,7 +72,7 @@ class TestProcessCapabilitiesPosix(CompatTestCase):
 
         text = self.capabilities.getCurrentPrivilegesDescription()
 
-        self.assertEqual(u'root capabilities disabled.', text)
+        self.assertEqual('root capabilities disabled.', text)
 
     def test_pam(self):
         """
@@ -106,7 +106,7 @@ class TestNTProcessCapabilities(CompatTestCase):
     """
 
     def setUp(self):
-        super(TestNTProcessCapabilities, self).setUp()
+        super().setUp()
 
         self.capabilities = process_capabilities
 
@@ -122,7 +122,8 @@ class TestNTProcessCapabilities(CompatTestCase):
         process having a specified mode enabled.
         """
         with self.capabilities._openProcess(win32security.TOKEN_QUERY) as (
-                process_token):
+            process_token
+        ):
             self.assertIsNotNone(process_token)
 
     def test_isPrivilegeEnabled_absent(self):
@@ -133,7 +134,9 @@ class TestNTProcessCapabilities(CompatTestCase):
         # accounts.
         privilege = win32security.SE_RELABEL_NAME
         self.assertEqual(
-            u'absent', self.capabilities._getPrivilegeState(privilege))
+            'absent',
+            self.capabilities._getPrivilegeState(privilege),
+        )
 
         self.assertFalse(self.capabilities._isPrivilegeEnabled(privilege))
 
@@ -142,10 +145,10 @@ class TestNTProcessCapabilities(CompatTestCase):
         It raises an exception when an invalid privilege name is requested.
         """
         with self.assertRaises(AdjustPrivilegeException):
-            with (self.capabilities._elevatePrivileges(
-                    win32security.SE_IMPERSONATE_NAME,
-                    'no-such-privilege-name',
-                    )):
+            with self.capabilities._elevatePrivileges(
+                win32security.SE_IMPERSONATE_NAME,
+                'no-such-privilege-name',
+            ):
                 pass  # pragma: no cover
 
     def test_pam(self):
@@ -167,7 +170,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
     """
 
     def setUp(self):
-        super(TestNTProcessCapabilitiesNormalUser, self).setUp()
+        super().setUp()
 
         self.capabilities = process_capabilities
 
@@ -180,7 +183,8 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         self.assertIsNotEmpty(result)
 
         privilege = self.capabilities._getPrivilegeID(
-            win32security.SE_CHANGE_NOTIFY_NAME)
+            win32security.SE_CHANGE_NOTIFY_NAME,
+        )
         self.assertContains((privilege, 3), result)
 
     def test_getPrivilegeState_invalid(self):
@@ -191,7 +195,7 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
 
         result = self.capabilities._getPrivilegeState(privilege)
 
-        self.assertEqual(u'absent', result)
+        self.assertEqual('absent', result)
 
     def test_getPrivilegeState_absent(self):
         """
@@ -199,9 +203,10 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
         process.
         """
         result = self.capabilities._getPrivilegeState(
-            win32security.SE_ASSIGNPRIMARYTOKEN_NAME)
+            win32security.SE_ASSIGNPRIMARYTOKEN_NAME,
+        )
 
-        self.assertEqual(u'absent', result)
+        self.assertEqual('absent', result)
 
     def test_getPrivilegeState_present(self):
         """
@@ -212,9 +217,10 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
             raise self.skipTest('GHA always runs as super-admin')
 
         result = self.capabilities._getPrivilegeState(
-            win32security.SE_SECURITY_NAME)
+            win32security.SE_SECURITY_NAME,
+        )
 
-        self.assertEqual(u'absent', result)
+        self.assertEqual('absent', result)
 
     def test_getPrivilegeState_enabled_default(self):
         """
@@ -225,9 +231,10 @@ class TestNTProcessCapabilitiesNormalUser(CompatTestCase):
             raise self.skipTest('GHA always runs as super-admin')
 
         result = self.capabilities._getPrivilegeState(
-            win32security.SE_IMPERSONATE_NAME)
+            win32security.SE_IMPERSONATE_NAME,
+        )
 
-        self.assertEqual(u'absent', result)
+        self.assertEqual('absent', result)
 
     def test_isPrivilegeEnabled_enabled(self):
         """
@@ -309,7 +316,7 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
     """
 
     def setUp(self):
-        super(TestNTProcessCapabilitiesAdministrator, self).setUp()
+        super().setUp()
 
         self.capabilities = process_capabilities
 
@@ -322,15 +329,18 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
         self.assertIsNotEmpty(result)
 
         privilege = self.capabilities._getPrivilegeID(
-            win32security.SE_SECURITY_NAME)
+            win32security.SE_SECURITY_NAME,
+        )
         self.assertContains((privilege, 0), result)
 
         privilege = self.capabilities._getPrivilegeID(
-            win32security.SE_IMPERSONATE_NAME)
+            win32security.SE_IMPERSONATE_NAME,
+        )
         self.assertContains((privilege, 3), result)
 
         privilege = self.capabilities._getPrivilegeID(
-            win32security.SE_CREATE_SYMBOLIC_LINK_NAME)
+            win32security.SE_CREATE_SYMBOLIC_LINK_NAME,
+        )
         self.assertContains((privilege, 0), result)
 
     def test_getPrivilegeState_present(self):
@@ -339,9 +349,10 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
         process but are not enabled.
         """
         result = self.capabilities._getPrivilegeState(
-            win32security.SE_SECURITY_NAME)
+            win32security.SE_SECURITY_NAME,
+        )
 
-        self.assertEqual(u'present', result)
+        self.assertEqual('present', result)
 
     def test_getPrivilegeState_enabled_default(self):
         """
@@ -349,9 +360,10 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
         current process but are enabled by default.
         """
         result = self.capabilities._getPrivilegeState(
-            win32security.SE_IMPERSONATE_NAME)
+            win32security.SE_IMPERSONATE_NAME,
+        )
 
-        self.assertEqual(u'enabled-by-default', result)
+        self.assertEqual('enabled-by-default', result)
 
     def test_isPrivilegeEnabled_enabled(self):
         """
@@ -371,22 +383,24 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
         running as super user.
         """
         initial_state = self.capabilities._isPrivilegeEnabled(
-            win32security.SE_BACKUP_NAME)
+            win32security.SE_BACKUP_NAME,
+        )
+
+        self.capabilities._adjustPrivilege(win32security.SE_BACKUP_NAME, False)
+
+        self.assertIsFalse(
+            self.capabilities._isPrivilegeEnabled(win32security.SE_BACKUP_NAME),
+        )
 
         self.capabilities._adjustPrivilege(
-            win32security.SE_BACKUP_NAME, False)
-
-        self.assertIsFalse(self.capabilities._isPrivilegeEnabled(
-            win32security.SE_BACKUP_NAME))
-
-        self.capabilities._adjustPrivilege(
-            win32security.SE_BACKUP_NAME, initial_state)
-
-        self.assertEquals(
+            win32security.SE_BACKUP_NAME,
             initial_state,
-            self.capabilities._isPrivilegeEnabled(
-                win32security.SE_BACKUP_NAME),
-            )
+        )
+
+        self.assertEqual(
+            initial_state,
+            self.capabilities._isPrivilegeEnabled(win32security.SE_BACKUP_NAME),
+        )
 
     def test_elevatePrivileges_take_ownership_success(self):
         """
@@ -399,11 +413,11 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
         privilege = win32security.SE_TAKE_OWNERSHIP_NAME
         self.assertFalse(self.capabilities._isPrivilegeEnabled(privilege))
 
-        with (self.capabilities._elevatePrivileges(privilege)):
+        with self.capabilities._elevatePrivileges(privilege):
             self.assertTrue(self.capabilities._isPrivilegeEnabled(privilege))
 
         # We should be able to take ownership again.
-        with (self.capabilities._elevatePrivileges(privilege)):
+        with self.capabilities._elevatePrivileges(privilege):
             self.assertTrue(self.capabilities._isPrivilegeEnabled(privilege))
 
         self.assertFalse(self.capabilities._isPrivilegeEnabled(privilege))
@@ -419,7 +433,7 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
 
         capabilities = self.capabilities
         with self.Patch.object(capabilities, '_adjustPrivilege') as method:
-            with (capabilities._elevatePrivileges(privilege)):
+            with capabilities._elevatePrivileges(privilege):
                 self.assertFalse(method.called)
                 self.assertTrue(capabilities._isPrivilegeEnabled(privilege))
 
@@ -436,19 +450,17 @@ class TestNTProcessCapabilitiesAdministrator(CompatTestCase):
         take_ownership = win32security.SE_TAKE_OWNERSHIP_NAME
         impersonate = win32security.SE_IMPERSONATE_NAME
         self.assertTrue(self.capabilities._isPrivilegeEnabled(impersonate))
-        self.assertFalse(
-            self.capabilities._isPrivilegeEnabled(take_ownership))
+        self.assertFalse(self.capabilities._isPrivilegeEnabled(take_ownership))
 
         capabilities = self.capabilities
-        with (capabilities._elevatePrivileges(take_ownership, impersonate)):
+        with capabilities._elevatePrivileges(take_ownership, impersonate):
+            self.assertTrue(self.capabilities._isPrivilegeEnabled(impersonate))
             self.assertTrue(
-                self.capabilities._isPrivilegeEnabled(impersonate))
-            self.assertTrue(
-                self.capabilities._isPrivilegeEnabled(take_ownership))
+                self.capabilities._isPrivilegeEnabled(take_ownership),
+            )
 
         self.assertTrue(self.capabilities._isPrivilegeEnabled(impersonate))
-        self.assertFalse(
-            self.capabilities._isPrivilegeEnabled(take_ownership))
+        self.assertFalse(self.capabilities._isPrivilegeEnabled(take_ownership))
 
     def test_symbolic_link(self):
         """

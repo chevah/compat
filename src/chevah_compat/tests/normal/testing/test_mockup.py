@@ -3,8 +3,9 @@
 """
 Tests for the testing infrastructure.
 """
-from chevah_compat.testing.mockup import ChevahCommonsFactory
+
 from chevah_compat.testing import ChevahTestCase, mk
+from chevah_compat.testing.mockup import ChevahCommonsFactory
 
 
 class TestFactory(ChevahTestCase):
@@ -18,20 +19,14 @@ class TestFactory(ChevahTestCase):
 
         Value is Unicode.
         """
-        self.assertNotEqual(
-            mk.string(),
-            mk.string(),
-            )
+        self.assertNotEqual(mk.string(), mk.string())
         self.assertIsInstance(str, mk.string())
 
     def test_number(self):
         """
         It will return different values at each call.
         """
-        self.assertNotEqual(
-            mk.number(),
-            mk.number(),
-            )
+        self.assertNotEqual(mk.number(), mk.number())
 
     def test_ascii(self):
         """
@@ -39,10 +34,7 @@ class TestFactory(ChevahTestCase):
 
         Value is str.
         """
-        self.assertNotEqual(
-            mk.ascii(),
-            mk.ascii(),
-            )
+        self.assertNotEqual(mk.ascii(), mk.ascii())
         self.assertIsInstance(str, mk.ascii())
 
     def test_bytes(self):
@@ -76,7 +68,9 @@ class TestFactory(ChevahTestCase):
             value.decode(encoding='ascii')
 
         self.assertEndsWith(
-            'ordinal not in range(128)', context.exception.reason)
+            'ordinal not in range(128)',
+            context.exception.reason,
+        )
 
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode(encoding='utf-8')
@@ -101,7 +95,9 @@ class TestFactory(ChevahTestCase):
             value.decode(encoding='ascii')
 
         self.assertEndsWith(
-            'ordinal not in range(128)', context.exception.reason)
+            'ordinal not in range(128)',
+            context.exception.reason,
+        )
 
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode(encoding='utf-8')
@@ -139,8 +135,7 @@ class TestFactory(ChevahTestCase):
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode(encoding='utf-16')
 
-        self.assertEndsWith(
-            context.exception.reason, 'truncated data')
+        self.assertEndsWith(context.exception.reason, 'truncated data')
 
     class OneFactory(ChevahCommonsFactory):
         """
@@ -159,15 +154,12 @@ class TestFactory(ChevahTestCase):
         one = self.OneFactory()
         other = self.OtherFactory()
 
-        self.assertNotEqual(
-            one.getUniqueInteger(),
-            other.getUniqueInteger(),
-            )
+        self.assertNotEqual(one.getUniqueInteger(), other.getUniqueInteger())
 
     def test_getTestUser_not_found(self):
         """
         Returns `None` if user is not found.
         """
-        result = mk.getTestUser(u'no-such-user-ever')
+        result = mk.getTestUser('no-such-user-ever')
 
         self.assertIsNone(result)

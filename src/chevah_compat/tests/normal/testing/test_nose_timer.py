@@ -3,6 +3,7 @@
 """
 Tests for nose test timer plugin.
 """
+
 from nose.plugins.attrib import attr
 
 from chevah_compat.testing import ChevahTestCase

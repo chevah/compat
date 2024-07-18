@@ -3,6 +3,7 @@
 """
 Provides information about capabilities for a process on Unix.
 """
+
 from zope.interface import implementer
 
 from chevah_compat.capabilities import BaseProcessCapabilities
@@ -14,15 +15,14 @@ from chevah_compat.unix_users import _ExecuteAsUser
 
 @implementer(IProcessCapabilities)
 class UnixProcessCapabilities(BaseProcessCapabilities):
-    '''Container for Unix capabilities detection.'''
-
+    """Container for Unix capabilities detection."""
 
     @property
     def impersonate_local_account(self):
-        '''See `IProcessCapabilities`.
+        """See `IProcessCapabilities`.
 
         On Unix systems, this means that we can run as root account.
-        '''
+        """
         try:
             with _ExecuteAsUser(euid=0, egid=0):
                 return True
@@ -31,7 +31,7 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
 
     @property
     def create_home_folder(self):
-        '''See `IProcessCapabilities`.'''
+        """See `IProcessCapabilities`."""
         return self.impersonate_local_account
 
     @property
@@ -57,9 +57,9 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
         On Unix it informs if the process has root capabilities.
         """
         if self.impersonate_local_account:
-            return _(u'root capabilities enabled.')
+            return _('root capabilities enabled.')
         else:
-            return _(u'root capabilities disabled.')
+            return _('root capabilities disabled.')
 
     @property
     def symbolic_link(self):
@@ -82,6 +82,7 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
 
         if self.os_name == 'linux':
             import distro
+
             distro_name = distro.id()
             if distro_name == 'alpine':
                 return False

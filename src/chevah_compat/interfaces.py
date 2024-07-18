@@ -1,10 +1,11 @@
 # Copyright (c) 2012 Adi Roiban.
 # See LICENSE for details.
+# ruff: noqa: ERA001
 """
 Common interfaces used by Chevah products.
 """
 
-from zope.interface import Interface, Attribute
+from zope.interface import Attribute, Interface
 
 
 class IDaemon(Interface):
@@ -18,7 +19,8 @@ class IDaemon(Interface):
         """
         True if standard streams (input, output, error) should be redirected
         to the new daemon process.
-        """)
+        """,
+    )
 
     detach_process = Attribute('True if process should detach from console.')
 
@@ -93,18 +95,20 @@ class IProcessCapabilities(Interface):
 
     os_family = Attribute('General family of OS. nt or posix')
     os_name = Attribute(
-        'Name of operating system. Ex: windows, linux, aix, solaris.')
+        'Name of operating system. Ex: windows, linux, aix, solaris.',
+    )
 
     impersonate_local_account = Attribute(
-        'True if it can impersonate any local account.')
+        'True if it can impersonate any local account.',
+    )
     create_home_folder = Attribute(
-        'True if it can create home folders for any local account.')
+        'True if it can create home folders for any local account.',
+    )
     get_home_folder = Attribute(
-        'True if it can retrieve home folders for any local account.')
-    symbolic_link = Attribute(
-        'True if it supports symbolic links.')
-    pam = Attribute(
-        'True if it supports PAM authentication.')
+        'True if it can retrieve home folders for any local account.',
+    )
+    symbolic_link = Attribute('True if it supports symbolic links.')
+    pam = Attribute('True if it supports PAM authentication.')
 
 
 class IHasImpersonatedAvatar(Interface):
@@ -112,19 +116,19 @@ class IHasImpersonatedAvatar(Interface):
     Avatar which can be impersonated.
     """
 
-    name = Attribute(u'Name/ID of this avatar.')
+    name = Attribute('Name/ID of this avatar.')
     token = Attribute(
-        '''
+        """
         Token obtained after authentication.
 
         Only used on Windows. This is required for impersonating Windows
         local and active directory accounts.
 
         This attribute is `None` on Unix systems.
-        ''')
+        """,
+    )
 
-    use_impersonation = Attribute(
-        u'True if this avatar should be impersonated.')
+    use_impersonation = Attribute('True if this avatar should be impersonated.')
 
     def getImpersonationContext():
         """
@@ -137,12 +141,14 @@ class IFileSystemAvatar(IHasImpersonatedAvatar):
     Avatar for interacting with the filesystem.
     """
 
-    home_folder_path = Attribute(u'Path to home folder')
-    root_folder_path = Attribute(u'Path to root folder')
+    home_folder_path = Attribute('Path to home folder')
+    root_folder_path = Attribute('Path to root folder')
     lock_in_home_folder = Attribute(
-        'True if filesystem access should be limited to home folder.')
+        'True if filesystem access should be limited to home folder.',
+    )
     virtual_folders = Attribute(
-        'List of tuples which map segments to real paths.')
+        'List of tuples which map segments to real paths.',
+    )
 
 
 class IOSUsers(Interface):
@@ -217,6 +223,7 @@ class IFilesystemNode(Interface):
 
     It will not allow access ouside of avatar's root folder.
     """
+
     def __init__(avatar, segments=None):
         """
         It is initialized with an :class:`IFileSystemAvatar` and an optional
@@ -229,17 +236,20 @@ class IFilesystemNode(Interface):
     name = Attribute(
         """
         Name of this node.
-        """)
+        """,
+    )
 
     path = Attribute(
         """
         Path inside the rooted filesystem.
-        """)
+        """,
+    )
 
     absolute_path = Attribute(
         """
         Path in the absolute filesystem.
-        """)
+        """,
+    )
 
     def getParent():
         """
@@ -616,7 +626,8 @@ class IFileAttributes(Interface):
 
     name = Attribute('Name of this member.')
     path = Attribute(
-        'Absolute path of this member, as seen for the chrooted fs.')
+        'Absolute path of this member, as seen for the chrooted fs.',
+    )
     size = Attribute('Size in bytes.')
     is_file = Attribute('True if member is a file.')
     is_folder = Attribute('True if member is a folder.')

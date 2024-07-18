@@ -3,6 +3,7 @@
 """
 Package for chevah-compat.
 """
+
 from setuptools import setup
 
 setup()

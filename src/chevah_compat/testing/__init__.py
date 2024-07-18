@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2011 Adi Roiban.
 # See LICENSE for details.
 """
@@ -6,18 +5,10 @@ Package with code that helps with testing.
 
 Here are a few import shortcuts.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
 from chevah_compat import process_capabilities
 from chevah_compat.administration import os_administration
-from chevah_compat.testing.mockup import (
-    mk,
-    TestGroup,
-    TestUser,
-    )
+from chevah_compat.testing.mockup import TestGroup, TestUser, mk
 from chevah_compat.testing.testcase import ChevahTestCase
 
 # Keep this alias for backward compatibility.
@@ -44,7 +35,7 @@ TEST_ACCOUNT_GID_OTHER = 2011
 TEST_ACCOUNT_GROUP_OTHER = 'g mițmotan'
 
 # Another test group to test an user belonging to multiple groups.
-TEST_ACCOUNT_GROUP_ANOTHER = u'g-another-test'
+TEST_ACCOUNT_GROUP_ANOTHER = 'g-another-test'
 # FIXME:2106:
 # Replace hard-coded constant with posixID()
 TEST_ACCOUNT_GID_ANOTHER = 2012
@@ -59,22 +50,19 @@ TEST_ACCOUNT_GROUP_DOMAIN = 'domain test_group'
 TEST_ACCOUNT_USERNAME = TestUser.sanitizeName(TEST_ACCOUNT_USERNAME)
 TEST_ACCOUNT_GROUP = TestGroup.sanitizeName(TEST_ACCOUNT_GROUP)
 
-TEST_ACCOUNT_USERNAME_OTHER = TestUser.sanitizeName(
-    TEST_ACCOUNT_USERNAME_OTHER)
+TEST_ACCOUNT_USERNAME_OTHER = TestUser.sanitizeName(TEST_ACCOUNT_USERNAME_OTHER)
 TEST_ACCOUNT_GROUP_OTHER = TestGroup.sanitizeName(TEST_ACCOUNT_GROUP_OTHER)
-TEST_ACCOUNT_GROUP_ANOTHER = TestGroup.sanitizeName(
-    TEST_ACCOUNT_GROUP_ANOTHER)
+TEST_ACCOUNT_GROUP_ANOTHER = TestGroup.sanitizeName(TEST_ACCOUNT_GROUP_ANOTHER)
 
 TEST_ACCOUNT_USERNAME_DOMAIN = TestUser.sanitizeName(
-    TEST_ACCOUNT_USERNAME_DOMAIN)
-TEST_ACCOUNT_GROUP_DOMAIN = TestGroup.sanitizeName(
-    TEST_ACCOUNT_GROUP_DOMAIN)
+    TEST_ACCOUNT_USERNAME_DOMAIN,
+)
+TEST_ACCOUNT_GROUP_DOMAIN = TestGroup.sanitizeName(TEST_ACCOUNT_GROUP_DOMAIN)
 
 
 if process_capabilities.os_name == 'solaris':
     TEST_ACCOUNT_HOME_PATH = '/export/home/' + TEST_ACCOUNT_USERNAME
-    TEST_ACCOUNT_HOME_PATH_OTHER = (
-        '/export/home/' + TEST_ACCOUNT_USERNAME_OTHER)
+    TEST_ACCOUNT_HOME_PATH_OTHER = '/export/home/' + TEST_ACCOUNT_USERNAME_OTHER
 else:
     TEST_ACCOUNT_HOME_PATH = '/home/' + TEST_ACCOUNT_USERNAME
     TEST_ACCOUNT_HOME_PATH_OTHER = '/home/' + TEST_ACCOUNT_USERNAME_OTHER
@@ -88,7 +76,7 @@ TEST_USERS = {
         posix_home_path=TEST_ACCOUNT_HOME_PATH,
         home_group=TEST_ACCOUNT_GROUP,
         password=TEST_ACCOUNT_PASSWORD,
-        ),
+    ),
     'other': TestUser(
         name=TEST_ACCOUNT_USERNAME_OTHER,
         posix_uid=TEST_ACCOUNT_UID_OTHER,
@@ -96,26 +84,26 @@ TEST_USERS = {
         primary_group_name=TEST_ACCOUNT_GROUP_OTHER,
         posix_home_path=TEST_ACCOUNT_HOME_PATH_OTHER,
         password=TEST_ACCOUNT_PASSWORD_OTHER,
-        ),
-    }
+    ),
+}
 
 TEST_GROUPS = {
     'normal': TestGroup(
         name=TEST_ACCOUNT_GROUP,
         posix_gid=TEST_ACCOUNT_GID,
         members=[TEST_ACCOUNT_USERNAME, TEST_ACCOUNT_USERNAME_OTHER],
-        ),
+    ),
     'other': TestGroup(
         name=TEST_ACCOUNT_GROUP_OTHER,
         posix_gid=TEST_ACCOUNT_GID_OTHER,
         members=[TEST_ACCOUNT_USERNAME_OTHER],
-        ),
+    ),
     'another': TestGroup(
         name=TEST_ACCOUNT_GROUP_ANOTHER,
         posix_gid=TEST_ACCOUNT_GID_ANOTHER,
         members=[TEST_ACCOUNT_USERNAME],
-        ),
-    }
+    ),
+}
 
 
 def setup_access_control(users, groups):

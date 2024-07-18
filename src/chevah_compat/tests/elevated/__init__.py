@@ -4,14 +4,15 @@
 Code for testing compat module that requires access to system security
 functions.
 """
+
 from chevah_compat import process_capabilities
 from chevah_compat.testing import (
+    TEST_GROUPS,
+    TEST_USERS,
     CompatTestCase,
     setup_access_control,
     teardown_access_control,
-    TEST_GROUPS,
-    TEST_USERS,
-    )
+)
 
 
 def runElevatedTest():
@@ -26,7 +27,7 @@ def runElevatedTest():
     if (
         CompatTestCase.os_name == 'osx'
         and CompatTestCase.os_version != 'osx-10.15'
-            ):
+    ):
         # On latest macOS we have issues creating the groups.
         # We kind of stop supporting macOS for system users,
         # so we don't care about elevated tests.
@@ -51,8 +52,9 @@ def setup_package():
         setup_access_control(users=TEST_USERS, groups=TEST_GROUPS)
     except Exception:  # pragma: no cover
         import traceback
+
         print(traceback.format_exc())
-        print("Failed to initialized the system accounts!")
+        print('Failed to initialized the system accounts!')
         teardown_access_control(users=TEST_USERS, groups=TEST_GROUPS)
         raise
 
