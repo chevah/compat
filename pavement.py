@@ -5,7 +5,6 @@ Build script for chevah-compat.
 """
 
 import compileall
-import imp
 import os
 import py_compile
 import struct
