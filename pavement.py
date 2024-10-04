@@ -10,6 +10,7 @@ import py_compile
 import struct
 import subprocess
 import sys
+from importlib.util import MAGIC_NUMBER
 
 from brink.pavement_commons import (
     SETUP,
@@ -119,7 +120,7 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=0):
             if not force:
                 try:
                     mtime = int(os.stat(fullname).st_mtime)
-                    expect = struct.pack('<4sl', imp.get_magic(), mtime)
+                    expect = struct.pack('<4sl', MAGIC_NUMBER, mtime)
                     cfile = fullname + (__debug__ and 'c' or 'o')
                     with open(cfile, 'rb') as chandle:
                         actual = chandle.read(8)
