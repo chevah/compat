@@ -4,6 +4,8 @@
 # Available VMs. Don't use `-latest` as we want to pin an OS version.
 # https://help.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners
 #
+# Available images https://github.com/actions/runner-images
+#
 # When running a tmate debug session you might need to increase the
 # timeout-minutes for each build.
 
@@ -25,7 +27,8 @@ defaults:
 
 jobs:
 
-  ubuntu-2004-unicode-path:
+  # Try to run using oldest Ubuntu version available on GitHub
+  ubuntu-old-unicode-path:
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
     timeout-minutes: 30
@@ -69,8 +72,9 @@ jobs:
       run: mv build-py3-ț build-py
 
 
-  ubuntu-2204-ascii-path:
-    runs-on: ubuntu-22.04
+  # Try to run with latest Ubuntu version available on GitHub
+  ubuntu-latest-ascii-path:
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     # Steps represent a sequence of tasks that will be executed as part of the job
