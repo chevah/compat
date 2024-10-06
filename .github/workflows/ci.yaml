@@ -294,27 +294,23 @@ jobs:
       uses: actions/cache@v4
       with:
         path: |
-          /home/chevah/$CHEVAH_REPO/build-$CHEVAH_REPO
+          build-py3
         key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-${{ matrix.container }}
 
     - name: Deps
       run: |
-        cd /home/chevah/$CHEVAH_REPO
-        ./pythia.sh deps
-        chown -R chevah .
+        su chevah -c "./pythia.sh deps"
 
     - uses: chevah/python-info-action@v1
       with:
-        python-path: /home/chevah/$CHEVAH_REPO/build-py3/bin/python
+        python-path: build-py3/bin/python
 
     - name: Build
       run: |
-        cd /home/chevah/$CHEVAH_REPO
         su chevah -c "./pythia.sh build"
 
     - name: Test
       run: |
-        cd /home/chevah/$CHEVAH_REPO
         su chevah -c "./pythia.sh test_ci2"
 
 
@@ -325,8 +321,8 @@ jobs:
     timeout-minutes: 10
     if: always()
     needs:
-      - ubuntu-2004-unicode-path
-      - ubuntu-2204-ascii-path
+      - ubuntu-old-unicode-path
+      - ubuntu-latest-ascii-path
       - macos-m1-unicode-path
       - windows
       - docker
