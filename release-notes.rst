@@ -5,6 +5,7 @@ Release notes for chevah.compat
 --------------------
 
 * Update for python 3.12.
+* Fix tearDown error handling.
 
 
 1.1.1 - 2024-07-05
