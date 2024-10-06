@@ -269,7 +269,7 @@ jobs:
 
     - name: Alpine setup
       if: startsWith(matrix.container, 'alpine')
-      run: apk add git bash shadow sudo curl
+      run: apk add git bash shadow sudo curl tar
 
     - name: Amazon Linux 2022 setup
       if: matrix.container == 'amazonlinux:2022' || matrix.container == 'rockylinux:9'
