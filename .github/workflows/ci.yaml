@@ -303,7 +303,7 @@ jobs:
 
     - name: Deps
       run: |
-        su chevah -c "./pythia.sh deps"
+        ./pythia.sh deps
 
     - uses: chevah/python-info-action@v1
       with:
@@ -311,11 +311,11 @@ jobs:
 
     - name: Build
       run: |
-        su chevah -c "./pythia.sh build"
+        ./pythia.sh build
 
     - name: Test
       run: |
-        su chevah -c "./pythia.sh test_ci2"
+        ./pythia.sh test_ci2
 
 
   # Helper so that on GitHub repo settings we can configure a single job as
