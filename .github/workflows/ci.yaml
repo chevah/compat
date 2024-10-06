@@ -288,16 +288,10 @@ jobs:
         useradd -g adm -s /bin/bash -m chevah
         echo '%adm    ALL=NOPASSWD: ALL' > /etc/sudoers
 
-    - name: Clone sources independently
-      run: |
-        cd /home/chevah/
-        git clone https://github.com/chevah/$CHEVAH_REPO
-        cd $CHEVAH_REPO
-        git checkout ${GITHUB_HEAD_REF}
+    - uses: actions/checkout@v4
 
     - name: Cache build
       uses: actions/cache@v4
-      if: matrix.container != 'proatria/centos:5.11-chevah1' && matrix.container != 'centos:6.10'
       with:
         path: |
           /home/chevah/$CHEVAH_REPO/build-$CHEVAH_REPO
