@@ -14,7 +14,6 @@ import threading
 import time
 from unittest.mock import Mock, patch
 
-import six
 from bunch import Bunch
 from nose import SkipTest
 
@@ -322,7 +321,7 @@ class TwistedTestCase(TestCase):
             raise_failure('threadpoool threads', self._threadPoolThreads())
 
         if len(reactor.getWriters()) > 0:  # noqa: cover
-            raise_failure('writers', six.text_type(reactor.getWriters()))
+            raise_failure('writers', str(reactor.getWriters()))
 
         for reader in reactor.getReaders():
             excepted = False
@@ -331,7 +330,7 @@ class TwistedTestCase(TestCase):
                     excepted = True
                     break
             if not excepted:  # noqa: cover
-                raise_failure('readers', six.text_type(reactor.getReaders()))
+                raise_failure('readers', str(reactor.getReaders()))
 
         for delayed_call in reactor.getDelayedCalls():
             if delayed_call.active():
@@ -603,7 +602,7 @@ class TwistedTestCase(TestCase):
         """
         Return a string representation of the delayed call.
         """
-        raw_name = six.text_type(delayed_call.func)
+        raw_name = str(delayed_call.func)
         raw_name = raw_name.replace('<function ', '')
         raw_name = raw_name.replace('<bound method ', '')
         return raw_name.split(' ', 1)[0].split('.')[-1]
@@ -1101,7 +1100,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
 
         This is only called when we run with -v or we show the error.
         """
-        class_name = six.text_type(self.__class__)[8:-2]
+        class_name = str(self.__class__)[8:-2]
         class_name = class_name.replace('.Test', ':Test')
         tests_start = class_name.find('.tests.') + 7
         class_name = class_name[tests_start:]
@@ -1153,17 +1152,17 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         """
         Update to stdlib to make sure we don't compare str with unicode.
         """
-        if isinstance(first, six.text_type) and not isinstance(
+        if isinstance(first, str) and not isinstance(
             second,
-            six.text_type,
+            str,
         ):  # noqa: cover
             if not msg:
                 msg = f'First is unicode while second is str for "{first}".'
             raise AssertionError(msg.encode('utf-8'))
 
-        if not isinstance(first, six.text_type) and isinstance(
+        if not isinstance(first, str) and isinstance(
             second,
-            six.text_type,
+            str,
         ):  # noqa: cover
             if not msg:
                 msg = f'First is str while second is unicode for "{first}".'
@@ -1401,7 +1400,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         segments = mk.fs.createFileInTemp(prefix=prefix, suffix=suffix)
         path = mk.fs.getRealPathFromSegments(segments)
 
-        if isinstance(content, six.text_type):
+        if isinstance(content, str):
             content = content.encode('utf-8')
 
         if cleanup:
