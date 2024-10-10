@@ -4,11 +4,7 @@
 Build script for chevah-compat.
 """
 
-import compileall
-import imp
 import os
-import py_compile
-import struct
 import subprocess
 import sys
 
@@ -90,64 +86,6 @@ def _set_umask(mask):
 # Set a consistent umask across all project tools.
 # Some tests assume that a specific umask is set in the OS.
 _set_umask(0o002)
-
-
-def compile_file(fullname, ddir=None, force=0, rx=None, quiet=0):
-    """
-    <Byte-compile one file.
-
-    Arguments (only fullname is required):
-
-    fullname:  the file to byte-compile
-    ddir:      if given, the directory name compiled in to the
-               byte-code file.
-    force:     if 1, force compilation, even if timestamps are up-to-date
-    quiet:     if 1, be quiet during compilation
-    """
-    success = 1
-    name = os.path.basename(fullname)
-    if ddir is not None:
-        dfile = os.path.join(ddir, name)
-    else:
-        dfile = None
-    if rx is not None:
-        mo = rx.search(fullname)
-        if mo:
-            return success
-    if os.path.isfile(fullname):
-        tail = name[-3:]
-        if tail == '.py':
-            if not force:
-                try:
-                    mtime = int(os.stat(fullname).st_mtime)
-                    expect = struct.pack('<4sl', imp.get_magic(), mtime)
-                    cfile = fullname + (__debug__ and 'c' or 'o')
-                    with open(cfile, 'rb') as chandle:
-                        actual = chandle.read(8)
-                    if expect == actual:
-                        return success
-                except OSError:
-                    pass
-            if not quiet:
-                print('Compiling', fullname.encode('utf-8'), '...')
-            try:
-                ok = py_compile.compile(fullname, None, dfile, True)
-            except py_compile.PyCompileError as err:
-                if quiet:
-                    print('Compiling', fullname.encode('utf-8'), '...')
-                print(err.msg.encode('utf-8'))
-                success = 0
-            except OSError as e:
-                print('Sorry', e)
-                success = 0
-            else:
-                if ok == 0:
-                    success = 0
-    return success
-
-
-# Path the upstream code.
-compileall.compile_file = compile_file
 
 
 @task

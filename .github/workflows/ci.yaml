@@ -4,6 +4,8 @@
 # Available VMs. Don't use `-latest` as we want to pin an OS version.
 # https://help.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners
 #
+# Available images https://github.com/actions/runner-images
+#
 # When running a tmate debug session you might need to increase the
 # timeout-minutes for each build.
 
@@ -25,7 +27,8 @@ defaults:
 
 jobs:
 
-  ubuntu-2004-unicode-path:
+  # Try to run using oldest Ubuntu version available on GitHub
+  ubuntu-old-unicode-path:
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
     timeout-minutes: 30
@@ -69,8 +72,9 @@ jobs:
       run: mv build-py3-ț build-py
 
 
-  ubuntu-2204-ascii-path:
-    runs-on: ubuntu-22.04
+  # Try to run with latest Ubuntu version available on GitHub
+  ubuntu-latest-ascii-path:
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -265,7 +269,7 @@ jobs:
 
     - name: Alpine setup
       if: startsWith(matrix.container, 'alpine')
-      run: apk add git bash shadow sudo curl
+      run: apk add git bash shadow sudo curl tar
 
     - name: Amazon Linux 2022 setup
       if: matrix.container == 'amazonlinux:2022' || matrix.container == 'rockylinux:9'
@@ -288,52 +292,30 @@ jobs:
         useradd -g adm -s /bin/bash -m chevah
         echo '%adm    ALL=NOPASSWD: ALL' > /etc/sudoers
 
-    # GHA's checkout action fails on CentOS 5/6, issue same commands manually.
-    # This fails when opening a new PR, but works starting with second commit.
-    - name: Clone sources independently
-      run: |
-        cd /home/chevah/
-        git init $CHEVAH_REPO
-        cd $CHEVAH_REPO
-        # Cleanup the repo.
-        git rev-parse --symbolic-full-name --verify --quiet HEAD || true
-        git rev-parse --symbolic-full-name --branches || true
-        git remote remove origin || true
-        # Update repo token.
-        git remote add origin https://github.com/chevah/$CHEVAH_REPO
-        git fetch --no-tags --prune origin
-        # Prepare the code.
-        git clean -f
-        git reset --hard ${{ github.event.after }}
-        git log -1 --format='%H'
+    - uses: actions/checkout@v4
 
-    # This action also fails on CentOS 5/6.
     - name: Cache build
       uses: actions/cache@v4
-      if: matrix.container != 'proatria/centos:5.11-chevah1' && matrix.container != 'centos:6.10'
       with:
         path: |
-          /home/chevah/$CHEVAH_REPO/build-$CHEVAH_REPO
+          build-py3
         key: ${{ runner.os }}-${{ hashFiles('pavement.py') }}-${{ hashFiles('pythia.conf') }}-${{ matrix.container }}
 
     - name: Deps
       run: |
-        cd /home/chevah/$CHEVAH_REPO
-        ./pythia.sh deps
         chown -R chevah .
+        su chevah -c "./pythia.sh deps"
 
     - uses: chevah/python-info-action@v1
       with:
-        python-path: /home/chevah/$CHEVAH_REPO/build-py3/bin/python
+        python-path: build-py3/bin/python
 
     - name: Build
       run: |
-        cd /home/chevah/$CHEVAH_REPO
         su chevah -c "./pythia.sh build"
 
     - name: Test
       run: |
-        cd /home/chevah/$CHEVAH_REPO
         su chevah -c "./pythia.sh test_ci2"
 
 
@@ -344,8 +326,8 @@ jobs:
     timeout-minutes: 10
     if: always()
     needs:
-      - ubuntu-2004-unicode-path
-      - ubuntu-2204-ascii-path
+      - ubuntu-old-unicode-path
+      - ubuntu-latest-ascii-path
       - macos-m1-unicode-path
       - windows
       - docker
