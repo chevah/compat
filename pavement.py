@@ -222,10 +222,11 @@ def test_ci2(args):
     ]
 
     # Show some info about the current environment.
-    from chevah_compat.testing.testcase import ChevahTestCase
     from coverage.cmdline import main as coverage_main
     from OpenSSL import SSL
     from OpenSSL import __version__ as pyopenssl_version
+
+    from chevah_compat.testing.testcase import ChevahTestCase
 
     print(
         f'{ChevahTestCase.os_family} / '
