@@ -1,5 +1,6 @@
 # Copyright (c) 2010-2016 Adi Roiban.
 # See LICENSE for details.
+# ruff: noqa: T201
 """
 Build script for chevah-compat.
 """

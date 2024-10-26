@@ -225,7 +225,7 @@ class TwistedTestCase(TestCase):
             # When debug is enabled with iterate using a small delay in steps,
             # to have a much better debug output.
             # Otherwise the debug messages will flood the output.
-            print(
+            print(  # noqa: T201
                 f'delayed: {self._reactorQueueToString()}\n'
                 f'threads: {reactor.threadCallQueue}\n'
                 f'writers: {reactor.getWriters()}\n'

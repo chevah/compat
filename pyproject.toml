@@ -56,7 +56,6 @@ target-version = "py311"
 # S flake8-bandit
 # SIM flake8-simplify
 # SLF flake8-self
-# T20 flake8-print
 # TCH flake8-type-checking
 select = [
     "A",
@@ -84,6 +83,7 @@ select = [
     "RSE",
     "SLOT",
     "T10",
+    "T20",
     "TD",
     "TID",
     "TRY",

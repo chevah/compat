@@ -1,3 +1,4 @@
+# ruff: noqa: T201
 """
 Call this script either as a file or as a module to see that arguments are
 in Unicode.
