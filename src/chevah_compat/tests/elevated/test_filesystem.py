@@ -199,8 +199,8 @@ class TestPosixFilesystem(FileSystemTestCase):
             ),
         )
 
-        # FIXME:928:
-        # Update this test after the Windows issues is fixed.
+        # TODO: Update this test after the Windows issues is fixed.
+        # 928
         if self.os_family == 'posix':
             self.assertTrue(
                 self.filesystem.hasGroup(

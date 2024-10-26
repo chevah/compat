@@ -1,60 +1,63 @@
-# -*- coding: utf-8 -*-
 # Code forked from
 # https://github.com/adamchainz/nose-randomly/blob/master/nose_randomly.py
 import random
-import sys
 import time
 
 from nose.plugins import Plugin
 from nose.suite import ContextList
 
 # Compat
-if sys.version_info[0] == 2:  # Python 2
-    map_return_type = list
-else:
-    map_return_type = map
+map_return_type = map
 
 
 __version__ = '1.2.6.chevah1'
 
 
 class RandomlyPlugin(Plugin):
-    name = str('randomly')
+    name = 'randomly'
     score = 10000  # Ensure randomly's logic is executed first
 
     def options(self, parser, env):
-        """Register commandline options.
-        """
-        super(RandomlyPlugin, self).options(parser, env)
+        """Register commandline options."""
+        super().options(parser, env)
         parser.add_option(
-            str('--randomly-seed'), action='store', dest='seed',
-            default=int(time.time()), type=int,
+            '--randomly-seed',
+            action='store',
+            dest='seed',
+            default=int(time.time()),
+            type=int,
             help="""Set the seed that nose-randomly uses. Default behaviour:
-                    use time.time()"""
-            )
+                    use time.time()""",
+        )
         parser.add_option(
-            str('--randomly-dont-shuffle-modules'), action='store_false',
-            dest='shuffle_modules', default=True,
-            help="Stop nose-randomly from shuffling the tests inside modules"
-            )
+            '--randomly-dont-shuffle-modules',
+            action='store_false',
+            dest='shuffle_modules',
+            default=True,
+            help='Stop nose-randomly from shuffling the tests inside modules',
+        )
         parser.add_option(
-            str('--randomly-dont-shuffle-cases'), action='store_false',
-            dest='shuffle_cases', default=True,
+            '--randomly-dont-shuffle-cases',
+            action='store_false',
+            dest='shuffle_cases',
+            default=True,
             help="""Stop nose-randomly from shuffling the tests inside TestCase
-                    classes"""
-            )
+                    classes""",
+        )
         parser.add_option(
-            str('--randomly-dont-reset-seed'), action='store_false',
-            dest='reset_seed', default=True,
+            '--randomly-dont-reset-seed',
+            action='store_false',
+            dest='reset_seed',
+            default=True,
             help="""Stop nose-randomly from resetting random.seed() at the
-                    start of every test context (TestCase) and test."""
-            )
+                    start of every test context (TestCase) and test.""",
+        )
 
     def configure(self, options, conf):
         """
         Configure plugin.
         """
-        super(RandomlyPlugin, self).configure(options, conf)
+        super().configure(options, conf)
 
         if not self.enabled:
             return
@@ -67,9 +70,9 @@ class RandomlyPlugin(Plugin):
 
         self.output_stream = stream
         print(
-            "Using --randomly-seed={seed}".format(seed=self.options.seed),
-            file=self.output_stream
-            )
+            f'Using --randomly-seed={self.options.seed}',
+            file=self.output_stream,
+        )
 
     def startContext(self, context):
         self.reset_random_seed()
@@ -126,8 +129,7 @@ class RandomlyPlugin(Plugin):
                         return orig_suiteClass(tests, **kwargs)
 
                     self.suiteClass = hackSuiteClass
-                suite = super(ShuffledLoader, self).loadTestsFromModule(
-                    *args, **kwargs)
+                suite = super().loadTestsFromModule(*args, **kwargs)
 
                 if options.shuffle_modules:
                     self.suiteClass = orig_suiteClass
@@ -151,8 +153,7 @@ class RandomlyPlugin(Plugin):
 
                     self.suiteClass = hackSuiteClass
 
-                suite = super(ShuffledLoader, self).loadTestsFromTestCase(
-                    testCaseClass)
+                suite = super().loadTestsFromTestCase(testCaseClass)
 
                 if options.shuffle_cases:
                     self.suiteClass = orig_suiteClass

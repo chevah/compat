@@ -304,8 +304,7 @@ def lint(args):
 
 
 @task
-@consume_args
-def fix(args):
+def fix():
     """
     Try to fix the source code.
     """
@@ -324,3 +323,21 @@ def fix(args):
 
     if check_result.returncode != 0 or format_result != 0:
         sys.exit(1)
+
+
+@task
+def migrate_fixme():
+    """
+    Migrate the FIX_ME markers to the ruff TO_DO markers.
+    """
+    for root, dirs, files in os.walk('src'):
+        for name in files:
+            if not name.endswith('.py'):
+                continue
+            with open(os.path.join(root, name)) as stream:
+                lines = stream.readlines()
+                for line_no, line in enumerate(lines):
+                    if '# FIXME:' not in line:
+                        continue
+                    print(lines[line_no])
+                    print(lines[line_no+1])

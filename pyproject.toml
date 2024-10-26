@@ -85,6 +85,7 @@ select = [
     "RSE",
     "SLOT",
     "T10",
+    "TD",
     "TID",
     "TRY",
     "YTT",
@@ -95,6 +96,7 @@ ignore = [
     "COM812",
     "ISC001",
     "TRY003",
+    "TD002",  # We don't use authors tag for todos.
     ]
 
 external = [

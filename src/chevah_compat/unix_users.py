@@ -211,7 +211,8 @@ class UnixUsers(CompatUsers):
             return False
 
         with self._executeAsAdministrator():
-            # FIXME:3059:
+            # TODO: Look to do PAM without root context.
+            # 3059
             # PAM can be used without admin right but I have no idea why
             # it fails with errors like:
             # audit_log_acct_message() failed: Operation not permitted.

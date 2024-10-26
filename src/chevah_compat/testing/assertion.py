@@ -38,7 +38,7 @@ class Contains:
             if value not in other:
                 return False
 
-    def __hash__(self):  # noqa: cover
+    def __hash__(self):  # pragma: no cover
         return hash(self._value[0])
 
 
@@ -137,7 +137,7 @@ class AssertionMixin:
             self.assertIsFailure(failure_or_deferred)
             failure = failure_or_deferred.result
 
-        if failure.type is not failure_class:  # noqa: cover
+        if failure.type is not failure_class:  # pragma: no cover
             message = (
                 f'Failure {text_type(failure)} is not of type {failure_class}'
             )

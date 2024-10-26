@@ -6,7 +6,6 @@ Tests for portable filesystem access.
 
 import errno
 import os
-import platform
 import stat
 import subprocess
 import sys
@@ -709,17 +708,6 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         Target is always returned in Long UNC.
         """
-        if self.os_name == 'hpux' or platform.processor() in [
-            'powerpc',
-            'sparc',
-        ]:
-            # FIXME:2027:
-            # This test fails on AIX and HPUX with a strange encoding error,
-            # most probably due to CPU bit order.
-            # It also fails on Solaris SPARC, but pass on Solaris x86.
-            # platform.processor() is empty on HPUX.
-            raise self.skipTest()
-
         symbolic_link_data = self.filesystem._parseReparseData(
             self.raw_reparse_buffer,
         )
@@ -2373,7 +2361,7 @@ class TestLocalFilesystemNTnonDevicePath(
         if cls.os_family != 'nt':
             raise cls.skipTest('Only on Windows.')
         cls._prev_os_getcwd = os.getcwd()
-        if cls._prev_os_getcwd.startswith('\\\\'):  # noqa: cover
+        if cls._prev_os_getcwd.startswith('\\\\'):  # pragma: no cover
             # We have a device path, so force using a non-device path
             # Most of the time, tests are executed from a process
             # that already has a DOS path and not a device path.

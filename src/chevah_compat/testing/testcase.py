@@ -220,7 +220,7 @@ class TwistedTestCase(TestCase):
         Iterate the reactor.
         """
         reactor.runUntilCurrent()
-        if debug:  # noqa: cover
+        if debug:  # pragma: no cover
             # When debug is enabled with iterate using a small delay in steps,
             # to have a much better debug output.
             # Otherwise the debug messages will flood the output.
@@ -298,7 +298,7 @@ class TwistedTestCase(TestCase):
                 f'Reactor is not clean. {location}: {reason}',
             )
 
-        if reactor._started:  # noqa: cover
+        if reactor._started:  # pragma: no cover
             # Reactor was not stopped, so stop it before raising the error.
             self._shutdownTestReactor()
             raise AssertionError('Reactor was not stopped.')
@@ -320,7 +320,7 @@ class TwistedTestCase(TestCase):
         if self._threadPoolThreads():
             raise_failure('threadpoool threads', self._threadPoolThreads())
 
-        if len(reactor.getWriters()) > 0:  # noqa: cover
+        if len(reactor.getWriters()) > 0:  # pragma: no cover
             raise_failure('writers', str(reactor.getWriters()))
 
         for reader in reactor.getReaders():
@@ -329,7 +329,7 @@ class TwistedTestCase(TestCase):
                 if isinstance(reader, reader_type):
                     excepted = True
                     break
-            if not excepted:  # noqa: cover
+            if not excepted:  # pragma: no cover
                 raise_failure('readers', str(reactor.getReaders()))
 
         for delayed_call in reactor.getDelayedCalls():
@@ -524,7 +524,7 @@ class TwistedTestCase(TestCase):
             delayed_calls = reactor.getDelayedCalls()
             try:
                 delayed_calls.remove(self._reactor_timeout_call)
-            except ValueError:  # noqa: cover
+            except ValueError:  # pragma: no cover
                 # Timeout might be no longer be there.
                 pass
             if not delayed_calls:
@@ -867,7 +867,7 @@ def _get_os_version():
         parts = platform.release().split('.')
         return f'solaris-{parts[1]}'
 
-    if os_name == 'aix':  # noqa: cover
+    if os_name == 'aix':  # pragma: no cover
         return f'aix-{platform.version()}.{platform.release()}'
 
     if os_name != 'linux':
@@ -1032,7 +1032,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         for function, args, kwargs in reversed(self.__cleanup__):
             try:
                 function(*args, **kwargs)
-            except Exception as error:  # noqa: cover
+            except Exception as error:  # pragma: no cover
                 self._teardown_errors.append((error, function, args, kwargs))
 
         self.__cleanup__ = []
@@ -1083,7 +1083,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             except AssertionError as error:
                 errors.append(str(error))
 
-        if errors:  # noqa: cover
+        if errors:  # pragma: no cover
             self._teardown_errors.append(
                 AssertionError(
                     'There are temporary files or folders left over.\n'
@@ -1091,7 +1091,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
                 ),
             )
 
-    def shortDescription(self):  # noqa: cover
+    def shortDescription(self):  # pragma: no cover
         """
         The short description for the test.
 
@@ -1155,7 +1155,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         if isinstance(first, str) and not isinstance(
             second,
             str,
-        ):  # noqa: cover
+        ):  # pragma: no cover
             if not msg:
                 msg = f'First is unicode while second is str for "{first}".'
             raise AssertionError(msg.encode('utf-8'))
@@ -1163,7 +1163,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         if not isinstance(first, str) and isinstance(
             second,
             str,
-        ):  # noqa: cover
+        ):  # pragma: no cover
             if not msg:
                 msg = f'First is str while second is unicode for "{first}".'
             raise AssertionError(msg.encode('utf-8'))
@@ -1439,8 +1439,8 @@ class FileSystemTestCase(ChevahTestCase):
 
     @classmethod
     def setUpClass(cls):
-        # FIXME:924:
-        # Disabled when we can not find the home folder path.
+        # TODO: Disabled when we can not find the home folder path.
+        # 924
         if not process_capabilities.get_home_folder:
             raise cls.skipTest()
 

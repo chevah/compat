@@ -369,7 +369,7 @@ class TestTwistedTestCase(ChevahTestCase):
         It will cancel any pending jobs for the threads.
         """
 
-        def last_call():  # noqa: cover
+        def last_call():  # pragma: no cover
             # This is added to the thread queue, but does not has the time
             # to be executed as our assertion will remove it from the queue.
             time.sleep(1)
@@ -466,7 +466,7 @@ class TestTwistedTestCase(ChevahTestCase):
         """
         results = []
         reactor.callLater(0.1, lambda x: results.append(x), True)
-        call_2 = reactor.callLater(  # noqa: cover
+        call_2 = reactor.callLater(  # pragma: no cover
             0.2,
             lambda x: results.append(x),
             False,
