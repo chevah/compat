@@ -65,7 +65,6 @@ SETUP['test']['nose_options'] = [
     '--with-randomly',
     # TODO: Add support for extenstions.
     # 690
-
     # '--with-timer',
     # '--with-run-reporter',
     # '--with-memory-usage',
@@ -218,7 +217,6 @@ def test_ci2(args):
     SETUP['test']['nose_options'] += [
         # TODO: Add support for extensions.
         # 690
-
         # '--with-run-reporter',
         # '--with-timer',
         '-v',
@@ -348,10 +346,10 @@ def migrate_fixme():
 
                     have_fixes = True
                     padding = line.split('# ')[0]
-                    comment = lines[line_no +1].split('# ', 1)[-1].strip()
+                    comment = lines[line_no + 1].split('# ', 1)[-1].strip()
                     issue = line.split('FIXME:')[1].replace(':', '')
                     lines[line_no] = f'{padding}# TODO: {comment}\n'
-                    lines[line_no + 1 ] = f'{padding}# {issue}\n'
+                    lines[line_no + 1] = f'{padding}# {issue}\n'
 
             if not have_fixes:
                 continue

@@ -40,7 +40,7 @@ class CompatError(Exception):
         self.message = message
 
     def __repr__(self):
-        result = f'CompatError {str(self.event_id)} - {self.message}'
+        result = f'CompatError {self.event_id!s} - {self.message}'
         return result
 
     def __str__(self):

@@ -79,6 +79,7 @@ select = [
     "PERF",
     "PGH",
     "PIE",
+    "RUF",
     "PYI",
     "RSE",
     "SLOT",
@@ -94,6 +95,10 @@ ignore = [
     "BLE001",
     "COM812",
     "ISC001",
+    # TODO: Update code to disable ruff rules.
+    # https://github.com/chevah/compat/issues/701
+    "RUF005",  # List concatenation
+    "RUF012",  # Class mutable attributes
     "TRY003",
     "TD002",  # We don't use authors tag for todos.
     ]

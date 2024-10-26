@@ -1347,7 +1347,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         Overwrite stdlib to swap the arguments.
         """
         if source not in target:
-            message = f'{repr(source)} not in {repr(target)}.'
+            message = f'{source!r} not in {target!r}.'
             raise AssertionError(message.encode('utf-8'))
 
     def assertIsInstance(self, expected_type, value, msg=None):
