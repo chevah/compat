@@ -97,8 +97,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         if not self._avatar:
             return False
-        else:
-            return self._avatar.lock_in_home_folder
+        return self._avatar.lock_in_home_folder
 
     def _getRootPath(self):
         """
@@ -116,8 +115,7 @@ class NTFilesystem(PosixFilesystemBase):
                 path = six.text_type(self._avatar.root_folder_path)
 
         # Fix folder separators.
-        path = path.replace('/', '\\')
-        return path
+        return path.replace('/', '\\')
 
     @property
     def temp_segments(self):
@@ -170,8 +168,7 @@ class NTFilesystem(PosixFilesystemBase):
         result = os.path.normpath(self._root_path + '\\' + path)
         if result.lower().startswith(self._root_path.lower()):
             return result.rstrip('\\')
-        else:
-            return self._root_path
+        return self._root_path
 
     def getRealPathFromSegments(self, segments, include_virtual=True):
         r"""See `ILocalFilesystem`.
@@ -826,8 +823,7 @@ class NTFilesystem(PosixFilesystemBase):
 
                 if recursive:
                     return self._rmtree(path_encoded)
-                else:
-                    return os.rmdir(path_encoded)
+                return os.rmdir(path_encoded)
         except OSError as error:
             # Sometimes windows return a generic EINVAL when path is not a
             # folder.
@@ -1025,7 +1021,7 @@ class NTFilesystem(PosixFilesystemBase):
             ace_count = dacl.GetAceCount()
             if ace_count < 1:
                 # Nothing in the list, nothing to remove.
-                return
+                return None
             index_ace_to_remove = -1
             for index in range(ace_count):
                 ((ace_type, ace_flag), mask, sid) = dacl.GetAce(index)
@@ -1035,7 +1031,7 @@ class NTFilesystem(PosixFilesystemBase):
 
             if index_ace_to_remove == -1:
                 # Group not found in the list.
-                return
+                return None
 
             dacl.DeleteAce(index_ace_to_remove)
             security.SetDacl(True, dacl, False)

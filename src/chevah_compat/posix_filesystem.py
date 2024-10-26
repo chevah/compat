@@ -401,8 +401,7 @@ class PosixFilesystemBase:
         try:
             if self._isVirtualPath(segments):
                 return True
-            else:
-                """
+            """
                 Let the normal code to check the existence.
                 """
         except CompatError:
@@ -421,8 +420,7 @@ class PosixFilesystemBase:
         with self._impersonateUser():
             if recursive:
                 return os.makedirs(path_encoded, _DEFAULT_FOLDER_MODE)
-            else:
-                return os.mkdir(path_encoded, _DEFAULT_FOLDER_MODE)
+            return os.mkdir(path_encoded, _DEFAULT_FOLDER_MODE)
 
     def deleteFolder(self, segments, recursive=True):
         """
@@ -494,7 +492,7 @@ class PosixFilesystemBase:
                     raise
             except Exception:
                 if ignore_errors:
-                    return
+                    return None
                 raise
 
     def rename(self, from_segments, to_segments):
@@ -589,8 +587,7 @@ class PosixFilesystemBase:
                 (self.OPEN_APPEND | self.OPEN_CREATE | self.OPEN_WRITE_ONLY),
                 mode,
             )
-            new_file = os.fdopen(fd, 'ab')
-            return new_file
+            return os.fdopen(fd, 'ab')
 
     def getFileSize(self, segments):
         """See `ILocalFilesystem`."""
@@ -1165,6 +1162,5 @@ def _win_getEncodedPath(path):
     if path.startswith('\\\\'):
         # \\server.name\share -> \\?\UNC\server.name\share
         return '\\\\?\\UNC\\' + path[2:]
-    else:
-        # C:\some\path -> \\?\C:\some\path
-        return '\\\\?\\' + path
+    # C:\some\path -> \\?\C:\some\path
+    return '\\\\?\\' + path

@@ -180,22 +180,19 @@ class UnixUsers(CompatUsers):
         if checked is not None:
             if checked is True:
                 return (True, None)
-            else:
-                return (False, None)
+            return (False, None)
 
         checked = self._checkShadowFile(username, password)
         if checked is not None:
             if checked is True:
                 return (True, None)
-            else:
-                return (False, None)
+            return (False, None)
 
         checked = self._checkShadowDBFile(username, password)
         if checked is not None:
             if checked is True:
                 return (True, None)
-            else:
-                return (False, None)
+            return (False, None)
 
         return (None, None)
 
@@ -251,8 +248,7 @@ class UnixUsers(CompatUsers):
             group_struct = grp.getgrgid(user_struct.pw_gid)
         except KeyError:
             self.raiseFailedToGetPrimaryGroup(username)
-        group_name = group_struct.gr_name
-        return group_name
+        return group_struct.gr_name
 
     def _executeAsAdministrator(self):
         """Returns a context manager for running under administrator user.

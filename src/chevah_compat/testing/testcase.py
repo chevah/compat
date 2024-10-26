@@ -138,8 +138,7 @@ class TwistedTestCase(TestCase):
         """
         if not reactor.threadpool:
             return []
-        else:
-            return reactor.threadpool.threads
+        return reactor.threadpool.threads
 
     def _threadPoolWorking(self):
         """
@@ -148,8 +147,7 @@ class TwistedTestCase(TestCase):
         """
         if not reactor.threadpool:
             return []
-        else:
-            return reactor.threadpool.working
+        return reactor.threadpool.working
 
     @classmethod
     def _cleanReactor(cls):
@@ -670,14 +668,15 @@ class TwistedTestCase(TestCase):
                 f'Success result expected on {deferred!r}, '
                 f'found no result instead',
             )
-        elif isinstance(result[0], Failure):
+            return None
+        if isinstance(result[0], Failure):
             self.fail(
                 f'Success result expected on {deferred!r}, '
                 f'found failure result instead:\n'
                 f'{result[0].getBriefTraceback()}',
             )
-        else:
-            return result[0]
+            return None
+        return result[0]
 
     def failureResultOf(self, deferred, *expectedExceptionTypes):
         """
@@ -714,12 +713,14 @@ class TwistedTestCase(TestCase):
                 f'Failure result expected on {deferred!r}, '
                 f'found no result instead',
             )
-        elif not isinstance(result[0], Failure):
+            return None
+        if not isinstance(result[0], Failure):
             self.fail(
                 f'Failure result expected on {deferred!r}, '
                 f'found success result ({result[0]!r}) instead',
             )
-        elif expectedExceptionTypes and not result[0].check(
+            return None
+        if expectedExceptionTypes and not result[0].check(
             *expectedExceptionTypes,
         ):
             expectedString = ' or '.join(
@@ -734,8 +735,8 @@ class TwistedTestCase(TestCase):
                 f'found type {result[0].type!r} '
                 f'instead: {result[0].getBriefTraceback()}',
             )
-        else:
-            return result[0]
+            return None
+        return result[0]
 
     def assertNoResult(self, deferred):
         """
@@ -1309,7 +1310,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             import resource
 
             return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        elif cls.os_family == 'nt':
+        if cls.os_family == 'nt':
             from wmi import WMI
 
             local_wmi = WMI('.')
@@ -1325,8 +1326,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             # 2099
 
             return int(peak_working_set_size)
-        else:
-            raise AssertionError('OS not supported.')
+        raise AssertionError('OS not supported.')
 
     def folderInTemp(self, *args, **kwargs):
         """

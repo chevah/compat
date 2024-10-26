@@ -58,8 +58,7 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
         """
         if self.impersonate_local_account:
             return _('root capabilities enabled.')
-        else:
-            return _('root capabilities disabled.')
+        return _('root capabilities disabled.')
 
     @property
     def symbolic_link(self):

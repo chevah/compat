@@ -37,6 +37,7 @@ class Contains:
         for value in self._values:
             if value not in other:
                 return False
+        return None
 
     def __hash__(self):  # pragma: no cover
         return hash(self._value[0])

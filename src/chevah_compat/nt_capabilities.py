@@ -78,8 +78,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
             and 'SeRestorePrivilege' in privileges
         ):
             return True
-        else:
-            return False
+        return False
 
     @property
     def get_home_folder(self):
@@ -291,8 +290,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         """
         if state in ['enabled', 'enabled-by-default']:
             return True
-        else:
-            return False
+        return False
 
     def _isPrivilegeStateAvailable(self, state):
         """
@@ -301,8 +299,7 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         """
         if state in ['present', 'enabled', 'enabled-by-default']:
             return True
-        else:
-            return False
+        return False
 
     def _hasPrivilege(self, privilege_name):
         """
@@ -323,5 +320,4 @@ class NTProcessCapabilities(BaseProcessCapabilities):
         """
         if self._hasPrivilege(win32security.SE_CREATE_SYMBOLIC_LINK_NAME):
             return True
-        else:
-            return False
+        return False

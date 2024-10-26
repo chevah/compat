@@ -270,9 +270,7 @@ def test_ci2(args):
     else:
         args = [args]
 
-    exit_code = call_task('test_python', args=args)
-
-    return exit_code
+    return call_task('test_python', args=args)
 
 
 @task
@@ -305,19 +303,20 @@ def lint(args):
 
 
 @task
-def fix():
+@consume_args
+def fix(args):
     """
     Try to fix the source code.
     """
     ruff_bin = os.path.join(pave.path.build, 'bin', 'ruff')
     check_result = subprocess.run(
-        [ruff_bin, 'check', '--fix', '--unsafe-fixes', '--no-cache'],
+        [ruff_bin, 'check', '--fix', '--unsafe-fixes', '--no-cache'] + args,
         stdout=sys.stdout,
         stderr=sys.stderr,
     )
 
     format_result = subprocess.run(
-        [ruff_bin, 'format', '--no-cache'],
+        [ruff_bin, 'format', '--no-cache'] + args,
         stdout=sys.stdout,
         stderr=sys.stderr,
     )

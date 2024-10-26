@@ -493,8 +493,7 @@ class OSAdministrationUnix:
         """
         if self.fs.exists(self.shadow_segments):
             return self._setUserPassword_shadow(user, self.shadow_segments)
-        else:
-            return self._setUserPassword_passwd(user, self.passwd_segments)
+        return self._setUserPassword_passwd(user, self.passwd_segments)
 
     def _setUserPassword_shadow(self, user, segments):
         """

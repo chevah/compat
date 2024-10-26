@@ -42,12 +42,12 @@ target-version = "py311"
 # ARG flake8-unused-arguments
 # B flake8-bugbear
 # C90 mccabe
-# CPY flake8-copyright
+# CPY flake8-copyright - needs preview features
 # D pydocstyle
-# DTZ flake8-datetimez
+# DTZ flake8-datetimez - need to fix datetime usage
 # G flake8-logging-format
 # INT flake8-gettext
-# N pep8-naming
+# N pep8-naming - poor support for interfaces
 # PL Pylint
 # PT flake8-pytest-style
 # PTH flake8-use-pathlib
@@ -55,7 +55,7 @@ target-version = "py311"
 # RET flake8-return
 # S flake8-bandit
 # SIM flake8-simplify
-# SLF flake8-self
+# SLF flake8-self - check private member access
 # TCH flake8-type-checking
 select = [
     "A",
@@ -79,6 +79,7 @@ select = [
     "PERF",
     "PGH",
     "PIE",
+    "RET",
     "RUF",
     "PYI",
     "RSE",

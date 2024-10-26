@@ -88,8 +88,7 @@ class NTUsers(CompatUsers):
                         'Invalid username/token combination.',
                     )
                 return self._getHomeFolderPath()
-            else:
-                return self._getHomeFolder(username, token)
+            return self._getHomeFolder(username, token)
         except MissingProfileFolderException:
             self.raiseFailedToGetHomeFolder(
                 username,
@@ -294,9 +293,8 @@ class NTUsers(CompatUsers):
             primary_domain_controller = win32net.NetGetDCName(None, parts[1])
             username = parts[0]
             return (primary_domain_controller, username)
-        else:
-            # This is not an UPN name.
-            return (None, upn)
+        # This is not an UPN name.
+        return (None, upn)
 
     def _getToken(self, username, password):
         """

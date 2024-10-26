@@ -165,4 +165,4 @@ class RandomlyPlugin(Plugin):
 
         # Tell the plugin infrastructure we did nothing so 'loader', as mutated
         # above, continues to be used
-        return None
+        return

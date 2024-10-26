@@ -54,11 +54,11 @@ class SanitizeNameMixin:
         os_version = ChevahTestCase.os_version
         if os_name in ['aix', 'hpux', 'freebsd', 'openbsd']:
             return _sanitize_name_legacy_unix(name)
-        elif os_version in ['osx-10.16']:
+        if os_version in ['osx-10.16']:
             # It looks like macOS 11 can't handle full Unix group names.
             macosname = _sanitize_name_legacy_unix(name)
             return macosname.replace('_', 'Z')
-        elif os_name == 'windows':
+        if os_name == 'windows':
             return _sanitize_name_windows(name)
 
         return name
@@ -297,12 +297,11 @@ class ChevahCommonsFactory:
                     'Can not generate an unique string shorter than %d'
                     % (length),
                 )
-            else:
-                extra_length = length - min_length
-                extra_text = ''.join(
-                    random.choice(string.ascii_uppercase + string.digits)
-                    for ignore in range(extra_length)
-                )
+            extra_length = length - min_length
+            extra_text = ''.join(
+                random.choice(string.ascii_uppercase + string.digits)
+                for ignore in range(extra_length)
+            )
 
         return base + extra_text + TEST_NAME_MARKER
 
