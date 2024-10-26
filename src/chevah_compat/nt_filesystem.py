@@ -124,8 +124,9 @@ class NTFilesystem(PosixFilesystemBase):
         """
         Segments to temporary folder.
         """
-        # FIXME:930:
-        # For impersonated account we can not return the default temporary
+        # TODO: For impersonated account we can not return the default temporary
+        # 930
+
         # folder, which is located in default account temp folder, since
         # impersonated account don't have access to it.
         if not isinstance(self._avatar, NTDefaultAvatar):
@@ -500,8 +501,9 @@ class NTFilesystem(PosixFilesystemBase):
         Code example for handling reparse points:
         http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista
         """
-        # FIXME:2025:
-        # Add support for junctions.
+        # TODO: Add support for junctions.
+        # 2025
+
         if not self.process_capabilities.symbolic_link:
             raise NotImplementedError('makeLink not implemented on this OS.')
 

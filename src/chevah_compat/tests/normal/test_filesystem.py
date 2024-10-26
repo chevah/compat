@@ -2474,8 +2474,9 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
     specific test and we isolate them to help detect low level path handling
     regressions.
 
-    # FIXME:1013:
-    # This test case need a lot of cleaning.
+    # TODO: This test case need a lot of cleaning.
+    # 1013
+
     """
 
     @classmethod

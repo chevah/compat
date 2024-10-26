@@ -164,8 +164,9 @@ class TwistedTestCase(TestCase):
         try:
             reactor.removeAll()
         except (RuntimeError, KeyError):
-            # FIXME:863:
-            # When running threads tests the reactor touched from the test
+            # TODO: When running threads tests the reactor touched from the test
+            # 863
+
             # case itself which run in one tread and from the fixtures/cleanup
             # code which is executed from another thread.
             # removeAll might fail since it detects that internal state
@@ -242,8 +243,9 @@ class TwistedTestCase(TestCase):
             t = reactor.running and t2
             reactor.doIteration(t)
         else:
-            # FIXME:4428:
-            # When not executed in debug mode, some test will fail as they
+            # TODO: When not executed in debug mode, some test will fail as they
+            # 4428
+
             # will not spin the reactor.
             # To not slow down all the tests, we run with a very small value.
             reactor.doIteration(0.000001)
@@ -658,8 +660,9 @@ class TwistedTestCase(TestCase):
 
         @return: The result of C{deferred}.
         """
-        # FIXME:1370:
-        # Remove / re-route this code after upgrading to Twisted 13.0.
+        # TODO: Remove / re-route this code after upgrading to Twisted 13.0.
+        # 1370
+
         result = []
         deferred.addBoth(result.append)
         if not result:
@@ -701,8 +704,9 @@ class TwistedTestCase(TestCase):
         @return: The failure result of C{deferred}.
         @rtype: L{failure.Failure}
         """
-        # FIXME:1370:
-        # Remove / re-route this code after upgrading to Twisted 13
+        # TODO: Remove / re-route this code after upgrading to Twisted 13
+        # 1370
+
         result = []
         deferred.addBoth(result.append)
         if not result:
@@ -752,8 +756,9 @@ class TwistedTestCase(TestCase):
         @raise SynchronousTestCase.failureException: If the
             L{Deferred<twisted.internet.defer.Deferred>} has a result.
         """
-        # FIXME:1370:
-        # Remove / re-route this code after upgrading to Twisted 13
+        # TODO: Remove / re-route this code after upgrading to Twisted 13
+        # 1370
+
         result = []
 
         def cb(res):
@@ -1066,8 +1071,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         """
         Check that no temporary files or folders are present.
         """
-        # FIXME:922:
-        # Move all filesystem checks into a specialized class
+        # TODO: Move all filesystem checks into a specialized class
+        # 922
+
         if self.test_segments:
             if mk.fs.isFolder(self.test_segments):
                 mk.fs.deleteFolder(self.test_segments, recursive=True)
@@ -1285,8 +1291,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             try:
                 temp_filesystem.deleteFile(segments)
             except Exception:
-                # FIXME:688:
-                # If this is a link to a broken folder,
+                # TODO: If this is a link to a broken folder,
+                # 688
+
                 # it is detected as a file,
                 # but on Windows it is a folder.
                 temp_filesystem.deleteFolder(segments, recursive=True)
@@ -1314,8 +1321,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             )
             result = local_wmi.query(query.encode('utf-8'))
             peak_working_set_size = int(result[0].PeakWorkingSetSize)
-            # FIXME:2099:
-            # Windows XP reports value in bytes, instead of Kilobytes.
+            # TODO: Windows XP reports value in bytes, instead of Kilobytes.
+            # 2099
+
             return int(peak_working_set_size)
         else:
             raise AssertionError('OS not supported.')

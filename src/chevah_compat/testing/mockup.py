@@ -36,8 +36,9 @@ def _sanitize_name_windows(candidate):
     """
     Return valid user/group name for Windows OSs from `candidate.
     """
-    # FIXME:927:
-    # On Windows, we can't delete home folders with unicode names.
+    # TODO: On Windows, we can't delete home folders with unicode names.
+    # 927
+
     return unidecode(candidate)
 
 

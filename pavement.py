@@ -62,8 +62,9 @@ SETUP['test']['package'] = 'chevah_compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = [
     '--with-randomly',
-    # FIXME:690:
-    # Add support for extenstions.
+    # TODO: Add support for extenstions.
+    # 690
+
     # '--with-timer',
     # '--with-run-reporter',
     # '--with-memory-usage',
@@ -214,8 +215,9 @@ def test_ci2(args):
     """
     # When running in CI mode, we want to get more reports.
     SETUP['test']['nose_options'] += [
-        # FIXME:690:
-        # Add support for extensions.
+        # TODO: Add support for extensions.
+        # 690
+
         # '--with-run-reporter',
         # '--with-timer',
         '-v',
@@ -330,14 +332,28 @@ def migrate_fixme():
     """
     Migrate the FIX_ME markers to the ruff TO_DO markers.
     """
-    for root, dirs, files in os.walk('src'):
+    for root, dirs, files in os.walk('.'):
         for name in files:
             if not name.endswith('.py'):
                 continue
-            with open(os.path.join(root, name)) as stream:
+
+            have_fixes = False
+            file_path = os.path.join(root, name)
+            with open(file_path) as stream:
                 lines = stream.readlines()
                 for line_no, line in enumerate(lines):
                     if '# FIXME:' not in line:
                         continue
-                    print(lines[line_no])
-                    print(lines[line_no+1])
+
+                    have_fixes = True
+                    padding = line.split('# ')[0]
+                    comment = lines[line_no +1].split('# ', 1)[-1].strip()
+                    issue = line.split('FIXME:')[1].replace(':', '')
+                    lines[line_no] = f'{padding}# TODO: {comment}\n'
+                    lines[line_no + 1 ] = f'{padding}# {issue}\n'
+
+            if not have_fixes:
+                continue
+
+            with open(file_path, 'w') as stream:
+                stream.write(''.join(lines))
