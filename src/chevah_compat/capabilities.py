@@ -16,22 +16,21 @@ def _get_os_name():
     family = sys.platform
     if family.startswith('linux'):
         return 'linux'
-    elif family.startswith('win'):
+    if family.startswith('win'):
         return 'windows'
-    elif family.startswith('aix'):
+    if family.startswith('aix'):
         return 'aix'
-    elif family.startswith('darwin'):
+    if family.startswith('darwin'):
         return 'osx'
-    elif family.startswith('sunos'):
+    if family.startswith('sunos'):
         return 'solaris'
-    elif family.startswith('hp-ux11'):
+    if family.startswith('hp-ux11'):
         return 'hpux'
-    elif family.startswith('openbsd'):
+    if family.startswith('openbsd'):
         return 'openbsd'
-    elif family.startswith('freebsd'):
+    if family.startswith('freebsd'):
         return 'freebsd'
-    else:
-        raise AssertionError(f'OS "{family}" not supported.')
+    raise AssertionError(f'OS "{family}" not supported.')
 
 
 def _get_cpu_type():
@@ -43,7 +42,7 @@ def _get_cpu_type():
     if not base:
         base = platform.machine()
 
-    if base == 'aarch64':  # noqa: cover
+    if base == 'aarch64':  # pragma: no cover
         return 'arm64'
 
     if base == 'x86_64':

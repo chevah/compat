@@ -42,8 +42,7 @@ class UnixFilesystem(PosixFilesystemBase):
 
         if self._avatar.root_folder_path is None:
             return '/'
-        else:
-            return self._avatar.root_folder_path
+        return self._avatar.root_folder_path
 
     def getRealPathFromSegments(self, segments, include_virtual=True):
         """
@@ -167,8 +166,7 @@ class UnixFilesystem(PosixFilesystemBase):
         group_struct = grp.getgrgid(attributes.gid)
         if group_struct.gr_name == group:
             return True
-        else:
-            return False
+        return False
 
     def _getCurrentUmask(self):
         """
@@ -213,10 +211,10 @@ class UnixFilesystem(PosixFilesystemBase):
         with self._impersonateUser():
             if self.isLink(segments):
                 self.deleteFile(segments)
-            elif recursive:
+                return None
+            if recursive:
                 return self._rmtree(path_encoded)
-            else:
-                return os.rmdir(path_encoded)
+            return os.rmdir(path_encoded)
 
     def getStatus(self, segments):
         """

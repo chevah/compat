@@ -1,6 +1,14 @@
 Release notes for chevah.compat
 ===============================
 
+
+1.2.0 - 2024-10-26
+--------------------
+
+* Include nose_randomly extension. The extension is no longer maintained upstream.
+  It also removes the dependency on node.
+
+
 1.1.2 - 2024-10-04
 --------------------
 

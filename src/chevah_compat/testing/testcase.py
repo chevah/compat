@@ -138,8 +138,7 @@ class TwistedTestCase(TestCase):
         """
         if not reactor.threadpool:
             return []
-        else:
-            return reactor.threadpool.threads
+        return reactor.threadpool.threads
 
     def _threadPoolWorking(self):
         """
@@ -148,8 +147,7 @@ class TwistedTestCase(TestCase):
         """
         if not reactor.threadpool:
             return []
-        else:
-            return reactor.threadpool.working
+        return reactor.threadpool.working
 
     @classmethod
     def _cleanReactor(cls):
@@ -164,8 +162,9 @@ class TwistedTestCase(TestCase):
         try:
             reactor.removeAll()
         except (RuntimeError, KeyError):
-            # FIXME:863:
-            # When running threads tests the reactor touched from the test
+            # TODO: When running threads tests the reactor touched from the test
+            # 863
+
             # case itself which run in one tread and from the fixtures/cleanup
             # code which is executed from another thread.
             # removeAll might fail since it detects that internal state
@@ -220,11 +219,11 @@ class TwistedTestCase(TestCase):
         Iterate the reactor.
         """
         reactor.runUntilCurrent()
-        if debug:  # noqa: cover
+        if debug:  # pragma: no cover
             # When debug is enabled with iterate using a small delay in steps,
             # to have a much better debug output.
             # Otherwise the debug messages will flood the output.
-            print(
+            print(  # noqa: T201
                 f'delayed: {self._reactorQueueToString()}\n'
                 f'threads: {reactor.threadCallQueue}\n'
                 f'writers: {reactor.getWriters()}\n'
@@ -242,8 +241,9 @@ class TwistedTestCase(TestCase):
             t = reactor.running and t2
             reactor.doIteration(t)
         else:
-            # FIXME:4428:
-            # When not executed in debug mode, some test will fail as they
+            # TODO: When not executed in debug mode, some test will fail as they
+            # 4428
+
             # will not spin the reactor.
             # To not slow down all the tests, we run with a very small value.
             reactor.doIteration(0.000001)
@@ -298,7 +298,7 @@ class TwistedTestCase(TestCase):
                 f'Reactor is not clean. {location}: {reason}',
             )
 
-        if reactor._started:  # noqa: cover
+        if reactor._started:  # pragma: no cover
             # Reactor was not stopped, so stop it before raising the error.
             self._shutdownTestReactor()
             raise AssertionError('Reactor was not stopped.')
@@ -320,7 +320,7 @@ class TwistedTestCase(TestCase):
         if self._threadPoolThreads():
             raise_failure('threadpoool threads', self._threadPoolThreads())
 
-        if len(reactor.getWriters()) > 0:  # noqa: cover
+        if len(reactor.getWriters()) > 0:  # pragma: no cover
             raise_failure('writers', str(reactor.getWriters()))
 
         for reader in reactor.getReaders():
@@ -329,7 +329,7 @@ class TwistedTestCase(TestCase):
                 if isinstance(reader, reader_type):
                     excepted = True
                     break
-            if not excepted:  # noqa: cover
+            if not excepted:  # pragma: no cover
                 raise_failure('readers', str(reactor.getReaders()))
 
         for delayed_call in reactor.getDelayedCalls():
@@ -524,7 +524,7 @@ class TwistedTestCase(TestCase):
             delayed_calls = reactor.getDelayedCalls()
             try:
                 delayed_calls.remove(self._reactor_timeout_call)
-            except ValueError:  # noqa: cover
+            except ValueError:  # pragma: no cover
                 # Timeout might be no longer be there.
                 pass
             if not delayed_calls:
@@ -658,8 +658,9 @@ class TwistedTestCase(TestCase):
 
         @return: The result of C{deferred}.
         """
-        # FIXME:1370:
-        # Remove / re-route this code after upgrading to Twisted 13.0.
+        # TODO: Remove / re-route this code after upgrading to Twisted 13.0.
+        # 1370
+
         result = []
         deferred.addBoth(result.append)
         if not result:
@@ -667,14 +668,15 @@ class TwistedTestCase(TestCase):
                 f'Success result expected on {deferred!r}, '
                 f'found no result instead',
             )
-        elif isinstance(result[0], Failure):
+            return None
+        if isinstance(result[0], Failure):
             self.fail(
                 f'Success result expected on {deferred!r}, '
                 f'found failure result instead:\n'
                 f'{result[0].getBriefTraceback()}',
             )
-        else:
-            return result[0]
+            return None
+        return result[0]
 
     def failureResultOf(self, deferred, *expectedExceptionTypes):
         """
@@ -701,8 +703,9 @@ class TwistedTestCase(TestCase):
         @return: The failure result of C{deferred}.
         @rtype: L{failure.Failure}
         """
-        # FIXME:1370:
-        # Remove / re-route this code after upgrading to Twisted 13
+        # TODO: Remove / re-route this code after upgrading to Twisted 13
+        # 1370
+
         result = []
         deferred.addBoth(result.append)
         if not result:
@@ -710,12 +713,14 @@ class TwistedTestCase(TestCase):
                 f'Failure result expected on {deferred!r}, '
                 f'found no result instead',
             )
-        elif not isinstance(result[0], Failure):
+            return None
+        if not isinstance(result[0], Failure):
             self.fail(
                 f'Failure result expected on {deferred!r}, '
                 f'found success result ({result[0]!r}) instead',
             )
-        elif expectedExceptionTypes and not result[0].check(
+            return None
+        if expectedExceptionTypes and not result[0].check(
             *expectedExceptionTypes,
         ):
             expectedString = ' or '.join(
@@ -730,8 +735,8 @@ class TwistedTestCase(TestCase):
                 f'found type {result[0].type!r} '
                 f'instead: {result[0].getBriefTraceback()}',
             )
-        else:
-            return result[0]
+            return None
+        return result[0]
 
     def assertNoResult(self, deferred):
         """
@@ -752,8 +757,9 @@ class TwistedTestCase(TestCase):
         @raise SynchronousTestCase.failureException: If the
             L{Deferred<twisted.internet.defer.Deferred>} has a result.
         """
-        # FIXME:1370:
-        # Remove / re-route this code after upgrading to Twisted 13
+        # TODO: Remove / re-route this code after upgrading to Twisted 13
+        # 1370
+
         result = []
 
         def cb(res):
@@ -867,7 +873,7 @@ def _get_os_version():
         parts = platform.release().split('.')
         return f'solaris-{parts[1]}'
 
-    if os_name == 'aix':  # noqa: cover
+    if os_name == 'aix':  # pragma: no cover
         return f'aix-{platform.version()}.{platform.release()}'
 
     if os_name != 'linux':
@@ -1032,7 +1038,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         for function, args, kwargs in reversed(self.__cleanup__):
             try:
                 function(*args, **kwargs)
-            except Exception as error:  # noqa: cover
+            except Exception as error:  # pragma: no cover
                 self._teardown_errors.append((error, function, args, kwargs))
 
         self.__cleanup__ = []
@@ -1066,8 +1072,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         """
         Check that no temporary files or folders are present.
         """
-        # FIXME:922:
-        # Move all filesystem checks into a specialized class
+        # TODO: Move all filesystem checks into a specialized class
+        # 922
+
         if self.test_segments:
             if mk.fs.isFolder(self.test_segments):
                 mk.fs.deleteFolder(self.test_segments, recursive=True)
@@ -1083,7 +1090,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             except AssertionError as error:
                 errors.append(str(error))
 
-        if errors:  # noqa: cover
+        if errors:  # pragma: no cover
             self._teardown_errors.append(
                 AssertionError(
                     'There are temporary files or folders left over.\n'
@@ -1091,7 +1098,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
                 ),
             )
 
-    def shortDescription(self):  # noqa: cover
+    def shortDescription(self):  # pragma: no cover
         """
         The short description for the test.
 
@@ -1155,7 +1162,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         if isinstance(first, str) and not isinstance(
             second,
             str,
-        ):  # noqa: cover
+        ):  # pragma: no cover
             if not msg:
                 msg = f'First is unicode while second is str for "{first}".'
             raise AssertionError(msg.encode('utf-8'))
@@ -1163,7 +1170,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         if not isinstance(first, str) and isinstance(
             second,
             str,
-        ):  # noqa: cover
+        ):  # pragma: no cover
             if not msg:
                 msg = f'First is str while second is unicode for "{first}".'
             raise AssertionError(msg.encode('utf-8'))
@@ -1285,8 +1292,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             try:
                 temp_filesystem.deleteFile(segments)
             except Exception:
-                # FIXME:688:
-                # If this is a link to a broken folder,
+                # TODO: If this is a link to a broken folder,
+                # 688
+
                 # it is detected as a file,
                 # but on Windows it is a folder.
                 temp_filesystem.deleteFolder(segments, recursive=True)
@@ -1302,7 +1310,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             import resource
 
             return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        elif cls.os_family == 'nt':
+        if cls.os_family == 'nt':
             from wmi import WMI
 
             local_wmi = WMI('.')
@@ -1314,11 +1322,11 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             )
             result = local_wmi.query(query.encode('utf-8'))
             peak_working_set_size = int(result[0].PeakWorkingSetSize)
-            # FIXME:2099:
-            # Windows XP reports value in bytes, instead of Kilobytes.
+            # TODO: Windows XP reports value in bytes, instead of Kilobytes.
+            # 2099
+
             return int(peak_working_set_size)
-        else:
-            raise AssertionError('OS not supported.')
+        raise AssertionError('OS not supported.')
 
     def folderInTemp(self, *args, **kwargs):
         """
@@ -1339,7 +1347,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         Overwrite stdlib to swap the arguments.
         """
         if source not in target:
-            message = f'{repr(source)} not in {repr(target)}.'
+            message = f'{source!r} not in {target!r}.'
             raise AssertionError(message.encode('utf-8'))
 
     def assertIsInstance(self, expected_type, value, msg=None):
@@ -1439,8 +1447,8 @@ class FileSystemTestCase(ChevahTestCase):
 
     @classmethod
     def setUpClass(cls):
-        # FIXME:924:
-        # Disabled when we can not find the home folder path.
+        # TODO: Disabled when we can not find the home folder path.
+        # 924
         if not process_capabilities.get_home_folder:
             raise cls.skipTest()
 

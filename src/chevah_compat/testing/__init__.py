@@ -21,23 +21,26 @@ mk
 TEST_ACCOUNT_USERNAME = 'mâț mițișor'
 TEST_ACCOUNT_PASSWORD = '42!Baroșanu'
 TEST_ACCOUNT_GROUP = 'g mâțmițișor'
-# FIXME:2106:
-# Replace hard-coded constant with posixID()
+# TODO: Replace hard-coded constant with posixID()
+# 2106
+
 TEST_ACCOUNT_UID = 2000
 TEST_ACCOUNT_GID = 2010
 TEST_ACCOUNT_GROUP_WIN = 'Users'
 TEST_ACCOUNT_USERNAME_OTHER = 'miț motan'
 TEST_ACCOUNT_PASSWORD_OTHER = '4!Altapara'
-# FIXME:2106:
-# Replace hard-coded constant with posixID()
+# TODO: Replace hard-coded constant with posixID()
+# 2106
+
 TEST_ACCOUNT_UID_OTHER = 2001
 TEST_ACCOUNT_GID_OTHER = 2011
 TEST_ACCOUNT_GROUP_OTHER = 'g mițmotan'
 
 # Another test group to test an user belonging to multiple groups.
 TEST_ACCOUNT_GROUP_ANOTHER = 'g-another-test'
-# FIXME:2106:
-# Replace hard-coded constant with posixID()
+# TODO: Replace hard-coded constant with posixID()
+# 2106
+
 TEST_ACCOUNT_GID_ANOTHER = 2012
 
 # Domain controller helpers.

@@ -1,3 +1,4 @@
+# ruff: noqa: T201
 # Copyright (c) 2012 Adi Roiban.
 # See LICENSE for details.
 """
@@ -492,8 +493,7 @@ class OSAdministrationUnix:
         """
         if self.fs.exists(self.shadow_segments):
             return self._setUserPassword_shadow(user, self.shadow_segments)
-        else:
-            return self._setUserPassword_passwd(user, self.passwd_segments)
+        return self._setUserPassword_passwd(user, self.passwd_segments)
 
     def _setUserPassword_shadow(self, user, segments):
         """
@@ -995,8 +995,9 @@ class OSAdministrationWindows(OSAdministrationUnix):
         home_base = os.path.dirname(os.getenv('USERPROFILE'))
         profile_folder_path = os.path.join(home_base, user.name)
 
-        # FIXME:927:
-        # We need to look for a way to delete home folders with unicode
+        # TODO: We need to look for a way to delete home folders with unicode
+        # 927
+
         # names.
         command = f'rmdir /S /Q "{profile_folder_path}"'
         result = subprocess.call(command, shell=True)

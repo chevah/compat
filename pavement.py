@@ -1,5 +1,6 @@
 # Copyright (c) 2010-2016 Adi Roiban.
 # See LICENSE for details.
+# ruff: noqa: T201
 """
 Build script for chevah-compat.
 """
@@ -62,8 +63,8 @@ SETUP['test']['package'] = 'chevah_compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = [
     '--with-randomly',
-    # FIXME:690:
-    # Add support for extenstions.
+    # TODO: Add support for extenstions.
+    # 690
     # '--with-timer',
     # '--with-run-reporter',
     # '--with-memory-usage',
@@ -214,18 +215,19 @@ def test_ci2(args):
     """
     # When running in CI mode, we want to get more reports.
     SETUP['test']['nose_options'] += [
-        # FIXME:690:
-        # Add support for extensions.
+        # TODO: Add support for extensions.
+        # 690
         # '--with-run-reporter',
         # '--with-timer',
         '-v',
     ]
 
     # Show some info about the current environment.
-    from chevah_compat.testing.testcase import ChevahTestCase
     from coverage.cmdline import main as coverage_main
     from OpenSSL import SSL
     from OpenSSL import __version__ as pyopenssl_version
+
+    from chevah_compat.testing.testcase import ChevahTestCase
 
     print(
         f'{ChevahTestCase.os_family} / '
@@ -268,9 +270,7 @@ def test_ci2(args):
     else:
         args = [args]
 
-    exit_code = call_task('test_python', args=args)
-
-    return exit_code
+    return call_task('test_python', args=args)
 
 
 @task
@@ -310,16 +310,48 @@ def fix(args):
     """
     ruff_bin = os.path.join(pave.path.build, 'bin', 'ruff')
     check_result = subprocess.run(
-        [ruff_bin, 'check', '--fix', '--unsafe-fixes', '--no-cache'],
+        [ruff_bin, 'check', '--fix', '--unsafe-fixes', '--no-cache'] + args,
         stdout=sys.stdout,
         stderr=sys.stderr,
     )
 
     format_result = subprocess.run(
-        [ruff_bin, 'format', '--no-cache'],
+        [ruff_bin, 'format', '--no-cache'] + args,
         stdout=sys.stdout,
         stderr=sys.stderr,
     )
 
     if check_result.returncode != 0 or format_result != 0:
         sys.exit(1)
+
+
+@task
+def migrate_fixme():
+    """
+    Migrate the FIX_ME markers to the ruff TO_DO markers.
+    """
+    for root, dirs, files in os.walk('.'):
+        for name in files:
+            if not name.endswith('.py'):
+                continue
+
+            have_fixes = False
+            file_path = os.path.join(root, name)
+            with open(file_path) as stream:
+                lines = stream.readlines()
+                for line_no, line in enumerate(lines):
+                    if '# FIXME:' not in line:
+                        continue
+
+                    have_fixes = True
+                    padding = line.split('# ')[0]
+                    comment = lines[line_no + 1].split('# ', 1)[-1].strip()
+                    issue = line.split('FIXME:')[1].replace(':', '')
+                    lines[line_no] = f'{padding}# TODO: {comment}\n'
+                    lines[line_no + 1] = f'{padding}# {issue}\n'
+
+            if not have_fixes:
+                continue
+
+            with open(file_path, 'w') as stream:
+                stream.write(''.join(lines))

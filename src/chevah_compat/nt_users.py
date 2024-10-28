@@ -69,8 +69,9 @@ class NTUsers(CompatUsers):
         """
         Get home folder for local user.
         """
-        # FIXME:2119:
-        # Replace with decorator that will raise an exception when
+        # TODO: Replace with decorator that will raise an exception when
+        # 2119
+
         # insufficient capabilities.
         if not process_capabilities.get_home_folder:
             message = (
@@ -87,8 +88,7 @@ class NTUsers(CompatUsers):
                         'Invalid username/token combination.',
                     )
                 return self._getHomeFolderPath()
-            else:
-                return self._getHomeFolder(username, token)
+            return self._getHomeFolder(username, token)
         except MissingProfileFolderException:
             self.raiseFailedToGetHomeFolder(
                 username,
@@ -274,8 +274,9 @@ class NTUsers(CompatUsers):
         Return the primary group for username.
         This just returns WINDOWS_PRIMARY_GROUP.
         """
-        # FIXME:1250:
-        # I don't know how to get primary group on Windows.
+        # TODO: I don't know how to get primary group on Windows.
+        # 1250
+
         if not self.userExists(username):
             self.raiseFailedToGetPrimaryGroup(username)
         return WINDOWS_PRIMARY_GROUP
@@ -292,9 +293,8 @@ class NTUsers(CompatUsers):
             primary_domain_controller = win32net.NetGetDCName(None, parts[1])
             username = parts[0]
             return (primary_domain_controller, username)
-        else:
-            # This is not an UPN name.
-            return (None, upn)
+        # This is not an UPN name.
+        return (None, upn)
 
     def _getToken(self, username, password):
         """

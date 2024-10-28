@@ -14,8 +14,7 @@ class CompatException(Exception):
         self.message = message
 
     def __repr__(self):
-        result = f'CompatException {self.message}'
-        return result
+        return f'CompatException {self.message}'
 
 
 class ChangeUserException(CompatException):
@@ -40,8 +39,7 @@ class CompatError(Exception):
         self.message = message
 
     def __repr__(self):
-        result = f'CompatError {str(self.event_id)} - {self.message}'
-        return result
+        return f'CompatError {self.event_id!s} - {self.message}'
 
     def __str__(self):
         return self.__repr__()

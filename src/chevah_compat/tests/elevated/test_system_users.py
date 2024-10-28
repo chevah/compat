@@ -412,8 +412,8 @@ class TestSystemUsers(SystemUsersTestCase):
             self.assertNotEqual(initial_uid, uid)
             self.assertNotEqual(initial_gid, gid)
             if self.os_name not in ['osx', 'freebsd']:
-                # FIXME:3808:
-                # Investigate why this no longer works/passes on OSX.
+                # TODO: Investigate why this no longer works/passes on OSX.
+                # 3808
                 # On OSX newer than 10.5 get/set groups are useless.
                 self.assertNotEqual(initial_groups, impersonated_groups)
 
@@ -671,9 +671,9 @@ class TestSystemUsersPAM(CompatTestCase):
         if not process_capabilities.pam:
             raise cls.skipTest()
         if not os.path.exists('/etc/pam.d/chevah-pam-test'):
-            # FIXME:3061:
-            # 'chevah-pam-test PAM module not configured on this machine.
-            # Later we might want to force this on all systems supporting PAM.
+            # TODO: force this on all systems supporting PAM.
+            # 3061
+            # chevah-pam-test PAM module not configured on this machine.
             raise cls.skipTest()
 
     def test_pamWithUsernameAndPassword_ok(self):

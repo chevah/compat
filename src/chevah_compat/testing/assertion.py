@@ -37,8 +37,9 @@ class Contains:
         for value in self._values:
             if value not in other:
                 return False
+        return None
 
-    def __hash__(self):  # noqa: cover
+    def __hash__(self):  # pragma: no cover
         return hash(self._value[0])
 
 
@@ -137,7 +138,7 @@ class AssertionMixin:
             self.assertIsFailure(failure_or_deferred)
             failure = failure_or_deferred.result
 
-        if failure.type is not failure_class:  # noqa: cover
+        if failure.type is not failure_class:  # pragma: no cover
             message = (
                 f'Failure {text_type(failure)} is not of type {failure_class}'
             )
@@ -154,7 +155,7 @@ class AssertionMixin:
             except StopIteration:
                 pass
             else:
-                message = f'Iterable is not empty.\n{repr(target)}.'
+                message = f'Iterable is not empty.\n{target!r}.'
                 raise AssertionError(message)
             return
 
@@ -184,7 +185,7 @@ class AssertionMixin:
         Raise AssertionError if source does not contain `token`.
         """
         if token not in source:
-            message = f'{repr(source)} does not contains {repr(token)}.'
+            message = f'{source!r} does not contains {token!r}.'
             raise AssertionError(message)
 
     def assertNotContains(self, token, source):
@@ -192,7 +193,7 @@ class AssertionMixin:
         Raise AssertionError if source does contain `token`.
         """
         if token in source:
-            message = f'{repr(source)} contains {repr(token)}.'
+            message = f'{source!r} contains {token!r}.'
             raise AssertionError(message)
 
     def assertTextContains(self, pattern, source):
@@ -200,7 +201,7 @@ class AssertionMixin:
         Raise AssertionError if pattern is not found in source.
         """
         if pattern not in pattern:
-            message = f'{repr(pattern)} not contained in\n{repr(source)}.'
+            message = f'{pattern!r} not contained in\n{source!r}.'
             raise AssertionError(message)
 
     def assertStartsWith(self, start, source):
@@ -208,7 +209,7 @@ class AssertionMixin:
         Raise AssertionError if `source` does not starts with `start`.
         """
         if not source.startswith(start):
-            message = f'{repr(source)} does not starts with {repr(start)}'
+            message = f'{source!r} does not starts with {start!r}'
             raise AssertionError(message)
 
     def assertEndsWith(self, end, source):
@@ -216,7 +217,7 @@ class AssertionMixin:
         Raise AssertionError if `source` does not ends with `end`.
         """
         if not source.endswith(end):
-            message = f'{repr(source)} does not end with {repr(end)}'
+            message = f'{source!r} does not end with {end!r}'
             raise AssertionError(message)
 
     def assertProvides(self, interface, obj):
