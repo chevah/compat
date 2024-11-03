@@ -2,6 +2,14 @@ Release notes for chevah.compat
 ===============================
 
 
+1.2.2 - 2024-11-03
+------------------
+
+* Allow cleaning testing filesystem inside the `RUNNER_WORKSPACE` environment
+  variable path.
+  This is for GitHub Action tests executed inside a container.
+
+
 1.2.1 - 2024-11-03
 ------------------
 

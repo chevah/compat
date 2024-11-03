@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chevah-compat"
-version = "1.2.1"
+version = "1.2.2"
 maintainers = [
     { name = "Adi Roiban", email = "adi.roiban@proatria.com" },
 ]

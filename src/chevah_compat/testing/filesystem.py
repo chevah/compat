@@ -266,8 +266,12 @@ class LocalTestFilesystem(LocalFilesystem):
             if path == '/':
                 return False
 
-            # Allow cleaning temporary directories.
             if tempfile.tempdir and path.startswith(tempfile.tempdir):
+                # Allow cleaning default Python temporary directories.
+                return True
+
+            if path.startswith(os.environ.get('RUNNER_WORKSPACE', '/tmp/')):
+                # Allow cleaning GitHub Actions work directories.
                 return True
 
             if os.name == 'posix':
