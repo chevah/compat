@@ -1,3 +1,89 @@
+[build-system]
+requires = [
+    "setuptools>=61.2",
+]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "chevah-compat"
+version = "1.2.1"
+maintainers = [
+    { name = "Adi Roiban", email = "adi.roiban@proatria.com" },
+]
+description = "Helpers for running Python code on many OSes."
+readme = "README.rst"
+requires-python = "~=3.8"
+
+# The runtime dependencies should be relaxed as otherwise it will
+# generate conflicts with the code using chevah-compat.
+dependencies = [
+    "zope.interface >= 5.4.0",
+    "pywin32 >= 305 ; platform_system == 'Windows'",
+    "python-pam >= 2.0.2 ; platform_system == 'Linux'",
+    # Used to detect Linux distributions.
+    "distro >= 1.6.0",
+]
+
+
+[project.license]
+text = "BSD"
+
+
+[project.urls]
+Homepage = "https://github.com/chevah/compat"
+
+
+[project.optional-dependencies]
+# These are the deps required to develop.
+# Try to pin them as much as possible.
+dev = [
+    "ruff ~= 0.7",
+    "bunch",
+    "Twisted==23.10.0+chevah.2",
+    "incremental",
+    "service-identity==24.1.0",
+    "pynose == 1.5.3",
+    "coverage ~= 7.5",
+    "diff_cover == 6.4.4",
+    "codecov == 2.1.12",
+    # Required for showing OpenSSL version in test_ci.
+    "pyOpenSSL",
+    #  Required for some unicode handling.
+    "unidecode",
+    "wmi ~= 1.5.1; platform_system == 'Windows'",
+]
+
+
+[project.entry-points."nose.plugins.0.10"]
+memory-usage = "chevah_compat.testing.nose_memory_usage:MemoryUsage"
+test-time = "chevah_compat.testing.nose_test_timer:TestTimer"
+run-reporter = "chevah_compat.testing.nose_run_reporter:RunReporter"
+randomly = "chevah_compat.testing.nose_randomly:RandomlyPlugin"
+
+
+[tool.setuptools]
+platforms = [
+    "any",
+]
+include-package-data = false
+
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+
+[tool.setuptools.packages.find]
+where = [
+    "src",
+]
+namespaces = false
+
+
+[tool.distutils.bdist_wheel]
+universal = 0
+
+
 # See ruff settings at https://docs.astral.sh/ruff/settings/
 [tool.ruff]
 exclude = [
