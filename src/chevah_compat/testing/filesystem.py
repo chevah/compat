@@ -267,7 +267,7 @@ class LocalTestFilesystem(LocalFilesystem):
                 return False
 
             # Allow cleaning temporary directories.
-            if tempfile.tempdir and path.startswith(path.tempdir):
+            if tempfile.tempdir and path.startswith(tempfile.tempdir):
                 return True
 
             if os.name == 'posix':
