@@ -6,6 +6,7 @@ Filesystem helpers for tests.
 
 import os
 import re
+import tempfile
 import uuid
 
 import six
@@ -265,22 +266,35 @@ class LocalTestFilesystem(LocalFilesystem):
             if path == '/':
                 return False
 
+            # Allow cleaning temporary directories.
+            if tempfile.tempdir and path.startswith(path.tempdir):
+                return True
+
             if os.name == 'posix':
                 # On Unix it is allowed to clean folder only in these
                 # folders.
-                if not path.startswith(('/srv', '/home', '/tmp')):
-                    return False
-            if os.name == 'nt':
-                if path == 'c:\\':
-                    return False
-                # Allow the windows temp.
-                if path.lower().startswith('c:\\windows\\temp'):
+
+                if path.startswith(('/srv', '/home', '/tmp')):
                     return True
-                # On Windows deny Windows or Program Files.
-                if 'Windows' in path:
-                    return False
-                if 'Program Files' in path:
-                    return False
+
+                return False
+
+            # We are on Windows.
+            if path == 'c:\\':
+                # Deny direct Windows root folder.
+                return False
+
+            # Allow the windows temp.
+            if path.lower().startswith('c:\\windows\\temp'):
+                return True
+
+            # On Windows deny Windows or Program Files.
+            if 'Windows' in path:
+                return False
+
+            if 'Program Files' in path:
+                return False
+
             return True
 
         if not have_safe_path(path):
