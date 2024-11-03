@@ -211,20 +211,9 @@ jobs:
       with:
         limit-access-to-actor: true
 
-    # FIXME:691:
-    # We should have just a single test step here to run all the tests in one
-    # go.
-    # Not sure why on Windows the normal tests are not discovered by default.
-    - name: Test normal
+    - name: Test
       run: |
-        ./pythia.sh test -vs normal
-      env:
-        CODECOV_TOKEN: enabled
-        USER: runneradmin
-
-    - name: Test elevated
-      run: |
-        ./pythia.sh test_ci2 elevated
+        ./pythia.sh test_ci2
       env:
         CODECOV_TOKEN: enabled
         USER: runneradmin
