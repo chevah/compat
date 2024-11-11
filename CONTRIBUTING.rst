@@ -5,9 +5,10 @@ Chevah Compat Development Guide
 Release process
 ---------------
 
-* Update the version in setup.py
+* Update the version in pyproject.toml
 * Update the release-notes.rst
-* Publish: ./build-compat/bin/python setup.py bdist_wheel upload -r chevah
+* Build wheel and sdist: python -m build
+* Publish: twine upload -r chevah dist/*
 
 
 Local tests

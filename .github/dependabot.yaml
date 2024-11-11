@@ -1,0 +1,21 @@
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+
+updates:
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    allow:
+      - dependency-type: "all"
+    schedule:
+      interval: monthly
+    labels:
+      - "tech-debt"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels:
+      - "tech-debt"

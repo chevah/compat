@@ -2,15 +2,30 @@ Release notes for chevah.compat
 ===============================
 
 
+1.2.2 - 2024-11-03
+------------------
+
+* Allow cleaning testing filesystem inside the `RUNNER_WORKSPACE` environment
+  variable path.
+  This is for GitHub Action tests executed inside a container.
+
+
+1.2.1 - 2024-11-03
+------------------
+
+* Allow cleaning testing filesystem inside the Python default temporary
+  directory, `tempfile.tempdir`.
+
+
 1.2.0 - 2024-10-26
---------------------
+------------------
 
 * Include nose_randomly extension. The extension is no longer maintained upstream.
   It also removes the dependency on node.
 
 
 1.1.2 - 2024-10-04
---------------------
+------------------
 
 * Update for python 3.12.
 * Fix tearDown error handling.
