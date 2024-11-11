@@ -45,7 +45,7 @@ dev = [
     "service-identity==24.1.0",
     "pynose == 1.5.3",
     "coverage ~= 7.5",
-    "diff_cover == 6.4.4",
+    "diff_cover == 9.2.0",
     "codecov == 2.1.12",
     # Required for showing OpenSSL version in test_ci.
     "pyOpenSSL",
