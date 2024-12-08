@@ -277,7 +277,7 @@ def test_ci2(args):
 @consume_args
 def pytest(args):
     """
-    Run tests for server side API.
+    Run tests using pytest.
     """
     import sys
 
