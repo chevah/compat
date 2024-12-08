@@ -76,7 +76,7 @@ jobs:
 
     - name: Test pytest elevated
       run: |
-        sudo ./pythia.sh pytest src/chevah_compat/tests/elevated/
+        sudo -E ./pythia.sh pytest src/chevah_compat/tests/elevated/
       env:
         CHEVAH_BUILD: build-py3-ț
 
