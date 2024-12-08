@@ -43,6 +43,8 @@ def _sanitize_name_windows(candidate):
 
 
 class SanitizeNameMixin:
+    __test__ = False
+
     @classmethod
     def sanitizeName(cls, name):
         """

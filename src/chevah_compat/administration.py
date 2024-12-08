@@ -102,14 +102,16 @@ class OSAdministrationUnix:
 
         # Try to get the group in list of all groups.
         group_found = False
-        for iterator in range(1000):
+        for iterator in range(100):
             if group_found:
                 break
             for group in grp.getgrall():
-                if group[0] == name:
+                if group.gr_name == name:
                     group_found = True
                     break
-            time.sleep(0.1)
+            if not group_found:
+                print(f'Waiting for group "{name}"...')
+                time.sleep(0.1)
 
         if not group_found:
             raise AssertionError(f'Failed to get group from all: {name}')
@@ -123,6 +125,7 @@ class OSAdministrationUnix:
             except KeyError:
                 # Group not ready yet.
                 pass
+            print(f'Waiting for group "{name}" in API...')
             time.sleep(0.1)
 
         raise AssertionError(
