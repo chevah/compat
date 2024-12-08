@@ -241,6 +241,20 @@ jobs:
         CODECOV_TOKEN: enabled
         USER: runneradmin
 
+    - name: Test pytest
+      run: |
+        ./pythia.sh pytest
+      env:
+        CODECOV_TOKEN: enabled
+        USER: runneradmin
+
+    - name: Test pytest elevated
+      run: |
+        ./pythia.sh pytest src/chevah_compat/tests/elevated/
+      env:
+        CODECOV_TOKEN: enabled
+        USER: runneradmin
+
     - name: Public coverage
       if: ${{ !cancelled() }}
       run: ./pythia.sh codecov_publish
