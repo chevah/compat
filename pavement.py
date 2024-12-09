@@ -275,6 +275,20 @@ def test_ci2(args):
 
 @task
 @consume_args
+def pytest(args):
+    """
+    Run tests using pytest.
+    """
+    import sys
+
+    from pytest import console_main
+
+    sys.argv = ['pytest'] + args
+    sys.exit(console_main())
+
+
+@task
+@consume_args
 def lint(args):
     """
     Check that the source code is ok

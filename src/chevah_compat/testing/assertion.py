@@ -148,7 +148,7 @@ class AssertionMixin:
         """
         Raise AssertionError if target is not empty.
         """
-        if isinstance(target, collections.Iterable):
+        if isinstance(target, collections.abc.Iterable):
             iterator = iter(target)
             try:
                 next(iterator)
@@ -167,7 +167,7 @@ class AssertionMixin:
         """
         Raise AssertionError if target is empty.
         """
-        if isinstance(target, collections.Iterable):
+        if isinstance(target, collections.abc.Iterable):
             try:
                 self.assertIsEmpty(target)
             except AssertionError:

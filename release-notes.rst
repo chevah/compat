@@ -1,6 +1,11 @@
 Release notes for chevah.compat
 ===============================
 
+1.3.0 - 2024-12-08
+------------------
+
+* Add support for running tests with `pytest`.
+
 
 1.2.2 - 2024-11-03
 ------------------

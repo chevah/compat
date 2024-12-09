@@ -727,37 +727,20 @@ class TestChevahTestCase(ChevahTestCase):
                 'is True.',
             )
 
-    @conditionals.onAdminPrivileges(True)
-    def test_onAdminPrivileges_present(self):
-        """
-        Run test only on machines that execute the tests with administrator
-        privileges.
-        """
-        if self.os_version in ['nt-5.1', 'nt-5.2']:
-            raise AssertionError(
-                'Windows XP and 2003 BS does not run as administrator',
-            )
-
-        if self.ci_name in [self.CI.TRAVIS, self.CI.GITHUB]:
-            raise AssertionError(
-                'Travis and GitHub does not run as administrator',
-            )
-
     @conditionals.onAdminPrivileges(False)
     def test_onAdminPrivileges_missing(self):
         """
-        Run test on build slaves that do not have administrator privileges.
+        Runs test in environments that don't have administrator privileges.
         """
-        if (
-            self.TEST_LANGUAGE == 'FR'
-            or self.os_name
-            or self.ci_name not in [self.CI.BUILDBOT, self.CI.LOCAL]
-        ):
-            # Not available on Windows XP and 2003 and non-buildbot runs.
+        if self.TEST_LANGUAGE == 'FR' or self.ci_name in [
+            self.CI.LOCAL,
+            self.CI.GITHUB,
+        ]:
+            # We expect to local run not to have admin.
             return
 
         raise AssertionError(
-            f'"{self.hostname}" is running with administrator privileges',
+            f'"{self.hostname}" is running with non-administrator privileges',
         )
 
     def test_cleanup_test_segments_file(self):

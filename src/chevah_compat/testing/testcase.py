@@ -92,9 +92,7 @@ class TwistedTestCase(TestCase):
         """
         Return true if last test run was successful.
         """
-        if self._outcome.result.errors:
-            return False
-        return True
+        return self._outcome.success
 
     def tearDown(self):
         try:
@@ -993,7 +991,7 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         threads = threading.enumerate()
         if len(threads) > 1:
             for thread in threads:
-                thread_name = thread.getName()
+                thread_name = thread.name
                 if self._isExceptedThread(thread_name):
                     continue
                 self._teardown_errors.append(
