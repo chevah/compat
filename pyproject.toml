@@ -40,7 +40,7 @@ Homepage = "https://github.com/chevah/compat"
 dev = [
     "ruff ~= 0.7",
     "bunch",
-    "Twisted==24.10.0",
+    "Twisted==24.11.0",
     "incremental",
     "service-identity==24.2.0",
     "pynose == 1.5.3",
