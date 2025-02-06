@@ -1208,8 +1208,10 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
         cls.cleanTemporaryFolder()
 
     @classmethod
-    def dropPrivileges(cls):
-        """Drop privileges to normal users."""
+    def setupPrivileges(cls):
+        """
+        Drop privileges to non-admin user that is expected to run the tests.
+        """
         if cls._drop_user == '-':
             return
 

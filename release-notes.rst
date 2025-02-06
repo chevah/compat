@@ -8,6 +8,7 @@ Release notes for chevah.compat
 * ChangeUserException was renamed to ChangeUserError and is now a CompatError.
 * On Unix, CompatUsers.executeAsUser has better support for thread usage.
 * ChevahTestCase.EXCEPTED_DELAYED_CALLS now requires the canonical name
+* ChevahTestCase.dropPrivileges was renamed to setupPrivileges
 
 
 1.3.0 - 2024-12-08
