@@ -7,7 +7,7 @@ Provides information about capabilities for a process on Unix.
 from zope.interface import implementer
 
 from chevah_compat.capabilities import BaseProcessCapabilities
-from chevah_compat.exceptions import ChangeUserException
+from chevah_compat.exceptions import ChangeUserError
 from chevah_compat.helpers import _
 from chevah_compat.interfaces import IProcessCapabilities
 from chevah_compat.unix_users import _ExecuteAsUser
@@ -26,7 +26,7 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
         try:
             with _ExecuteAsUser(euid=0, egid=0):
                 return True
-        except ChangeUserException:
+        except ChangeUserError:
             return False
 
     @property

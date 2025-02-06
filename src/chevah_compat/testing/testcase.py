@@ -603,7 +603,7 @@ class TwistedTestCase(TestCase):
         raw_name = str(delayed_call.func)
         raw_name = raw_name.replace('<function ', '')
         raw_name = raw_name.replace('<bound method ', '')
-        return raw_name.split(' ', 1)[0].split('.')[-1]
+        return raw_name.split(' at 0x', 1)[0]
 
     def getDeferredFailure(
         self,

@@ -17,12 +17,6 @@ class CompatException(Exception):
         return f'CompatException {self.message}'
 
 
-class ChangeUserException(CompatException):
-    """
-    User could not be impersonated.
-    """
-
-
 class AdjustPrivilegeException(CompatException):
     """
     Could not adjust process privileges.
@@ -43,3 +37,13 @@ class CompatError(Exception):
 
     def __str__(self):
         return self.__repr__()
+
+
+class ChangeUserError(CompatError):
+    """
+    User could not be impersonated.
+    """
+
+    def __init__(self, message):
+        self.event_id = 1006
+        self.message = message

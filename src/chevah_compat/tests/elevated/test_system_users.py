@@ -14,7 +14,7 @@ from chevah_compat import (
 )
 from chevah_compat.administration import os_administration
 from chevah_compat.constants import WINDOWS_PRIMARY_GROUP
-from chevah_compat.exceptions import ChangeUserException, CompatError
+from chevah_compat.exceptions import ChangeUserError, CompatError
 from chevah_compat.helpers import NoOpContext
 from chevah_compat.interfaces import IHasImpersonatedAvatar
 from chevah_compat.testing import (
@@ -433,9 +433,9 @@ class TestSystemUsers(SystemUsersTestCase):
     def test_executeAsUser_unix_user_does_not_exists(self):
         """
         If the user does not exist, executeAsUser will raise
-        ChangeUserException.
+        ChangeUserError.
         """
-        with self.assertRaises(ChangeUserException):
+        with self.assertRaises(ChangeUserError):
             system_users.executeAsUser(username='no-such-user')
 
     def test_getGroupForUser_only_default_user_group_unix(self):

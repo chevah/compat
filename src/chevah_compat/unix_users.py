@@ -19,7 +19,7 @@ except ImportError:
 from zope.interface import implementer
 
 from chevah_compat.compat_users import CompatUsers
-from chevah_compat.exceptions import ChangeUserException
+from chevah_compat.exceptions import ChangeUserError
 from chevah_compat.helpers import NoOpContext, _
 from chevah_compat.interfaces import (
     IFileSystemAvatar,
@@ -35,7 +35,7 @@ def _get_euid_and_egid(username):
     try:
         pwnam = pwd.getpwnam(username)
     except KeyError:
-        raise ChangeUserException(_('User does not exists.'))
+        raise ChangeUserError('Username does not exists.')
 
     return (pwnam.pw_uid, pwnam.pw_gid)
 
@@ -48,12 +48,12 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
         try:
             pwnam = pwd.getpwnam(username)
         except KeyError:
-            raise ChangeUserException('User does not exists.')
+            raise ChangeUserError('User does not exists.')
         euid = pwnam.pw_uid
         egid = pwnam.pw_gid
     else:
         if euid is None:
-            raise ChangeUserException(
+            raise ChangeUserError(
                 'You need to pass euid when username is not passed.',
             )
         pwnam = pwd.getpwuid(euid)
@@ -75,7 +75,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
         os.setegid(egid)
         os.seteuid(euid)
     except OSError:
-        raise ChangeUserException('Could not switch user.')
+        raise ChangeUserError('Could not switch user.')
 
 
 def _verifyCrypt(password, crypted_password):
@@ -226,7 +226,7 @@ class UnixUsers(CompatUsers):
     def dropPrivileges(self, username):
         """Change process privileges to `username`.
 
-        Return `ChangeUserException` is there are no permissions for
+        Raise `ChangeUserError` is there are no permissions for
         switching to user.
         """
         _change_effective_privileges(username)
@@ -236,7 +236,7 @@ class UnixUsers(CompatUsers):
         Returns a context manager for chaning current process privileges
         to `username`.
 
-        Return `ChangeUserException` is there are no permissions for
+        Raise `ChangeUserError` is there are no permissions for
         switching to user or user does not exists.
         """
         return _ExecuteAsUser(username=username)
@@ -253,7 +253,7 @@ class UnixUsers(CompatUsers):
     def _executeAsAdministrator(self):
         """Returns a context manager for running under administrator user.
 
-        Return `ChangeUserException` is there are no permissions for
+        Raise `ChangeUserError` is there are no permissions for
         switching to user.
         """
         return _ExecuteAsUser(euid=0, egid=0)
@@ -405,7 +405,7 @@ class _ExecuteAsUser:
             try:
                 pwnam = pwd.getpwnam(username)
             except KeyError:
-                raise ChangeUserException(_('User does not exists.'))
+                raise ChangeUserError('User does not exists.')
             euid = pwnam.pw_uid
             egid = pwnam.pw_gid
         self.euid = euid
