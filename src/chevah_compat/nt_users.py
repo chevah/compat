@@ -340,8 +340,34 @@ class _ExecuteAsUser:
         return False
 
 
+class ResetEffectivePrivilegesNTContext:
+    """
+    A context manager that reset the effective user.
+    """
+
+    def __enter__(self):
+        """
+        See class docstring.
+        """
+        win32security.RevertToSelf()
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        """Just propagate errors."""
+        return False
+
+
 @implementer(IHasImpersonatedAvatar)
 class NTHasImpersonatedAvatar:
+    _NoOpContext = NoOpContext
+
+    @classmethod
+    def setupResetEffectivePrivileges(cls):
+        """
+        Does nothing on Windows.
+        """
+        cls._NoOpContext = ResetEffectivePrivilegesNTContext
+
     @property
     def use_impersonation(self):
         """
@@ -355,7 +381,7 @@ class NTHasImpersonatedAvatar:
         """
         if not self.use_impersonation:
             # Don't switch context if not required.
-            return NoOpContext()
+            return self._NoOpContext()
 
         return _ExecuteAsUser(token=self.token)
 

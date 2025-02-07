@@ -135,6 +135,14 @@ class IHasImpersonatedAvatar(Interface):
         Context manager for impersonating operating system functions.
         """
 
+    def setupResetEffectivePrivileges():
+        """
+        Update any future class instance to reset permissions before
+        checking for impersonation.
+
+        This is a workaround for thread I/O operations that might block.
+        """
+
 
 class IFileSystemAvatar(IHasImpersonatedAvatar):
     """
