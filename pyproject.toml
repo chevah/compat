@@ -40,13 +40,13 @@ Homepage = "https://github.com/chevah/compat"
 dev = [
     "ruff ~= 0.7",
     "bunch",
-    "Twisted==24.10.0",
+    "Twisted==24.11.0",
     "incremental",
     "service-identity==24.2.0",
     "pynose == 1.5.3",
     "pytest ~= 8.3",
     "coverage ~= 7.5",
-    "diff_cover == 9.2.0",
+    "diff_cover == 9.2.2",
     "codecov == 2.1.12",
     # Required for showing OpenSSL version in test_ci.
     "pyOpenSSL",
