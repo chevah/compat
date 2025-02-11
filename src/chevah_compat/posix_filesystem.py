@@ -86,6 +86,8 @@ class PosixFilesystemBase:
     def _impersonateUser(self):
         """
         Returns an impersonation context for current user.
+
+        Warning: Make sure that calls to this context manager are not nested.
         """
         if not self._avatar:
             return NoOpContext()

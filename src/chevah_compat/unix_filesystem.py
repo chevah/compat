@@ -208,10 +208,12 @@ class UnixFilesystem(PosixFilesystemBase):
             raise CompatError(1009, 'Deleting Unix root folder is not allowed.')
 
         path_encoded = self.getEncodedPath(path)
+
+        if self.isLink(segments):
+            self.deleteFile(segments)
+            return None
+
         with self._impersonateUser():
-            if self.isLink(segments):
-                self.deleteFile(segments)
-                return None
             if recursive:
                 return self._rmtree(path_encoded)
             return os.rmdir(path_encoded)

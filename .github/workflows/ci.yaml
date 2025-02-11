@@ -252,7 +252,7 @@ jobs:
 
     - name: Test elevated
       run: |
-        ./pythia.sh test_ci2 elevated
+        ./pythia.sh test -vs elevated
       env:
         CODECOV_TOKEN: enabled
         USER: runneradmin

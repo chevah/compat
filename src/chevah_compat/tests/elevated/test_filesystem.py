@@ -7,7 +7,12 @@ Tests for portable filesystem access.
 import errno
 import os
 
-from chevah_compat import LocalFilesystem, SuperAvatar
+from chevah_compat import (
+    DefaultAvatar,
+    LocalFilesystem,
+    SuperAvatar,
+    system_users,
+)
 from chevah_compat.exceptions import CompatError, CompatException
 from chevah_compat.interfaces import IFileAttributes
 from chevah_compat.testing import (
@@ -309,6 +314,105 @@ class TestPosixFilesystem(FileSystemTestCase):
         self.assertEqual(11, file_attributes.size)
         self.assertAlmostEqual(self.now(), file_attributes.modified, delta=5)
         self.assertIsInstance(str, file_attributes.name)
+
+    def test_impersonate_nested(self):
+        """
+        The user impersonation works for nested calls.
+
+        Once all nested calls exit, the OS process is reset to the previous
+        user.
+        """
+        user = TEST_USERS['normal']
+        avatar = mk.FilesystemOsAvatar(
+            user=user,
+            home_folder_path=mk.fs.temp_path,
+        )
+
+        initial_user = system_users.getCurrentUserName()
+        filesystem = LocalFilesystem(avatar=avatar)
+        with filesystem._impersonateUser():
+            self.assertEqual(user.name, system_users.getCurrentUserName())
+            with filesystem._impersonateUser():
+                self.assertEqual(user.name, system_users.getCurrentUserName())
+
+            # Even though we have exited the context,
+            # we still have the impersonated use as this is a nested call.
+            self.assertEqual(user.name, system_users.getCurrentUserName())
+
+        # Once we exit all context, the previous context is set.
+        self.assertEqual(initial_user, system_users.getCurrentUserName())
+
+    def test_nested_no_reset(self):
+        """
+        The user impersonation is not reset when nesting specific user
+        filesystem with the default filesystem
+        """
+        user = TEST_USERS['normal']
+        avatar = mk.FilesystemOsAvatar(
+            user=user,
+            home_folder_path=mk.fs.temp_path,
+        )
+        initial_user = system_users.getCurrentUserName()
+        filesystem = LocalFilesystem(avatar=avatar)
+        default_filesystem = LocalFilesystem(avatar=DefaultAvatar())
+
+        with default_filesystem._impersonateUser():
+            # Previous user is kept
+            self.assertEqual(initial_user, system_users.getCurrentUserName())
+
+        with filesystem._impersonateUser():
+            self.assertEqual(user.name, system_users.getCurrentUserName())
+
+            with default_filesystem._impersonateUser():
+                # Still uses the nested user.
+                self.assertEqual(user.name, system_users.getCurrentUserName())
+
+        # Once we exit all context, the previous context is set.
+        self.assertEqual(initial_user, system_users.getCurrentUserName())
+
+    def test_nested_with_reset(self):
+        """
+        The user impersonation can reset when nesting a specific user
+        filesystem with the default filesystem.
+        """
+        user = TEST_USERS['normal']
+        avatar = mk.FilesystemOsAvatar(
+            user=user,
+            home_folder_path=mk.fs.temp_path,
+        )
+        initial_user = system_users.getCurrentUserName()
+        filesystem = LocalFilesystem(avatar=avatar)
+
+        default_filesystem = LocalFilesystem(avatar=DefaultAvatar())
+
+        initial_context = DefaultAvatar._NoOpContext
+        DefaultAvatar.setupResetEffectivePrivileges()
+
+        def revert_avatar(initial_context):
+            DefaultAvatar._NoOpContext = initial_context
+
+        self.addCleanup(revert_avatar, initial_context)
+
+        with default_filesystem._impersonateUser():
+            # Previous user is kept
+            self.assertEqual(initial_user, system_users.getCurrentUserName())
+
+        with filesystem._impersonateUser():
+            self.assertEqual(user.name, system_users.getCurrentUserName())
+
+            with default_filesystem._impersonateUser():
+                # Reset the user.
+                self.assertEqual(
+                    initial_user, system_users.getCurrentUserName()
+                )
+
+            # Further call to the specific impersonated filesystem will work
+            # and will trigger an impersonation.
+            with filesystem._impersonateUser():
+                self.assertEqual(user.name, system_users.getCurrentUserName())
+
+        # Once we exit all context, the previous context is set.
+        self.assertEqual(initial_user, system_users.getCurrentUserName())
 
 
 @conditionals.onOSFamily('posix')

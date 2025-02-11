@@ -817,13 +817,13 @@ class NTFilesystem(PosixFilesystemBase):
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
         try:
-            with self._windowsToOSError(segments), self._impersonateUser():
+            with self._windowsToOSError(segments):
                 if self.isLink(segments):
                     recursive = False
-
-                if recursive:
-                    return self._rmtree(path_encoded)
-                return os.rmdir(path_encoded)
+                with self._impersonateUser():
+                    if recursive:
+                        return self._rmtree(path_encoded)
+                    return os.rmdir(path_encoded)
         except OSError as error:
             # Sometimes windows return a generic EINVAL when path is not a
             # folder.
