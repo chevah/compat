@@ -335,9 +335,12 @@ class TestPosixFilesystem(FileSystemTestCase):
             with filesystem._impersonateUser():
                 self.assertEqual(user.name, system_users.getCurrentUserName())
 
-            # Even though we have exited the context,
-            # we still have the impersonated use as this is a nested call.
-            self.assertEqual(user.name, system_users.getCurrentUserName())
+            # On Windows, nested calls are not supported.
+            # I don't know how to implement nested support in Windows.
+            if self.os_family != 'nt':
+                # Even though we have exited the context,
+                # we still have the impersonated use as this is a nested call.
+                self.assertEqual(user.name, system_users.getCurrentUserName())
 
         # Once we exit all context, the previous context is set.
         self.assertEqual(initial_user, system_users.getCurrentUserName())
@@ -432,7 +435,7 @@ class TestUnixFilesystem(FileSystemTestCase):
     def test_addGroup_denied_group_file(self):
         """
         On Unix we can not set the group for a file that we own to a group
-        to which we are not members, with the exception of HPUX.
+        to which we are not members.
         """
         file_name = mk.makeFilename()
         file_segments = self.filesystem.home_segments
@@ -443,24 +446,15 @@ class TestUnixFilesystem(FileSystemTestCase):
         def act():
             self.filesystem.addGroup(file_segments, TEST_ACCOUNT_GROUP_OTHER)
 
-        if self.os_name == 'hpux':
+        with self.assertRaises(CompatError) as context:
             act()
-            self.assertTrue(
-                self.filesystem.hasGroup(
-                    file_segments,
-                    TEST_ACCOUNT_GROUP_OTHER,
-                ),
-            )
-        else:
-            with self.assertRaises(CompatError) as context:
-                act()
-            self.assertEqual(1017, context.exception.event_id)
-            self.assertFalse(
-                self.filesystem.hasGroup(
-                    file_segments,
-                    TEST_ACCOUNT_GROUP_OTHER,
-                ),
-            )
+        self.assertEqual(1017, context.exception.event_id)
+        self.assertFalse(
+            self.filesystem.hasGroup(
+                file_segments,
+                TEST_ACCOUNT_GROUP_OTHER,
+            ),
+        )
 
     def test_addGroup_denied_group_folder(self):
         """
@@ -475,24 +469,15 @@ class TestUnixFilesystem(FileSystemTestCase):
         def act():
             self.filesystem.addGroup(folder_segments, TEST_ACCOUNT_GROUP_OTHER)
 
-        if self.os_name == 'hpux':
+        with self.assertRaises(CompatError) as context:
             act()
-            self.assertTrue(
-                self.filesystem.hasGroup(
-                    folder_segments,
-                    TEST_ACCOUNT_GROUP_OTHER,
-                ),
-            )
-        else:
-            with self.assertRaises(CompatError) as context:
-                act()
-            self.assertEqual(1017, context.exception.event_id)
-            self.assertFalse(
-                self.filesystem.hasGroup(
-                    folder_segments,
-                    TEST_ACCOUNT_GROUP_OTHER,
-                ),
-            )
+        self.assertEqual(1017, context.exception.event_id)
+        self.assertFalse(
+            self.filesystem.hasGroup(
+                folder_segments,
+                TEST_ACCOUNT_GROUP_OTHER,
+            ),
+        )
 
     def test_removeGroup(self):
         """
