@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chevah-compat"
-version = "1.4.0"
+version = "1.5.0"
 maintainers = [
     { name = "Adi Roiban", email = "adi.roiban@proatria.com" },
 ]
@@ -43,10 +43,10 @@ dev = [
     "Twisted==24.11.0",
     "incremental",
     "service-identity==24.2.0",
-    "pynose == 1.5.3",
+    "pynose == 1.5.4",
     "pytest ~= 8.3",
     "coverage ~= 7.5",
-    "diff_cover == 9.2.2",
+    "diff_cover == 9.2.3",
     "codecov == 2.1.12",
     # Required for showing OpenSSL version in test_ci.
     "pyOpenSSL",

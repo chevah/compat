@@ -234,6 +234,26 @@ class UnixUsers(CompatUsers):
         # Credentials are always rejected.
         return False
 
+    def pamOnlyWithUsernameAndPassword(self, username, password, service='login'):
+        """
+        Check username and password using only PAM and using the current
+        service user.
+
+        No root is required.
+
+        Returns True if credentials are accepted, False otherwise.
+        """
+        from pam import authenticate as pam_authenticate
+        checked = pam_authenticate(username, password, service)
+
+        if checked is True:
+            return True
+
+        # For PAM account we don't know if this is a failure due to
+        # a bad credentials or non existent credentials.
+        # Credentials are always rejected.
+        return False
+
     def dropPrivileges(self, username):
         """Change process privileges to `username`.
 
