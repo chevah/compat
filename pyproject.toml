@@ -46,7 +46,7 @@ dev = [
     "pynose == 1.5.3",
     "pytest ~= 8.3",
     "coverage ~= 7.5",
-    "diff_cover == 9.2.2",
+    "diff_cover == 9.2.4",
     "codecov == 2.1.12",
     # Required for showing OpenSSL version in test_ci.
     "pyOpenSSL",
