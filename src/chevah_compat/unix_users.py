@@ -232,7 +232,8 @@ class UnixUsers(CompatUsers):
         # Credentials are always rejected.
         return False
 
-    def pamOnlyWithUsernameAndPassword(self, username, password, service='login'):
+    def pamOnlyWithUsernameAndPassword(
+            self, username, password, service='login'):
         """
         Check username and password using only PAM and using the current
         service user.

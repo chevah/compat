@@ -143,13 +143,16 @@ class TestSystemUsers(CompatTestCase):
         """
         Return false when user is not found.
         """
+        if self.os_version.startswith('alpine-'):
+            raise self.skipTest('Alpine has no PAM')
+
         result = system_users.pamOnlyWithUsernameAndPassword(
             'no-such-user', 'password-ignored')
 
         self.assertIsFalse(result)
 
     @conditionals.onOSName('linux')
-    def test_pamOnlyWithUsernameAndPassword_bad_password(self):
+    def test_pamOnlyWithUsernameAndPassword_root_bad_password(self):
         """
         Return false when trying to authenticate the root.
         """
@@ -175,6 +178,17 @@ class TestSystemUsers(CompatTestCase):
             current_user, 'password-bad')
 
         self.assertIsFalse(result)
+
+    @conditionals.onOSVersion('alpine-3')
+    def test_pamOnlyWithUsernameAndPassword_no_pam(self):
+        """
+        Raises an error if PAM is not available on the OS.
+        """
+        with self.assertRaises(CompatError) as context:
+            system_users.pamWithUsernameAndPassword(
+                'no-such-user', 'password-ignored')
+
+        self.assertEqual(1006, context.exception.event_id)
 
 
 class TestDefaultAvatar(CompatTestCase):
