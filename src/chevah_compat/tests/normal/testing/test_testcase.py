@@ -338,7 +338,9 @@ class TestTwistedTestCase(ChevahTestCase):
             self._assertReactorIsClean()
 
         self.assertEqual(
-            'Reactor is not clean. delayed calls: much_later',
+            'Reactor is not clean. delayed calls: '
+            'TestTwistedTestCase.test_assertReactorIsClean_excepted_deferred.'
+            '<locals>.much_later',
             context.exception.args[0],
         )
         # Cancel and remove it so that the general test will not fail.
@@ -355,7 +357,11 @@ class TestTwistedTestCase(ChevahTestCase):
             This is here to have a name.
             """
 
-        self.EXCEPTED_DELAYED_CALLS = ['much_later']
+        self.EXCEPTED_DELAYED_CALLS = [
+            'TestTwistedTestCase.'
+            'test_assertReactorIsClean_excepted_delayed_calls.'
+            '<locals>.much_later'
+        ]
 
         delayed_call = reactor.callLater(10, much_later)
 

@@ -19,13 +19,16 @@ except ImportError:
 from zope.interface import implementer
 
 from chevah_compat.compat_users import CompatUsers
-from chevah_compat.exceptions import ChangeUserException
+from chevah_compat.exceptions import ChangeUserError
 from chevah_compat.helpers import NoOpContext, _
 from chevah_compat.interfaces import (
     IFileSystemAvatar,
     IHasImpersonatedAvatar,
     IOSUsers,
 )
+
+_GLOBAL_EUID = os.geteuid()
+_GLOBAL_EGID = os.getegid()
 
 
 def _get_euid_and_egid(username):
@@ -35,7 +38,7 @@ def _get_euid_and_egid(username):
     try:
         pwnam = pwd.getpwnam(username)
     except KeyError:
-        raise ChangeUserException(_('User does not exists.'))
+        raise ChangeUserError('Username does not exists.')
 
     return (pwnam.pw_uid, pwnam.pw_gid)
 
@@ -48,12 +51,12 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
         try:
             pwnam = pwd.getpwnam(username)
         except KeyError:
-            raise ChangeUserException('User does not exists.')
+            raise ChangeUserError('User does not exists.')
         euid = pwnam.pw_uid
         egid = pwnam.pw_gid
     else:
         if euid is None:
-            raise ChangeUserException(
+            raise ChangeUserError(
                 'You need to pass euid when username is not passed.',
             )
         pwnam = pwd.getpwuid(euid)
@@ -61,6 +64,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
 
     uid, gid = os.geteuid(), os.getegid()
     if uid == euid and gid == egid:
+        # We are already under the requested user.
         return
 
     try:
@@ -75,7 +79,7 @@ def _change_effective_privileges(username=None, euid=None, egid=None):
         os.setegid(egid)
         os.seteuid(euid)
     except OSError:
-        raise ChangeUserException('Could not switch user.')
+        raise ChangeUserError('Could not switch user.')
 
 
 def _verifyCrypt(password, crypted_password):
@@ -111,6 +115,13 @@ class UnixUsers(CompatUsers):
     # they are active.
     # `NP` is Centrify way of saying `*NP*`.
     _NOT_HERE = ('x', 'NP', '*NP*', '*')
+
+    def getCurrentUserName(self):
+        """
+        Return the name of the account under which the current
+        process is executed.
+        """
+        return pwd.getpwuid(os.geteuid()).pw_name
 
     def getHomeFolder(self, username, token=None):
         """Get home folder for local (or NIS) user."""
@@ -226,17 +237,23 @@ class UnixUsers(CompatUsers):
     def dropPrivileges(self, username):
         """Change process privileges to `username`.
 
-        Return `ChangeUserException` is there are no permissions for
+        Raise `ChangeUserError` is there are no permissions for
         switching to user.
         """
+        global _GLOBAL_EUID, _GLOBAL_EGID
+
         _change_effective_privileges(username)
+
+        # Record the new default user.
+        _GLOBAL_EUID = os.geteuid()
+        _GLOBAL_EGID = os.getegid()
 
     def executeAsUser(self, username, token=None):
         """
         Returns a context manager for chaning current process privileges
         to `username`.
 
-        Return `ChangeUserException` is there are no permissions for
+        Raise `ChangeUserError` is there are no permissions for
         switching to user or user does not exists.
         """
         return _ExecuteAsUser(username=username)
@@ -253,7 +270,7 @@ class UnixUsers(CompatUsers):
     def _executeAsAdministrator(self):
         """Returns a context manager for running under administrator user.
 
-        Return `ChangeUserException` is there are no permissions for
+        Raise `ChangeUserError` is there are no permissions for
         switching to user.
         """
         return _ExecuteAsUser(euid=0, egid=0)
@@ -397,7 +414,9 @@ class UnixUsers(CompatUsers):
 
 
 class _ExecuteAsUser:
-    """Context manager for running under a different user."""
+    """
+    Context manager for running under a different user.
+    """
 
     def __init__(self, username=None, euid=0, egid=0):
         """Initialize the context manager."""
@@ -405,25 +424,49 @@ class _ExecuteAsUser:
             try:
                 pwnam = pwd.getpwnam(username)
             except KeyError:
-                raise ChangeUserException(_('User does not exists.'))
+                raise ChangeUserError('User does not exists.')
             euid = pwnam.pw_uid
             egid = pwnam.pw_gid
         self.euid = euid
         self.egid = egid
-        self.initial_euid = os.geteuid()
-        self.initial_egid = os.getegid()
+        self._initial_euid = os.geteuid()
+        self._initial_egid = os.getegid()
 
     def __enter__(self):
-        """Change process effective user."""
+        """
+        Change process effective user.
+        """
         _change_effective_privileges(euid=self.euid, egid=self.egid)
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
-        """Reverting previous effective ID."""
+        """
+        Reverting to the default effective ID.
+        """
         _change_effective_privileges(
-            euid=self.initial_euid,
-            egid=self.initial_egid,
+            euid=self._initial_euid,
+            egid=self._initial_egid,
         )
+        return False
+
+
+class ResetEffectivePrivilegesUnixContext:
+    """
+    A context manager that reset the effecit user.
+    """
+
+    def __enter__(self):
+        """
+        See class docstring.
+        """
+        _change_effective_privileges(
+            euid=_GLOBAL_EUID,
+            egid=_GLOBAL_EGID,
+        )
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        """Just propagate errors."""
         return False
 
 
@@ -432,9 +475,15 @@ class UnixHasImpersonatedAvatar:
     _euid = None
     _egid = None
 
+    _NoOpContext = NoOpContext
+
     def __init__(self):
         self._euid = None
         self._egid = None
+
+    @classmethod
+    def setupResetEffectivePrivileges(cls):
+        cls._NoOpContext = ResetEffectivePrivilegesUnixContext
 
     @property
     def use_impersonation(self):
@@ -448,7 +497,7 @@ class UnixHasImpersonatedAvatar:
         See: :class:`IFileSystemAvatar`
         """
         if not self.use_impersonation:
-            return NoOpContext()
+            return self._NoOpContext()
 
         # Create cached values if not initialized.
         if not (self._euid and self._egid):

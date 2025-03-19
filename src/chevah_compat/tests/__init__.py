@@ -17,7 +17,7 @@ def setup_package():
 
     if drop_user != '-':
         ChevahTestCase.initialize(drop_user=drop_user)
-        ChevahTestCase.dropPrivileges()
+        ChevahTestCase.setupPrivileges()
 
     # Prepare the main testing filesystem.
     mk.fs.setUpTemporaryFolder()

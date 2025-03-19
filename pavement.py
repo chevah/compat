@@ -62,7 +62,6 @@ SETUP['repository']['github'] = 'https://github.com/chevah/compat'
 SETUP['test']['package'] = 'chevah_compat.tests'
 SETUP['test']['elevated'] = 'elevated'
 SETUP['test']['nose_options'] = [
-    '--with-randomly',
     # TODO: Add support for extenstions.
     # 690
     # '--with-timer',

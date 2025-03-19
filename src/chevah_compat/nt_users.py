@@ -23,7 +23,7 @@ from zope.interface import implementer
 
 from chevah_compat.compat_users import CompatUsers
 from chevah_compat.constants import CSIDL_FLAG_CREATE, WINDOWS_PRIMARY_GROUP
-from chevah_compat.exceptions import ChangeUserException
+from chevah_compat.exceptions import ChangeUserError
 from chevah_compat.helpers import NoOpContext
 from chevah_compat.interfaces import (
     IFileSystemAvatar,
@@ -104,7 +104,7 @@ class NTUsers(CompatUsers):
             try:
                 with self.executeAsUser(username, token):
                     return self._getHomeFolderPath(token)
-            except ChangeUserException as error:
+            except ChangeUserError as error:
                 self.raiseFailedToGetHomeFolder(username, error.message)
 
         try:
@@ -256,14 +256,15 @@ class NTUsers(CompatUsers):
         """
         Returns a context manager for changing current process privileges
         to `username`
-        Return `ChangeUserException` is there are no permissions for
+
+        Raise `ChangeUserError` is there are no permissions for
         switching to user.
         """
         if username and username == self.getCurrentUserName():
             return NoOpContext()
 
         if token is None:
-            raise ChangeUserException(
+            raise ChangeUserError(
                 'executeAsUser: A valid token is required.',
             )
 
@@ -339,8 +340,34 @@ class _ExecuteAsUser:
         return False
 
 
+class ResetEffectivePrivilegesNTContext:
+    """
+    A context manager that reset the effective user.
+    """
+
+    def __enter__(self):
+        """
+        See class docstring.
+        """
+        win32security.RevertToSelf()
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        """Just propagate errors."""
+        return False
+
+
 @implementer(IHasImpersonatedAvatar)
 class NTHasImpersonatedAvatar:
+    _NoOpContext = NoOpContext
+
+    @classmethod
+    def setupResetEffectivePrivileges(cls):
+        """
+        Does nothing on Windows.
+        """
+        cls._NoOpContext = ResetEffectivePrivilegesNTContext
+
     @property
     def use_impersonation(self):
         """
@@ -354,7 +381,7 @@ class NTHasImpersonatedAvatar:
         """
         if not self.use_impersonation:
             # Don't switch context if not required.
-            return NoOpContext()
+            return self._NoOpContext()
 
         return _ExecuteAsUser(token=self.token)
 

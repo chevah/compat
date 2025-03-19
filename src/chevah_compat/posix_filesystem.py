@@ -22,7 +22,6 @@ from os import scandir
 from zope.interface import implementer
 
 from chevah_compat.exceptions import (
-    ChangeUserException,
     CompatError,
     CompatException,
 )
@@ -87,20 +86,13 @@ class PosixFilesystemBase:
     def _impersonateUser(self):
         """
         Returns an impersonation context for current user.
+
+        Warning: Make sure that calls to this context manager are not nested.
         """
         if not self._avatar:
             return NoOpContext()
 
-        try:
-            return self._avatar.getImpersonationContext()
-        except ChangeUserException:
-            raise CompatError(
-                1006,
-                _(
-                    f'Could not switch process to local account '
-                    f'"{self._avatar.name}".'
-                ),
-            )
+        return self._avatar.getImpersonationContext()
 
     def _pathSplitRecursive(self, path):
         """
