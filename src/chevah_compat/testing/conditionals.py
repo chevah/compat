@@ -88,20 +88,6 @@ def onOSName(name):
     return skipOnCondition(check_os_name, f'OS name "{name}" not available.')
 
 
-def onOSVersion(versions):
-    """
-    Run test only if current os vesrsion or is in one from `versions` list.
-    """
-
-    def check_os_version():
-        return process_capabilities.os_version not in versions
-
-    return skipOnCondition(
-        check_os_version,
-        f'OS version "{versions}" not available.',
-    )
-
-
 def onCapability(name, value):
     """
     Run test only if capability with `name` equals `value`.

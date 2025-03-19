@@ -233,7 +233,8 @@ class UnixUsers(CompatUsers):
         return False
 
     def pamOnlyWithUsernameAndPassword(
-            self, username, password, service='login'):
+        self, username, password, service='login'
+    ):
         """
         Check username and password using only PAM and using the current
         service user.
@@ -246,6 +247,7 @@ class UnixUsers(CompatUsers):
         Returns True if credentials are accepted, False otherwise.
         """
         from pam import authenticate as pam_authenticate
+
         try:
             checked = pam_authenticate(username, password, service)
         except AttributeError:

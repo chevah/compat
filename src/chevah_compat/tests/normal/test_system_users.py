@@ -134,7 +134,8 @@ class TestSystemUsers(CompatTestCase):
         """
         with self.assertRaises(CompatError) as context:
             system_users.pamWithUsernameAndPassword(
-            'no-such-user', 'password-ignored')
+                'no-such-user', 'password-ignored'
+            )
 
         self.assertEqual(1006, context.exception.event_id)
 
@@ -147,7 +148,8 @@ class TestSystemUsers(CompatTestCase):
             raise self.skipTest('Alpine has no PAM')
 
         result = system_users.pamOnlyWithUsernameAndPassword(
-            'no-such-user', 'password-ignored')
+            'no-such-user', 'password-ignored'
+        )
 
         self.assertIsFalse(result)
 
@@ -160,7 +162,8 @@ class TestSystemUsers(CompatTestCase):
             raise self.skipTest('Alpine has no PAM')
 
         result = system_users.pamOnlyWithUsernameAndPassword(
-            'root', 'password-bad')
+            'root', 'password-bad'
+        )
 
         self.assertIsFalse(result)
 
@@ -175,18 +178,23 @@ class TestSystemUsers(CompatTestCase):
 
         current_user = os.environ.get('USER')
         result = system_users.pamOnlyWithUsernameAndPassword(
-            current_user, 'password-bad')
+            current_user, 'password-bad'
+        )
 
         self.assertIsFalse(result)
 
-    @conditionals.onOSVersion('alpine-3')
+    @conditionals.onOSName('linux')
     def test_pamOnlyWithUsernameAndPassword_no_pam(self):
         """
         Raises an error if PAM is not available on the OS.
         """
+        if not self.os_version.startswith('alpine-'):
+            raise self.skipTest('Test only for Alpine.')
+
         with self.assertRaises(CompatError) as context:
             system_users.pamWithUsernameAndPassword(
-                'no-such-user', 'password-ignored')
+                'no-such-user', 'password-ignored'
+            )
 
         self.assertEqual(1006, context.exception.event_id)
 

@@ -6,7 +6,7 @@ Release notes for chevah.compat
 ------------------
 
 * Add API to authenticate OS users with only PAM and without root requirement.
-
+* Remove `conditionals.onOSVersion` helper.
 
 1.4.0 - 2024-12-08
 ------------------
