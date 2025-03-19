@@ -176,6 +176,11 @@ class TestSystemUsers(CompatTestCase):
         if self.os_version.startswith('alpine-'):
             raise self.skipTest('Alpine has no PAM')
 
+        if self.ci_name == self.CI.GITHUB and self.os_version == 'ubuntu-24':
+            # I don't know why on GHA and Ubuntu 24 any password is accepted
+            # by PAM for the curent user.
+            raise self.skipTest('GitHub Action user accepts any password.')
+
         current_user = os.environ.get('USER')
         result = system_users.pamOnlyWithUsernameAndPassword(
             current_user, 'password-bad'
