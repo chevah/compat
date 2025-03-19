@@ -219,11 +219,9 @@ class UnixUsers(CompatUsers):
             return False
 
         with self._executeAsAdministrator():
-            # TODO: Look to do PAM without root context.
-            # 3059
-            # PAM can be used without admin right but I have no idea why
-            # it fails with errors like:
-            # audit_log_acct_message() failed: Operation not permitted.
+            # Some PAM modules and some PAM setups might not need root.
+            # Most of the time, PAM is configured as a proxy for /etc/shadow
+            # and in this case root is required.
             checked = pam_authenticate(username, password, service)
 
         if checked is True:
@@ -240,6 +238,9 @@ class UnixUsers(CompatUsers):
         service user.
 
         No root is required.
+
+        Event if users and passwords are valid, this might fail, depending
+        on PAM configuration.
 
         Returns True if credentials are accepted, False otherwise.
         """

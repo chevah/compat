@@ -5,7 +5,7 @@ Release notes for chevah.compat
 1.5.0 - 2025-03-19
 ------------------
 
-* Authenticate OS users with only PAM and without root requirement.
+* Add API to authenticate OS users with only PAM and without root requirement.
 
 
 1.4.0 - 2024-12-08
