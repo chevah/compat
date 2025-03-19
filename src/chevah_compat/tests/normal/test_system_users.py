@@ -127,7 +127,7 @@ class TestSystemUsers(CompatTestCase):
 
         self.assertTrue(HAS_SHADOW_SUPPORT)
 
-    @conditionals.onOSFamily('posix')
+    @conditionals.onOSName('linux')
     def test_pamWithUsernameAndPassword_no_such_user(self):
         """
         Raise an error for any auth request.
@@ -138,7 +138,7 @@ class TestSystemUsers(CompatTestCase):
 
         self.assertEqual(1006, context.exception.event_id)
 
-    @conditionals.onOSFamily('posix')
+    @conditionals.onOSName('linux')
     def test_pamOnlyWithUsernameAndPassword_no_such_user(self):
         """
         Return false when user is not found.
@@ -148,22 +148,28 @@ class TestSystemUsers(CompatTestCase):
 
         self.assertIsFalse(result)
 
-    @conditionals.onOSFamily('posix')
+    @conditionals.onOSName('linux')
     def test_pamOnlyWithUsernameAndPassword_bad_password(self):
         """
         Return false when trying to authenticate the root.
         """
+        if self.os_version.startswith('alpine-'):
+            raise self.skipTest('Alpine has no PAM')
+
         result = system_users.pamOnlyWithUsernameAndPassword(
             'root', 'password-bad')
 
         self.assertIsFalse(result)
 
-    @conditionals.onOSFamily('posix')
+    @conditionals.onOSName('linux')
     def test_pamOnlyWithUsernameAndPassword_bad_password(self):
         """
         Return false when trying to authenticate the current user with
         a bad password.
         """
+        if self.os_version.startswith('alpine-'):
+            raise self.skipTest('Alpine has no PAM')
+
         current_user = os.environ.get('USER')
         result = system_users.pamOnlyWithUsernameAndPassword(
             current_user, 'password-bad')

@@ -245,7 +245,10 @@ class UnixUsers(CompatUsers):
         Returns True if credentials are accepted, False otherwise.
         """
         from pam import authenticate as pam_authenticate
-        checked = pam_authenticate(username, password, service)
+        try:
+            checked = pam_authenticate(username, password, service)
+        except AttributeError:
+            raise ChangeUserError('PAM is not available.')
 
         if checked is True:
             return True
