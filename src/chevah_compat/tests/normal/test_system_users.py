@@ -7,6 +7,7 @@ Test system users portable code.
 import os
 
 from chevah_compat import DefaultAvatar, SuperAvatar, system_users
+from chevah_compat.exceptions import CompatError
 from chevah_compat.interfaces import IFileSystemAvatar, IOSUsers
 from chevah_compat.testing import (
     TEST_DOMAIN,
@@ -125,6 +126,82 @@ class TestSystemUsers(CompatTestCase):
         from chevah_compat.unix_users import HAS_SHADOW_SUPPORT
 
         self.assertTrue(HAS_SHADOW_SUPPORT)
+
+    @conditionals.onOSName('linux')
+    def test_pamWithUsernameAndPassword_no_such_user(self):
+        """
+        Raise an error for any auth request.
+        """
+        with self.assertRaises(CompatError) as context:
+            system_users.pamWithUsernameAndPassword(
+                'no-such-user', 'password-ignored'
+            )
+
+        self.assertEqual(1006, context.exception.event_id)
+
+    @conditionals.onOSName('linux')
+    def test_pamOnlyWithUsernameAndPassword_no_such_user(self):
+        """
+        Return false when user is not found.
+        """
+        if self.os_version.startswith('alpine-'):
+            raise self.skipTest('Alpine has no PAM')
+
+        result = system_users.pamOnlyWithUsernameAndPassword(
+            'no-such-user', 'password-ignored'
+        )
+
+        self.assertIsFalse(result)
+
+    @conditionals.onOSName('linux')
+    def test_pamOnlyWithUsernameAndPassword_root_bad_password(self):
+        """
+        Return false when trying to authenticate the root.
+        """
+        if self.os_version.startswith('alpine-'):
+            raise self.skipTest('Alpine has no PAM')
+
+        result = system_users.pamOnlyWithUsernameAndPassword(
+            'root', 'password-bad'
+        )
+
+        self.assertIsFalse(result)
+
+    @conditionals.onOSName('linux')
+    def test_pamOnlyWithUsernameAndPassword_bad_password(self):
+        """
+        Return false when trying to authenticate the current user with
+        a bad password.
+        """
+        if self.os_version.startswith('alpine-'):
+            raise self.skipTest('Alpine has no PAM')
+
+        if self.ci_name == self.CI.GITHUB and self.os_version == 'ubuntu-24':
+            # I don't know why on GHA and Ubuntu 24 any password is accepted
+            # by PAM for the curent user.
+            raise self.skipTest('GitHub Action user accepts any password.')
+
+        current_user = os.environ.get('USER')
+        result = system_users.pamOnlyWithUsernameAndPassword(
+            current_user, 'password-bad'
+        )
+
+        self.assertIsFalse(result)
+
+    @conditionals.onOSName('linux')
+    def test_pamOnlyWithUsernameAndPassword_no_pam(self):
+        """
+        Raises an error if PAM is not available on the OS.
+        """
+        if not self.os_version.startswith('alpine-'):
+            raise self.skipTest('Test only for Alpine.')
+
+        with self.assertRaises(CompatError) as context:
+            system_users.pamWithUsernameAndPassword(
+                'no-such-user', 'password-ignored'
+            )
+
+        self.assertEqual(1006, context.exception.event_id)
 
 
 class TestDefaultAvatar(CompatTestCase):
