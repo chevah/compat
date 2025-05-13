@@ -320,7 +320,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
             username=TEST_ACCOUNT_USERNAME,
-            password=mk.string(),
+            password=mk.password(),
         )
 
         self.assertFalse(result)
@@ -336,7 +336,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
             username=mk.string(),
-            password=mk.string(),
+            password=mk.password(),
         )
 
         self.assertFalse(result)

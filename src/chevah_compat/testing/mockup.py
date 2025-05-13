@@ -251,7 +251,7 @@ class ChevahCommonsFactory:
         return self.getUniqueString(*args, **kwargs)
 
     def password(self):
-        return 'Sup3RLongPass-' + self.string()
+        return 'VeryVerySup3R#!LongPass-' + self.string()
 
     def number(self, *args, **kwargs):
         """
@@ -434,7 +434,7 @@ class ChevahCommonsFactory:
             name = self.string()
 
         if password is None:
-            password = self.string()
+            password = self.password()
 
         if posix_home_path is None:
             if process_capabilities.os_name == 'solaris':
