@@ -19,7 +19,7 @@ requires-python = "~=3.8"
 # generate conflicts with the code using chevah-compat.
 dependencies = [
     "zope.interface >= 7.2",
-    "typing_extensions",
+    "typing_extensions >= 4.13.2",
     "passlib >= 1.7",
     "pywin32 >= 305 ; platform_system == 'Windows'",
     "python-pam >= 2.0.2 ; platform_system == 'Linux'",
@@ -52,8 +52,6 @@ dev = [
     "codecov == 2.1.12",
     # Required for showing OpenSSL version in test_ci.
     "pyOpenSSL",
-    #  Required for some unicode handling.
-    "unidecode",
     "wmi ~= 1.5.1; platform_system == 'Windows'",
 ]
 
