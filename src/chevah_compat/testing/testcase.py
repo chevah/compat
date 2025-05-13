@@ -391,7 +391,9 @@ class TwistedTestCase(TestCase):
 
                 if self._timeout_reached:
                     raise AssertionError(
-                        'Deferred took more than %d to execute.' % timeout,
+                        'Deferred took more than {} to execute.'.format(  # noqa:UP032
+                            timeout
+                        ),
                     )
 
         # Check executing all deferred from chained callbacks.
@@ -1316,9 +1318,9 @@ class ChevahTestCase(TwistedTestCase, AssertionMixin):
             local_wmi = WMI('.')
 
             query = (
-                'SELECT PeakWorkingSetSize '
+                'SELECT PeakWorkingSetSize '  # noqa:UP032
                 'FROM Win32_Process '
-                'WHERE Handle=%d' % os.getpid()
+                'WHERE Handle={}'.format(os.getpid())
             )
             result = local_wmi.query(query.encode('utf-8'))
             peak_working_set_size = int(result[0].PeakWorkingSetSize)

@@ -20,7 +20,6 @@ for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
 """
 
 import os
-import random
 import socket
 import subprocess
 import sys
@@ -83,7 +82,7 @@ class OSAdministrationUnix:
         add_group_method(group=group)
 
     def _addGroup_unix(self, group):
-        group_line = '%s:x:%d:' % (group.name, group.gid)
+        group_line = f'{group.name}:x:{group.gid}:'
         gshadow_line = f'{group.name}:!::'
 
         self._appendUnixEntry(self.group_segments, group_line)
@@ -266,14 +265,10 @@ class OSAdministrationUnix:
         group = TestGroup(name=user.name, posix_gid=user.uid)
         self._addGroup_unix(group)
 
-        values = (
-            user.name,
-            user.uid,
-            user.gid,
-            user.posix_home_path,
-            user.shell,
+        passwd_line = (
+            f'{user.name}:x:{user.uid}:{user.gid}:'
+            f':{user.posix_home_path}:{user.shell}'
         )
-        passwd_line = '%s:x:%d:%d::%s:%s' % values
 
         shadow_line = f'{user.name}:!:15218:0:99999:7:::'
 
@@ -503,6 +498,7 @@ class OSAdministrationUnix:
         Set a password in shadow file.
         """
         from passlib.hash import md5_crypt
+
         shadow_password = md5_crypt.hash(user.password)
 
         self._changeUnixEntry(
@@ -517,6 +513,7 @@ class OSAdministrationUnix:
         Set a password in passwd file.
         """
         from passlib.hash import md5_crypt
+
         passwd_password = md5_crypt.hash(user.password)
 
         self._changeUnixEntry(

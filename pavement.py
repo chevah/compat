@@ -14,7 +14,7 @@ from brink.pavement_commons import (
     codecov_publish,
     coverage_prepare,
     default,
-    help,
+    help,  # noqa: A004
     merge_commit,
     merge_init,
     pave,

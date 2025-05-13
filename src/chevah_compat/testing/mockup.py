@@ -293,8 +293,7 @@ class ChevahCommonsFactory:
             # padded.
             if min_length + 1 > length:
                 raise AssertionError(
-                    'Can not generate an unique string shorter than %d'
-                    % (length),
+                    f'Can not generate an unique string shorter than {length}'
                 )
             extra_length = length - min_length
             extra_text = ''.join(

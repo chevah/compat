@@ -29,9 +29,9 @@ hash_context = CryptContext(
         'bcrypt',  # $2$
         'sha256_crypt',  # $5$
         'sha512_crypt',  # $6$
-        ],
+    ],
     default='sha512_crypt',
-    )
+)
 
 
 def _get_euid_and_egid(username):
@@ -191,6 +191,7 @@ class UnixUsers(CompatUsers):
             if checked is True:
                 return (True, None)
             return (False, None)
+        return (False, None)
 
     def pamWithUsernameAndPassword(self, username, password, service='login'):
         """
@@ -541,7 +542,7 @@ def _get_etc_shadow(username):
     if not os.path.exists('/etc/shadow'):
         raise KeyError('Shadow not supported.')
 
-    with open('/etc/shadow', 'r') as stream:
+    with open('/etc/shadow') as stream:
         for line in stream:
             parts = line.split(':')
             if len(parts) < 3:

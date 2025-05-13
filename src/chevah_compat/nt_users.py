@@ -174,9 +174,8 @@ class NTUsers(CompatUsers):
             (error_id, error_call, error_message) = error.args
             error_text = (
                 'Failed to create user profile. '
-                'Make sure you have SeBackupPrivilege and '
-                'SeRestorePrivilege. (%d: %s - %s)'
-                % (error_id, error_call, error_message)
+                'Make sure you have SeBackupPrivilege and SeRestorePrivilege. '
+                f'{error_id}: {error_call} - {error_message})'
             )
             self.raiseFailedToGetHomeFolder(username, error_text)
 
