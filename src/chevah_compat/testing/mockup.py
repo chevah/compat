@@ -251,7 +251,7 @@ class ChevahCommonsFactory:
         return self.getUniqueString(*args, **kwargs)
 
     def password(self):
-        return 'Sup3R-' + self.string()
+        return 'Sup3RLongPass-' + self.string()
 
     def number(self, *args, **kwargs):
         """

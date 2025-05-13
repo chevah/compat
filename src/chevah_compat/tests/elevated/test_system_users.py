@@ -334,12 +334,13 @@ class TestSystemUsers(SystemUsersTestCase):
         This is slow since the OS adds a timeout or checks for various
         PAM modules.
         """
-        result = system_users.authenticateWithUsernameAndPassword(
+        result, token = system_users.authenticateWithUsernameAndPassword(
             username=mk.string(),
             password=mk.string(),
         )
 
-        self.assertIsNone(result)
+        self.assertFalse(result)
+        self.assertIsNone(token)
 
     def test_executeAsUser_multiple_call_on_same_credentials(self):
         """
