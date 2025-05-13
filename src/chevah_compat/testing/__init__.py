@@ -19,7 +19,7 @@ mk
 
 # Test accounts and passwords.
 TEST_ACCOUNT_USERNAME = 'mâț mițișor'
-TEST_ACCOUNT_PASSWORD = '42!Baroșanu'
+TEST_ACCOUNT_PASSWORD = '42!BaroșanuLung'
 TEST_ACCOUNT_GROUP = 'g mâțmițișor'
 # TODO: Replace hard-coded constant with posixID()
 # 2106
@@ -28,7 +28,7 @@ TEST_ACCOUNT_UID = 2000
 TEST_ACCOUNT_GID = 2010
 TEST_ACCOUNT_GROUP_WIN = 'Users'
 TEST_ACCOUNT_USERNAME_OTHER = 'miț motan'
-TEST_ACCOUNT_PASSWORD_OTHER = '4!Altapara'
+TEST_ACCOUNT_PASSWORD_OTHER = '4!AltaparaLungu'
 # TODO: Replace hard-coded constant with posixID()
 # 2106
 
@@ -47,7 +47,7 @@ TEST_ACCOUNT_GID_ANOTHER = 2012
 TEST_PDC = '\\\\CHEVAH-DC'
 TEST_DOMAIN = 'chevah'
 TEST_ACCOUNT_USERNAME_DOMAIN = 'domain test-user'
-TEST_ACCOUNT_PASSWORD_DOMAIN = 'qwe123QWE'
+TEST_ACCOUNT_PASSWORD_DOMAIN = 'qwe123QWE!Complex'
 TEST_ACCOUNT_GROUP_DOMAIN = 'domain test_group'
 
 TEST_ACCOUNT_USERNAME = TestUser.sanitizeName(TEST_ACCOUNT_USERNAME)
