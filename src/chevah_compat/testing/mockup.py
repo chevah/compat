@@ -7,9 +7,6 @@ import random
 import string
 import uuid
 
-import six
-from unidecode import unidecode
-
 try:
     from twisted.internet.protocol import Factory
     from twisted.internet.tcp import Port
@@ -29,17 +26,14 @@ def _sanitize_name_legacy_unix(candidate):
 
     By default password is limited to 8 characters without spaces.
     """
-    return unidecode(candidate).replace(' ', '_')[:8]
+    return candidate.replace(' ', '_')[:8]
 
 
 def _sanitize_name_windows(candidate):
     """
     Return valid user/group name for Windows OSs from `candidate.
     """
-    # TODO: On Windows, we can't delete home folders with unicode names.
-    # 927
-
-    return unidecode(candidate)
+    return candidate
 
 
 class SanitizeNameMixin:
@@ -248,7 +242,7 @@ class ChevahCommonsFactory:
 
         This is an Unicode with only ascii characters.
         """
-        return 'ascii_StR' + six.text_type(self.number())
+        return 'ascii_StR' + str(self.number())
 
     def string(self, *args, **kwargs):
         """
@@ -279,13 +273,13 @@ class ChevahCommonsFactory:
         """
         The account under which this process is executed.
         """
-        return six.text_type(os.environ['USER'])
+        return os.environ['USER']
 
     def getUniqueString(self, length=None):
         """
         A string unique for this session.
         """
-        base = 'StR' + six.text_type(self.number())
+        base = 'StR' + str(self.number())
 
         # The minimum length so that we don't truncate the unique string.
         min_length = len(base) + len(TEST_NAME_MARKER)
