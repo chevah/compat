@@ -250,6 +250,9 @@ class ChevahCommonsFactory:
         """
         return self.getUniqueString(*args, **kwargs)
 
+    def password(self):
+        return 'Sup3R-' + self.string()
+
     def number(self, *args, **kwargs):
         """
         Shortcut for getUniqueInteger.

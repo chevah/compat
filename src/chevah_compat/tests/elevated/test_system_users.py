@@ -147,7 +147,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         test_user = TestUser(
             name=mk.string(),
-            password=mk.string(),
+            password=mk.password(),
             create_local_profile=True,
         )
         os_administration.addUser(test_user)
@@ -188,7 +188,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         test_user = TestUser(
             name='no-home',
-            password=mk.string(),
+            password=mk.password(),
             create_local_profile=False,
         )
         # Unfortunately there is no API to get default base home path for
