@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chevah-compat"
-version = "1.5.0"
+version = "1.6.0"
 maintainers = [
     { name = "Adi Roiban", email = "adi.roiban@proatria.com" },
 ]
@@ -18,7 +18,9 @@ requires-python = "~=3.8"
 # The runtime dependencies should be relaxed as otherwise it will
 # generate conflicts with the code using chevah-compat.
 dependencies = [
-    "zope.interface >= 5.4.0",
+    "zope.interface >= 7.2",
+    "typing_extensions",
+    "passlib >= 1.7",
     "pywin32 >= 305 ; platform_system == 'Windows'",
     "python-pam >= 2.0.2 ; platform_system == 'Linux'",
     # Used to detect Linux distributions.

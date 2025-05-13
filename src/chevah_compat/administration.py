@@ -502,15 +502,8 @@ class OSAdministrationUnix:
         """
         Set a password in shadow file.
         """
-        import crypt
-
-        ALPHABET = (
-            '0123456789'
-            'abcdefghijklmnopqrstuvwxyz'
-            'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        )
-        salt = ''.join(random.choice(ALPHABET) for i in range(8))
-        shadow_password = crypt.crypt(user.password, '$1$' + salt + '$')
+        from passlib.hash import md5_crypt
+        shadow_password = md5_crypt.hash(user.password)
 
         self._changeUnixEntry(
             segments=segments,
@@ -523,15 +516,9 @@ class OSAdministrationUnix:
         """
         Set a password in passwd file.
         """
-        import crypt
+        from passlib.hash import md5_crypt
+        passwd_password = md5_crypt.hash(user.password)
 
-        ALPHABET = (
-            '0123456789'
-            'abcdefghijklmnopqrstuvwxyz'
-            'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        )
-        salt = ''.join(random.choice(ALPHABET) for i in range(2))
-        passwd_password = crypt.crypt(user.password, salt)
         self._changeUnixEntry(
             segments=segments,
             name=user.name,

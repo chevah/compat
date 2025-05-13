@@ -1,12 +1,20 @@
 Release notes for chevah.compat
 ===============================
 
+1.6.0 - 2025-05-13
+------------------
+
+* Add support for Python 3.13
+* Remove usage of `crypt` and `spwd`
+* Remove dependency on `unidecode`.
+
 
 1.5.0 - 2025-03-19
 ------------------
 
 * Add API to authenticate OS users with only PAM and without root requirement.
 * Remove `conditionals.onOSVersion` helper.
+
 
 1.4.0 - 2024-12-08
 ------------------

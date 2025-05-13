@@ -298,9 +298,6 @@ class TestSystemUsers(SystemUsersTestCase):
         if self.os_name in ['aix', 'hpux', 'osx', 'freebsd', 'openbsd']:
             # No shadow support.
             self.assertIsNone(result)
-        elif self.os_version in ['rhel-5']:
-            # No shadow users on old RHEL/Centos container.
-            self.assertIsNone(result)
         else:
             self.assertTrue(result)
 
@@ -337,13 +334,12 @@ class TestSystemUsers(SystemUsersTestCase):
         This is slow since the OS adds a timeout or checks for various
         PAM modules.
         """
-        result, token = system_users.authenticateWithUsernameAndPassword(
+        result = system_users.authenticateWithUsernameAndPassword(
             username=mk.string(),
             password=mk.string(),
         )
 
-        self.assertFalse(result)
-        self.assertIsNone(token)
+        self.assertIsNone(result)
 
     def test_executeAsUser_multiple_call_on_same_credentials(self):
         """
