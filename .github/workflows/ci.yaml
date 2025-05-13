@@ -221,6 +221,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Relax password security
+      run: |
+        net accounts /uniquepw:0
+
     - name: Cache build
       uses: actions/cache@v4
       with:
