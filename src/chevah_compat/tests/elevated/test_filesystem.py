@@ -615,7 +615,7 @@ class TestSymbolicLinks(OSAccountFileSystemTestCase, SymbolicLinksMixin):
 
     CREATE_TEST_USER = TestUser(
         name=mk.string(),
-        password=mk.string(),
+        password=mk.password(),
         home_group=TEST_ACCOUNT_GROUP,
         posix_uid=mk.posixID(),
         windows_required_rights=rights,
