@@ -903,6 +903,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
             'script_path': None,
         }
 
+        print(f'Setting password {user.password}')
         win32net.NetUserAdd(user.pdc, 1, user_info)
         if user.windows_create_local_profile:
             if not user.password:  # pragma: no cover
