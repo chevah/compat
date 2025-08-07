@@ -1,6 +1,13 @@
 Release notes for chevah.compat
 ===============================
 
+
+1.6.1 - 2025-08-07
+------------------
+
+* Remove runtime dependency on `distro` package
+
+
 1.6.0 - 2025-05-13
 ------------------
 
