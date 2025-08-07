@@ -3,6 +3,7 @@
 """
 Provides information about capabilities for a process on Unix.
 """
+
 import os
 
 from zope.interface import implementer
@@ -84,6 +85,5 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
             if os.path.exists('/etc/alpine-release'):
                 return False
             return True
-
 
         return True
