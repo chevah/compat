@@ -19,7 +19,7 @@ mk
 
 # Test accounts and passwords.
 TEST_ACCOUNT_USERNAME = 'mâț mițișor'
-TEST_ACCOUNT_PASSWORD = '42!BaroșanuLung'
+TEST_ACCOUNT_PASSWORD = '42!BarosanuLung'
 TEST_ACCOUNT_GROUP = 'g mâțmițișor'
 # TODO: Replace hard-coded constant with posixID()
 # 2106

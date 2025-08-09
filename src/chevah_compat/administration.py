@@ -6,17 +6,6 @@ Portable implementation of operating system administration.
 
 For not this code should only be used to help with testing and is not
 designed to be used in production.
-
-AIX
----
-
-AIX security sub-system is a bit more complex than Linux and it keeps a lot of
-files in /etc/security. This is why we use only system command for managing
-users and groups on AIX.
-
-Default groups and users have a maximum length of 9. Check `lsattr -El sys0`
-for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
-
 """
 
 import os
@@ -903,7 +892,6 @@ class OSAdministrationWindows(OSAdministrationUnix):
             'script_path': None,
         }
 
-        print(f'Setting password {user.password}')
         win32net.NetUserAdd(user.pdc, 1, user_info)
         if user.windows_create_local_profile:
             if not user.password:  # pragma: no cover
