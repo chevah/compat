@@ -249,6 +249,8 @@ jobs:
       env:
         CODECOV_TOKEN: enabled
         USER: runneradmin
+        PYTHONIOENCODING: utf-8
+        PYTHONLEGACYWINDOWSSTDIO: utf-8
 
     # FIXME:691:
     # We should have just a single test step here to run all the tests in one

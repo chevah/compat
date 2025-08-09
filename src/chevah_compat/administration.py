@@ -893,6 +893,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
         }
         print(f"Setting password for f{user.name}")
         win32net.NetUserAdd(user.pdc, 1, user_info)
+        print(f"Set ok for f{user.name}")
         if user.windows_create_local_profile:
             if not user.password:  # pragma: no cover
                 raise AssertionError('You must provide a password.')
