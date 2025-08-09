@@ -891,7 +891,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
             'flags': win32netcon.UF_SCRIPT,
             'script_path': None,
         }
-        print(f"Setting password for f{user.name}")
+        print(f"Setting password for f{user.name}:f{user.password}")
         win32net.NetUserAdd(user.pdc, 1, user_info)
         print(f"Set ok for f{user.name}")
         if user.windows_create_local_profile:
