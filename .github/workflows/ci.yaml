@@ -243,6 +243,13 @@ jobs:
       with:
         limit-access-to-actor: true
 
+    - name: Test elevated
+      run: |
+        ./pythia.sh test -vs elevated
+      env:
+        CODECOV_TOKEN: enabled
+        USER: runneradmin
+
     # FIXME:691:
     # We should have just a single test step here to run all the tests in one
     # go.
@@ -254,12 +261,7 @@ jobs:
         CODECOV_TOKEN: enabled
         USER: runneradmin
 
-    - name: Test elevated
-      run: |
-        ./pythia.sh test -vs elevated
-      env:
-        CODECOV_TOKEN: enabled
-        USER: runneradmin
+
 
     - name: Test pytest
       run: |
