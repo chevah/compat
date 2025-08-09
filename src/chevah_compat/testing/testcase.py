@@ -1486,8 +1486,9 @@ class FileSystemTestCase(ChevahTestCase):
         from chevah_compat.testing import TEST_ACCOUNT_GROUP
 
         user = mk.makeTestUser(
-            name='filesystem-test-case-' + mk.string(),
-            home_group=TEST_ACCOUNT_GROUP)
+            name='fs_tc_' + mk.ascii()[3:].replace('-', '_'),
+            home_group=TEST_ACCOUNT_GROUP,
+        )
         os_administration.addUser(user)
         return user
 

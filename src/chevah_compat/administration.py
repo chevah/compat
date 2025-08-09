@@ -891,9 +891,9 @@ class OSAdministrationWindows(OSAdministrationUnix):
             'flags': win32netcon.UF_SCRIPT,
             'script_path': None,
         }
-        print(f"Setting password for f{user.name}:f{user.password}")
+        print(f'Setting password for {user.name}:{user.password}')
         win32net.NetUserAdd(user.pdc, 1, user_info)
-        print(f"Set ok for f{user.name}")
+        print(f'Set ok for {user.name}')
         if user.windows_create_local_profile:
             if not user.password:  # pragma: no cover
                 raise AssertionError('You must provide a password.')

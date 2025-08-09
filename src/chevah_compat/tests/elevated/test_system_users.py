@@ -146,7 +146,7 @@ class TestSystemUsers(SystemUsersTestCase):
         required capabilities.
         """
         test_user = TestUser(
-            name=self._testMethodName + mk.string(),
+            name='getHomeFolder_nt',
             password=mk.password(),
             create_local_profile=True,
         )

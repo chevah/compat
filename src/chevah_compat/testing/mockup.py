@@ -33,6 +33,9 @@ def _sanitize_name_windows(candidate):
     """
     Return valid user/group name for Windows OSs from `candidate.
     """
+    if len(candidate.encode('utf-8')) > 19:
+        raise AssertionError(f'Windows fails with long username: {candidate}')
+
     return candidate
 
 
