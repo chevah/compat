@@ -4,18 +4,11 @@
 Adapter for working with Unix users.
 """
 
-import crypt
 import grp
 import os
 import pwd
 
-try:
-    import spwd
-
-    HAS_SHADOW_SUPPORT = True
-except ImportError:
-    HAS_SHADOW_SUPPORT = False
-
+from passlib.context import CryptContext
 from zope.interface import implementer
 
 from chevah_compat.compat_users import CompatUsers
@@ -29,6 +22,16 @@ from chevah_compat.interfaces import (
 
 _GLOBAL_EUID = os.geteuid()
 _GLOBAL_EGID = os.getegid()
+
+hash_context = CryptContext(
+    schemes=[
+        'md5_crypt',  # $1$
+        'bcrypt',  # $2$
+        'sha256_crypt',  # $5$
+        'sha512_crypt',  # $6$
+    ],
+    default='sha512_crypt',
+)
 
 
 def _get_euid_and_egid(username):
@@ -87,17 +90,7 @@ def _verifyCrypt(password, crypted_password):
     Return `True` if password can be associated with `crypted_password`,
     and return `False` otherwise.
     """
-    provided_password = crypt.crypt(password, crypted_password)
-
-    if os.sys.platform == 'sunos5' and provided_password.startswith('$6$'):
-        # There is a bug in Python 2.5 and crypt add some extra
-        # values for shadow passwords of type 6.
-        provided_password = provided_password[:12] + provided_password[20:]
-
-    if provided_password == crypted_password:
-        return True
-
-    return False
+    return hash_context.verify(password, crypted_password)
 
 
 @implementer(IOSUsers)
@@ -114,7 +107,7 @@ class UnixUsers(CompatUsers):
     # which are listed on Ubuntu `getent shadow` with password '*', even if
     # they are active.
     # `NP` is Centrify way of saying `*NP*`.
-    _NOT_HERE = ('x', 'NP', '*NP*', '*')
+    _NOT_HERE = ('x', 'NP', '*NP*', '*', '!*')
 
     def getCurrentUserName(self):
         """
@@ -198,14 +191,7 @@ class UnixUsers(CompatUsers):
             if checked is True:
                 return (True, None)
             return (False, None)
-
-        checked = self._checkShadowDBFile(username, password)
-        if checked is not None:
-            if checked is True:
-                return (True, None)
-            return (False, None)
-
-        return (None, None)
+        return (False, None)
 
     def pamWithUsernameAndPassword(self, username, password, service='login'):
         """
@@ -354,15 +340,12 @@ class UnixUsers(CompatUsers):
                user will be unable to log-in
             * "!!" - the password has expired
         """
-        if not HAS_SHADOW_SUPPORT:
-            return None
-
         username = username
         password = password
 
         try:
             with self._executeAsAdministrator():
-                crypted_password = spwd.getspnam(username).sp_pwd
+                crypted_password = _get_etc_shadow(username)
 
             # Locked account
             if crypted_password in ('LK',):
@@ -374,47 +357,6 @@ class UnixUsers(CompatUsers):
                 return None
         except KeyError:
             return None
-
-        return _verifyCrypt(password, crypted_password)
-
-    def _checkShadowDBFile(self, username, password):
-        """
-        Authenticate against /etc/spwd.db BSD file.
-        """
-        from chevah_compat import process_capabilities
-
-        if process_capabilities.os_name not in ['freebsd', 'openbsd']:
-            return None
-
-        # For now we don't support py3.
-        import bsddb185  # pylint: disable=bad-python3-import
-
-        username = username.encode('utf-8')
-        password = password.encode('utf-8')
-
-        entry = ''
-        db = None
-
-        # We try to keep the context switch as little as possible.
-        try:
-            with self._executeAsAdministrator():
-                db = bsddb185.open('/etc/spwd.db')
-
-            try:
-                entry = db['1' + username]
-            except KeyError:
-                return None
-
-        finally:
-            if db:
-                db.close()
-
-        parts = entry.split('\x00')
-
-        if len(parts) > 2:
-            crypted_password = parts[1]
-        else:
-            return False
 
         return _verifyCrypt(password, crypted_password)
 
@@ -591,3 +533,27 @@ class UnixSuperAvatar(UnixHasImpersonatedAvatar):
         Name of the default avatar.
         """
         return 'root'
+
+
+def _get_etc_shadow(username):
+    """
+    Return the hash password for username from /etc/shadow
+    """
+    if not os.path.exists('/etc/shadow'):
+        raise KeyError('Shadow not supported.')
+
+    with open('/etc/shadow') as stream:
+        for line in stream:
+            parts = line.split(':')
+            if len(parts) < 3:
+                # Invalid line.
+                continue
+
+            if parts[0] != username:
+                # Not our user.
+                continue
+
+            # We found the password.
+            return parts[1]
+
+    raise KeyError('User not found.')

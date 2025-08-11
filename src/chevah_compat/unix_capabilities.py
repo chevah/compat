@@ -4,6 +4,8 @@
 Provides information about capabilities for a process on Unix.
 """
 
+import os
+
 from zope.interface import implementer
 
 from chevah_compat.capabilities import BaseProcessCapabilities
@@ -80,10 +82,8 @@ class UnixProcessCapabilities(BaseProcessCapabilities):
             return False
 
         if self.os_name == 'linux':
-            import distro
-
-            distro_name = distro.id()
-            if distro_name == 'alpine':
+            if os.path.exists('/etc/alpine-release'):
                 return False
+            return True
 
         return True

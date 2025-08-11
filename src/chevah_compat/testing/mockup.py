@@ -7,9 +7,6 @@ import random
 import string
 import uuid
 
-import six
-from unidecode import unidecode
-
 try:
     from twisted.internet.protocol import Factory
     from twisted.internet.tcp import Port
@@ -29,17 +26,17 @@ def _sanitize_name_legacy_unix(candidate):
 
     By default password is limited to 8 characters without spaces.
     """
-    return unidecode(candidate).replace(' ', '_')[:8]
+    return candidate.replace(' ', '_')[:8]
 
 
 def _sanitize_name_windows(candidate):
     """
     Return valid user/group name for Windows OSs from `candidate.
     """
-    # TODO: On Windows, we can't delete home folders with unicode names.
-    # 927
+    if len(candidate.encode('utf-8')) > 19:
+        raise AssertionError(f'Windows fails with long username: {candidate}')
 
-    return unidecode(candidate)
+    return candidate
 
 
 class SanitizeNameMixin:
@@ -248,13 +245,16 @@ class ChevahCommonsFactory:
 
         This is an Unicode with only ascii characters.
         """
-        return 'ascii_StR' + six.text_type(self.number())
+        return 'ascii_StR' + str(self.number())
 
     def string(self, *args, **kwargs):
         """
         Shortcut for getUniqueString.
         """
         return self.getUniqueString(*args, **kwargs)
+
+    def password(self):
+        return 'VeryVerySup3R#!LongPass-' + self.string()
 
     def number(self, *args, **kwargs):
         """
@@ -279,13 +279,13 @@ class ChevahCommonsFactory:
         """
         The account under which this process is executed.
         """
-        return six.text_type(os.environ['USER'])
+        return os.environ['USER']
 
     def getUniqueString(self, length=None):
         """
         A string unique for this session.
         """
-        base = 'StR' + six.text_type(self.number())
+        base = 'StR' + str(self.number())
 
         # The minimum length so that we don't truncate the unique string.
         min_length = len(base) + len(TEST_NAME_MARKER)
@@ -296,8 +296,7 @@ class ChevahCommonsFactory:
             # padded.
             if min_length + 1 > length:
                 raise AssertionError(
-                    'Can not generate an unique string shorter than %d'
-                    % (length),
+                    f'Can not generate an unique string shorter than {length}'
                 )
             extra_length = length - min_length
             extra_text = ''.join(
@@ -438,7 +437,7 @@ class ChevahCommonsFactory:
             name = self.string()
 
         if password is None:
-            password = self.string()
+            password = self.password()
 
         if posix_home_path is None:
             if process_capabilities.os_name == 'solaris':

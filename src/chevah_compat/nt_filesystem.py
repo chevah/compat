@@ -163,8 +163,7 @@ class NTFilesystem(PosixFilesystemBase):
         outside of the chroot.
         """
         path = os.path.normpath(os.path.join(*segments))
-        if path.startswith('..\\'):
-            path = path[3:]
+        path = path.removeprefix('..\\')
         result = os.path.normpath(self._root_path + '\\' + path)
         if result.lower().startswith(self._root_path.lower()):
             return result.rstrip('\\')
@@ -391,12 +390,7 @@ class NTFilesystem(PosixFilesystemBase):
         """
         absolute_path = super().getAbsoluteRealPath(path)
 
-        if absolute_path.startswith('\\\\?\\'):
-            # Remove the Unicode path marker, since our compat API uses normal
-            # windows paths, even for long paths.
-            absolute_path = absolute_path[4:]
-
-        return absolute_path
+        return absolute_path.removeprefix('\\\\?\\')
 
     @contextmanager
     def _windowsToOSError(self, segments=None, path=None):

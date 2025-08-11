@@ -146,8 +146,8 @@ class TestSystemUsers(SystemUsersTestCase):
         required capabilities.
         """
         test_user = TestUser(
-            name=mk.string(),
-            password=mk.string(),
+            name='getHomeFolder_nt',
+            password=mk.password(),
             create_local_profile=True,
         )
         os_administration.addUser(test_user)
@@ -188,7 +188,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         test_user = TestUser(
             name='no-home',
-            password=mk.string(),
+            password=mk.password(),
             create_local_profile=False,
         )
         # Unfortunately there is no API to get default base home path for
@@ -298,9 +298,6 @@ class TestSystemUsers(SystemUsersTestCase):
         if self.os_name in ['aix', 'hpux', 'osx', 'freebsd', 'openbsd']:
             # No shadow support.
             self.assertIsNone(result)
-        elif self.os_version in ['rhel-5']:
-            # No shadow users on old RHEL/Centos container.
-            self.assertIsNone(result)
         else:
             self.assertTrue(result)
 
@@ -323,7 +320,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
             username=TEST_ACCOUNT_USERNAME,
-            password=mk.string(),
+            password=mk.password(),
         )
 
         self.assertFalse(result)
@@ -339,7 +336,7 @@ class TestSystemUsers(SystemUsersTestCase):
         """
         result, token = system_users.authenticateWithUsernameAndPassword(
             username=mk.string(),
-            password=mk.string(),
+            password=mk.password(),
         )
 
         self.assertFalse(result)

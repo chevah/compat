@@ -6,21 +6,9 @@ Portable implementation of operating system administration.
 
 For not this code should only be used to help with testing and is not
 designed to be used in production.
-
-AIX
----
-
-AIX security sub-system is a bit more complex than Linux and it keeps a lot of
-files in /etc/security. This is why we use only system command for managing
-users and groups on AIX.
-
-Default groups and users have a maximum length of 9. Check `lsattr -El sys0`
-for `max_logname`. Can be changed with `chdev -l sys0 -a max_logname=128`.
-
 """
 
 import os
-import random
 import socket
 import subprocess
 import sys
@@ -83,7 +71,7 @@ class OSAdministrationUnix:
         add_group_method(group=group)
 
     def _addGroup_unix(self, group):
-        group_line = '%s:x:%d:' % (group.name, group.gid)
+        group_line = f'{group.name}:x:{group.gid}:'
         gshadow_line = f'{group.name}:!::'
 
         self._appendUnixEntry(self.group_segments, group_line)
@@ -266,14 +254,10 @@ class OSAdministrationUnix:
         group = TestGroup(name=user.name, posix_gid=user.uid)
         self._addGroup_unix(group)
 
-        values = (
-            user.name,
-            user.uid,
-            user.gid,
-            user.posix_home_path,
-            user.shell,
+        passwd_line = (
+            f'{user.name}:x:{user.uid}:{user.gid}:'
+            f':{user.posix_home_path}:{user.shell}'
         )
-        passwd_line = '%s:x:%d:%d::%s:%s' % values
 
         shadow_line = f'{user.name}:!:15218:0:99999:7:::'
 
@@ -502,15 +486,9 @@ class OSAdministrationUnix:
         """
         Set a password in shadow file.
         """
-        import crypt
+        from passlib.hash import md5_crypt
 
-        ALPHABET = (
-            '0123456789'
-            'abcdefghijklmnopqrstuvwxyz'
-            'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        )
-        salt = ''.join(random.choice(ALPHABET) for i in range(8))
-        shadow_password = crypt.crypt(user.password, '$1$' + salt + '$')
+        shadow_password = md5_crypt.hash(user.password)
 
         self._changeUnixEntry(
             segments=segments,
@@ -523,15 +501,10 @@ class OSAdministrationUnix:
         """
         Set a password in passwd file.
         """
-        import crypt
+        from passlib.hash import md5_crypt
 
-        ALPHABET = (
-            '0123456789'
-            'abcdefghijklmnopqrstuvwxyz'
-            'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        )
-        salt = ''.join(random.choice(ALPHABET) for i in range(2))
-        passwd_password = crypt.crypt(user.password, salt)
+        passwd_password = md5_crypt.hash(user.password)
+
         self._changeUnixEntry(
             segments=segments,
             name=user.name,
@@ -918,8 +891,15 @@ class OSAdministrationWindows(OSAdministrationUnix):
             'flags': win32netcon.UF_SCRIPT,
             'script_path': None,
         }
-
-        win32net.NetUserAdd(user.pdc, 1, user_info)
+        try:
+            win32net.NetUserAdd(user.pdc, 1, user_info)
+        except Exception as error:
+            raise RuntimeError(
+                'Failed to create user. '
+                'Even if Windows complains about password policy '
+                'the error might be caused by the username. '
+                f'{error}'
+            )
         if user.windows_create_local_profile:
             if not user.password:  # pragma: no cover
                 raise AssertionError('You must provide a password.')

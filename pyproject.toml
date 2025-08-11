@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chevah-compat"
-version = "1.5.0"
+version = "1.6.1"
 maintainers = [
     { name = "Adi Roiban", email = "adi.roiban@proatria.com" },
 ]
@@ -18,7 +18,9 @@ requires-python = "~=3.8"
 # The runtime dependencies should be relaxed as otherwise it will
 # generate conflicts with the code using chevah-compat.
 dependencies = [
-    "zope.interface >= 5.4.0",
+    "zope.interface >= 7.2",
+    "typing_extensions >= 4.13.2",
+    "passlib >= 1.7",
     "pywin32 >= 305 ; platform_system == 'Windows'",
     "python-pam >= 2.0.2 ; platform_system == 'Linux'",
     # Used to detect Linux distributions.
@@ -40,18 +42,17 @@ Homepage = "https://github.com/chevah/compat"
 dev = [
     "ruff ~= 0.7",
     "bunch",
-    "Twisted==24.11.0",
+    "Twisted==25.5.0",
     "incremental",
     "service-identity==24.2.0",
     "pynose == 1.5.4",
     "pytest ~= 8.3",
+    "packaging ~= 25.0",
     "coverage ~= 7.6",
-    "diff_cover == 9.2.4",
+    "diff_cover == 9.6.0",
     "codecov == 2.1.12",
     # Required for showing OpenSSL version in test_ci.
     "pyOpenSSL",
-    #  Required for some unicode handling.
-    "unidecode",
     "wmi ~= 1.5.1; platform_system == 'Windows'",
 ]
 
