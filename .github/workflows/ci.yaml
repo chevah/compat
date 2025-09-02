@@ -37,7 +37,7 @@ jobs:
     steps:
 
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Cache build
       uses: actions/cache@v4
@@ -92,7 +92,7 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 2
 
@@ -146,7 +146,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Cache build
       uses: actions/cache@v4
@@ -222,7 +222,7 @@ jobs:
       PYTHONLEGACYWINDOWSSTDIO: utf-8
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Relax password security
       run: |
@@ -339,7 +339,7 @@ jobs:
         useradd -g adm -s /bin/bash -m chevah
         echo '%adm    ALL=NOPASSWD: ALL' > /etc/sudoers
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Cache build
       uses: actions/cache@v4
