@@ -45,7 +45,7 @@ dev = [
     "Twisted==25.5.0",
     "incremental",
     "service-identity==24.2.0",
-    "pynose == 1.5.4",
+    "pynose == 1.5.5",
     "pytest ~= 8.3",
     "packaging ~= 25.0",
     "coverage ~= 7.6",
