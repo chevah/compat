@@ -498,6 +498,9 @@ class NTFilesystem(PosixFilesystemBase):
         if not self.process_capabilities.symbolic_link:
             raise NotImplementedError('makeLink not implemented on this OS.')
 
+        self._rejectRoot(
+            link_segments, 'Creating a link as the root folder is not allowed.')
+
         target_path = self.getRealPathFromSegments(
             target_segments,
             include_virtual=False,
@@ -621,6 +624,9 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        self._rejectRoot(
+            segments,
+            'Setting attributes for the nt root folder is not allowed.')
         with self._windowsToOSError(segments):
             if 'uid' in attributes or 'gid' in attributes:
                 raise OSError(errno.EPERM, 'Operation not supported')
@@ -808,6 +814,11 @@ class NTFilesystem(PosixFilesystemBase):
 
         For symbolic links we always force non-recursive behaviour.
         """
+        self._rejectRoot(
+            segments,
+            'Deleting the nt root folder is not allowed.',
+            )
+
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
         try:
@@ -854,6 +865,10 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        self._rejectRoot(
+            segments,
+            'Setting owner for the nt root folder is not allowed.',
+            )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         encoded_path = self.getEncodedPath(path)
         try:
@@ -950,6 +965,10 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        self._rejectRoot(
+            segments,
+            'Adding group for the nt root folder is not allowed.',
+            )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         encoded_path = self.getEncodedPath(path)
         try:
@@ -988,6 +1007,10 @@ class NTFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        self._rejectRoot(
+            segments,
+            'Removing group for the nt root folder is not allowed.',
+            )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         encoded_path = self.getEncodedPath(path)
         try:

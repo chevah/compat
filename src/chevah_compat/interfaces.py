@@ -455,6 +455,11 @@ class ILocalFilesystem(Interface):
         Return True if segments points to a link.
         """
 
+    def isRoot(segments):
+        """
+        Return True if segments points to the root folder.
+        """
+
     def exists(segments):
         """
         Return True if segments points to an existing path.

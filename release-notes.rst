@@ -1,6 +1,12 @@
 Release notes for chevah.compat
 ===============================
 
+1.7.0 - 2026-07-22
+------------------
+
+* Prevent the filesystem from modifying the root folder.
+  All operations that would modify the root folder will raise a CompatError.
+
 
 1.6.1 - 2025-08-07
 ------------------

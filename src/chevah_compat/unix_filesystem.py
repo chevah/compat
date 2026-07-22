@@ -102,6 +102,10 @@ class UnixFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        self._rejectRoot(
+            link_segments,
+            'Creating a link in the root folder is not allowed.',
+            )
         target_path = self.getRealPathFromSegments(
             target_segments,
             include_virtual=False,
@@ -116,6 +120,10 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def setOwner(self, segments, owner):
         """See `ILocalFilesystem`."""
+        self._rejectRoot(
+            segments,
+            'Setting owner for the unix root folder is not allowed.',
+            )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         try:
             uid = pwd.getpwnam(owner).pw_uid
@@ -136,6 +144,10 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def addGroup(self, segments, group, permissions=None):
         """See `ILocalFilesystem`."""
+        self._rejectRoot(
+            segments,
+            'Adding group for the unix root folder is not allowed.',
+            )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         try:
             gid = grp.getgrnam(group).gr_gid
@@ -203,6 +215,10 @@ class UnixFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        self._rejectRoot(
+            segments,
+            'Deleting the unix root folder is not allowed.',
+            )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         if path == '/':
             raise CompatError(1009, 'Deleting Unix root folder is not allowed.')

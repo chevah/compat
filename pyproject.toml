@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chevah-compat"
-version = "1.6.1"
+version = "1.7.0"
 maintainers = [
     { name = "Adi Roiban", email = "adi.roiban@proatria.com" },
 ]
@@ -42,6 +42,7 @@ Homepage = "https://github.com/chevah/compat"
 dev = [
     "ruff ~= 0.7",
     "bunch",
+    "psutil",
     "Twisted==25.5.0",
     "incremental",
     "service-identity==24.2.0",
