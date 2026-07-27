@@ -53,7 +53,7 @@ class SanitizeNameMixin:
         os_version = ChevahTestCase.os_version
         if os_name in ['aix', 'hpux', 'freebsd', 'openbsd']:
             return _sanitize_name_legacy_unix(name)
-        if os_version in ['osx-10.16']:
+        if os_version == 'osx-10.16':
             # It looks like macOS 11 can't handle full Unix group names.
             macosname = _sanitize_name_legacy_unix(name)
             return macosname.replace('_', 'Z')

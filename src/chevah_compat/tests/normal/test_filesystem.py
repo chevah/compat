@@ -475,7 +475,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         It can delete folder even if it is not empty.
         """
-        segments, child_name = self.createFolderWithChild()
+        segments, _ = self.createFolderWithChild()
         self.assertTrue(self.filesystem.exists(segments))
 
         self.filesystem.deleteFolder(segments, recursive=True)
@@ -620,7 +620,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         # We assume all slaves have the c:\temp folder.
         share_name = 'share-name ' + mk.string()
         self.makeWindowsShare(path='c:\\temp', name=share_name)
-        path, segments = mk.fs.makePathInTemp()
+        _, segments = mk.fs.makePathInTemp()
         self.addCleanup(self.filesystem.deleteFolder, segments)
         filename = mk.makeFilename()
         file_segments = ['c', 'temp', filename]
@@ -2812,7 +2812,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         """
         Will return True when we have a UNC / network link.
         """
-        path, segments = mk.fs.makePathInTemp()
+        _, segments = mk.fs.makePathInTemp()
         # Make sure path does not exists.
         result = self.unlocked_filesystem.exists(segments)
         self.assertFalse(result)
@@ -3108,7 +3108,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         """
         It return the virtual link of the target.
         """
-        path, target_segments = self.tempFile()
+        _, target_segments = self.tempFile()
         link_segments = [f'{target_segments[-1]}-link']
         mk.fs.makeLink(
             target_segments=target_segments,
@@ -3265,7 +3265,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         Virtual path on Windows/OSX are case insensitive, while on other
         systems are case sensitive.
         """
-        path, segments = self.tempFolder(suffix='low')
+        _, segments = self.tempFolder(suffix='low')
         virtual_shadow = segments[-1][:-3] + segments[-1][-3:].upper()
 
         if self.os_name in ['windows', 'osx']:

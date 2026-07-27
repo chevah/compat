@@ -499,7 +499,8 @@ class NTFilesystem(PosixFilesystemBase):
             raise NotImplementedError('makeLink not implemented on this OS.')
 
         self._rejectRoot(
-            link_segments, 'Creating a link as the root folder is not allowed.')
+            link_segments, 'Creating a link as the root folder is not allowed.'
+        )
 
         target_path = self.getRealPathFromSegments(
             target_segments,
@@ -565,14 +566,14 @@ class NTFilesystem(PosixFilesystemBase):
         try:
             file_info = win32file.GetFileInformationByHandle(file_handle)
             (
-                attributes,
-                created_at,
-                accessed_at,
-                written_at,
+                _attributes,
+                _created_at,
+                _accessed_at,
+                _written_at,
                 volume_id,
-                file_high,
-                file_low,
-                n_links,
+                _file_high,
+                _file_low,
+                _n_links,
                 index_high,
                 index_low,
             ) = file_info
@@ -626,7 +627,8 @@ class NTFilesystem(PosixFilesystemBase):
         """
         self._rejectRoot(
             segments,
-            'Setting attributes for the nt root folder is not allowed.')
+            'Setting attributes for the nt root folder is not allowed.',
+        )
         with self._windowsToOSError(segments):
             if 'uid' in attributes or 'gid' in attributes:
                 raise OSError(errno.EPERM, 'Operation not supported')
@@ -817,7 +819,7 @@ class NTFilesystem(PosixFilesystemBase):
         self._rejectRoot(
             segments,
             'Deleting the nt root folder is not allowed.',
-            )
+        )
 
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
@@ -868,7 +870,7 @@ class NTFilesystem(PosixFilesystemBase):
         self._rejectRoot(
             segments,
             'Setting owner for the nt root folder is not allowed.',
-            )
+        )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         encoded_path = self.getEncodedPath(path)
         try:
@@ -892,7 +894,7 @@ class NTFilesystem(PosixFilesystemBase):
                 )
                 d_acl = security_descriptor.GetSecurityDescriptorDacl()
 
-                user_sid, user_domain, user_type = (
+                user_sid, _user_domain, _user_type = (
                     win32security.LookupAccountName(None, owner)
                 )
                 flags = (
@@ -968,11 +970,11 @@ class NTFilesystem(PosixFilesystemBase):
         self._rejectRoot(
             segments,
             'Adding group for the nt root folder is not allowed.',
-            )
+        )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         encoded_path = self.getEncodedPath(path)
         try:
-            group_sid, group_domain, group_type = (
+            group_sid, _group_domain, _group_type = (
                 win32security.LookupAccountName(None, group)
             )
         except win32net.error:
@@ -1010,11 +1012,11 @@ class NTFilesystem(PosixFilesystemBase):
         self._rejectRoot(
             segments,
             'Removing group for the nt root folder is not allowed.',
-            )
+        )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         encoded_path = self.getEncodedPath(path)
         try:
-            group_sid, group_domain, group_type = (
+            group_sid, _group_domain, _group_type = (
                 win32security.LookupAccountName(None, group)
             )
         except win32net.error:
@@ -1041,7 +1043,7 @@ class NTFilesystem(PosixFilesystemBase):
                 return None
             index_ace_to_remove = -1
             for index in range(ace_count):
-                ((ace_type, ace_flag), mask, sid) = dacl.GetAce(index)
+                ((_ace_type, _ace_flag), _mask, sid) = dacl.GetAce(index)
                 if group_sid == sid:
                     index_ace_to_remove = index
                     break
@@ -1068,7 +1070,7 @@ class NTFilesystem(PosixFilesystemBase):
         encoded_path = self.getEncodedPath(path)
 
         try:
-            group_sid, group_domain, group_type = (
+            group_sid, _group_domain, _group_type = (
                 win32security.LookupAccountName(None, group)
             )
         except win32net.error:
@@ -1089,7 +1091,7 @@ class NTFilesystem(PosixFilesystemBase):
                 # Nothing in the list.
                 return False
             for index in range(ace_count):
-                ((ace_type, ace_flag), mask, sid) = dacl.GetAce(index)
+                ((_ace_type, _ace_flag), _mask, sid) = dacl.GetAce(index)
                 if group_sid == sid:
                     return True
         return False

@@ -40,7 +40,7 @@ Homepage = "https://github.com/chevah/compat"
 # These are the deps required to develop.
 # Try to pin them as much as possible.
 dev = [
-    "ruff ~= 0.7",
+    "ruff ~= 0.16",
     "bunch",
     "psutil",
     "Twisted==25.5.0",

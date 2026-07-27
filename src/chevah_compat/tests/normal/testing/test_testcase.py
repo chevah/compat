@@ -358,9 +358,11 @@ class TestTwistedTestCase(ChevahTestCase):
             """
 
         self.EXCEPTED_DELAYED_CALLS = [
-            'TestTwistedTestCase.'
-            'test_assertReactorIsClean_excepted_delayed_calls.'
-            '<locals>.much_later'
+            (
+                'TestTwistedTestCase.'
+                'test_assertReactorIsClean_excepted_delayed_calls.'
+                '<locals>.much_later'
+            )
         ]
 
         delayed_call = reactor.callLater(10, much_later)

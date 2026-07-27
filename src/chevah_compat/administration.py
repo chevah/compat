@@ -563,7 +563,7 @@ class OSAdministrationUnix:
         )
 
     def _setUserPassword_openbsd(self, user):
-        code, out = execute(
+        _, out = execute(
             command=['encrypt'],
             input_text=user.password.encode('utf-8'),
         )
@@ -959,7 +959,7 @@ class OSAdministrationWindows(OSAdministrationUnix):
             win32net.NetUserDel(user.pdc, user.name)
         except win32net.error as error:  # pragma: no cover
             # Ignore user not found error.
-            (number, context, message) = error
+            (number, _context, _message) = error
             # Ignore user not found error.
             if number != ERROR_NONE_MAPPED:
                 raise

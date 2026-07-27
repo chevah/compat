@@ -510,9 +510,11 @@ class PosixFilesystemBase:
         See `ILocalFilesystem`.
         """
         self._rejectRoot(
-            from_segments, 'Renaming from the root folder is not allowed.')
+            from_segments, 'Renaming from the root folder is not allowed.'
+        )
         self._rejectRoot(
-            to_segments, 'Renaming to the root folder is not allowed.')
+            to_segments, 'Renaming to the root folder is not allowed.'
+        )
         from_path = self.getRealPathFromSegments(
             from_segments,
             include_virtual=False,
@@ -886,7 +888,8 @@ class PosixFilesystemBase:
         """
         self._rejectRoot(
             segments,
-            'Setting attributes on the posix root folder is not allowed.')
+            'Setting attributes on the posix root folder is not allowed.',
+        )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
