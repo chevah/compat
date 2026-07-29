@@ -56,7 +56,8 @@ class UnixFilesystem(PosixFilesystemBase):
 
         relative_path = '/' + '/'.join(segments)
         relative_path = self.getAbsoluteRealPath(relative_path).rstrip('/')
-        return str(self._root_path.rstrip('/') + relative_path)
+        path = self._root_path.rstrip('/') + relative_path
+        return str(path or '/')
 
     def getSegmentsFromRealPath(self, path):
         """
@@ -168,6 +169,10 @@ class UnixFilesystem(PosixFilesystemBase):
         This has no effect on Unix/Linux but raises an error if we are
         touching a virtual root.
         """
+        self._rejectRoot(
+            segments,
+            'Removing group for the unix root folder is not allowed.',
+        )
         self.getRealPathFromSegments(segments, include_virtual=False)
         return
 

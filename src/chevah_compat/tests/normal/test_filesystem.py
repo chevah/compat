@@ -31,6 +31,16 @@ class FilesystemTestingHelpers:
     Common code for running filesystem tests.
     """
 
+    def assertRootOperationRejected(self, operation):
+        """
+        Check that all segment forms resolving to the filesystem root fail.
+        """
+        root_segments = ([], ['..'], ['child', '..'])
+        for segments in root_segments:
+            error = self.assertRaises(CompatError, operation, segments)
+            self.assertEqual(1009, error.event_id)
+            self.assertEndsWith('is not allowed.', error.message)
+
     def makeLink(self, segments, cleanup=True):
         """
         Create a symbolic link to `segments` and return the segments for it.
@@ -89,6 +99,15 @@ class FilesystemTestMixin(FilesystemTestingHelpers):
     """
     Common tests for filesystem for all OSes.
     """
+
+    def test_isRoot(self):
+        """
+        Root detection normalizes segments before comparing their real paths.
+        """
+        self.assertIsTrue(self.filesystem.isRoot([]))
+        self.assertIsTrue(self.filesystem.isRoot(['..']))
+        self.assertIsTrue(self.filesystem.isRoot(['child', '..']))
+        self.assertIsFalse(self.filesystem.isRoot(['child']))
 
     def test_getSegments_upper_paths(self):
         """
@@ -2485,6 +2504,17 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         cls.unlocked_filesystem = LocalFilesystem(avatar=DefaultAvatar())
         cls.filesystem = cls.unlocked_filesystem
 
+    def test_deleteFolder_root(self):
+        """
+        Recursive deletion rejects the unlocked filesystem root.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.unlocked_filesystem.deleteFolder(
+                segments,
+                recursive=True,
+            ),
+        )
+
     def test_getSegments(self):
         """
         Check getSegments.
@@ -2905,6 +2935,101 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         cls.locked_avatar.lock_in_home_folder = True
         cls.locked_filesystem = LocalFilesystem(avatar=cls.locked_avatar)
         cls.filesystem = cls.locked_filesystem
+
+    def test_createFolder_root(self):
+        """
+        Creating the avatar root using any equivalent segments is rejected.
+        """
+        self.assertRootOperationRejected(self.locked_filesystem.createFolder)
+
+    def test_deleteFolder_root(self):
+        """
+        Recursive deletion is rejected for the avatar root.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.deleteFolder(
+                segments,
+                recursive=True,
+            ),
+        )
+
+    def test_rename_from_root(self):
+        """
+        Renaming the avatar root using any equivalent segments is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.rename(
+                segments,
+                ['destination'],
+            ),
+        )
+
+    def test_rename_to_root(self):
+        """
+        Renaming another path over the avatar root is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.rename(
+                ['source'],
+                segments,
+            ),
+        )
+
+    def test_setAttributes_root(self):
+        """
+        Changing attributes on the avatar root is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.setAttributes(
+                segments,
+                {'mode': 0o700},
+            ),
+        )
+
+    def test_setOwner_root(self):
+        """
+        Changing the owner of the avatar root is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.setOwner(
+                segments,
+                'ignored-owner',
+            ),
+        )
+
+    def test_addGroup_root(self):
+        """
+        Adding a group to the avatar root is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.addGroup(
+                segments,
+                'ignored-group',
+            ),
+        )
+
+    def test_removeGroup_root(self):
+        """
+        Removing a group from the avatar root is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.removeGroup(
+                segments,
+                'ignored-group',
+            ),
+        )
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_makeLink_root(self):
+        """
+        Creating a link over the avatar root is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.makeLink(
+                ['ignored-target'],
+                segments,
+            ),
+        )
 
     def test_getSegments_locked(self):
         """
