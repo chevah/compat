@@ -226,6 +226,22 @@ class NTFilesystem(PosixFilesystemBase):
         self._validateDrivePath(result)
         return six.text_type(result)
 
+    def isRoot(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
+        normalized_segments = self.getSegments(self.getPath(segments))
+        if self._lock_in_home:
+            return super().isRoot(normalized_segments)
+
+        if normalized_segments in [[], ['.'], ['..']]:
+            return True
+
+        return (
+            len(normalized_segments) == 1
+            and normalized_segments[0].lower() in self._allowed_drive_letters
+        )
+
     # Windows allows only 26 drive letters and is case insensitive.
     _allowed_drive_letters = [
         'a',

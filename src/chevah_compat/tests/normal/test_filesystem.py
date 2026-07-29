@@ -107,7 +107,11 @@ class FilesystemTestMixin(FilesystemTestingHelpers):
         self.assertIsTrue(self.filesystem.isRoot([]))
         self.assertIsTrue(self.filesystem.isRoot(['..']))
         self.assertIsTrue(self.filesystem.isRoot(['child', '..']))
-        self.assertIsFalse(self.filesystem.isRoot(['child']))
+        if self.os_family == 'nt' and not self.filesystem._lock_in_home:
+            self.assertIsTrue(self.filesystem.isRoot(['c']))
+            self.assertIsFalse(self.filesystem.isRoot(['c', 'child']))
+        else:
+            self.assertIsFalse(self.filesystem.isRoot(['c']))
 
     def test_getSegments_upper_paths(self):
         """
@@ -2283,6 +2287,19 @@ class LocalFilesystemNTMixin:
         after = self.filesystem.getAttributes(segments)
 
         self.assertEqual(initial.mode, after.mode)
+
+    def test_deleteFolder_drive_root(self):
+        """
+        Deleting a drive root is rejected.
+        """
+        error = self.assertRaises(
+            CompatError,
+            self.filesystem.deleteFolder,
+            ['c'],
+            recursive=True,
+        )
+        self.assertEqual(1009, error.event_id)
+        self.assertEndsWith('is not allowed.', error.message)
 
     def test_isAbsolutePath(self):
         """
