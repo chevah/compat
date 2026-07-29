@@ -391,7 +391,11 @@ class PosixFilesystemBase:
         """
         See `ILocalFilesystem`.
         """
-        path = self.getRealPathFromSegments(segments, include_virtual=False)
+        normalized_segments = self.getSegments(self.getPath(segments))
+        path = self.getRealPathFromSegments(
+            normalized_segments,
+            include_virtual=False,
+        )
         root = self.getRealPathFromSegments([], include_virtual=False)
         return root.lower() == path.lower()
 
