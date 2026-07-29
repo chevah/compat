@@ -254,7 +254,7 @@ class TestSystemUsers(SystemUsersTestCase):
         if self.os_name in ['aix', 'hpux']:
             # On AIX and HPUX password is in the passwd file.
             self.assertTrue(result)
-        elif self.os_version in ['rhel-5']:
+        elif self.os_version == 'rhel-5':
             # Old RHEL/Centos contain has the password in passwd file.
             self.assertIsTrue(result)
         else:
@@ -277,7 +277,7 @@ class TestSystemUsers(SystemUsersTestCase):
         if self.os_name in ['aix', 'hpux']:
             # On AIX and HPUX invalid passwords are not accepted.
             self.assertFalse(result)
-        elif self.os_version in ['rhel-5']:
+        elif self.os_version == 'rhel-5':
             # Old RHEL/Centos contain has the password in passwd file,
             # and the provided password doesn't match what is in the file.
             self.assertIsFalse(result)

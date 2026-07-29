@@ -14,7 +14,6 @@ import stat  # pylint: disable=bad-python3-import
 
 from zope.interface import implementer
 
-from chevah_compat.exceptions import CompatError
 from chevah_compat.interfaces import ILocalFilesystem
 from chevah_compat.posix_filesystem import PosixFilesystemBase
 from chevah_compat.unix_users import UnixUsers
@@ -57,7 +56,8 @@ class UnixFilesystem(PosixFilesystemBase):
 
         relative_path = '/' + '/'.join(segments)
         relative_path = self.getAbsoluteRealPath(relative_path).rstrip('/')
-        return str(self._root_path.rstrip('/') + relative_path)
+        path = self._root_path.rstrip('/') + relative_path
+        return str(path or '/')
 
     def getSegmentsFromRealPath(self, path):
         """
@@ -102,6 +102,10 @@ class UnixFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        self._rejectRoot(
+            link_segments,
+            'Creating a link in the root folder is not allowed.',
+        )
         target_path = self.getRealPathFromSegments(
             target_segments,
             include_virtual=False,
@@ -116,6 +120,10 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def setOwner(self, segments, owner):
         """See `ILocalFilesystem`."""
+        self._rejectRoot(
+            segments,
+            'Setting owner for the unix root folder is not allowed.',
+        )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         try:
             uid = pwd.getpwnam(owner).pw_uid
@@ -136,6 +144,10 @@ class UnixFilesystem(PosixFilesystemBase):
 
     def addGroup(self, segments, group, permissions=None):
         """See `ILocalFilesystem`."""
+        self._rejectRoot(
+            segments,
+            'Adding group for the unix root folder is not allowed.',
+        )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         try:
             gid = grp.getgrnam(group).gr_gid
@@ -157,6 +169,10 @@ class UnixFilesystem(PosixFilesystemBase):
         This has no effect on Unix/Linux but raises an error if we are
         touching a virtual root.
         """
+        self._rejectRoot(
+            segments,
+            'Removing group for the unix root folder is not allowed.',
+        )
         self.getRealPathFromSegments(segments, include_virtual=False)
         return
 
@@ -203,10 +219,11 @@ class UnixFilesystem(PosixFilesystemBase):
         """
         See `ILocalFilesystem`.
         """
+        self._rejectRoot(
+            segments,
+            'Deleting the unix root folder is not allowed.',
+        )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
-        if path == '/':
-            raise CompatError(1009, 'Deleting Unix root folder is not allowed.')
-
         path_encoded = self.getEncodedPath(path)
 
         if self.isLink(segments):

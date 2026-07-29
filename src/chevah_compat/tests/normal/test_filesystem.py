@@ -31,6 +31,16 @@ class FilesystemTestingHelpers:
     Common code for running filesystem tests.
     """
 
+    def assertRootOperationRejected(self, operation):
+        """
+        Check that all segment forms resolving to the filesystem root fail.
+        """
+        root_segments = ([], ['..'], ['child', '..'])
+        for segments in root_segments:
+            error = self.assertRaises(CompatError, operation, segments)
+            self.assertEqual(1009, error.event_id)
+            self.assertEndsWith('is not allowed.', error.message)
+
     def makeLink(self, segments, cleanup=True):
         """
         Create a symbolic link to `segments` and return the segments for it.
@@ -89,6 +99,19 @@ class FilesystemTestMixin(FilesystemTestingHelpers):
     """
     Common tests for filesystem for all OSes.
     """
+
+    def test_isRoot(self):
+        """
+        Root detection normalizes segments before comparing their real paths.
+        """
+        self.assertIsTrue(self.filesystem.isRoot([]))
+        self.assertIsTrue(self.filesystem.isRoot(['..']))
+        self.assertIsTrue(self.filesystem.isRoot(['child', '..']))
+        if self.os_family == 'nt' and not self.filesystem._lock_in_home:
+            self.assertIsTrue(self.filesystem.isRoot(['c']))
+            self.assertIsFalse(self.filesystem.isRoot(['c', 'child']))
+        else:
+            self.assertIsFalse(self.filesystem.isRoot(['c']))
 
     def test_getSegments_upper_paths(self):
         """
@@ -475,7 +498,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         """
         It can delete folder even if it is not empty.
         """
-        segments, child_name = self.createFolderWithChild()
+        segments, _ = self.createFolderWithChild()
         self.assertTrue(self.filesystem.exists(segments))
 
         self.filesystem.deleteFolder(segments, recursive=True)
@@ -620,7 +643,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         # We assume all slaves have the c:\temp folder.
         share_name = 'share-name ' + mk.string()
         self.makeWindowsShare(path='c:\\temp', name=share_name)
-        path, segments = mk.fs.makePathInTemp()
+        _, segments = mk.fs.makePathInTemp()
         self.addCleanup(self.filesystem.deleteFolder, segments)
         filename = mk.makeFilename()
         file_segments = ['c', 'temp', filename]
@@ -2265,6 +2288,19 @@ class LocalFilesystemNTMixin:
 
         self.assertEqual(initial.mode, after.mode)
 
+    def test_deleteFolder_drive_root(self):
+        """
+        Deleting a drive root is rejected.
+        """
+        error = self.assertRaises(
+            CompatError,
+            self.filesystem.deleteFolder,
+            ['c'],
+            recursive=True,
+        )
+        self.assertEqual(1009, error.event_id)
+        self.assertEndsWith('is not allowed.', error.message)
+
     def test_isAbsolutePath(self):
         """
         Unit test for detecting which Windows path is absolute.
@@ -2484,6 +2520,17 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         super().setUpClass()
         cls.unlocked_filesystem = LocalFilesystem(avatar=DefaultAvatar())
         cls.filesystem = cls.unlocked_filesystem
+
+    def test_deleteFolder_root(self):
+        """
+        Recursive deletion rejects the unlocked filesystem root.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.unlocked_filesystem.deleteFolder(
+                segments,
+                recursive=True,
+            ),
+        )
 
     def test_getSegments(self):
         """
@@ -2812,7 +2859,7 @@ class TestLocalFilesystemUnlocked(CompatTestCase, FilesystemTestMixin):
         """
         Will return True when we have a UNC / network link.
         """
-        path, segments = mk.fs.makePathInTemp()
+        _, segments = mk.fs.makePathInTemp()
         # Make sure path does not exists.
         result = self.unlocked_filesystem.exists(segments)
         self.assertFalse(result)
@@ -2905,6 +2952,101 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         cls.locked_avatar.lock_in_home_folder = True
         cls.locked_filesystem = LocalFilesystem(avatar=cls.locked_avatar)
         cls.filesystem = cls.locked_filesystem
+
+    def test_createFolder_root(self):
+        """
+        Creating the avatar root using any equivalent segments is rejected.
+        """
+        self.assertRootOperationRejected(self.locked_filesystem.createFolder)
+
+    def test_deleteFolder_root(self):
+        """
+        Recursive deletion is rejected for the avatar root.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.deleteFolder(
+                segments,
+                recursive=True,
+            ),
+        )
+
+    def test_rename_from_root(self):
+        """
+        Renaming the avatar root using any equivalent segments is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.rename(
+                segments,
+                ['destination'],
+            ),
+        )
+
+    def test_rename_to_root(self):
+        """
+        Renaming another path over the avatar root is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.rename(
+                ['source'],
+                segments,
+            ),
+        )
+
+    def test_setAttributes_root(self):
+        """
+        Changing attributes on the avatar root is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.setAttributes(
+                segments,
+                {'mode': 0o700},
+            ),
+        )
+
+    def test_setOwner_root(self):
+        """
+        Changing the owner of the avatar root is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.setOwner(
+                segments,
+                'ignored-owner',
+            ),
+        )
+
+    def test_addGroup_root(self):
+        """
+        Adding a group to the avatar root is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.addGroup(
+                segments,
+                'ignored-group',
+            ),
+        )
+
+    def test_removeGroup_root(self):
+        """
+        Removing a group from the avatar root is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.removeGroup(
+                segments,
+                'ignored-group',
+            ),
+        )
+
+    @conditionals.onCapability('symbolic_link', True)
+    def test_makeLink_root(self):
+        """
+        Creating a link over the avatar root is rejected.
+        """
+        self.assertRootOperationRejected(
+            lambda segments: self.locked_filesystem.makeLink(
+                ['ignored-target'],
+                segments,
+            ),
+        )
 
     def test_getSegments_locked(self):
         """
@@ -3108,7 +3250,7 @@ class TestLocalFilesystemLocked(CompatTestCase, FilesystemTestMixin):
         """
         It return the virtual link of the target.
         """
-        path, target_segments = self.tempFile()
+        _, target_segments = self.tempFile()
         link_segments = [f'{target_segments[-1]}-link']
         mk.fs.makeLink(
             target_segments=target_segments,
@@ -3265,7 +3407,7 @@ class TestLocalFilesystemVirtualFolder(CompatTestCase):
         Virtual path on Windows/OSX are case insensitive, while on other
         systems are case sensitive.
         """
-        path, segments = self.tempFolder(suffix='low')
+        _, segments = self.tempFolder(suffix='low')
         virtual_shadow = segments[-1][:-3] + segments[-1][-3:].upper()
 
         if self.os_name in ['windows', 'osx']:

@@ -348,7 +348,7 @@ class UnixUsers(CompatUsers):
                 crypted_password = _get_etc_shadow(username)
 
             # Locked account
-            if crypted_password in ('LK',):
+            if crypted_password == 'LK':
                 return False
 
             # Allow other methods to take over if password is not

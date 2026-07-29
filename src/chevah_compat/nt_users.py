@@ -206,11 +206,11 @@ class NTUsers(CompatUsers):
         if not groups:
             raise ValueError("Groups for validation can't be empty.")
 
-        primary_domain_controller, name = self._parseUPN(username)
+        primary_domain_controller, _name = self._parseUPN(username)
 
         for group in groups:
             try:
-                group_sid, group_domain, group_type = (
+                group_sid, _group_domain, _group_type = (
                     win32security.LookupAccountName(
                         primary_domain_controller,
                         group,

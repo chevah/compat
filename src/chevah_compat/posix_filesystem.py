@@ -387,6 +387,25 @@ class PosixFilesystemBase:
         """
         raise NotImplementedError('isLink')
 
+    def isRoot(self, segments):
+        """
+        See `ILocalFilesystem`.
+        """
+        normalized_segments = self.getSegments(self.getPath(segments))
+        path = self.getRealPathFromSegments(
+            normalized_segments,
+            include_virtual=False,
+        )
+        root = self.getRealPathFromSegments([], include_virtual=False)
+        return root.lower() == path.lower()
+
+    def _rejectRoot(self, segments, message):
+        """
+        Helper to raise an error on operations that modify the root folder.
+        """
+        if self.isRoot(segments):
+            raise CompatError(1009, message)
+
     def exists(self, segments):
         """See `ILocalFilesystem`."""
 
@@ -406,7 +425,10 @@ class PosixFilesystemBase:
             return os.path.lexists(path_encoded)
 
     def createFolder(self, segments, recursive=False):
-        """See `ILocalFilesystem`."""
+        """
+        See `ILocalFilesystem`.
+        """
+        self._rejectRoot(segments, 'Creating the root folder is not allowed.')
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
@@ -488,7 +510,15 @@ class PosixFilesystemBase:
                 raise
 
     def rename(self, from_segments, to_segments):
-        """See `ILocalFilesystem`."""
+        """
+        See `ILocalFilesystem`.
+        """
+        self._rejectRoot(
+            from_segments, 'Renaming from the root folder is not allowed.'
+        )
+        self._rejectRoot(
+            to_segments, 'Renaming to the root folder is not allowed.'
+        )
         from_path = self.getRealPathFromSegments(
             from_segments,
             include_virtual=False,
@@ -857,7 +887,13 @@ class PosixFilesystemBase:
         return os.stat_result([0o40555, 0, 0, 0, 1, 1, 0, 1, modified, 0])
 
     def setAttributes(self, segments, attributes):
-        """See `ILocalFilesystem`."""
+        """
+        See `ILocalFilesystem`.
+        """
+        self._rejectRoot(
+            segments,
+            'Setting attributes on the posix root folder is not allowed.',
+        )
         path = self.getRealPathFromSegments(segments, include_virtual=False)
         path_encoded = self.getEncodedPath(path)
         with self._impersonateUser():
