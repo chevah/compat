@@ -49,7 +49,7 @@ class TestFactory(ChevahTestCase):
         Check the error message for Unicode decode error.
         """
         expected = 'invalid start byte'
-        self.assertEndsWith(expected, exception.reason)
+        self.assertEndsWith(exception.reason, expected)
 
     def test_bytes_string_conversion_utf8_default(self):
         """
@@ -68,14 +68,14 @@ class TestFactory(ChevahTestCase):
             value.decode(encoding='ascii')
 
         self.assertEndsWith(
-            'ordinal not in range(128)',
             context.exception.reason,
+            'ordinal not in range(128)',
         )
 
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode(encoding='utf-8')
 
-        self.assertEndsWith('invalid start byte', context.exception.reason)
+        self.assertEndsWith(context.exception.reason, 'invalid start byte')
 
     def test_bytes_string_conversion_utf8_arbitrary(self):
         """
@@ -95,14 +95,14 @@ class TestFactory(ChevahTestCase):
             value.decode(encoding='ascii')
 
         self.assertEndsWith(
-            'ordinal not in range(128)',
             context.exception.reason,
+            'ordinal not in range(128)',
         )
 
         with self.assertRaises(UnicodeDecodeError) as context:
             value.decode(encoding='utf-8')
 
-        self.assertEndsWith('invalid start byte', context.exception.reason)
+        self.assertEndsWith(context.exception.reason, 'invalid start byte')
 
     def test_bytes_string_conversion_utf16_default(self):
         """

@@ -49,7 +49,7 @@ class TestAssertionMixin(ChevahTestCase):
             self.assertTempIsClean()
 
         message = context.exception.args[0]
-        self.assertStartsWith('Temporary folder is not clean.', message)
+        self.assertStartsWith(message, 'Temporary folder is not clean.')
         self.assertContains(temp_segments[-1], message)
 
         self.assertFalse(mk.fs.exists(temp_segments))
@@ -180,9 +180,7 @@ class TestAssertionMixin(ChevahTestCase):
         # The check here is more complicated since the message relies on the
         # assertEqual implementation.
         self.assertStartsWith(
-            'Element counts were not equal:',
-            exception.args[0],
-        )
+            exception.args[0], 'Element counts were not equal:')
 
     def test_assertEqual_unicode_vs_bytestring_in_list(self):
         """

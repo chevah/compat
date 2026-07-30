@@ -39,7 +39,7 @@ class FilesystemTestingHelpers:
         for segments in root_segments:
             error = self.assertRaises(CompatError, operation, segments)
             self.assertEqual(1009, error.event_id)
-            self.assertEndsWith('is not allowed.', error.message)
+            self.assertEndsWith(error.message, 'is not allowed.')
 
     def makeLink(self, segments, cleanup=True):
         """
@@ -365,7 +365,8 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertTrue(self.filesystem.exists(self.test_segments))
         expected = '[Errno 21] Is a directory: ' + path
-        self.assertStartsWith(expected, force_unicode(context.exception))
+        self.assertStartsWith(
+            force_unicode(context.exception), expected)
 
     def test_deleteFile_regular(self):
         """
@@ -1376,7 +1377,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
         expected = '[Errno 21] Is a directory: ' + path
-        self.assertStartsWith(expected, force_unicode(context.exception))
+        self.assertStartsWith(force_unicode(context.exception), expected)
 
     def test_openFileForReading_folder(self):
         """
@@ -1390,7 +1391,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
 
         self.assertEqual(errno.EISDIR, context.exception.errno)
         details = '[Errno 21] Is a directory: ' + path
-        self.assertStartsWith(details, force_unicode(context.exception))
+        self.assertStartsWith(force_unicode(context.exception), details)
 
     def test_openFileForWriting_folder(self):
         """
@@ -1405,7 +1406,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path, context.exception.filename)
         details = '[Errno 21] Is a directory: ' + path
-        self.assertStartsWith(details, force_unicode(context.exception))
+        self.assertStartsWith(force_unicode(context.exception), details)
 
     def test_openFileForAppending_folder(self):
         """
@@ -1420,7 +1421,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertEqual(path, context.exception.filename)
         details = '[Errno 21] Is a directory: ' + path
-        self.assertStartsWith(details, str(context.exception))
+        self.assertStartsWith(str(context.exception), details)
 
     def test_touch_no_parent(self):
         """
@@ -1723,7 +1724,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             self.filesystem.openFileForReading(segments)
 
         details = '[Errno 2] No such file or directory: ' + path
-        self.assertStartsWith(details, force_unicode(context.exception))
+        self.assertStartsWith(force_unicode(context.exception), details)
         self.assertEqual(errno.ENOENT, context.exception.errno)
 
     def test_openFileForReading_file_not_found(self):
@@ -1738,7 +1739,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
             self.filesystem.openFileForReading(segments)
 
         details = '[Errno 2] No such file or directory: ' + path
-        self.assertStartsWith(details, force_unicode(context.exception))
+        self.assertStartsWith(force_unicode(context.exception), details)
         self.assertEqual(errno.ENOENT, context.exception.errno)
 
     def test_openFileForReading_already_opened(self):
@@ -2299,7 +2300,7 @@ class LocalFilesystemNTMixin:
             recursive=True,
         )
         self.assertEqual(1009, error.event_id)
-        self.assertEndsWith('is not allowed.', error.message)
+        self.assertEndsWith(error.message, 'is not allowed.')
 
     def test_isAbsolutePath(self):
         """

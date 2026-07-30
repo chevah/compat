@@ -8,7 +8,6 @@ import collections
 import time
 from contextlib import contextmanager
 
-from six import text_type
 
 try:
     from twisted.python.failure import Failure
@@ -110,8 +109,8 @@ class AssertionMixin:
         if expected_id != actual_id:
             values = (
                 actual_error,
-                text_type(expected_id),
-                text_type(actual_id),
+                str(expected_id),
+                str(actual_id),
             )
             message = 'Error id for {} is not {}, but {}.'.format(*values)
             raise AssertionError(message)
@@ -121,14 +120,14 @@ class AssertionMixin:
         Raise an exception if value is not 'False'.
         """
         if value is not False:
-            raise AssertionError(f'{text_type(value)} is not False.')
+            raise AssertionError(f'{str(value)} is not False.')
 
     def assertIsTrue(self, value):
         """
         Raise an exception if value is not 'True'.
         """
         if value is not True:
-            raise AssertionError(f'{text_type(value)} is not True.')
+            raise AssertionError(f'{str(value)} is not True.')
 
     def assertFailureType(self, failure_class, failure_or_deferred):
         """Raise assertion error if failure is not of required type."""
@@ -140,7 +139,7 @@ class AssertionMixin:
 
         if failure.type is not failure_class:  # pragma: no cover
             message = (
-                f'Failure {text_type(failure)} is not of type {failure_class}'
+                f'Failure {str(failure)} is not of type {failure_class}'
             )
             raise AssertionError(message)
 
@@ -202,22 +201,6 @@ class AssertionMixin:
         """
         if pattern not in pattern:
             message = f'{pattern!r} not contained in\n{source!r}.'
-            raise AssertionError(message)
-
-    def assertStartsWith(self, start, source):
-        """
-        Raise AssertionError if `source` does not starts with `start`.
-        """
-        if not source.startswith(start):
-            message = f'{source!r} does not starts with {start!r}'
-            raise AssertionError(message)
-
-    def assertEndsWith(self, end, source):
-        """
-        Raise AssertionError if `source` does not ends with `end`.
-        """
-        if not source.endswith(end):
-            message = f'{source!r} does not end with {end!r}'
             raise AssertionError(message)
 
     def assertProvides(self, interface, obj):
