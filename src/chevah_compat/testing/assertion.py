@@ -8,7 +8,6 @@ import collections
 import time
 from contextlib import contextmanager
 
-
 try:
     from twisted.python.failure import Failure
 except ImportError:
@@ -120,14 +119,14 @@ class AssertionMixin:
         Raise an exception if value is not 'False'.
         """
         if value is not False:
-            raise AssertionError(f'{str(value)} is not False.')
+            raise AssertionError(f'{value!s} is not False.')
 
     def assertIsTrue(self, value):
         """
         Raise an exception if value is not 'True'.
         """
         if value is not True:
-            raise AssertionError(f'{str(value)} is not True.')
+            raise AssertionError(f'{value!s} is not True.')
 
     def assertFailureType(self, failure_class, failure_or_deferred):
         """Raise assertion error if failure is not of required type."""
@@ -138,9 +137,7 @@ class AssertionMixin:
             failure = failure_or_deferred.result
 
         if failure.type is not failure_class:  # pragma: no cover
-            message = (
-                f'Failure {str(failure)} is not of type {failure_class}'
-            )
+            message = f'Failure {failure!s} is not of type {failure_class}'
             raise AssertionError(message)
 
     def assertIsEmpty(self, target):

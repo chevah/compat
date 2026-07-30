@@ -365,8 +365,7 @@ class TestLocalFilesystem(DefaultFilesystemTestCase):
         self.assertEqual(errno.EISDIR, context.exception.errno)
         self.assertTrue(self.filesystem.exists(self.test_segments))
         expected = '[Errno 21] Is a directory: ' + path
-        self.assertStartsWith(
-            force_unicode(context.exception), expected)
+        self.assertStartsWith(force_unicode(context.exception), expected)
 
     def test_deleteFile_regular(self):
         """

@@ -180,7 +180,8 @@ class TestAssertionMixin(ChevahTestCase):
         # The check here is more complicated since the message relies on the
         # assertEqual implementation.
         self.assertStartsWith(
-            exception.args[0], 'Element counts were not equal:')
+            exception.args[0], 'Element counts were not equal:'
+        )
 
     def test_assertEqual_unicode_vs_bytestring_in_list(self):
         """
