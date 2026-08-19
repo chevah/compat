@@ -1,11 +1,19 @@
 Release notes for chevah.compat
 ===============================
 
+
+1.8.0 - 2026-07-30
+------------------
+
+* Update for Python 3.14
+
+
 1.7.1 - 2026-07-29
 ------------------
 
 * For Unix, getRealPathFromSegments now returns the root folder instead
   of an empty string.
+
 
 1.7.0 - 2026-07-22
 ------------------

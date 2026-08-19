@@ -427,7 +427,7 @@ class TwistedTestCase(TestCase):
             self.executeReactor()
             result = transport.value()
 
-            self.assertStartsWith('211-Features:\n', result)
+            self.assertStartsWith(result, '211-Features:\n')
         """
         if timeout is None:
             timeout = self.DEFERRED_TIMEOUT
@@ -942,7 +942,7 @@ def _get_ci_name():
     return _CI_NAMES.LOCAL
 
 
-class ChevahTestCase(TwistedTestCase, AssertionMixin):
+class ChevahTestCase(AssertionMixin, TwistedTestCase):
     """
     Test case for Chevah tests.
 

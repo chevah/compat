@@ -156,7 +156,7 @@ class TestProcessCapabilities(FileSystemTestCase):
                     win32security.SE_INC_WORKING_SET_NAME,
                 )
 
-        self.assertStartsWith('enabled', update_state)
+        self.assertStartsWith(update_state, 'enabled')
 
     @conditionals.onOSFamily('nt')
     def test_elevatePrivileges_impersonated_not_present(self):
